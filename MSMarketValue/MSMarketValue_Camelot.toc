@@ -1,0 +1,20 @@
+## Interface: 16001
+## Title: MS Market Value
+## Notes: Full auction snapshots, vendor sell prices, and estimated disenchant values.
+## Author: MoobStack
+## Version: 0.1.0-beta
+## Category: Auction & Economy
+## IconTexture: Interface\Icons\INV_Misc_Coin_02
+## SavedVariables: MSMarketValueDB
+## LoadSavedVariablesFirst: 1
+## X-Build: 2026-10-04-beta001
+
+Bootstrap.lua
+Core\Util.lua
+Core\Database.lua
+Data\Disenchant.lua
+Core\Valuation.lua
+Auction\Scanner.lua
+Integrations\Tooltips.lua
+UI\Window.lua
+Core\Events.lua

@@ -1,0 +1,28 @@
+name: Beta bug report
+description: Report behavior from the exact MS Market Value beta build.
+title: "[Beta] "
+labels: []
+body:
+  - type: input
+    id: build
+    attributes:
+      label: Addon build and client version
+      description: Copy the header from /msmv diagnostics.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps, expected result, and actual result
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Diagnostics and exact Lua error
+      description: Review diagnostic text before posting it. Do not upload WTF folders, account data, or credentials.
+  - type: textarea
+    id: disenchant
+    attributes:
+      label: Disenchant observation, if relevant
+      description: Item link/ID, item level, quality, and the actual material and quantity received.

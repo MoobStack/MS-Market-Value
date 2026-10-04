@@ -1,0 +1,20 @@
+name: Validate beta
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, resolved 2026-10-04
+      - name: Install Lua 5.1
+        run: |
+          sudo apt-get update
+          sudo apt-get install --no-install-recommends -y lua5.1
+      - name: Validate runtime and behavioral fixtures
+        run: python3 tools/validate.py --lua lua5.1 --luac luac5.1

@@ -1,0 +1,13 @@
+dist/
+__pycache__/
+*.pyc
+tests/tmp/
+*.log
+.DS_Store
+Thumbs.db
+# Real player saved data and local credentials never belong in this repository.
+WTF/
+SavedVariables/
+MSMarketValueDB.lua
+MSMarketValueDB.lua.bak
+.env
