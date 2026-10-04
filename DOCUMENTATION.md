@@ -1,6 +1,6 @@
 # MS Market Value documentation
 
-Version `0.1.0-beta`, build `2026-10-04-beta003`.
+Version `1.0.0`, build `2026-10-04-release001`.
 
 ## Installation
 
@@ -32,11 +32,11 @@ Closing the auction house or entering combat cancels a scan. Additional replicat
 
 ## Prices
 
-All tooltip monetary values are **per individual item**, in copper internally. For a listing of 10 items with a total buyout of 1 gold, the recorded unit price is 10 silver. Fractional unit copper values are retained during calculations, then rounded for display; positive values below one copper show `<1c`.
+Prices are stored **per individual item**, in copper internally. The tooltip groups vendor, AH and applicable **DE expected** values in one block. For a readable hovered stack larger than one, its heading is **Each / Stack (N)** and each row shows the unit value followed by the total for N items. A single item or unavailable quantity shows **Each** only. Native GUID/location or a matching bag/equipment context supplies the quantity; generic links, child-item contexts and restricted values do not supply an invented stack count. For a listing of 10 items with a total buyout of 1 gold, the recorded unit price is 10 silver. Fractional unit copper values are retained during calculations, then rounded for display; positive values below one copper show `<1c`. Stack totals multiply the unrounded unit value before display rounding, so the displayed unit value multiplied by N can differ slightly from the correctly rounded stack total. Maximum stack capacity and total ownership are never used as the hovered count.
 
 The AH value is the lowest buyout per unit in the latest completed replication snapshot. Bid-only auctions do not supply a buyout price. Sold rows do not contribute. This is a snapshot of asking prices, not a confirmed sale value, historical average, liquidity measurement, or guaranteed profit.
 
-Signed random suffixes are indexed separately using `itemID:suffix`. Enchantments, gems, unique instance IDs and the viewer's level are not pricing keys. Where no matching suffix is available, the base item ID minimum is labeled **item-wide**. Retail bonus-list/upgrade-level valuation and battle-pet cage valuation are outside this Forever beta's scope.
+Signed random suffixes are indexed separately using `itemID:suffix`. Enchantments, gems, unique instance IDs and the viewer's level are not pricing keys. Where no matching suffix is available, the base item ID minimum is labeled **item-wide**. Retail bonus-list/upgrade-level valuation and battle-pet cage valuation are outside this release's scope.
 
 | Tooltip result | Interpretation |
 |---|---|
@@ -53,11 +53,11 @@ Stale data remains available and visibly dated by default. Age is based on the s
 
 The model uses native item level, quality, equipment class and subclass. Required character level is not substituted for item level. Uncommon armor and ordinary weapons have different reference outcome probabilities; wands use the dust-heavy reference treatment.
 
-For each possible material, the tooltip shows a quantity range, outcome probability and expected quantity. For example, `1-2 (80%; avg 1.20)` means that outcome occurs with 80% probability in the reference model and supplies an expected 1.20 units per disenchant. You do not receive all listed alternative outcomes together.
+A blank line separates the price block from **Disenchant estimate**. For each possible material, the tooltip shows a per-item quantity range, outcome probability and expected quantity. Material ranges and chances do not become stack loot guarantees; only monetary expected values are multiplied by the actual stack count. For example, `1-2 (80%; avg 1.20)` means that outcome occurs with 80% probability in the reference model and supplies an expected 1.20 units per disenchant. You do not receive all listed alternative outcomes together.
 
-The expected value is the sum of probability-weighted quantities times per-unit material buyout prices from the same snapshot. Each possible material needs a price. If one is missing, the total is **Unavailable** and any known subtotal is labeled **Priced portion only**. Prices are gross, before AH fees and listing costs.
+The expected value is the sum of probability-weighted quantities times per-unit material buyout prices from the same snapshot. Each possible material needs a price. If one is missing, the total is **Unavailable** and any known subtotal is labeled **DE priced portion only** in the price block. Prices are gross, before AH fees and listing costs.
 
-The beta's loot model is a **Classic reference estimate**. It is not a verified Forever loot dataset. Standard gear eligibility is inferred from quality/class/equipment slot, not confirmed by a native disenchantability API. Item exceptions, new Forever materials, changed probabilities, and profession/skill requirements can invalidate an estimate. The addon does not claim your character can currently disenchant the item. Check the native profession behavior and use item exclusions for exceptions.
+The release's loot model is a **Classic reference estimate**. It is not a verified Forever loot dataset. Standard gear eligibility is inferred from quality/class/equipment slot, not confirmed by a native disenchantability API. Item exceptions, new Forever materials, changed probabilities, and profession/skill requirements can invalidate an estimate. The addon does not claim your character can currently disenchant the item. Check the native profession behavior and use item exclusions for exceptions.
 
 See [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) for complete bracket details. Items outside those brackets are labeled as having no profile rather than extrapolated.
 
@@ -65,9 +65,9 @@ See [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) for complete bracket de
 
 | Setting/control | Default | Effect |
 |---|---|---|
-| Vendor sell price | On | Show native vendor sell value |
-| Lowest AH buyout | On | Show current saved minimum buyout |
-| Estimated disenchant value | On | Show eligible reference outcomes/value |
+| Vendor sell price | On | Show native vendor each/stack values |
+| Lowest AH buyout | On | Show saved minimum buyout each/stack values |
+| Estimated disenchant value | On | Show eligible DE each/stack values and reference details |
 | Material ranges and chances | On | Show possible materials, ranges, probabilities, averages |
 | Snapshot age and stale flag | On | Display snapshot age and stale marker |
 | Mark prices stale after | 24 hours | Configurable integer, 1–168 hours |
@@ -96,7 +96,7 @@ Opening an auctioneer leaves the native Buy tab selected and adds an **MS Market
 
 For the reported `ClassicBetaPvP2`, native region `90` and Horde, the key is `forever|90|pvp|Horde`. A character reporting `ClassicBetaPvP1` in the same region/faction reads that cache. A Normal character does not read the PvP cache. Only the supplied PvP alias is live evidence; Normal/RP and other host aliases still need native confirmation. Unrecognized aliases remain safely isolated and can be reported for a later mapping update.
 
-A positive native region identifier, including beta `90`, is preferred. An unavailable/zero region falls back to accessible modern/legacy login-portal values; us/kr/eu/tw/cn map to numeric regions and other named portals remain separate. Missing/empty normalized aliases fall back to the public name. Locale, PvP flags and Classic/Modern UI presets never select a ruleset. A missing usable identity blocks the request before consuming cooldown. See [UPGRADE.md](UPGRADE.md) for the fresh scan required when moving an old cache to this new namespace.
+A positive native region identifier, including beta `90`, is preferred. An unavailable/zero region falls back to accessible modern/legacy login-portal values; us/kr/eu/tw/cn map to numeric regions and other named portals remain separate. Missing/empty normalized aliases fall back to the public name. Locale, PvP flags and Classic/Modern UI presets never select a ruleset. A missing usable identity blocks the request before consuming cooldown. Build003 already used this namespace, so upgrading from build003 to 1.0.0 preserves its completed snapshot without rescanning. See [UPGRADE.md](UPGRADE.md) for the fresh scan required only when moving an older realm-keyed cache into this namespace.
 
 WoW writes SavedVariables on a successful UI reload or normal logout/exit. The addon cannot force an immediate disk write. A crash, interrupted shutdown, or client-side SavedVariables regression can lose changes made since the last successful write. `LoadSavedVariablesFirst: 1` is included, and initialization waits for the addon's `ADDON_LOADED` event.
 
@@ -106,7 +106,7 @@ Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak
 
 Enable native script errors with `/console scriptErrors 1`, then reproduce the issue once. Copy `/msmv diagnostics`, the exact error text, client version/build, and addon build. For a material mismatch include item ID/link, item level, quality and actual loot. Diagnostics omit auction seller names and stored account credentials.
 
-Install build003 for the build001 identity failure or build002 “replication buffer was refreshed” failure and `ShoppingTooltip1` first-hover error. IDLE with zero session requests means a request was not sent. Report the market key, ruleset/source, faction, reporting aliases, region/portal, event counts and exact failure. These are public market identifiers, not credentials.
+Install 1.0.0 for the earlier build001 identity failure or build002 “replication buffer was refreshed” failure and `ShoppingTooltip1` first-hover error. The user reported successful build003 completion; 1.0.0 retains those scanner/refresh fixes. IDLE with zero session requests means a request was not sent. Report the market key, ruleset/source, faction, reporting aliases, region/portal, event counts and exact failure. These are public market identifiers, not credentials.
 
 Comparison tooltips still receive values through the native postprocessing callback. MSMV only requests refresh of readable getter-backed primary item tooltips; Blizzard owns comparison layout and rebuilding. A comparison may update with the next native comparison refresh/rehover.
 

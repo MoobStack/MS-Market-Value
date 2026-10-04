@@ -16,7 +16,14 @@ def run(lua: str, luac: str | None = None) -> None:
     toc = RUNTIME / "MSMarketValue.toc"
     text = toc.read_text(encoding="utf-8")
     meta = json.loads((ROOT / "build.json").read_text(encoding="utf-8"))
-    assert meta["version"] == "0.1.0-beta", "Hold the primary beta version until the finalized release"
+    channel = meta.get("releaseChannel", "beta")
+    if channel == "beta":
+        assert meta["version"] == "0.1.0-beta", "Hold the primary beta version until the finalized release"
+        assert meta["gitTag"] == f'v{meta["version"]}-build{meta["buildNumber"]}'
+    else:
+        assert channel == "stable", "Unknown release channel"
+        assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", meta["version"]), "Use a stable semantic version"
+        assert meta["gitTag"] == "v" + meta["version"], "Stable releases use an immutable version tag"
     assert f'## Interface: {meta["interface"]}\n' in text
     assert f'## Version: {meta["version"]}\n' in text
     assert f'## X-Build: {meta["build"]}\n' in text
@@ -24,7 +31,6 @@ def run(lua: str, luac: str | None = None) -> None:
     assert f'A.VERSION = "{meta["version"]}"' in bootstrap
     assert f'A.BUILD = "{meta["build"]}"' in bootstrap
     assert f'A.INTERFACE = {meta["interface"]}' in bootstrap
-    assert meta["gitTag"] == f'v{meta["version"]}-build{meta["buildNumber"]}'
     assert "## SavedVariables: MSMarketValueDB\n" in text
     assert "## LoadSavedVariablesFirst: 1\n" in text
     for suffix in ("Camelot", "Forever"):
@@ -48,7 +54,7 @@ def run(lua: str, luac: str | None = None) -> None:
     result = subprocess.run([lua, "-e", 'assert(_VERSION == "Lua 5.1", "Use Lua 5.1 to validate this addon")'], check=True)
     assert result.returncode == 0
     subprocess.run([lua, "tests/run.lua"], cwd=ROOT, check=True)
-    print("PASS TOC/load order, beta identity, Lua 5.1, and runtime operation checks.")
+    print("PASS TOC/load order, release identity, Lua 5.1, and runtime operation checks.")
 
 
 if __name__ == "__main__":

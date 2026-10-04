@@ -1,6 +1,29 @@
 # Changelog
 
-Public version **0.1.0-beta** is fixed until the first finalized release. Each candidate has a separate build identifier, archive filename, checksums, commit, and annotated build tag. New beta builds add entries beneath the same primary version; they do not increment the TOC version.
+The first stable release is **1.0.0**. Before this release, all revisions used the same primary **0.1.0-beta** version with distinct build identifiers and immutable annotated tags. Earlier entries record the evidence available when each beta was prepared; the new native report is recorded below.
+
+## 1.0.0 — 2026-10-04 UTC
+
+| Release detail | Value |
+|---|---|
+| Build identifier | `2026-10-04-release001` |
+| Annotated Git tag | `v1.0.0` |
+| Target | WoW Forever 1.60.1 / 70205 / Interface 16001 |
+
+Added and changed:
+
+- Stacked item tooltips show per-item and actual stack totals under **Each / Stack (N)**. Native item GUID/location or matching bag/equipment context supplies the quantity; generic links and inaccessible contexts retain each-only values.
+- Vendor, AH and applicable **DE expected** values now share the price block. Material estimates follow a blank line and remain per item.
+- Stack totals multiply the original unit value before money rounding. Missing DE material prices still prevent a complete total; a known subtotal remains explicitly labeled **DE priced portion only**.
+- Promoted metadata, all three TOCs, documentation and release validation to stable **1.0.0**. Schema 1, the realmless market keys, prior prices/settings/exclusions/cooldown and all three beta commits/tags are preserved. Build003 users do not need a new scan solely for this update.
+
+Validation and native evidence:
+
+- **90/90** local Lua 5.1 checks pass, including 12 new quantity, display, rounding, restriction and beta-to-stable cache cases.
+- Runtime syntax, metadata/load order, three identical TOCs, pinned-library integrity and operation checks pass.
+- The user reported build003 **COMPLETE** on `forever|90|pvp|Horde`: **104,763 rows**, **2,856 priced items**, **6,329 replication events**, **6,328 same-count updates**, one full-scan request, and the AH tab installed. The user reported that behavior appeared to work as intended.
+- This report establishes a successful native PvP scan and stored in-memory snapshot. It does not establish a reload/restart disk round-trip, every material/variant's coverage, other rulesets, or the new 1.0.0 stack layout. Those checks remain listed separately.
+- Forever DE outcomes and special eligibility remain a labeled, unverified Classic reference.
 
 ## 0.1.0-beta
 

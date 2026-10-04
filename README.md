@@ -1,86 +1,78 @@
 # MS Market Value
 
-MS Market Value saves a complete auction-house price snapshot and adds vendor sell prices, auction buyout prices, and estimated disenchant material values to item tooltips.
+MS Market Value saves a complete auction-house price snapshot and adds vendor, auction and estimated disenchant values to item tooltips. Stacked items show the value of each item and the whole hovered stack in one price block.
 
 | Project detail | Value |
 |---|---|
 | Publisher | MoobStack |
 | Addon folder | `MSMarketValue` |
-| Public beta version | `0.1.0-beta` |
-| Build | `2026-10-04-beta003` |
-| Target | WoW Forever 1.60.1, Interface 16001 |
+| Version | `1.0.0` |
+| Build | `2026-10-04-release001` |
+| Annotated tag | `v1.0.0` |
+| Target | WoW Forever 1.60.1 / 70205 / Interface 16001 |
 | Dependencies | Bundled LibStub and LibAHTab; no separate addon installation |
-| Status | Revised beta candidate; 78 local tests pass; native scan/tooltip/UI retest pending |
+| Validation | 90/90 local checks; build003 native PvP scan completed 104,763 rows |
 
-This is a separate modern-client addon. It does not extend or migrate the older Interface 11200 MS Auction addon.
+## Changes in 1.0.0
 
----
+- Vendor, AH and applicable **DE expected** prices share a compact block headed **Each / Stack (quantity)** when the hovered quantity is available and greater than one.
+- Stack totals use that item's actual quantity and multiply the unrounded unit value before display rounding.
+- A blank line separates prices from the disenchant material ranges, chances and expected quantities. Those material estimates remain per item.
+- Existing build003 snapshots, settings, exclusions and cooldowns carry forward. No fresh scan is required solely for this update.
+- The first stable release uses **1.0.0**. All three **0.1.0-beta** builds and their immutable tags remain in Git history.
 
-## Changelog
+See [CHANGELOG.md](CHANGELOG.md) for the complete history and [RELEASE-NOTES-v1.0.0.md](RELEASE-NOTES-v1.0.0.md) for this release.
 
-### 0.1.0-beta — build003 — 2026-10-04 UTC
+## Install and use
 
-- Fixed first-hover refresh errors by refreshing only getter-backed primary item tooltips. Comparison tooltips remain under Blizzard's comparison manager.
-- Same-count replication updates now continue a scan and wake pending item-data retries without restarting, requesting again, or double-counting accepted rows.
-- Added ruleset-aware Forever caches: PvP and Normal remain separate, reporting-host suffixes share the detected ruleset, and native region `90` is accepted. Faction caches remain separate pending native market qualification.
-- Rebuilt the AH pane with full-width Blizzard inset textures, borders, stock controls, and two settings columns. Manual settings and diagnostics use native portrait frames.
-- Added ruleset/source/faction and replication-event diagnostics. Public version stays **0.1.0-beta**; all **78/78** local tests pass. Native build003 checks remain pending.
-
-All revisions before the first finalized release remain **0.1.0-beta**. Build identifiers and immutable build tags distinguish revisions. See [CHANGELOG.md](CHANGELOG.md).
-
----
-
-## Documentation
-
-### Install and use
-
-1. Extract the **Clean ZIP** into the active Forever client's `Interface/AddOns` folder. During beta this is normally `World of Warcraft/_classic_beta_/Interface/AddOns`.
-2. Confirm `Interface/AddOns/MSMarketValue/MSMarketValue.toc` exists directly inside the addon folder.
+1. With WoW closed, replace `Interface/AddOns/MSMarketValue` using the **Clean ZIP**. Use the AddOns folder of the Forever client you actually launch; the current beta client normally uses `_classic_beta_`.
+2. Confirm `Interface/AddOns/MSMarketValue/MSMarketValue.toc` exists directly inside the addon folder. Preserve your WTF/SavedVariables files.
 3. Restart WoW and enable **MS Market Value**.
-4. Open an auctioneer, select the new **MS Market Value** tab, then click **Scan entire AH**. Opening the auctioneer does not open a settings popup.
-5. Wait for **COMPLETE**. Hover items to see prices and eligible reference disenchant estimates.
-6. Use `/reload` or log out normally to let WoW write saved data to disk.
+4. Existing build003 prices are immediately usable. For a first scan or later refresh, open an auctioneer, select **MS Market Value**, and click **Scan entire AH** once when permitted.
+5. Wait for **COMPLETE**. Use `/reload` or a normal logout/exit to let WoW save prices and settings.
 
 | Command | Action |
 |---|---|
-| `/msmv` or `/msmarketvalue` | Select/leave the MS tab at an auctioneer; open/close a manual window elsewhere |
-| `/msmv scan` | Request one full-house scan at an open auctioneer |
-| `/msmv stop` | Cancel local processing and keep the last complete snapshot |
-| `/msmv status` | Show scan state and saved snapshot age |
-| `/msmv diagnostics` | Open text that can be copied into a beta report |
+| `/msmv` or `/msmarketvalue` | Select/leave the MS tab at an auctioneer; open/close settings elsewhere |
+| `/msmv scan` | Request one complete scan at an open auctioneer |
+| `/msmv stop` | Stop local processing and keep the last complete snapshot |
+| `/msmv status` | Show scan state and snapshot age |
+| `/msmv diagnostics` | Open copyable client, market and scan details |
 
-Every normal option is available in the AH tab and the manually opened window. The native inset layout shows scan controls above two settings columns without a settings scrollbar. Scanning and tooltip calculations run outside combat.
+The AH tab uses native Blizzard inset textures, fonts and controls. Opening an auctioneer keeps Buy selected without a settings popup. Scanning and tooltip calculations run outside combat.
 
-### How to interpret the tooltip
+## Read the tooltip
 
-- **Vendor sell:** the native sell price for one item.
-- **AH low:** the lowest observed buyout per unit from the last complete scan. These are asking prices, before auction fees.
-- **Item-wide:** the fallback minimum across variants sharing the item ID. It is labeled when a matching signed suffix is unavailable.
-- **DE material:** a possible outcome with a quantity range, chance, and probability-weighted average quantity. The possible outcomes are alternatives.
-- **DE value:** the sum of each material's expected quantity multiplied by its current snapshot price. Missing material prices make the complete value unavailable; a priced subtotal is labeled separately.
+**Each / Stack (N)** identifies the two monetary values on each price row. Single items and contexts without a reliable quantity show **Each** only. An item link in chat does not acquire the count of an unrelated stack you own.
 
-**Disenchant data limitation:** This beta uses a **Classic reference estimate**, not a verified Forever loot table. Special item eligibility, revised materials, probabilities, and quantity distributions require live evidence. The tooltip states this limitation. No item is automatically disenchanted.
+- **Vendor sell:** native sell price.
+- **AH low:** lowest observed unit buyout in the latest complete snapshot; asking prices before fees.
+- **AH low (item-wide):** labeled fallback across variants when the signed suffix has no exact price.
+- **DE expected:** probability-weighted material value. Missing material prices make the full estimate unavailable; any priced portion is labeled separately.
+- **Disenchant estimate:** per-item material quantity ranges, chances and expected quantities, separated from prices by a blank line. Outcomes are alternatives.
 
-### Project references
+The DE model remains a **Classic reference estimate**. Forever-specific loot, exceptional eligibility and profession requirements are unverified and labeled. No item is automatically disenchanted. The user's successful build003 report supports the existing PvP scan behavior; the new 1.0.0 stack display still needs a native hover check.
+
+## Documentation
 
 | File | Purpose |
 |---|---|
-| [DOCUMENTATION.md](DOCUMENTATION.md) | Features, settings, prices, persistence and troubleshooting |
-| [COMPATIBILITY.md](COMPATIBILITY.md) | Client/API target, Blizzard policy design, restrictions and limits |
-| [ARCHITECTURE.md](ARCHITECTURE.md) | Modules, scan lifecycle and saved-data schema |
-| [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) | Reference tables, formula and eligibility limits |
-| [docs/BUILD003-INVESTIGATION.md](docs/BUILD003-INVESTIGATION.md) | Tooltip/scan failures, realmless caches, native styling and evidence limits |
-| [docs/BUILD002-INVESTIGATION.md](docs/BUILD002-INVESTIGATION.md) | Earlier pre-request failure and first AH tab |
-| [docs/RESEARCH.md](docs/RESEARCH.md) | Primary sources and research provenance |
-| [GIT-WORKFLOW.md](GIT-WORKFLOW.md) | Full local Git, GitHub, beta revision, packaging and recovery workflow |
-| [VALIDATION.md](VALIDATION.md) | Completed checks and pending live checks |
-| [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md) | First-client qualification steps |
-| [UPGRADE.md](UPGRADE.md) | Beta updates, backups and rollback |
-| [ROADMAP.md](ROADMAP.md) | Work remaining before a finalized release |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Development and bug-report expectations |
-| [GITHUB-RELEASE.md](GITHUB-RELEASE.md) | Prepared beta release description |
-| [RELEASE-NOTES-v0.1.0-beta.md](RELEASE-NOTES-v0.1.0-beta.md) | Current beta release notes |
+| [DOCUMENTATION.md](DOCUMENTATION.md) | Settings, prices, persistence and troubleshooting |
+| [COMPATIBILITY.md](COMPATIBILITY.md) | Supported client/API target, restrictions and coverage limits |
+| [ARCHITECTURE.md](ARCHITECTURE.md) | Modules, scan lifecycle, quantity resolution and saved schema |
+| [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) | Reference tables, assumptions and eligibility |
+| [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md) | Native baseline evidence and tooltip implementation |
+| [docs/BUILD003-INVESTIGATION.md](docs/BUILD003-INVESTIGATION.md) | Earlier tooltip/scan fixes, ruleset caches and native styling |
+| [docs/BUILD002-INVESTIGATION.md](docs/BUILD002-INVESTIGATION.md) | Earlier market lookup failure and first AH tab |
+| [docs/RESEARCH.md](docs/RESEARCH.md) | Primary source links and provenance |
+| [GIT-WORKFLOW.md](GIT-WORKFLOW.md) | Complete Git, GitHub, stable release, packaging and recovery workflow |
+| [VALIDATION.md](VALIDATION.md) | Completed checks, native evidence and remaining coverage |
+| [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md) | Native checks for the exact release |
+| [UPGRADE.md](UPGRADE.md) | Upgrade, backup and rollback |
+| [ROADMAP.md](ROADMAP.md) | Follow-up client and loot-model work |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | Development and reporting expectations |
+| [GITHUB-RELEASE.md](GITHUB-RELEASE.md) | GitHub release description |
 
-The intended repository is `MoobStack/MS-Market-Value`. An origin URL in the supplied local repository is a configured destination, not evidence that the repository or a release has been created on GitHub.
+The intended repository is `MoobStack/MS-Market-Value`. A configured origin and local tag do not establish that GitHub publication has occurred.
 
-MoobStack is an independent community addon publisher. These addons are not affiliated with, authorized by, or endorsed by Blizzard Entertainment or any community server project. World of Warcraft and related marks are the property of their respective owners.
+MoobStack is an independent community addon publisher, unaffiliated with Blizzard Entertainment or any community server project. World of Warcraft and related marks belong to their owners.

@@ -1,3 +1,5 @@
+> Historical beta release notes. The current stable release is documented in [RELEASE-NOTES-v1.0.0.md](RELEASE-NOTES-v1.0.0.md).
+
 # MS Market Value 0.1.0-beta
 
 Current candidate **build003**, `2026-10-04-beta003`, prepared 2026-10-04 UTC. Tag: `v0.1.0-beta-build003`.

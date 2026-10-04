@@ -1,12 +1,12 @@
-# Live-client beta checklist
+# Live-client checklist
 
-Test the exact build `2026-10-04-beta003`. Record the client version/build and addon diagnostics. The user's build002 report establishes one request reaching PROCESSING, tab installation, a second-event failure and a ShoppingTooltip1 refresh error; the screenshot shows the old narrow panel. All build003 boxes below remain uncompleted. Headless regression checks are not native passes.
+Test exact release `1.0.0 / 2026-10-04-release001`. The user reported build003 COMPLETE on PvP/Horde: 104,763 rows, 2,856 priced items, one request, 6,329 events and 6,328 same-count updates; the tab installed and behavior appeared normal. This is successful baseline evidence. The boxes below track the exact 1.0.0 release or dedicated scenarios not established by that report; local checks are separate.
 
 ## Startup and window
 
 - [ ] Install the Clean ZIP into the active Forever beta AddOns folder and restart the client.
 - [ ] Enable script errors using `/console scriptErrors 1`.
-- [ ] Confirm the addon list and `/msmv diagnostics` identify version 0.1.0-beta, build003 and Interface 16001.
+- [ ] Confirm the addon list and `/msmv diagnostics` identify version 1.0.0, build 2026-10-04-release001 and Interface 16001.
 - [ ] Open `/msmv`; check readable labels, no overlap, usable buttons and proper fonts.
 - [ ] Drag the window; close it with Escape; reopen it and confirm the position.
 - [ ] Toggle each tooltip setting and apply stale hours. Verify the control changes the corresponding behavior.
@@ -31,6 +31,13 @@ Test the exact build `2026-10-04-beta003`. Record the client version/build and a
 Use `GetReplicateItemInfo`/`GetNumReplicateItems` only through the loaded addon for further diagnostics; do not paste an AH API call into `/run` or use a dynamic Lua editor to bypass the addon's boundaries.
 
 ## Tooltip values
+
+- [ ] Hover a known bag stack: verify **Each / Stack (N)** uses its actual count and vendor/AH totals equal the unrounded unit value times N.
+- [ ] Hover two different stacks of the same item and split/merge a stack; rehover and confirm the totals change without duplicate sections.
+- [ ] Hover a single item, an equipped item and a generic chat link; verify each-only prices when no reliable stack context is available.
+- [ ] On eligible gear, confirm **DE expected** is in the price block, with each/stack totals where applicable, followed by one blank line before the material section.
+- [ ] Confirm material ranges/chances/averages remain per item. Toggle material display and verify the DE price remains available.
+- [ ] Upgrade from build003 with an existing snapshot; confirm prices/settings/exclusions/cooldown remain without a forced scan.
 
 - [ ] Hover a vendor-sellable item outside combat and compare the native sell value for one item.
 - [ ] Hover an item with zero vendor sale value and verify it is distinguished from unavailable data.
@@ -69,7 +76,7 @@ Keep a copy of the SavedVariables backup while the client is closed. A save/relo
 
 - [ ] While normally disenchanting spare low-level items, record item link/ID, native iLvl, quality, actual material and quantity, client build and sample count.
 - [ ] Verify special non-disenchantable items can be excluded and their estimates restored through the UI.
-- [ ] Treat an unexpected material or quantity as a model mismatch requiring a beta update.
+- [ ] Treat an unexpected material or quantity as a model mismatch requiring a model update.
 - [ ] Leave unobserved high-level/rare/epic brackets marked unverified. A low-level test cannot qualify them.
 
-Native auction/API/UI/persistence checks and loot-model checks are separate. Submit `/msmv diagnostics`, any exact Lua error and the relevant checklist results for the next build. All revisions stay under the same primary beta version.
+Native auction/API/UI/persistence checks and loot-model checks are separate. Submit `/msmv diagnostics`, any exact Lua error and the relevant checklist results for the next build. The three prerelease revisions remain in the 0.1.0-beta history; subsequent stable releases use new semantic version tags.

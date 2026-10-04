@@ -2,7 +2,7 @@
 
 ## Reviewed target
 
-| Attribute | Build003 target |
+| Attribute | 1.0.0 target |
 |---|---|
 | Game | World of Warcraft: Forever beta |
 | Client version | 1.60.1 |
@@ -10,10 +10,10 @@
 | Reviewed UI source | Blizzard UI mirror `forever`, 1.60.1 build 70205 |
 | Reviewed source commit | `e3ecc27b64d30fdc735a3f6579b866858f9f9df1` |
 | Lua validation | Lua 5.1.5 |
-| User evidence | Build002 request/processing/tab observed; repeated-event scan failure and comparison refresh error reported |
-| Build003 live-client qualification | Scan/tooltip/native UI/persistence retest pending |
+| User evidence | Build003 completed 104,763 rows on PvP/Horde, one request, 6,329 events; AH tab installed; user reported normal behavior |
+| 1.0.0 native coverage | New stack display, other rulesets, complete disk lifecycle and dedicated taint/coexistence checks pending |
 
-Forever uses a modern client API despite level-60 content. This addon targets that environment; the old MoobStack Interface 11200 client target does not apply to this project. Modern Retail, Classic Era, older private-server clients and later unreviewed Interface versions are not qualified targets for build003.
+Forever uses a modern client API despite level-60 content. This addon targets that environment; the old MoobStack Interface 11200 client target does not apply to this project. Modern Retail, Classic Era, older private-server clients and later unreviewed Interface versions are not qualified targets for 1.0.0.
 
 All three TOCs advertise Interface 16001. The `_Camelot` suffix corresponds to current Forever package conventions; the `_Forever` and unsuffixed copies provide equivalent naming alternatives. Including those manifests does not qualify a different API version. Runtime checks require the reviewed Interface number, restricted-value detection and the required modern auction functions.
 
@@ -39,7 +39,7 @@ Unknown aliases remain isolated. Public-name/portal fallbacks still handle missi
 - `issecretvalue`, and `canaccessvalue` where available, are checked before using input values.
 - Secret inputs are not converted, inspected, compared, formatted, stored or calculated with.
 - Scanning and tooltip calculations stop/suppress their work in combat.
-- Native item and auction data is accessed using ordinary validated inputs.
+- Native item and auction data is accessed using ordinary validated inputs. Stack quantities come from matching native item GUID/location or bag/equipment contexts; inaccessible or unverified quantities retain each-only prices.
 - No combat analytics, aura reads, combat-log computation, protected interaction or automatic chat communication is used.
 
 These are conservative design choices, not a Blizzard approval or a guarantee that all future client updates permit the same APIs. An unavailable/changed/restricted function is a compatibility issue to report, not a reason to bypass its restriction.
@@ -64,4 +64,4 @@ New Forever items/materials or changed drop rates must be modeled from new evide
 
 ## Update response
 
-For a new client build with unchanged Interface, rerun affected live checks and compare the API surface if behavior changes. For a new Interface number, review the actual UI/API definitions before updating metadata and the runtime gate together. Maintain the primary public beta version while advancing the build ID. Do not mark a client qualified based solely on a TOC edit.
+For a new client build with unchanged Interface, rerun affected live checks and compare the API surface if behavior changes. For a new Interface number, review the actual UI/API definitions before updating metadata and the runtime gate together. After the first stable release, update semantic versions and immutable version tags for released changes; preserve the three historical beta tags. Do not mark a client qualified based solely on a TOC edit.

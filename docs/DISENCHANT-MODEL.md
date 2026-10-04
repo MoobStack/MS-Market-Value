@@ -75,12 +75,12 @@ Worked synthetic example: an iLvl 17 green armor item, with dust at 100c, essenc
 | Small Glimmering Shard | 0.05 × 1 = 0.05 | 50c |
 | Total | | 297.5c, displayed as 2s 98c |
 
-This example is a calculation fixture, not a report of current market prices. Vendor value is independent of the model. AH material values are gross asking-price estimates; fees, deposits, market depth and sale probability are not modeled.
+This example is a calculation fixture, not a report of current market prices. In the price block, **DE expected** for a verified hovered stack of three is 892.5c, displayed as 8s 93c; the per-item estimate displays as 2s 98c. Stack multiplication happens before rounding. The material block remains per item and follows a blank line. Vendor value is independent of the model. AH material values are gross asking-price estimates; fees, deposits, market depth and sale probability are not modeled.
 
 If any possible material has no snapshot buyout, no complete expected value is shown. A known subtotal is separately labeled and never called the total. A missing price, a zero native vendor value, a bid-only auction and an unlisted item are different states.
 
-## Updating the model during beta
+## Updating the model
 
-Keep the primary beta version fixed. Record item ID/link, native item level, quality, class/subclass, actual materials and quantities, number of observations, and client build. A single observation proves that outcome occurred, not its probability. Use sufficiently representative observations or an authoritative new data source before changing probability claims.
+Release model changes under a new version/profile, preserving existing release tags. Record item ID/link, native item level, quality, class/subclass, actual materials and quantities, number of observations, and client build. A single observation proves that outcome occurred, not its probability. Use sufficiently representative observations or an authoritative new data source before changing probability claims.
 
 Update the profile, research notes, model tables, focused fixtures and changelog together. Add exact item exceptions only with evidence. Continue to label any unverified bracket or changed Forever material behavior until independently qualified.

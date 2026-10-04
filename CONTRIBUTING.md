@@ -13,9 +13,9 @@ git diff --check
 
 Use focused behavioral fixtures for changed price, persistence, scanner or restriction behavior. UI and native server behavior also require live evidence; headless widgets are limited test doubles.
 
-## Beta identity
+## Release identity
 
-Keep the public version at **0.1.0-beta** until the first finalized release. Advance the build identifier, metadata, changelog, release notes and annotated build tag together. Do not move earlier build tags or rewrite public history to disguise a changed candidate. Full instructions are in [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
+Version **1.0.0** is the first finalized release. Keep all three historical **0.1.0-beta** build tags immutable. Stable changes use a new semantic version, unique build identifier and annotated `v<version>` tag; update Bootstrap, all TOCs, build.json, changelog and release notes together. Never overwrite a released version or rewrite public history. Full instructions are in [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
 
 ## Review expectations
 

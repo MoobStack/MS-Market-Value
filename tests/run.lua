@@ -81,7 +81,7 @@ local function widget(name)
 end
 
 local function fresh(saved)
-    local world = { wall = 1800000000, mono = 0, cpu = 0, rows = {}, requests = 0, loadRequests = 0, items = {}, realm = "FixtureRealm", region = 1, portal = "us", faction = "Horde", hardcore = false, combat = false, ready = true, interface = 16001, messages = {} }
+    local world = { wall = 1800000000, mono = 0, cpu = 0, rows = {}, requests = 0, loadRequests = 0, items = {}, realm = "FixtureRealm", region = 1, portal = "us", faction = "Horde", hardcore = false, combat = false, ready = true, interface = 16001, messages = {}, locations = {}, containers = {}, equipment = {} }
     _G.MSMarketValueDB = saved
     _G.issecretvalue = function(v) return rawequal(v, secret) end
     _G.canaccessvalue = function(v) return not rawequal(v, secret) end
@@ -113,6 +113,11 @@ local function fresh(saved)
     _G.ShoppingTooltip1, _G.ShoppingTooltip2 = widget("ShoppingTooltip1"), widget("ShoppingTooltip2")
     _G.ItemRefShoppingTooltip1, _G.ItemRefShoppingTooltip2 = nil, nil
     _G.Enum = { TooltipDataType = { Item = 0 } }
+    _G.C_Container = { GetContainerItemInfo = function(bag, slot)
+        world.containerReads = (world.containerReads or 0) + 1
+        return world.containers[tostring(bag) .. ":" .. tostring(slot)]
+    end }
+    _G.ItemLocation = { CreateFromEquipmentSlot = function(_, slot) return world.equipment[slot] or {} end }
     _G.date = os.date
     _G.CreateFrame = function(_, name, parent, template)
         local w = widget(name); w.parent, w.template = parent, template
@@ -144,6 +149,14 @@ local function fresh(saved)
         tbl[key] = function(...) original(...); callback(...) end
     end
     _G.C_Item = {
+        GetItemLocation = function(guid) return world.locations[guid] end,
+        GetItemID = function(location) return location.itemID end,
+        GetStackCount = function(location)
+            world.stackReads = (world.stackReads or 0) + 1
+            return location.stackCount
+        end,
+        GetItemCount = function() error("total ownership is not a hovered stack") end,
+        GetItemMaxStackSize = function() error("maximum stack size is not a hovered stack") end,
         RequestLoadItemDataByID = function() world.loadRequests = world.loadRequests + 1 end,
         GetItemInfo = function(item)
             world.itemCalls = (world.itemCalls or 0) + 1
@@ -723,7 +736,7 @@ test("getter-backed primary item refresh updates loaded values without duplicate
         local headers, vendor = 0
         for _, line in ipairs(tooltip.lines) do
             if line.left == A.TITLE then headers = headers + 1 end
-            if line.left == "Vendor sell (each)" then vendor = line.right end
+            if line.left == "Vendor sell" then vendor = line.right end
         end
         equal(headers, 1); equal(vendor, "43s 21c")
     end
@@ -843,6 +856,175 @@ test("restricted faction blocks a ruleset request and restricted hardcore values
     local info = A.Util.MarketInfo(); equal(info.nativeFaction, "restricted"); equal(info.ruleset, "pvp")
     C_GameRules.IsHardcoreActive = function() error("not ready") end; w.faction = "Horde"
     equal(A.Util.MarketKey(), "forever|90|pvp|Horde")
+end)
+
+
+local function findLine(lines, left)
+    for index, line in ipairs(lines) do
+        if line.left == left then return line, index end
+    end
+end
+
+local function bagTooltip(w, itemID, count, bag, slot)
+    bag, slot = bag or 0, slot or 1
+    GameTooltip.info = {getterName="GetBagItem", getterArgs={bag, slot}}
+    GameTooltip.data = {id=itemID, type=0}
+    GameTooltip.link = link(itemID)
+    w.containers[tostring(bag) .. ":" .. tostring(slot)] = {itemID=itemID, stackCount=count}
+    return GameTooltip
+end
+
+test("bag totals use the hovered slot count and never total ownership or maximum capacity", function()
+    local w, A = initial(); w.items[100] = {vendor=1234, quality=1}
+    local tooltip = bagTooltip(w, 100, 3)
+    A.Tooltips.Handle(tooltip, tooltip.data)
+    equal(findLine(tooltip.lines, A.TITLE).right, "Each / Stack (3)")
+    equal(findLine(tooltip.lines, "Vendor sell").right, "12s 34c / 37s 02c")
+    equal(findLine(tooltip.lines, "AH low").right, "9s 00c / 27s 00c")
+    equal(findLine(tooltip.lines, "DE expected"), nil)
+end)
+test("matched item GUIDs identify one actual stack and mismatched GUIDs use a verified bag slot", function()
+    local w, A = initial(); local tooltip = bagTooltip(w, 100, 3)
+    tooltip.data.guid = "Fixture-Stack"
+    w.locations["Fixture-Stack"] = {itemID=100, stackCount=20}
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 20)
+    w.locations["Fixture-Stack"].itemID = 101
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 3)
+    w.containers["0:1"].itemID = 101
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+end)
+test("owned equipment contexts provide quantities while target and child contexts stay each-only", function()
+    local w, A = fresh(); w:load()
+    GameTooltip.data = {id=100, type=0}
+    GameTooltip.info = {getterName="GetInventoryItem", getterArgs={"player", 18}}
+    w.equipment[18] = {itemID=100, stackCount=12}
+    equal(A.Tooltips.StackCount(GameTooltip, GameTooltip.data, 100), 12)
+    GameTooltip.info.getterArgs[1] = "target"
+    equal(A.Tooltips.StackCount(GameTooltip, GameTooltip.data, 100), 1)
+    GameTooltip.info = {getterName="GetBagItemChild", getterArgs={0,1}}
+    w.containers["0:1"] = {itemID=100, stackCount=20}
+    equal(A.Tooltips.StackCount(GameTooltip, GameTooltip.data, 100), 1)
+end)
+test("generic item links do not acquire an arbitrary owned quantity", function()
+    local w, A = initial(); w.items[100] = {quality=1}
+    ItemRefTooltip.info = {getterName="GetHyperlink", getterArgs={link(100)}}
+    ItemRefTooltip.data = {id=100, type=0, quantity=secret, stackCount=secret}
+    ItemRefTooltip.link = link(100)
+    w.locations["Unrelated-Stack"] = {itemID=100, stackCount=20}
+    A.Tooltips.Handle(ItemRefTooltip, ItemRefTooltip.data)
+    equal(findLine(ItemRefTooltip.lines, A.TITLE).right, "Each")
+    equal(findLine(ItemRefTooltip.lines, "AH low").right, "9s 00c")
+end)
+test("restricted or malformed quantity contexts keep usable each-only prices", function()
+    local w, A = initial(); local tooltip = bagTooltip(w, 100, 20)
+    for _, args in ipairs({secret, {secret,1}, {0,secret}, {0,0}, {0,1.5}}) do
+        tooltip.info.getterArgs = args
+        equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+    end
+    equal(w.containerReads, nil)
+    tooltip.info.getterArgs = {0,1}
+    for _, count in ipairs({secret, 0, -1, 1.5, 1000001, math.huge, "20"}) do
+        w.containers["0:1"].stackCount = count
+        equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+        equal(A.Tooltips.Lines(100, link(100), count)[1].right, "Each")
+    end
+    w.containers["0:1"] = secret
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+    w.containers["0:1"] = {itemID=secret, stackCount=20}
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+    tooltip.info = nil; tooltip.data.guid = secret
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+    tooltip.data.guid = "Fixture-Stack"
+    w.locations["Fixture-Stack"] = secret
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+    w.locations["Fixture-Stack"] = {itemID=secret, stackCount=secret}
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+end)
+test("combat and forbidden frames suppress quantity API reads and native getter failures recover", function()
+    local w, A = initial(); local tooltip = bagTooltip(w, 100, 20)
+    w.combat = true; equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+    w.combat = false; tooltip.forbidden = true
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1); equal(w.containerReads, nil)
+    tooltip.forbidden = false
+    C_Container.GetContainerItemInfo = function() error("not ready") end
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+    tooltip.GetPrimaryTooltipInfo = function() error("not ready") end
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+end)
+test("same-item stack changes refresh totals after native clear without duplicate addon sections", function()
+    local w, A = initial(); local tooltip = bagTooltip(w, 100, 3)
+    A.Tooltips.Handle(tooltip, tooltip.data); local lineCount = tooltip:NumLines()
+    A.Tooltips.Handle(tooltip, tooltip.data); equal(tooltip:NumLines(), lineCount)
+    w.containers["0:1"].stackCount = 7
+    tooltip.lines = {{left="Native item"}}
+    A.Tooltips.Handle(tooltip, tooltip.data)
+    equal(findLine(tooltip.lines, A.TITLE).right, "Each / Stack (7)")
+    equal(findLine(tooltip.lines, "AH low").right, "9s 00c / 63s 00c")
+    local sections = 0
+    for _, line in ipairs(tooltip.lines) do if line.left == A.TITLE then sections = sections + 1 end end
+    equal(sections, 1)
+end)
+test("stack totals multiply unrounded unit prices and preserve exact suffix selection", function()
+    local w, A = fresh(); w:start({row(100,5,111,0),row(100,5,555,-5)}); w:drain()
+    local each = A.Tooltips.Lines(100, link(100,0), 3)
+    equal(findLine(each,"AH low").right, "22c / 67c")
+    local suffix = A.Tooltips.Lines(100, link(100,-5), 3)
+    equal(findLine(suffix,"AH low").right, "1s 11c / 3s 33c")
+    local fallback = A.Tooltips.Lines(100, link(100,9), 3)
+    equal(findLine(fallback,"AH low (item-wide)").right, "22c / 67c")
+end)
+test("DE expected each and stack values share the price block before spaced per-item materials", function()
+    local w, A = fresh(); w:start({row(300,1,1000),row(10940,1,100),row(10939,1,200),row(10978,1,1000)}); w:drain()
+    w.items[300] = {level=17, vendor=100}
+    local lines = A.Tooltips.Lines(300, link(300), 3)
+    local value, valueIndex = findLine(lines,"DE expected")
+    equal(value.right, "2s 98c / 8s 93c")
+    local _, headerIndex = findLine(lines,"Disenchant estimate")
+    truth(valueIndex < headerIndex); equal(lines[headerIndex-1].left, " ")
+    truth(findLine(lines,"Auction snapshot") ~= nil)
+    local _, ageIndex = findLine(lines,"Auction snapshot"); truth(ageIndex < headerIndex)
+    local copies = 0
+    for _, line in ipairs(lines) do if line.left == "DE expected" then copies = copies + 1 end end
+    equal(copies,1); truth(findLine(lines,"One possible outcome per item.") ~= nil)
+    equal(findLine(lines,"DE value (expected, each)"),nil)
+end)
+test("unpriced DE materials keep the full total unavailable and stack-scale only the labeled subtotal", function()
+    local w, A = fresh(); w:start({row(10940,1,100),row(10939,1,200)}); w:drain()
+    w.items[300] = {level=17}
+    local lines = A.Tooltips.Lines(300, link(300), 2)
+    equal(findLine(lines,"DE expected").right,"Unavailable")
+    equal(findLine(lines,"DE priced portion only").right,"2s 48c / 4s 95c")
+    equal(findLine(lines,"Unpriced materials").right,"1")
+    local _, partialIndex = findLine(lines,"DE priced portion only")
+    local _, headerIndex = findLine(lines,"Disenchant estimate")
+    truth(partialIndex < headerIndex)
+end)
+test("display options and zero vendor values retain their meaning in a stack price block", function()
+    local w, A = fresh(); w:load(); w.items[300] = {level=17,vendor=0}
+    local lines = A.Tooltips.Lines(300, link(300), 20)
+    equal(findLine(lines,"Vendor sell").right,"No vendor sale")
+    equal(findLine(lines,"AH low").right,"Scan required")
+    A.DB.data.settings.showMaterials = false
+    lines = A.Tooltips.Lines(300, link(300), 20)
+    truth(findLine(lines,"DE expected") ~= nil); truth(findLine(lines,"Disenchant estimate") ~= nil)
+    equal(findLine(lines,"One possible outcome per item."),nil)
+    A.DB.data.settings.showDisenchant = false
+    lines = A.Tooltips.Lines(300, link(300), 20)
+    equal(findLine(lines,"DE expected"),nil); equal(findLine(lines,"Disenchant estimate"),nil)
+    A.DB.data.settings.showVendor, A.DB.data.settings.showAuction = false, false
+    equal(#A.Tooltips.Lines(300, link(300),20),0)
+end)
+test("1.0.0 retains the completed beta003 market, settings, exclusions and cooldown without rescanning", function()
+    local w, A = fresh(); w.realm="ClassicBetaPvP2"; w.region=90
+    w:start({row(100,1,500)}); w:drain()
+    local saved, snapshot = A.DB.data, A.DB.Snapshot()
+    saved.version, saved.build = "0.1.0-beta", "2026-10-04-beta003"
+    snapshot.version, snapshot.build = saved.version, saved.build
+    saved.settings.staleHours=72; saved.excludedItems[300]=true
+    local w2,A2 = fresh(saved); w2.realm="ClassicBetaPvP2"; w2.region=90; w2:load()
+    equal(A2.VERSION,"1.0.0"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
+    equal(A2.DB.data.settings.staleHours,72); equal(A2.DB.data.excludedItems[300],true)
+    equal(A2.Scanner.RemainingCooldown(),900); equal(w2.requests,0)
 end)
 
 print(string.format("RESULT: %d/%d behavioral tests passed (Lua %s). Live-client validation pending.", testCount, testCount, _VERSION))

@@ -1,45 +1,49 @@
 # Validation
 
-Build `2026-10-04-beta003`; version `0.1.0-beta`; target Interface 16001 / client 1.60.1 / 70205.
+Version `1.0.0`; build `2026-10-04-release001`; tag `v1.0.0`; target Interface 16001 / client 1.60.1 / 70205.
 
 ## Completed checks and user evidence
 
-| Layer | Result | Evidence/limit |
+| Layer | Result | Evidence and limits |
 |---|---|---|
 | Lua syntax | PASS | All eleven runtime Lua files parse under Lua 5.1.5 |
-| Behavioral fixtures | **78/78 PASS** | Controlled native API/frame doubles load the actual bundled tab libraries |
-| TOC/source contracts | PASS | Interface, fixed beta version, build metadata, SavedVariables, load order and three identical manifests |
-| Library integrity | PASS | Bundled files match the pinned hashes in `tools/vendor.json`; attribution/terms included |
-| Runtime operation checks | PASS | No dynamic evaluation, legacy query scanner, repeated search enumeration, protected purchase/post/cast or automatic chat |
-| Build001 user report | Partial native evidence | Correct client, modern APIs and tooltip callback installed; IDLE with failed realm/region gate and no snapshot |
-| Build002 user report | Partial native evidence | One request reached PROCESSING; tab installed; duplicate-event failure and ShoppingTooltip refresh error; prior layout shown |
-| Build003 native client | **PENDING RETEST** | Revised scan, first-hover behavior, coverage, UI fit/taint/coexistence and native disk persistence not yet tested |
-| GitHub CI | **PENDING** | Workflow prepared; no remote action run claimed |
+| Behavioral fixtures | **90/90 PASS** | Controlled native API/frame doubles load the actual bundled libraries |
+| TOC/source contracts | PASS | Stable version/tag, build metadata, SavedVariables, load order and three identical TOCs |
+| Library integrity | PASS | Pinned hashes in `tools/vendor.json`; original attribution and terms retained |
+| Runtime operations | PASS | No dynamic evaluation, legacy query scanner, protected purchase/post/cast or automatic chat |
+| Build003 native PvP scan | **COMPLETE reported** | 104,763 rows; 2,856 priced items; one request; 6,329 events and 6,328 same-count updates |
+| Build003 tab/tooltip report | General positive feedback | Tab installed, callback ready; user said behavior appeared to function as intended; no dedicated taint/scale results supplied |
+| 1.0.0 stack tooltip | Native check pending | Each/stack quantities, prices and spacing pass local cases; no exact-release client report yet |
+| Native SavedVariables | Round-trip pending | The report shows a complete saved in-memory snapshot, not reload/relog/full-restart evidence |
+| Other markets and DE loot | Not qualified | PvP report does not qualify Normal, other regions/factions or Forever loot probabilities |
+| GitHub CI | Pending execution | Read-only workflow prepared; no remote run claimed |
+
+The successful user report is preserved in [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md). The reported snapshot started at `2026-10-04T08:07:09Z` on `forever|90|pvp|Horde`, with 5 bid-only and 0 sold rows. COMPLETE accounts for every row in the returned replication buffer; independent native listing checks are still needed for market/material coverage.
 
 ## Behavioral coverage
 
-The original 45 cases cover row/CPU budgets, zero-based iteration, stack/suffix prices, bid-only/sold distinctions, replacement/removal, explicit empty responses, pending data/timeouts, cancellation, conflicts, hostile restricted values, schema preservation, serialized saved data, DE brackets/expectations/missing prices, native tooltip guards/duplicates/staleness, settings and money formatting.
+The original 45 cases cover budgets, zero-based rows, prices/suffixes, bid-only/sold rows, complete replacement/empty responses, pending data/timeouts, cancellation/conflicts, restricted values, schema/serialized data, DE brackets/expectations/missing prices, tooltip guards/duplicates/staleness, settings and money formatting.
 
-Build002 adds 18 cases: public realm/portal fallback scanning; missing or failing normalized API; all recognized region/portal mappings; native-key precedence; build001 snapshot/cooldown reuse across a fresh session; named-portal isolation; pre-request failures without cooldown; restricted/throwing lookup diagnostics; portal changes during scanning; tab creation without a popup; scanning from the tab; native/shared-addon tab switching without extending native indices; delayed frame loading and tick retries; retired popup preference; reopen/reuse; slash/manual docking; and combat gates.
+Build002 added 18 market/portal/cooldown/session and AH-tab lifecycle cases. Build003 replaced the old blanket second-event refusal and added 15 cases for repeated scan updates, retry preservation, primary-only refresh, region 90, host sharing, ruleset/faction isolation, old caches and native hardcore/alias boundaries.
 
-Build003 replaces the prior blanket second-event refusal case and adds 15 cases for repeated processing/resolution events, partial retry-pass preservation, changed/late counts, comparison/custom refresh exclusion, getter/data restrictions, primary refresh/deduplication/reentrancy/recovery, region 90, shared reporting hosts, Normal/PvP/faction separation, mid-scan ruleset changes, independent-session persistence, old-cache preservation, bounded alias/hardcore detection and restricted faction gates.
+Version 1.0.0 adds 12 cases covering actual bag counts, matched GUIDs, equipment context, generic links, mismatched/restricted/malformed quantities, combat/forbidden/API failures, changing stack sizes and tooltip deduplication, fractional rounding/suffixes, DE block order and spacing, partial DE stack values, display options/zero vendor values, and reuse of build003 prices/settings/exclusions/cooldown.
 
-The other addon tab is a fixture, not a running Auctionator installation. Tests cannot prove native event timing, display layout, frame taint, actual server coverage or WoW disk saving. The user's build001 report is preserved in [docs/BUILD002-INVESTIGATION.md](docs/BUILD002-INVESTIGATION.md). The new build002 errors/diagnostics and screenshot findings are in [docs/BUILD003-INVESTIGATION.md](docs/BUILD003-INVESTIGATION.md); they establish failures in the old build, not passes in the revised candidate.
+Fixtures never infer quantity from maximum capacity or total owned items. The native quantity helpers are checked against the pinned Forever definitions. Material ranges remain per item and the stack DE total scales the original expected value.
 
-## Delivery packaging gates
+Frame doubles cannot prove visual fit, native taint or coexistence with a running Auctionator. Serialization into a fresh namespace does not prove WoW disk saving. Historical beta failures remain documented in the build002/build003 investigations.
 
-`tools/package.py` requires a clean checkout at the exact annotated tag and checks Git objects, ZIP CRCs, and runtime byte parity against source/tag. It creates/verifies the complete Git bundle and writes SHA-256 checksums. Build003 history contains the unchanged build001/build002 commits and annotated tags.
+## Delivery gates
 
-A companion `*-Validation.json` records the delivered commit/tag, archive/bundle checks, restored-bundle test result, checksum verification and reproducible Clean/Source bytes. Git Repository ZIP metadata is not promised identical after additional local Git operations.
+`tools/package.py` requires a clean checkout at the exact annotated tag, checks Git objects, ZIP CRC and runtime/source/tag byte parity, and creates/verifies a complete Git bundle. All three beta commits and tag objects are preserved.
 
-## Pending native qualification
+The companion `*-Validation.json` records the delivered commit/tag, restored bundle tests, repository ZIP restore, checksum verification and reproducible Clean/Source bytes. Git Repository ZIP metadata can change after local Git operations. Packaging does not publish to GitHub.
 
-Use [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md). Retest ruleset/region/faction diagnostics and host-cache sharing, successful native scan/material coverage with additional replication updates, cold-cache/first-hover comparison tooltips, full-width native inset layout, native/Auctionator switching and bag-use taint behavior, interruption, tooltips and reload/relog/restart persistence. Actual Forever DE loot remains a separate evidence task.
+## Native follow-up and reproduction
 
-## Reproduce
+Use [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md) for the new stacked tooltip, DE placement/spacing, first-hover comparisons, disk lifecycle, Normal/PvP/faction isolation, listing coverage and taint/coexistence.
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-Local passes establish the tested logic; they do not establish Blizzard approval or verified Forever DE probabilities. Keep live status pending until the exact build's native scenarios are exercised.
+The stable version records the finalized release identity. It does not change the Classic DE model's unverified Forever coverage or imply Blizzard endorsement.

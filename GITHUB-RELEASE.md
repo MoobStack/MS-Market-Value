@@ -1,17 +1,17 @@
-MS Market Value **0.1.0-beta — build003** (`2026-10-04-beta003`). Mark this candidate as a pre-release when publishing.
+MS Market Value **1.0.0** — build `2026-10-04-release001`, tag `v1.0.0`.
 
-This revision fixes the reported comparison-tooltip refresh path and second-event scan failure. Primary item tooltips can refresh after data loads; comparison rebuilding stays with Blizzard. Same-count replication updates preserve scan progress and wake unresolved item-data retries without duplicate accumulation or another request. Count/context/conflict failures retain prior completed data.
+Stacked items now show **Each / Stack (N)** prices using the actual hovered quantity. Vendor, lowest AH buyout and applicable **DE expected** values share one price block. Totals use unrounded unit values. A blank line separates prices from the per-item disenchant material quantities, chances and averages.
 
-Detected Forever markets are keyed by region, ruleset and faction. Native region `90` is accepted, reporting-host suffixes do not split a known PvP cache, and Normal/PvE stays separate. Alias-derived detection is identified in diagnostics; unknown aliases remain isolated. Cross-faction market sharing is unqualified. Old realm-keyed snapshots remain stored but require a new successful scan before prices exist under the ruleset key.
+Missing material prices keep the full DE estimate unavailable; any priced subtotal remains clearly labeled. Generic item links or inaccessible quantity contexts show each-only values.
 
-The **MS Market Value** AH pane now uses full-width native textured inset frames and stock controls, with two settings columns and no settings scrollbar. Manual settings and diagnostics use native portrait windows. Opening an auctioneer keeps Buy selected and opens no standalone popup. LibAHTab/LibStub remain bundled with original terms.
+Complete, user-started auction scans save unit minimum buyouts persistently through WoW SavedVariables. Only a complete scan replaces the current region/ruleset/faction snapshot. The AH tab uses native Blizzard textures and controls; LibAHTab/LibStub are bundled.
 
-User-started full scans save minimum buyout prices per unit. Complete scans replace the market's prior snapshot; failures keep it. Tooltips include vendor prices, AH buyouts and labeled Classic reference disenchant quantities/probabilities/value. Missing material prices prevent a complete DE total.
+**Upgrade:** Replace `Interface/AddOns/MSMarketValue` from the Clean ZIP with WoW closed, preserve WTF, then restart. Completed build003 prices/settings/exclusions/cooldowns carry forward without a new scan. Schema remains 1. Earlier realm-keyed caches are retained and require their first ruleset-keyed scan.
 
-**Target:** Forever 1.60.1 / 70205 / Interface 16001. **Local validation:** 78/78 Lua 5.1 tests pass. The supplied build002 logs/screenshot establish a request reaching PROCESSING, tab installation and the reported failures/old layout. **Build003 native scan/first-hover/UI/persistence retest remains pending.** Forever DE probabilities and special eligibility remain unverified and labeled.
+**Target:** WoW Forever 1.60.1 / 70205 / Interface 16001. **Validation:** 90/90 local Lua 5.1 checks pass. The user reported build003 native PvP/Horde completion: 104,763 rows, 2,856 priced items, one request, 6,329 events and 6,328 same-count updates, with general positive feedback. The exact 1.0.0 stack display, native disk round-trips, other rulesets and dedicated taint/coexistence checks remain follow-up coverage.
 
-Install the **Clean ZIP**, replacing `MSMarketValue` in the active client's `Interface/AddOns` with WoW closed and preserving WTF/SavedVariables. Restart, select **MS Market Value** at an auctioneer and click **Scan entire AH** once when permitted. Use the Git Repository ZIP, Source ZIP or complete bundle for development/recovery; verify hashes against SHA256.
+**DE model:** Labeled Classic reference estimates; Forever-specific loot probabilities and exceptional eligibility remain unverified. Values are gross asking-price estimates, before auction costs.
 
-Version stays **0.1.0-beta** until the first finalized release. Build003 has a new immutable annotated tag; build001/build002 history remains intact. Preparing these assets does not publish a release.
+Install the Clean ZIP. The Source ZIP, Git Repository ZIP and complete bundle provide code/documentation/history; verify supplied assets against SHA256. All three 0.1.0-beta build tags remain immutable. This is the first stable version; publish it without the prerelease flag.
 
-MoobStack is independent and is not affiliated with or endorsed by Blizzard Entertainment. World of Warcraft and related marks belong to their respective owners.
+MoobStack is independent and unaffiliated with Blizzard Entertainment. World of Warcraft and related marks belong to their owners.

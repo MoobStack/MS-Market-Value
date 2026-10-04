@@ -1,18 +1,24 @@
-# Beta upgrades, backup and rollback
+# Upgrades, backup and rollback
 
-The installed folder and SavedVariable names remain `MSMarketValue` and `MSMarketValueDB` throughout this beta. Public version remains 0.1.0-beta; build IDs identify individual revisions.
+The installed folder and SavedVariable names remain `MSMarketValue` and `MSMarketValueDB`. The first stable version is **1.0.0**, build `2026-10-04-release001`; database schema remains 1. All earlier revisions remain in the 0.1.0-beta history.
 
 ## Update
 
 1. Finish or stop any running scan and close WoW normally.
 2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` if present. Keep a copy of the current Clean ZIP.
 3. Replace the existing `Interface/AddOns/MSMarketValue` folder with the new Clean ZIP's `MSMarketValue` folder. Preserve your WTF folder.
-4. Start WoW; open diagnostics and verify the new **build ID**, not only the unchanged beta version.
+4. Start WoW; open diagnostics and verify **version 1.0.0** and **build 2026-10-04-release001**.
 5. Check saved prices/settings and rerun the live checks relevant to the revision.
 
 Do not mix Lua files from two builds. Do not install the source/Git repository directory inside AddOns. No legacy migration bridge or separate Update ZIP is required for this new addon.
 
-## Upgrade to build003
+## Upgrade from build003 to 1.0.0
+
+No fresh scan, database reset or SavedVariables deletion is required. Version 1.0.0 keeps build003's market namespace, schema, completed prices, settings, exclusions, saved window position and cooldown. Replace only the addon folder and preserve WTF. Hover a known stack to verify **Each / Stack (N)**, the grouped vendor/AH/DE prices and the blank line before per-item DE materials. Quantity is read from the current hover context and is not saved.
+
+If upgrading directly from build001/build002, the older namespace transition below still applies; a successful scan under the detected ruleset key is required. A build003 snapshot already under that key is immediately usable.
+
+## Historical upgrade to build003
 
 Schema remains 1. Settings, exclusions, window position, cooldown and old completed records are preserved. Detected Forever markets now use `forever|region|ruleset|faction`. The prior `portal:test|ClassicBetaPvP2` key is not copied or merged into the new cache; native region 90 is now accepted directly. **One fresh successful scan is required for the new ruleset key.** The old records remain stored for rollback and are never substituted for another ruleset's prices.
 
@@ -30,7 +36,7 @@ After installing build002, open an auctioneer and click the new **MS Market Valu
 
 With WoW closed, replace the addon folder using the previous Clean ZIP. If the new revision changed the saved schema, restore the matching SavedVariables backup too. Never restore a saved-data file while WoW is open; the client's subsequent save can overwrite it.
 
-All beta builds refuse future schema numbers and preserve the loaded variable. They do not silently downgrade a future database or delete it. The documented schema is version 1; any future migration must be reviewed and tested separately.
+These releases refuse future schema numbers and preserve the loaded variable. They do not silently downgrade a future database or delete it. The documented schema is version 1; any future migration must be reviewed and tested separately.
 
 ## Move installations
 

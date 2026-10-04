@@ -1,29 +1,19 @@
-# Beta roadmap
+# Roadmap
 
-Public version remains **0.1.0-beta** until the first finalized release. Build003 addresses comparison refresh and repeated replication updates, introduces realmless ruleset caches, accepts native beta region 90, and uses native Blizzard UI templates.
+Version **1.0.0** finalizes the first release with actual-stack prices and grouped DE values. The user reported successful build003 native scanning on PvP/Horde. Preserve that behavior and the complete-snapshot replacement contract in later releases.
 
-## Immediate build003 retest inputs
+## Client coverage
 
-1. Native completion/coverage with replication-event and same-count update diagnostics.
-2. Cold-cache first-hover comparison tooltips, including the reported item 270018 when available.
-3. Native inset layout at the user's UI scale, tab switching, Auctionator coexistence and taint results.
-4. PvP/Normal alias/source evidence, shared-host cache behavior and native faction/AH pooling qualification.
-5. Reload, relog, character-switch and full-exit/restart disk persistence.
-6. Material coverage, suffix-price checks and item-specific DE exceptions or loot mismatches.
+1. Record native 1.0.0 each/stack display, changing bag quantities and DE spacing.
+2. Confirm reload, relog, character switching and full-exit/restart persistence.
+3. Collect Normal and other ruleset/region/faction aliases, host-sharing evidence and cross-faction AH pooling qualification.
+4. Check material/variant listing coverage, first-hover comparisons, UI scale, Auctionator coexistence and native taint.
+5. Review actual APIs when the client build or Interface changes; update supported targets using evidence.
 
-Address concrete failures in the next build under the same public beta version. Preserve complete-snapshot replacement and old records. A new native Normal/PvP getter, if established, can replace alias detection in a later build without silently merging unknown markets.
+Fix concrete regressions in stable patch releases without moving existing tags. A verified native Normal/PvP getter could replace alias detection without merging unknown markets.
 
-## Loot-model qualification
+## Loot-model coverage
 
-Build a Forever-specific evidence-backed dataset where available. Track each bracket's evidence separately, including new materials and exceptions. Add model overrides or additional profiles when observations require them. Continue labeling unverified outcomes until supported by representative data.
+Collect item IDs/links, native levels/qualities, actual loot and sample counts for Forever-specific brackets and exceptions. Track each bracket's evidence separately and update profiles/fixtures/research together. Continue labeling unverified outcomes. A single observed outcome does not establish its probability.
 
-## Finalized first release
-
-- Qualify the supported native client build, auction coverage, market identity and SavedVariables lifecycle.
-- Fix reproducible UI, taint and coexistence issues.
-- Publish accurate supported-client and model-coverage statements.
-- Select a software license if desired and update notices before distribution.
-- Review/tag exact final source; regenerate verified assets and checksums.
-- Select the first finalized release version only at that point.
-
-Automatic purchasing, selling, posting, disenchant execution, historical price databases and combat features are outside the requested initial scope.
+Automatic buying, posting, disenchant execution, price history and combat features remain outside the requested scope.

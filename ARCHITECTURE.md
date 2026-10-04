@@ -1,12 +1,12 @@
 # Architecture
 
-Version `0.1.0-beta`, build `2026-10-04-beta003`; database schema 1.
+Version `1.0.0`, build `2026-10-04-release001`; database schema 1.
 
 ## Runtime modules and load order
 
 | File | Responsibility |
 |---|---|
-| `MSMarketValue/Bootstrap.lua` | Publisher identity, beta/build constants and public namespace |
+| `MSMarketValue/Bootstrap.lua` | Publisher identity, version/build constants and public namespace |
 | `Libs/LibStub/LibStub.lua` | Public-domain versioned library registry |
 | `Libs/LibAHTab/LibAHTab.lua` | Shared addon AH tabs without extending native tab indices |
 | `Core/Util.lua` | Access checks, numeric validation, item/suffix keys, money/age formatting and guarded ruleset/faction/region identity and isolated alias/portal fallback |
@@ -14,7 +14,7 @@ Version `0.1.0-beta`, build `2026-10-04-beta003`; database schema 1.
 | `Data/Disenchant.lua` | Named reference material/outcome profiles; no executable third-party loot code |
 | `Core/Valuation.lua` | Native item metadata, estimated eligibility, outcomes and expected value |
 | `Auction/Scanner.lua` | Serialized replication request, bounded row processing, retries and cancellation |
-| `Integrations/Tooltips.lua` | Modern item tooltip callback, accessible public tooltip allowlist and duplicate prevention |
+| `Integrations/Tooltips.lua` | Modern item tooltip callback, actual stack quantity, each/stack price block, accessible allowlist and duplicate prevention |
 | `UI/Window.lua` | Shared AH tab, reparented native inset/manual controls, progress, item exclusions and diagnostics |
 | `Core/Events.lua` | ADDON_LOADED/login initialization, scan events, ticks and slash commands |
 
@@ -54,7 +54,9 @@ Saved-data initialization occurs on this addon's `ADDON_LOADED`, not at Lua file
 
 `TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, ...)` decorates registered public item tooltips. Primary item data is checked for access before reading the item ID. Restricted numeric/string values are checked before comparisons, arithmetic, formatting or table lookup. Forbidden and unregistered tooltips are skipped. The old `OnTooltipSetItem` hook is not used.
 
-Default allowed frames are the native game tooltip, item-reference tooltip and comparison tooltips. Integrations may explicitly register an ordinary accessible tooltip through `MSMarketValue.Tooltips.Allow(frame)`. This is an internal beta API, without a stable external compatibility promise.
+Default allowed frames are the native game tooltip, item-reference tooltip and comparison tooltips. Integrations may explicitly register an ordinary accessible tooltip through `MSMarketValue.Tooltips.Allow(frame)`. This is an internal integration API, without a stable external compatibility promise.
+
+The tooltip resolves quantity from an accessible native item GUID/location, or from matching bag/equipment getter arguments. It validates the returned item ID and positive integer stack count before use. Generic links and unknown/restricted contexts show each-only values. Quantity is read for each decoration and is not persisted. No maximum-capacity or aggregate-ownership lookup is used. Unit copper values remain unchanged; each/stack formatting multiplies before rounding. Vendor/AH/DE values and snapshot age precede a blank line and per-item material estimates. Missing materials preserve unavailable-full-total/labeled-subtotal semantics.
 
 All feature calculations run outside combat. Tooltip refreshes are coalesced at 0.25-second intervals after successful scan/item-data events. Only allowed, visible GameTooltip/ItemRefTooltip frames with accessible getter-backed, non-append primary item information can be rebuilt. Comparison/custom frames are decoration-only and remain owned by the native comparison manager. A reentrancy guard prevents nested refreshes; failed getter/rebuild calls do not leave it latched. No combat telemetry, aura analysis, secure buttons, protected actions, posting, purchasing, disenchant casting or automated communication is implemented.
 
@@ -62,7 +64,7 @@ All feature calculations run outside combat. Tooltip refreshes are coalesced at 
 
 LibAHTab minor 5 coordinates addon tabs through its standard LibStub registry. MS does not add to Blizzard's `Tabs`, `numTabs` or display-mode maps. Selecting a custom tab uses the library to clear native content, deselect other addon tabs and show the MS panel. Selecting a native mode hides custom panels through the library's secure post-hook.
 
-The MS tab is installed only when the native AH frame is visible and outside combat. ADDON_LOADED and deferred update ticks handle late frame creation. Opening an auctioneer keeps Buy selected; neither the MS tab nor standalone window is automatically shown. A single 768×460 controls frame moves directly between the AH body and an 800×538 native portrait window. Full-width scan controls and two settings columns use native InsetFrameTemplate textures/nine-slice borders and stock controls; no settings scroll viewport is needed. Its frame strata/level follow its current parent. Diagnostics remain a separate native portrait copy dialog with a scrollable edit field. Native visual layout and taint still require a live test.
+The MS tab is installed only when the native AH frame is visible and outside combat. ADDON_LOADED and deferred update ticks handle late frame creation. Opening an auctioneer keeps Buy selected; neither the MS tab nor standalone window is automatically shown. A single 768×460 controls frame moves directly between the AH body and an 800×538 native portrait window. Full-width scan controls and two settings columns use native InsetFrameTemplate textures/nine-slice borders and stock controls; no settings scroll viewport is needed. Its frame strata/level follow its current parent. Diagnostics remain a separate native portrait copy dialog with a scrollable edit field. The user's build003 report confirms tab installation and reports normal behavior; exact 1.0.0 tooltip fit and dedicated native taint/coexistence checks remain separate.
 
 ## Repository tooling
 

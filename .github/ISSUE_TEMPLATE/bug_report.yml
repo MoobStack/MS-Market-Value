@@ -1,6 +1,6 @@
-name: Beta bug report
-description: Report behavior from the exact MS Market Value beta build.
-title: "[Beta] "
+name: Bug report
+description: Report behavior from the exact MS Market Value version and build.
+title: "[Bug] "
 labels: []
 body:
   - type: input

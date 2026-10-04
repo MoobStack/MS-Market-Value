@@ -5,187 +5,214 @@
 | Project | MS Market Value |
 | Intended repository | `MoobStack/MS-Market-Value` |
 | Main branch | `main` |
-| Public beta version | `0.1.0-beta` |
-| Current build | `2026-10-04-beta003` |
-| Current annotated tag | `v0.1.0-beta-build003` |
+| Stable version | `1.0.0` |
+| Build | `2026-10-04-release001` |
+| Annotated tag | `v1.0.0` |
+| Historical beta tags | `v0.1.0-beta-build001`, `v0.1.0-beta-build002`, `v0.1.0-beta-build003` |
 
-## What the supplied artifacts contain
+## Artifacts and prerequisites
 
-| Artifact | Contents/use |
+| Artifact | Contents and use |
 |---|---|
-| `*-Clean.zip` | Only `MSMarketValue/`; install in the game |
-| `*-Source.zip` | Complete repository files excluding `.git`; readable source and documentation |
-| `*-Git-Repository.zip` | Repository files and complete `.git`; `main`, commit, annotated build tag, configured origin |
-| `*.bundle` | Portable complete Git history and refs, including the build tag |
-| `*-SHA256.txt` | Checksums of binary/archive artifacts and any separately supplied companion docs/receipt |
+| `*-Clean.zip` | Only `MSMarketValue/`; install this in the game |
+| `*-Source.zip` | Complete tracked source/tests/docs, excluding `.git` |
+| `*-Git-Repository.zip` | Source and complete `.git`, main branch, commit history, annotated tags and configured origin |
+| `*.bundle` | Portable complete Git history and refs |
+| `*-SHA256.txt` | SHA-256 hashes of supplied archives/bundle and any companion docs/receipt |
+| `*-Git-Workflow.md`, `*-Changelog.md` | Standalone copies of these repository documents |
+| `*-Validation.json` | Evidence for the delivered tag, tests, restores, parity and checksums |
 
-No Update ZIP or migration bridge is needed. Build003 preserves schema 1, settings/exclusions/cooldowns and old completed records. Detected Forever markets use new ruleset/faction keys and require one fresh successful scan; old realm-keyed records are never automatically merged. The build001/build002 commits and annotated tags remain intact. The SavedVariable remains `MSMarketValueDB`.
+Development requires Git, Python 3.10+ and Lua/luac 5.1. GitHub commands below additionally require an authenticated `gh` installation and write permission under MoobStack. The game package bundles LibStub and LibAHTab; it needs no development tools or separate dependency addon.
 
-The initialized repository uses a local publisher identity `MoobStack <development@moobstack.invalid>`. The `.invalid` address cannot receive mail and is not a claim about the user's GitHub identity. Set your preferred name and email for future commits. The origin URL is a destination only; packaging does not create a remote repository, push commits, or publish a release.
+Version 1.0.0 keeps schema 1 and build003's market namespace, prices, settings, exclusions and cooldown. It does not require a new scan solely for the upgrade. Older realm-keyed caches remain stored and require their first scan under the detected ruleset key. SavedVariables are player data and are not part of source/history archives.
 
-## Open and inspect the prepared repository
+A configured origin, local tag or packaged asset does not establish remote publication. Only a verified push and published GitHub release establish that result.
 
-Extract the Git Repository ZIP to a development folder outside the game. Open a terminal in the resulting `MS-Market-Value` directory:
+## Inspect the supplied repository
+
+Extract the Git Repository ZIP outside the game's AddOns folder. Open a terminal in `MS-Market-Value`:
 
 ```bash
 git status --short
 git branch --show-current
 git log --oneline --decorate -5
 git remote -v
-git show --stat v0.1.0-beta-build003
+git show --stat v1.0.0
+git tag --list
 git fsck --full
 ```
 
-The branch should be `main`, the worktree should be clean, and the build tag should point at the supplied commit. Never initialize a new repository over the included `.git` directory.
+Expect a clean `main` checkout at `v1.0.0`, with all three earlier beta tags. Do not initialize a new repository over its included `.git` directory. The Source ZIP is readable source without Git metadata; use the Repository ZIP or bundle to preserve history.
 
-## Configure your identity
+The original local commits use `MoobStack <development@moobstack.invalid>`. This placeholder cannot receive mail and is not the user's verified GitHub identity. Configure your preferred identity for future commits:
 
 ```bash
 git config user.name "YOUR PREFERRED COMMIT NAME"
 git config user.email "YOUR VERIFIED OR GITHUB NOREPLY EMAIL"
 ```
 
-These are literal placeholders to replace; neither command sends email. They affect future commits in this repository. The publisher commits can remain as delivered. All three annotated build001/build002/build003 tags and their commits are retained.
+Replace the literal placeholders. These settings affect future commits and send no email; existing release commits/tags can remain as delivered.
 
-## Create the remote repository when ready
+## Inspect or create the remote
 
-On GitHub, create an empty repository named **MS-Market-Value** under **MoobStack**, without adding a generated README, license, or gitignore. Alternatively, with an authenticated GitHub CLI and permission to create repositories in the organization:
+Check the intended repository through GitHub or an authenticated CLI:
+
+```bash
+gh repo view MoobStack/MS-Market-Value --json nameWithOwner,url,defaultBranchRef
+```
+
+If it exists, inspect its branches/tags before pushing. If it does not exist and you have creation permission, create an empty public repository without a generated README/license/gitignore:
 
 ```bash
 gh repo create MoobStack/MS-Market-Value --public --description "WoW Forever auction snapshots and item value tooltips"
 ```
 
-Skip creation if that repository already exists. Inspect its history before combining it with this checkout. Do not replace an existing remote history blindly.
-
-The prepared checkout already has this HTTPS destination:
+The supplied checkout has this destination. Inspect it; change or add origin only if necessary:
 
 ```bash
 git remote -v
-# If changing an existing origin URL:
+# Use set-url when origin exists:
 git remote set-url origin https://github.com/MoobStack/MS-Market-Value.git
-# If origin is absent instead:
+# Use add instead when origin is absent:
 git remote add origin https://github.com/MoobStack/MS-Market-Value.git
 ```
 
-Use only the command appropriate to whether `origin` exists. Authentication belongs to your Git/GitHub installation; never place tokens in source files or remote URLs.
-
-## Push the reviewed beta revision
-
-Run these commands after deciding to upload the prepared project:
+Authentication belongs to Git/GitHub. Never put tokens in files, remote URLs or release assets. For an existing remote, inspect its history:
 
 ```bash
-git push -u origin main
-git push origin refs/tags/v0.1.0-beta-build001 refs/tags/v0.1.0-beta-build002 refs/tags/v0.1.0-beta-build003
+git fetch origin
+git ls-remote --heads --tags origin
+git log --oneline --decorate --all -10
 ```
 
-GitHub Actions runs read-only validation of source contracts and Lua 5.1 fixtures. It does not upload artifacts or publish a release. Runtime validation in WoW remains separate from CI.
+An empty remote or an ancestor of local `main` permits a normal fast-forward push. Resolve divergent history explicitly on a review branch before publishing; never force-push over an unrelated project or overwrite existing tags.
 
-## Develop the next revision under the SAME primary beta version
-
-For build004:
-
-1. Start from this full Git repository, or clone the remote after it exists.
-2. Reproduce the reported behavior with a focused fixture and preserve the previous complete-snapshot contract.
-3. Keep `A.VERSION`, all TOC `## Version` values, and `build.json.version` at **0.1.0-beta**.
-4. Set a new build ID such as `2026-10-05-beta004` in `Bootstrap.lua`, all three TOCs and `build.json`. Set `buildNumber` to `004`, `gitTag` to `v0.1.0-beta-build004`, and `archiveDate` to the new UTC build date.
-5. Add the new entry under the existing `0.1.0-beta` section in CHANGELOG.md. Update README's latest-build excerpt, release notes, validation status and any affected documentation.
-6. Run source and behavioral validation; run the applicable native-client checks.
-7. Commit on `main` and create a **new annotated build tag**. Preserve the earlier build tags.
+## Validate and push 1.0.0
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 git diff --check
-git add .
-git commit -m "Beta build004: describe the concrete behavior change"
-git tag -a v0.1.0-beta-build004 -m "MS Market Value 0.1.0-beta build004"
 git status --short
 git fsck --full
-python3 tools/package.py
-git push origin main
-git push origin refs/tags/v0.1.0-beta-build004
+git push -u origin main
+git push origin refs/tags/v0.1.0-beta-build001 refs/tags/v0.1.0-beta-build002 refs/tags/v0.1.0-beta-build003 refs/tags/v1.0.0
 ```
 
-The example date is illustrative, not a required date for the next revision. Version remains fixed; build identifiers advance. No force-push or moving published beta tag is needed.
-
-## Run validation locally
-
-Development dependencies are Python 3.10+ and Lua/luac 5.1. LibStub and LibAHTab are bundled runtime libraries; no separately installed dependency addon is required. On Linux with these commands available:
+The read-only GitHub Actions workflow validates source contracts and Lua 5.1 fixtures on main pushes/pull requests. It does not publish or upload release assets. Native WoW checks remain separate. Wait for the remote checks and inspect any failure before announcing a release:
 
 ```bash
-python3 tools/validate.py --lua lua5.1 --luac luac5.1
+gh run list --repo MoobStack/MS-Market-Value --branch main --limit 5
 ```
 
-On Windows, use `py -3` for Python and supply absolute paths to your Lua 5.1 executables if they are not on PATH:
+## Package the exact tagged source
+
+`tools/package.py` requires a clean checkout, an annotated tag from build.json and HEAD at that tag. It verifies Git objects, ZIP CRCs, bundle validity and runtime/source/tag byte parity:
+
+```bash
+python3 tools/package.py
+git status --short
+```
+
+Its five outputs appear in ignored `dist/`: Clean ZIP, Source ZIP, Git Repository ZIP, complete bundle and a checksum manifest for those four artifacts. The supplied release also contains standalone workflow/changelog copies and a validation receipt; its manifest covers those companions too.
+
+Clean/Source ZIPs use fixed dates and sorted entries for reproducibility. Git Repository ZIP metadata can differ after subsequent Git operations. Keep runtime files from one exact tag together; never mix builds in AddOns.
+
+To verify all files listed in a downloaded manifest on Linux, run from the directory containing them:
+
+```bash
+sha256sum -c MoobStack-MSMarketValue-v1.0.0-SHA256.txt
+```
+
+On Windows, compare the computed hash with the appropriate manifest line:
+
+```powershell
+Get-FileHash .\MoobStack-MSMarketValue-v1.0.0-Clean.zip -Algorithm SHA256
+```
+
+Windows validation can use `py -3` and actual executable paths:
 
 ```powershell
 py -3 tools/validate.py --lua "C:\Tools\Lua51\lua.exe" --luac "C:\Tools\Lua51\luac.exe"
 ```
 
-These Windows paths are examples of development-tool locations, not files included in this package. Use your actual installation paths. Do not validate the addon only with Lua 5.4.
+These example tools are not included in the addon. Use Lua 5.1 for runtime validation.
 
-## Produce release assets from the exact tagged source
+## Publish the stable release
 
-The package tool refuses a dirty checkout or a HEAD that differs from `build.json.gitTag`. It includes all tracked source/docs, excludes development files from the Clean ZIP, verifies ZIP CRC and source/runtime/tag byte parity, and verifies the bundle:
-
-```bash
-python3 tools/package.py
-git status --short
-```
-
-Outputs are under ignored `dist/`. To check downloaded checksums on Linux:
+After the exact tag is pushed and its assets are checked, publish using `GITHUB-RELEASE.md`. Version 1.0.0 is stable: omit `--prerelease`. The following command publishes immediately; the documented commands are not evidence they have been executed:
 
 ```bash
-cd dist
-sha256sum -c MoobStack-MSMarketValue-v0.1.0-beta-build003-SHA256.txt
-```
-
-On Windows, compute an individual artifact's hash and compare it with the matching manifest line:
-
-```powershell
-Get-FileHash .\dist\MoobStack-MSMarketValue-v0.1.0-beta-build003-Clean.zip -Algorithm SHA256
-```
-
-Archive filenames and the immutable build tag identify a candidate even while its TOC version stays unchanged. Runtime/source ZIPs use fixed timestamps and sorted entries for reproducibility. Repository ZIP metadata includes Git's local history/configuration and may differ after additional local Git operations.
-
-## Prepare a GitHub release
-
-Use the text in `GITHUB-RELEASE.md` and attach the four artifacts and checksum manifest. Mark a beta as **Pre-release**. A draft can be created after the tag has been pushed, using Bash:
-
-```bash
-gh release create v0.1.0-beta-build003 \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003-Clean.zip \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003-Source.zip \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003-Git-Repository.zip \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003.bundle \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003-SHA256.txt \
+gh release create v1.0.0 \
+  dist/MoobStack-MSMarketValue-v1.0.0-Clean.zip \
+  dist/MoobStack-MSMarketValue-v1.0.0-Source.zip \
+  dist/MoobStack-MSMarketValue-v1.0.0-Git-Repository.zip \
+  dist/MoobStack-MSMarketValue-v1.0.0.bundle \
+  dist/MoobStack-MSMarketValue-v1.0.0-SHA256.txt \
   --repo MoobStack/MS-Market-Value \
-  --title "MS Market Value 0.1.0-beta — build003" \
-  --notes-file GITHUB-RELEASE.md \
-  --prerelease --draft
+  --verify-tag --latest \
+  --title "MS Market Value 1.0.0" \
+  --notes-file GITHUB-RELEASE.md
 ```
 
-That command is documentation for your later publication decision; it was not executed while preparing these files. Keep live-validation status accurate and do not describe the Classic DE model as verified Forever loot data. A final stable version/tag is selected only when the first release is ready to be finalized.
+Use the supplied files' actual directory if publishing the delivered assets instead of freshly generated `dist/` outputs. Attach the supplied workflow/changelog/validation companions as well when using the extended manifest. Avoid a manifest listing files you have not uploaded. A deliberate review draft can use `--draft`; publishing a draft later requires `gh release edit v1.0.0 --draft=false --latest --repo MoobStack/MS-Market-Value`.
 
-## Restore from the bundle
-
-Verify and clone the bundle in a new development directory:
+If a release already exists, inspect it before acting; do not duplicate it, replace published assets silently or reuse its tag for different code. Verify the resulting release and assets:
 
 ```bash
-git clone MoobStack-MSMarketValue-v0.1.0-beta-build003.bundle MS-Market-Value-restored
+gh release view v1.0.0 --repo MoobStack/MS-Market-Value --json url,isDraft,isPrerelease,tagName,assets
+git ls-remote origin refs/heads/main refs/tags/v1.0.0 'refs/tags/v1.0.0^{}'
+```
+
+The release should have `isDraft=false`, `isPrerelease=false`, the correct tag/commit and all files required by its checksum manifest. Keep the Classic DE qualification and precise native evidence in the public notes.
+
+## Develop the next stable version
+
+Use a branch for each change and a new version/tag for each released result. A backward-compatible bug fix can use **1.0.1**; a compatible feature addition can use **1.1.0**. Breaking contracts require a major-version review. Development branches can iterate before their release tag is created; never move an existing released tag.
+
+1. Branch from updated `main`, reproduce the concrete issue and change the relevant source/fixtures.
+2. Update `A.VERSION`, all three TOC Version values and build.json.version together.
+3. Use a unique UTC build ID such as `2026-10-05-release002`; update Bootstrap, all three TOCs and build.json.build/buildNumber/archiveDate. Keep `releaseChannel` as `stable` and set `gitTag` to `v1.0.1` for a 1.0.1 release.
+4. Add a new changelog section and release notes; update supported-client/evidence statements accurately.
+5. Run validation and applicable native checks, review the diff, commit and merge the reviewed change.
+6. Annotate the new version tag on the exact final commit, package and push without rewriting earlier history.
+
+```bash
+git switch -c fix/describe-issue
+python3 tools/validate.py --lua lua5.1 --luac luac5.1
+git diff --check
+git add .
+git diff --cached
+git commit -m "Describe the concrete fix"
+# Merge through the project's normal review workflow before tagging.
+git switch main
+git tag -a v1.0.1 -m "MS Market Value 1.0.1"
+python3 tools/package.py
+git push origin main
+git push origin refs/tags/v1.0.1
+```
+
+The version/date above are examples for a future patch. Earlier prerelease revisions remain under 0.1.0-beta; that historical version freeze ended with 1.0.0. Never force-push main or delete historical release tags as part of ordinary revision work.
+
+## Restore or roll back
+
+Clone the supplied bundle into a fresh development directory:
+
+```bash
+git clone MoobStack-MSMarketValue-v1.0.0.bundle MS-Market-Value-restored
 cd MS-Market-Value-restored
-git fsck --full
 git checkout main
-git show --stat v0.1.0-beta-build003
+git fsck --full
+git show --stat v1.0.0
 git remote set-url origin https://github.com/MoobStack/MS-Market-Value.git
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-A bundle clone's initial origin points to the local bundle; the `set-url` step restores the intended GitHub destination. A bundle preserves code/history, not the player's SavedVariables. Restore those separately with WoW closed.
+A bundle clone initially has the bundle path as origin; set-url restores the intended destination. To inspect a historical build without changing main, use `git switch --detach v0.1.0-beta-build003`. Return with `git switch main`. Package only the tag named in that checkout's build.json.
 
-## Change record for this candidate
+For a game rollback, close WoW and replace the addon folder from the matching earlier Clean ZIP. Schema 1 remains compatible with build003; restore a SavedVariables backup only when needed, while WoW is closed. Git archives restore code/history, not player prices. See [UPGRADE.md](UPGRADE.md).
 
-Build003 fixes first-hover comparison refresh and repeated replication-event handling, adds ruleset-aware caches with native beta region support, and rebuilds settings with native Blizzard frame templates. Public version remains `0.1.0-beta`. See [CHANGELOG.md](CHANGELOG.md), [docs/BUILD003-INVESTIGATION.md](docs/BUILD003-INVESTIGATION.md) and [VALIDATION.md](VALIDATION.md) for behavior, cache-upgrade implications and native evidence limits. The delivered repository is local; no GitHub push or publication is claimed.
+## Repository hygiene and change record
 
-## Repository hygiene
+Commit source, fixtures, build metadata and documentation. Keep dist, WTF/SavedVariables, credentials, temporary research and private diagnostics out of Git. Inspect the staged diff before committing. Original project code has no selected permissive license; retain bundled library notices and terms in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
-Commit source, tests, build metadata and documentation. Keep `dist/`, WTF/SavedVariables, credentials, temporary fixtures and private diagnostics out of Git. The existing gitignore handles these local outputs; check `git status` and `git diff --cached` before each commit. A visible-source/free addon is not automatically MIT-licensed: see `THIRD-PARTY-NOTICES.md` for the current license decision status.
+Version 1.0.0 adds actual-stack prices, places expected DE in the price block and spaces material estimates below it. The scanner/schema/market keys remain compatible with build003. See [CHANGELOG.md](CHANGELOG.md), [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md) and [VALIDATION.md](VALIDATION.md) for exact changes and evidence.
