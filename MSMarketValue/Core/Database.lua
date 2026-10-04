@@ -5,7 +5,7 @@ A.DB = D
 
 D.defaults = {
     showVendor = true, showAuction = true, showDisenchant = true,
-    showMaterials = true, showAge = true, openAtAH = true,
+    showMaterials = true, showAge = true,
     staleHours = 24,
 }
 

@@ -1,0 +1,7 @@
+Bundled Auction House tab libraries
+
+LibAHTab-1-0 minor 5: Copyright (c) 2022 plusmouse. MIT License; full terms in LibAHTab/LICENSE.txt.
+LibStub minor 2: public domain; original credits and dedication are retained in LibStub/LibStub.lua.
+Source: https://github.com/TheMouseNest/LibAHTab/tree/2ddbec58c8be37b2cd911bee7512d597e7dfdfe1
+Only LF line endings and trailing whitespace were normalized.
+These terms apply to the named bundled libraries; they do not choose a license for MoobStack code.

@@ -2,6 +2,7 @@
 """Repository contract checks plus Lua 5.1 behavioral tests. No third-party Python deps."""
 from __future__ import annotations
 import argparse
+import hashlib
 import json
 import pathlib
 import re
@@ -29,9 +30,13 @@ def run(lua: str, luac: str | None = None) -> None:
     for suffix in ("Camelot", "Forever"):
         assert (RUNTIME / f"MSMarketValue_{suffix}.toc").read_bytes() == toc.read_bytes()
     paths = [line.replace("\\", "/") for line in text.splitlines() if line and not line.startswith("#")]
-    assert len(paths) == len(set(paths)) == 9
+    assert len(paths) == len(set(paths)) == 11
     assert paths[0] == "Bootstrap.lua" and paths[-1] == "Core/Events.lua"
+    assert paths[1:3] == ["Libs/LibStub/LibStub.lua", "Libs/LibAHTab/LibAHTab.lua"]
     assert set(paths) == {p.relative_to(RUNTIME).as_posix() for p in RUNTIME.rglob("*.lua")}
+    vendor = json.loads((ROOT / "tools/vendor.json").read_text(encoding="utf-8"))
+    for relative, checksums in vendor["files"].items():
+        assert hashlib.sha256((RUNTIME / relative).read_bytes()).hexdigest() == checksums["bundled_sha256"], relative
     forbidden = re.compile(r"\b(?:RunScript|loadstring|loadfile|QueryAuctionItems|SendSearchQuery|PlaceAuctionBid|PostItem|PostCommodity|ConfirmCommoditiesPurchase|CastSpellByName|SendChatMessage)\s*\(")
     for relative in paths:
         path = (RUNTIME / relative).resolve()

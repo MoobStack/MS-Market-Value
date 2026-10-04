@@ -1,13 +1,14 @@
 # Beta roadmap
 
-Public version remains **0.1.0-beta** until the first finalized release. Build001 implements the requested scan/store/tooltip/reference-estimate behavior and its local tests.
+Public version remains **0.1.0-beta** until the first finalized release. Build002 fixes the reported pre-request market lookup failure and integrates scan/settings into an AH tab. It retains the complete snapshot and tooltip/reference-estimate contract.
 
-## Immediate next build inputs
+## Immediate build002 retest inputs
 
-1. Native startup/UI/tooltip and full-scan results from the user's Forever client.
-2. Reload, relog, character-switch and full-exit/restart persistence results.
-3. Material listing coverage and suffix-price checks.
-4. Item-specific disenchant exceptions and observed material/quantity mismatches.
+1. Build002 realm/region/portal diagnostic values and a native full-scan completion from the user's Forever client.
+2. AH tab layout, scrollbar, native tab switching and Auctionator tab coexistence/taint results.
+3. Reload, relog, character-switch and full-exit/restart persistence results.
+4. Material listing coverage and suffix-price checks.
+5. Item-specific disenchant exceptions and observed material/quantity mismatches.
 
 Address concrete failures in the next build under the same public beta version. Preserve complete-snapshot replacement and tested error behavior.
 

@@ -1,13 +1,15 @@
-MS Market Value **0.1.0-beta — build001** (`2026-10-04-beta001`). Mark this candidate as a pre-release when publishing.
+MS Market Value **0.1.0-beta — build002** (`2026-10-04-beta002`). Mark this candidate as a pre-release when publishing.
 
-User-started full-house scans save the latest completed per-item minimum buyout prices and add vendor sell, AH buyout and estimated disenchant values to item tooltips. A complete scan replaces the previous snapshot; interrupted or failed scans retain it. Saved data is account-wide with separate realm/region snapshots.
+Build002 fixes the market lookup gate that prevented build001 from sending a scan when a normalized realm or numeric region was unavailable. Guarded public realm-name and login-portal fallbacks resolve the market; expanded diagnostics expose lookup sources and the session request count. Matching existing numeric keys, complete snapshots and cooldowns are retained.
 
-Material estimates show possible quantities, probabilities and expected quantities. Expected DE value uses material prices from the saved AH scan and becomes unavailable when a possible material has no price. Snapshot age/stale flags and settings are included.
+Scan controls and settings now live in a new **MS Market Value** Auction House tab with a vertical scrollbar. Opening an auctioneer keeps Buy selected and no longer opens a settings popup. `/msmv` selects/leaves the tab at the AH and opens a manual window elsewhere. Pinned LibAHTab and LibStub are bundled with original notices, requiring no separately installed addon.
 
-**Compatibility target:** WoW Forever 1.60.1 / Interface 16001. **Validation:** 45/45 headless Lua 5.1 behavioral tests pass; live-client qualification is pending. **DE limitation:** Classic reference probabilities/eligibility are unverified for Forever and are labeled in the tooltip.
+User-started full scans save per-item minimum buyout prices; complete scans replace the previous snapshot while failures/interruption retain it. Tooltips show vendor prices, AH buyouts and Classic reference disenchant quantities/probabilities/value. Missing material prices prevent a complete DE total.
 
-Install the **Clean ZIP**. Extract `MSMarketValue` into the active client's `Interface/AddOns`, restart WoW, then open an auctioneer and select **Scan entire AH**. `/msmv` opens settings. Use the **Git Repository ZIP**, **Source ZIP**, or **bundle** for development/recovery and the **SHA256 manifest** to verify downloads.
+**Target:** Forever 1.60.1 / 70205 / Interface 16001. **Local validation:** 63/63 Lua 5.1 tests pass. User diagnostics confirmed build001 startup/API/callback availability and the failed market lookup. **Build002 native scan/tab/persistence retest remains pending.** Forever DE probabilities and special eligibility remain unverified and labeled.
 
-Version stays **0.1.0-beta** for all revisions before the first finalized release. Build IDs, tags and asset names identify candidates. See the repository changelog and live test checklist for current evidence.
+Install the **Clean ZIP**, replacing `MSMarketValue` in the active client's `Interface/AddOns` without changing WTF/SavedVariables. Restart WoW, open an auctioneer, select **MS Market Value**, then click **Scan entire AH**. Use the Git Repository ZIP, Source ZIP or complete bundle for development/recovery; verify asset hashes against the SHA256 manifest.
 
-MoobStack is an independent community addon publisher and is not affiliated with or endorsed by Blizzard Entertainment. World of Warcraft and related marks belong to their respective owners.
+Version remains **0.1.0-beta** until the first finalized release. Build002 has a new immutable tag; build001 history/tag remain available. Preparing these assets does not publish a release.
+
+MoobStack is independent and is not affiliated with or endorsed by Blizzard Entertainment. World of Warcraft and related marks belong to their respective owners.

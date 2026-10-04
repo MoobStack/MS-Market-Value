@@ -42,15 +42,19 @@ frame:RegisterEvent("PLAYER_LOGIN")
 frame:SetScript("OnEvent", function(_, event, arg1, arg2)
     if event == "ADDON_LOADED" then
         if U.String(arg1) and arg1 == A.NAME then Initialize() end
+        if U.String(arg1) and arg1 == "Blizzard_AuctionHouseUI" and A.auctionOpen then
+            A.UI.OnAuctionShow()
+        end
     elseif event == "PLAYER_LOGIN" then
         Login()
     elseif event == "AUCTION_HOUSE_SHOW" then
         A.auctionOpen = true
-        A.UI.OpenAtAH()
+        A.UI.OnAuctionShow()
         U.Notify()
     elseif event == "AUCTION_HOUSE_CLOSED" then
         A.auctionOpen = false
         S.Stop("The auction house closed.")
+        if A.UI.panel then A.UI.panel:Hide() end
         U.Notify()
     elseif event == "REPLICATE_ITEM_LIST_UPDATE" then
         S.OnResponse()
@@ -62,9 +66,12 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "PLAYER_REGEN_DISABLED" then
         S.Stop("Combat started.")
         if A.UI.frame then A.UI.frame:Hide() end
+        if A.UI.panel then A.UI.panel:Hide() end
+        U.Notify()
         if A.UI.diagnostics then A.UI.diagnostics:Hide() end
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.refreshTooltips = true
+        if A.auctionOpen then A.UI.OnAuctionShow() end
         U.Notify()
     elseif event == "PLAYER_LOGOUT" then
         S.Stop("Logging out.")
@@ -82,7 +89,8 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     if uiElapsed >= 0.25 then
         uiElapsed = 0
-        if A.UI.frame and A.UI.frame:IsShown() then A.UI.Refresh() end
+        if A.auctionOpen and not A.UI.tabInstalled and not U.Combat() then A.UI.InstallAuctionTab() end
+        if (A.UI.frame and A.UI.frame:IsShown()) or (A.UI.panel and A.UI.panel:IsShown()) then A.UI.Refresh() end
         if A.refreshTooltips and not U.Combat() then
             A.refreshTooltips = false
             A.Tooltips.RefreshVisible()

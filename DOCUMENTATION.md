@@ -1,6 +1,6 @@
 # MS Market Value documentation
 
-Version `0.1.0-beta`, build `2026-10-04-beta001`.
+Version `0.1.0-beta`, build `2026-10-04-beta002`.
 
 ## Installation
 
@@ -12,7 +12,7 @@ A newly added addon folder requires a client restart. Subsequent replacements of
 
 ## Full scans
 
-Open an auctioneer and choose **Scan entire AH**. The addon sends one replication request, waits for `REPLICATE_ITEM_LIST_UPDATE`, and processes the entire returned zero-based row range. It does not loop through per-item search queries to enumerate the marketplace.
+Open an auctioneer, select the **MS Market Value** tab, and choose **Scan entire AH**. The addon sends one replication request, waits for `REPLICATE_ITEM_LIST_UPDATE`, and processes the entire returned zero-based row range. It does not loop through per-item search queries to enumerate the marketplace.
 
 | State | Meaning |
 |---|---|
@@ -57,11 +57,11 @@ For each possible material, the tooltip shows a quantity range, outcome probabil
 
 The expected value is the sum of probability-weighted quantities times per-unit material buyout prices from the same snapshot. Each possible material needs a price. If one is missing, the total is **Unavailable** and any known subtotal is labeled **Priced portion only**. Prices are gross, before AH fees and listing costs.
 
-Build001's loot model is a **Classic reference estimate**. It is not a verified Forever loot dataset. Standard gear eligibility is inferred from quality/class/equipment slot, not confirmed by a native disenchantability API. Item exceptions, new Forever materials, changed probabilities, and profession/skill requirements can invalidate an estimate. The addon does not claim your character can currently disenchant the item. Check the native profession behavior and use item exclusions for exceptions.
+The beta's loot model is a **Classic reference estimate**. It is not a verified Forever loot dataset. Standard gear eligibility is inferred from quality/class/equipment slot, not confirmed by a native disenchantability API. Item exceptions, new Forever materials, changed probabilities, and profession/skill requirements can invalidate an estimate. The addon does not claim your character can currently disenchant the item. Check the native profession behavior and use item exclusions for exceptions.
 
 See [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) for complete bracket details. Items outside those brackets are labeled as having no profile rather than extrapolated.
 
-## Settings window
+## Auction House tab and manual settings window
 
 | Setting/control | Default | Effect |
 |---|---|---|
@@ -70,18 +70,19 @@ See [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) for complete bracket de
 | Estimated disenchant value | On | Show eligible reference outcomes/value |
 | Material ranges and chances | On | Show possible materials, ranges, probabilities, averages |
 | Snapshot age and stale flag | On | Display snapshot age and stale marker |
-| Open at auction house | On | Show the window when an auctioneer opens |
 | Mark prices stale after | 24 hours | Configurable integer, 1–168 hours |
 | Exclude item | None | Suppress DE estimates for the entered numeric item ID |
 | Restore estimate | — | Remove that item ID's exclusion |
 | Stop scan | — | Stop local work and retain the complete snapshot |
 | Copy diagnostics | — | Select diagnostic text for Ctrl+C |
 
-Drag the main window to reposition it. Its position and settings are saved account-wide. Escape closes the window. Item exclusions can be reversed without changing the auction snapshot.
+Opening an auctioneer leaves the native Buy tab selected and adds an **MS Market Value** tab. Click it for scan controls and settings; scroll down for lower options. Native tabs and other shared-library addon tabs hide the MS panel when selected. The AH tab is reused on subsequent openings.
+
+`/msmv` selects the MS tab at an auctioneer; running it again returns to Buy. Away from an auctioneer, it opens a manual window whose position is saved account-wide. Escape closes that window. No standalone settings window opens automatically. The former `openAtAH` preference remains stored for rollback but is ignored. Item exclusions can be reversed without changing the snapshot.
 
 ## Persistence and backup
 
-`MSMarketValueDB` is a normal account-wide SavedVariable. It contains settings, exclusions, cooldown state and separate realm/region snapshots. Modern AH data is shared across factions; the addon does not create artificial faction-specific markets. Connected realms are conservatively stored under the reporting character's realm name.
+`MSMarketValueDB` is a normal account-wide SavedVariable. It contains settings, exclusions, cooldown state and separate realm/region snapshots. Modern AH data is shared across factions; the addon does not create artificial faction-specific markets. Connected realms are conservatively stored under the reporting character's realm name. A usable normalized realm name and numeric region remain the primary identity. A missing/empty normalized name falls back to the whitespace/hyphen-free public realm name. A missing/zero region falls back to `C_CVar.GetCVar("portal")`, then legacy `GetCVar("portal")`; us/kr/eu/tw/cn map to the existing numeric keys. Other named test portals have separate keys. Locale is never used to guess a region. If neither public name nor region/portal is available, no request is sent and no cooldown is consumed.
 
 WoW writes SavedVariables on a successful UI reload or normal logout/exit. The addon cannot force an immediate disk write. A crash, interrupted shutdown, or client-side SavedVariables regression can lose changes made since the last successful write. `LoadSavedVariablesFirst: 1` is included, and initialization waits for the addon's `ADDON_LOADED` event.
 
@@ -90,6 +91,8 @@ Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak
 ## Troubleshooting and reporting
 
 Enable native script errors with `/console scriptErrors 1`, then reproduce the issue once. Copy `/msmv diagnostics`, the exact error text, client version/build, and addon build. For a material mismatch include item ID/link, item level, quality and actual loot. Diagnostics omit auction seller names and stored account credentials.
+
+For the build001 message “Realm/region information is not available yet”, install build002 and check the expanded market fields in diagnostics. IDLE with zero session requests means no native request was sent; report the market key, normalized/public realm, native region, portal and lookup sources. These values are public market identifiers, not credentials.
 
 If scan state remains WAITING, preserve the old snapshot and wait for the cooldown. If RESOLVING fails, report the state and exact client build. If saved prices disappear after reload, stop overwriting the backup and report the client-side persistence behavior. Do not install an external executable or SavedVariables workaround as part of this addon without a separate review.
 

@@ -38,6 +38,12 @@ local function widget(name)
     function w:Show() self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
     function w:Hide() self.shown = false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
     function w:IsShown() return self.shown end
+    function w:SetParent(parent) self.parent = parent end
+    function w:GetParent() return self.parent end
+    function w:IsObjectType(kind) return kind == "Frame" end
+    function w:GetFrameLevel() return self.level or 1 end
+    function w:GetFrameStrata() return self.strata or (self.parent and self.parent:GetFrameStrata()) or "MEDIUM" end
+    function w:SetFrameStrata(value) self.strata = value end
     function w:IsForbidden() return self.forbidden or false end
     function w:SetPoint(...) self.points[#self.points + 1] = { ... } end
     function w:ClearAllPoints() self.points = {} end
@@ -66,14 +72,14 @@ local function widget(name)
         self.lines = { {left = "Native item"} }
         if self.processor then self.processor(self, self.data) end
     end
-    for _, method in ipairs({ "SetFrameStrata", "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetJustifyH", "SetFontObject", "SetMultiLine", "SetAutoFocus", "SetMaxLetters", "SetNumeric", "SetStatusBarTexture", "SetStatusBarColor", "SetMinMaxValues" }) do
+    for _, method in ipairs({ "SetFrameLevel", "SetHitRectInsets", "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetJustifyH", "SetFontObject", "SetMultiLine", "SetAutoFocus", "SetMaxLetters", "SetNumeric", "SetStatusBarTexture", "SetStatusBarColor", "SetMinMaxValues" }) do
         w[method] = function() end
     end
     return w
 end
 
 local function fresh(saved)
-    local world = { wall = 1800000000, mono = 0, cpu = 0, rows = {}, requests = 0, loadRequests = 0, items = {}, realm = "FixtureRealm", region = 1, combat = false, ready = true, interface = 16001, messages = {} }
+    local world = { wall = 1800000000, mono = 0, cpu = 0, rows = {}, requests = 0, loadRequests = 0, items = {}, realm = "FixtureRealm", region = 1, portal = "us", combat = false, ready = true, interface = 16001, messages = {} }
     _G.MSMarketValueDB = saved
     _G.issecretvalue = function(v) return rawequal(v, secret) end
     _G.canaccessvalue = function(v) return not rawequal(v, secret) end
@@ -83,19 +89,32 @@ local function fresh(saved)
     _G.GetNormalizedRealmName = function() return world.realm end
     _G.GetRealmName = GetNormalizedRealmName
     _G.GetCurrentRegion = function() return world.region end
+    _G.GetCVar = function() return world.legacyPortal end
+    _G.C_CVar = { GetCVar = function() return world.portal end }
     _G.InCombatLockdown = function() return world.combat end
     _G.GetBuildInfo = function() return "1.60.1", "70205", "Oct 3 2026", world.interface end
     _G.debugprofilestop = function() world.cpu = world.cpu + 0.01; return world.cpu end
     _G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, message) world.messages[#world.messages + 1] = message end }
     _G.SlashCmdList, _G.UISpecialFrames = {}, {}
     _G.UIParent = widget("UIParent")
+    _G.LibStub, _G.AuctionHouseFrame, _G.AuctionHouseFrameDisplayMode = nil, nil, nil
+    _G.WOW_PROJECT_MAINLINE, _G.WOW_PROJECT_CAMELOT = 1, 14
+    _G.WOW_PROJECT_ID = WOW_PROJECT_CAMELOT
+    _G.strmatch = string.match
+    _G.PanelTemplates_TabResize = function(tab) tab.resized = true end
+    _G.PanelTemplates_DeselectTab = function(tab) tab.selected = false end
+    _G.PanelTemplates_SelectTab = function(tab) tab.selected = true end
     _G.GameFontHighlightSmall = {}
     _G.GameTooltip, _G.ItemRefTooltip = widget("GameTooltip"), widget("ItemRefTooltip")
     _G.ShoppingTooltip1, _G.ShoppingTooltip2 = widget("ShoppingTooltip1"), widget("ShoppingTooltip2")
     _G.ItemRefShoppingTooltip1, _G.ItemRefShoppingTooltip2 = nil, nil
     _G.Enum = { TooltipDataType = { Item = 0 } }
     _G.date = os.date
-    _G.CreateFrame = function(_, name) local w = widget(name); if name then _G[name] = w end; return w end
+    _G.CreateFrame = function(_, name, parent)
+        local w = widget(name); w.parent = parent
+        if name then _G[name] = w end
+        return w
+    end
     _G.TooltipDataProcessor = { AddTooltipPostCall = function(_, callback)
         world.tooltipCallback = callback
         for _, t in ipairs({ GameTooltip, ItemRefTooltip, ShoppingTooltip1, ShoppingTooltip2 }) do t.processor = callback end
@@ -137,6 +156,34 @@ local function fresh(saved)
         end
     end
     world.A = A
+    function world:makeAH()
+        local ah = widget("AuctionHouseFrame")
+        ah:SetSize(800, 538)
+        ah:SetParent(UIParent)
+        ah.Tabs, ah.numTabs = { widget(), widget(), widget() }, 3
+        ah.BuyContent, ah.SellContent, ah.AuctionsContent = widget(), widget(), widget()
+        _G.AuctionHouseFrameDisplayMode = { Buy = { "BuyContent" }, Sell = { "SellContent" }, Auctions = { "AuctionsContent" } }
+        function ah:SetTitle(text) self.title = text end
+        function ah:SetDisplayMode(mode)
+            self.displayMode = mode
+            for _, modes in pairs(AuctionHouseFrameDisplayMode) do
+                for _, key in ipairs(modes) do self[key]:Hide() end
+            end
+            for _, key in ipairs(mode) do self[key]:Show() end
+        end
+        ah:SetScript("OnShow", function(self) self:SetDisplayMode(AuctionHouseFrameDisplayMode.Buy) end)
+        _G.AuctionHouseFrame = ah
+        return ah
+    end
+    function world:event(event, arg1, arg2)
+        A.eventFrame.scripts.OnEvent(A.eventFrame, event, arg1, arg2)
+    end
+    function world:openAH()
+        local ah = AuctionHouseFrame or self:makeAH()
+        ah:Show()
+        self:event("AUCTION_HOUSE_SHOW")
+        return ah
+    end
     function world:load()
         A.eventFrame.scripts.OnEvent(A.eventFrame, "ADDON_LOADED", "MSMarketValue")
         A.eventFrame.scripts.OnEvent(A.eventFrame, "PLAYER_LOGIN")
@@ -434,7 +481,7 @@ end)
 test("UI exposes all settings and generates copyable diagnostics", function()
     local w, A = initial(); A.UI.Create(); A.UI.frame:Show()
     truth(A.UI.checks.showVendor); truth(A.UI.checks.showAuction); truth(A.UI.checks.showDisenchant)
-    truth(A.UI.checks.showMaterials); truth(A.UI.checks.showAge); truth(A.UI.checks.openAtAH)
+    truth(A.UI.checks.showMaterials); truth(A.UI.checks.showAge); equal(A.UI.checks.openAtAH, nil)
     A.UI.ShowDiagnostics(); truth(A.UI.diagnostics:IsShown()); truth(A.UI.diagnosticsEdit.highlighted)
     truth(string.find(A.UI.diagnosticsEdit:GetText(), "70205"))
 end)
@@ -448,6 +495,149 @@ test("money formatting distinguishes missing, zero, sub-copper, silver and gold 
     equal(A.Util.Money(0.5), "<1c"); equal(A.Util.Money(123), "1s 23c")
     equal(A.Util.Money(12345), "1g 23s 45c"); equal(A.Util.Money(secret), "Unavailable")
     equal(A.Util.Money(9007199254740991), "900719925474g 09s 91c")
+end)
+
+test("empty normalized realm and zero native region use public realm and login portal", function()
+    local w, A = fresh(); w.region = 0; w.realm = "Test Realm-Name"
+    GetNormalizedRealmName = function() return "" end
+    w:start({row(100, 2, 1000)}); w:drain()
+    equal(w.requests, 1); equal(A.Scanner.requestCount, 1)
+    equal(A.DB.Snapshot().marketKey, "1|TestRealmName"); equal(A.DB.Price(100).low, 500)
+    local info = A.Util.MarketInfo()
+    equal(info.realmSource, "GetRealmName"); equal(info.regionSource, "C_CVar.GetCVar(portal)")
+end)
+test("missing or failing normalized realm API falls back without an error", function()
+    for _, fn in ipairs({false, function() error("lookup failed") end}) do
+        local w, A = fresh(); GetNormalizedRealmName = fn or nil
+        equal(A.Util.MarketKey(), "1|FixtureRealm")
+    end
+end)
+test("named regions and modern or legacy portal values identify the same market", function()
+    local mappings = {us=1, kr=2, eu=3, tw=4, cn=5}
+    for portal, region in pairs(mappings) do
+        local w, A = fresh(); w.region = 0; w.portal = string.upper(portal)
+        equal(A.Util.MarketKey(), tostring(region) .. "|FixtureRealm")
+        w.region = nil; w.portal = nil; w.legacyPortal = " " .. portal .. " "
+        equal(A.Util.MarketKey(), tostring(region) .. "|FixtureRealm")
+        w.region = string.upper(portal); w.legacyPortal = nil
+        equal(A.Util.MarketKey(), tostring(region) .. "|FixtureRealm")
+    end
+end)
+test("native numeric region and existing normalized realm keys take precedence", function()
+    local w, A, old = initial(); w.portal = "eu"
+    equal(A.DB.Snapshot(), old)
+    w.realm = "Normalized-Realm"
+    equal(A.Util.MarketKey(), "1|Normalized-Realm")
+end)
+test("falling back to a matching portal retains build001 snapshots and reload persistence", function()
+    local w, A, old = initial(); w.region = 0
+    equal(A.DB.Snapshot(), old); equal(A.DB.Price(100).low, 900)
+    local w2, A2 = fresh(A.DB.data); w2.region = nil; w2:load()
+    equal(A2.DB.Price(100).low, 900); equal(A2.Scanner.RemainingCooldown(), 900)
+end)
+test("named test portals do not share region or other portal prices", function()
+    local w, A = fresh(); w.region = 0; w.portal = "beta"
+    w:start({row(100, 1, 500)}); w:drain()
+    equal(A.DB.Snapshot().marketKey, "portal:beta|FixtureRealm")
+    w.portal = "public-test"; equal(A.DB.Snapshot(), nil)
+    w.portal = "us"; equal(A.DB.Snapshot(), nil)
+    w.portal = "beta"; equal(A.DB.Price(100).low, 500)
+end)
+test("unavailable market identity consumes no request or cooldown and explains the source", function()
+    local w, A = fresh(); w:load(); w.region = 0; w.portal = nil
+    local ok, reason = A.Scanner.Start()
+    equal(ok, false); truth(string.find(reason, "Region and login portal"))
+    equal(w.requests, 0); equal(A.Scanner.requestCount, 0); equal(A.Scanner.RemainingCooldown(), 0)
+    for _, portal in ipairs({"0", " ", "us/invalid"}) do
+        w.portal = portal; equal(A.Scanner.Start(), false); equal(w.requests, 0)
+    end
+    w.region = 1; w.realm = ""
+    ok, reason = A.Scanner.Start(); equal(ok, false); truth(string.find(reason, "Realm name"))
+end)
+test("restricted and throwing market APIs are reported without exposing values", function()
+    local w, A = fresh(); w.region = secret; w.portal = secret
+    GetNormalizedRealmName = function() return secret end
+    GetRealmName = function() error("not ready") end
+    local info = A.Util.MarketInfo(); equal(info.key, nil)
+    equal(info.normalizedRealm, "restricted"); equal(info.realmName, "error"); equal(info.nativeRegion, "restricted")
+    w:load(); truth(string.find(A.UI.DiagnosticsText(), "Native region: restricted"))
+end)
+test("a portal change during a fallback scan preserves the original snapshot", function()
+    local w, A, old = initial(); w.region = 0
+    newScan(w, {row(200, 1, 100)}); w.portal = "eu"; w:drain()
+    equal(A.Scanner.state, "FAILED"); w.portal = "us"; equal(A.DB.Snapshot(), old)
+end)
+test("opening the AH adds one tab and keeps the native Buy pane selected", function()
+    local w, A = fresh(); w:load(); local ah = w:openAH()
+    truth(A.UI.tabInstalled); truth(A.UI.tabButton)
+    equal(ah.numTabs, 3); equal(#ah.Tabs, 3)
+    equal(A.UI.panel:IsShown(), false); equal(A.UI.frame:IsShown(), false)
+    truth(ah.BuyContent:IsShown()); equal(A.UI.content:GetParent(), A.UI.scroll)
+    equal(A.UI.content:GetFrameStrata(), ah:GetFrameStrata())
+    truth(string.find(A.UI.DiagnosticsText(), "Auction House tab: installed"))
+end)
+test("AH tab opens working scan controls and native tabs restore the original pane", function()
+    local w, A = fresh(); w:load(); local ah = w:openAH()
+    A.UI.tabButton.scripts.OnClick(); truth(A.UI.panel:IsShown()); equal(ah.BuyContent:IsShown(), false)
+    w.rows = {row(100, 1, 123)}; A.UI.scanButton.scripts.OnClick()
+    equal(w.requests, 1); w:event("REPLICATE_ITEM_LIST_UPDATE"); w:drain()
+    equal(A.DB.Price(100).low, 123)
+    ah:SetDisplayMode(AuctionHouseFrameDisplayMode.Buy)
+    equal(A.UI.panel:IsShown(), false); truth(ah.BuyContent:IsShown()); equal(A.UI.tabButton.selected, false)
+end)
+test("shared tab library coordinates another addon without changing Blizzard tab indices", function()
+    local w, A = fresh(); w:load(); local ah = w:makeAH(); ah:Show()
+    local lib, other = LibStub("LibAHTab-1-0"), widget()
+    lib:CreateTab("OtherAddonFixture", other, "Other addon")
+    w:event("AUCTION_HOUSE_SHOW"); A.UI.tabButton.scripts.OnClick()
+    truth(A.UI.panel:IsShown()); equal(other:IsShown(), false)
+    lib:SetSelected("OtherAddonFixture"); truth(other:IsShown()); equal(A.UI.panel:IsShown(), false)
+    A.UI.tabButton.scripts.OnClick(); truth(A.UI.panel:IsShown()); equal(other:IsShown(), false)
+    equal(ah.numTabs, 3); equal(#ah.Tabs, 3); equal(#lib.internalState.Tabs, 2)
+end)
+test("delayed AH frame loading installs the tab after the SHOW event", function()
+    local w, A = fresh(); w:load(); w:event("AUCTION_HOUSE_SHOW")
+    equal(A.UI.tabInstalled, nil); equal(A.UI.frame, nil)
+    local ah = w:makeAH(); ah:Show(); w:event("ADDON_LOADED", "Blizzard_AuctionHouseUI")
+    truth(A.UI.tabInstalled); equal(A.UI.frame:IsShown(), false)
+end)
+test("AH installation retries on a later tick when the native frame becomes visible", function()
+    local w, A = fresh(); w:load(); w:makeAH(); w:event("AUCTION_HOUSE_SHOW")
+    equal(A.UI.tabInstalled, nil)
+    AuctionHouseFrame:Show(); A.eventFrame.scripts.OnUpdate(A.eventFrame, 0.25)
+    truth(A.UI.tabInstalled)
+end)
+test("legacy automatic-popup setting is retained but does not open or select settings", function()
+    local w, A = fresh({schema=1, markets={}, settings={openAtAH=true}}); w:load()
+    A.UI.Toggle(); truth(A.UI.frame:IsShown())
+    w:openAH(); equal(A.UI.frame:IsShown(), false); equal(A.UI.panel:IsShown(), false)
+    equal(A.DB.data.settings.openAtAH, true)
+end)
+test("reopening the auction house reuses the same tab and defaults to Buy", function()
+    local w, A = fresh(); w:load(); local ah = w:openAH()
+    A.UI.tabButton.scripts.OnClick(); local button = A.UI.tabButton
+    ah:Hide(); w:event("AUCTION_HOUSE_CLOSED"); equal(A.UI.panel:IsShown(), false)
+    w:openAH(); equal(A.UI.tabButton, button); equal(A.UI.panel:IsShown(), false)
+    equal(#LibStub("LibAHTab-1-0").internalState.Tabs, 1)
+end)
+test("slash menu moves controls between the AH tab and manual window", function()
+    local w, A = fresh(); w:load(); local ah = w:openAH()
+    SlashCmdList.MSMARKETVALUE(""); truth(A.UI.panel:IsShown()); equal(A.UI.frame:IsShown(), false)
+    SlashCmdList.MSMARKETVALUE(""); equal(A.UI.panel:IsShown(), false); truth(ah.BuyContent:IsShown())
+    ah:Hide(); w:event("AUCTION_HOUSE_CLOSED")
+    SlashCmdList.MSMARKETVALUE(""); truth(A.UI.frame:IsShown()); equal(A.UI.content:GetParent(), A.UI.frame)
+    equal(A.UI.content:GetFrameStrata(), "DIALOG")
+    w:openAH(); equal(A.UI.frame:IsShown(), false); equal(A.UI.content:GetParent(), A.UI.scroll)
+end)
+test("combat defers tab creation and hides addon controls until out of combat", function()
+    local w, A = fresh(); w:load(); w.combat = true; w:openAH()
+    equal(A.UI.tabInstalled, nil); equal(A.UI.frame, nil)
+    w.combat = false; w:event("PLAYER_REGEN_ENABLED"); truth(A.UI.tabInstalled)
+    A.UI.tabButton.scripts.OnClick(); truth(A.UI.panel:IsShown())
+    w.combat = true; w:event("PLAYER_REGEN_DISABLED")
+    equal(A.UI.panel:IsShown(), false); equal(A.UI.tabButton.enabled, false)
+    A.UI.tabButton.scripts.OnClick(); equal(A.UI.panel:IsShown(), false)
+    w.combat = false; w:event("PLAYER_REGEN_ENABLED"); equal(A.UI.tabButton.enabled, true)
 end)
 
 print(string.format("RESULT: %d/%d behavioral tests passed (Lua %s). Live-client validation pending.", testCount, testCount, _VERSION))

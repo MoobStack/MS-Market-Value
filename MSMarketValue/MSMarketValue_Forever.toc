@@ -7,9 +7,11 @@
 ## IconTexture: Interface\Icons\INV_Misc_Coin_02
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
-## X-Build: 2026-10-04-beta001
+## X-Build: 2026-10-04-beta002
 
 Bootstrap.lua
+Libs\LibStub\LibStub.lua
+Libs\LibAHTab\LibAHTab.lua
 Core\Util.lua
 Core\Database.lua
 Data\Disenchant.lua

@@ -4,7 +4,7 @@ Maintain the player-visible contract: a user starts one native full-house scan, 
 
 ## Development setup
 
-Install Git, Python 3.10+ and Lua/luac 5.1. Work from the repository root. Runtime code must stay compatible with the reviewed Forever API and Lua 5.1 syntax. Runtime includes no external libraries or executables.
+Install Git, Python 3.10+ and Lua/luac 5.1. Work from the repository root. Runtime code must stay compatible with the reviewed Forever API and Lua 5.1 syntax. Runtime bundles pinned LibStub and LibAHTab; it includes no executables or separate dependency-install requirement. Preserve their attribution/licenses, verify vendor hashes, and explicitly review any future library update.
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1

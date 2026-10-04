@@ -1,6 +1,6 @@
 local _, A = ...
 local U, D = A.Util, A.DB
-local S = { state = "IDLE", active = false }
+local S = { state = "IDLE", active = false, requestCount = 0 }
 A.Scanner = S
 
 local function SetState(state, message)
@@ -56,8 +56,10 @@ function S.Start()
             return false, "The auction server is busy. Try again when it is ready."
         end
     end
-    local key, reason = U.MarketKey()
-    if not key then return false, reason end
+    local market = U.MarketInfo()
+    local key = market.key
+    if not key then return false, market.reason end
+    U.Log("Scan market: " .. key .. " (" .. market.realmSource .. "; " .. market.regionSource .. ").")
     S.active, S.marketKey = true, key
     S.requestAt, S.startedMono = U.Now(), U.Mono()
     S.cursor, S.pending, S.loaded = 0, {}, {}
@@ -67,6 +69,7 @@ function S.Start()
     D.data.cooldownUntil = S.requestAt + A.SCAN_COOLDOWN
     SetState("WAITING", "Waiting for the auction server's full snapshot.")
     S.sending = true
+    S.requestCount = S.requestCount + 1
     local ok = pcall(C_AuctionHouse.ReplicateItems)
     S.sending = false
     if not ok then

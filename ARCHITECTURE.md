@@ -1,26 +1,28 @@
 # Architecture
 
-Version `0.1.0-beta`, build `2026-10-04-beta001`; database schema 1.
+Version `0.1.0-beta`, build `2026-10-04-beta002`; database schema 1.
 
 ## Runtime modules and load order
 
 | File | Responsibility |
 |---|---|
 | `MSMarketValue/Bootstrap.lua` | Publisher identity, beta/build constants and public namespace |
-| `Core/Util.lua` | Access checks, numeric validation, item/suffix keys, money and age formatting |
+| `Libs/LibStub/LibStub.lua` | Public-domain versioned library registry |
+| `Libs/LibAHTab/LibAHTab.lua` | Shared addon AH tabs without extending native tab indices |
+| `Core/Util.lua` | Access checks, numeric validation, item/suffix keys, money/age formatting and guarded realm/portal identity |
 | `Core/Database.lua` | Saved data initialization, price accumulation, snapshot lookup and atomic replacement |
 | `Data/Disenchant.lua` | Named reference material/outcome profiles; no executable third-party loot code |
 | `Core/Valuation.lua` | Native item metadata, estimated eligibility, outcomes and expected value |
 | `Auction/Scanner.lua` | Serialized replication request, bounded row processing, retries and cancellation |
 | `Integrations/Tooltips.lua` | Modern item tooltip callback, accessible public tooltip allowlist and duplicate prevention |
-| `UI/Window.lua` | Settings, progress, saved layout, item exclusions and diagnostic copy window |
+| `UI/Window.lua` | Shared AH tab, reparented scrolling/manual controls, progress, item exclusions and diagnostics |
 | `Core/Events.lua` | ADDON_LOADED/login initialization, scan events, ticks and slash commands |
 
-The addon uses the per-addon namespace supplied to Lua files. `_G.MSMarketValue` is the one intentionally published module namespace. `_G.MSMarketValueDB` is the TOC-declared persistent variable. No Blizzard function is replaced in runtime code. A secure post-hook observes replication requests to detect conflicts.
+The addon uses the per-addon namespace supplied to Lua files. `_G.MSMarketValue` is the one intentionally published module namespace. `_G.MSMarketValueDB` is the TOC-declared persistent variable. The bundled libraries also publish their standard `LibStub` registry. No Blizzard function is replaced in runtime code. A secure post-hook observes replication requests to detect conflicts.
 
 ## Scan lifecycle
 
-Start gates check client compatibility, initialized data, auction availability, combat, API support, cooldown, readiness and market identity. One replication request transitions to WAITING. A native completion event supplies the total row count and transitions to PROCESSING. Indices range from **0 to count−1**.
+Start gates check client compatibility, initialized data, auction availability, combat, API support, cooldown, readiness and market identity. Market resolution first uses a native normalized realm and numeric region, then public realm name and login-portal fallbacks. Recognized region portals preserve numeric build001 keys; nonstandard portals remain separate. Failing the identity gate returns a specific reason before the request/cooldown write. One replication request transitions to WAITING. A native completion event supplies the total row count and transitions to PROCESSING. Indices range from **0 to count−1**.
 
 Processing occurs at most once per 0.05 seconds. Each tick handles at most 100 rows and checks an approximate four-millisecond budget using `debugprofilestop` when available. The row limit remains in effect if that optional profiler is absent.
 
@@ -36,11 +38,11 @@ After every row is accounted for, the database checks row-category totals and th
 |---|---|
 | `schema` | Integer 1; future schemas disable this build and are retained |
 | `version`, `build` | Addon identities of the last initialization |
-| `settings` | Tooltip visibility, automatic window opening and stale-hours preferences |
+| `settings` | Tooltip visibility and stale-hours preferences; obsolete openAtAH is preserved but ignored |
 | `windowPosition` | Optional center-relative x/y coordinates |
 | `excludedItems[itemID]` | Optional DE exclusion flag |
 | `cooldownUntil` | Persisted minimum next replication request timestamp |
-| `markets[marketKey]` | One completed snapshot per region/realm key |
+| `markets[marketKey]` | One completed snapshot per numeric-region/realm or named-portal/realm key |
 
 Each snapshot records start/end timestamps, method, addon version/build, completeness, total/processed row counts, buyout/bid-only/sold counts, distinct priced items, `prices`, `variants`, and bid-only item flags.
 
@@ -55,6 +57,12 @@ Saved-data initialization occurs on this addon's `ADDON_LOADED`, not at Lua file
 Default allowed frames are the native game tooltip, item-reference tooltip and comparison tooltips. Integrations may explicitly register an ordinary accessible tooltip through `MSMarketValue.Tooltips.Allow(frame)`. This is an internal beta API, without a stable external compatibility promise.
 
 All feature calculations run outside combat. Tooltip refreshes are coalesced at 0.25-second intervals after successful scan/item-data events. No combat telemetry, aura analysis, secure buttons, protected actions, posting, purchasing, disenchant casting or automated communication is implemented.
+
+## Auction House UI
+
+LibAHTab minor 5 coordinates addon tabs through its standard LibStub registry. MS does not add to Blizzard's `Tabs`, `numTabs` or display-mode maps. Selecting a custom tab uses the library to clear native content, deselect other addon tabs and show the MS panel. Selecting a native mode hides custom panels through the library's secure post-hook.
+
+The MS tab is installed only when the native AH frame is visible and outside combat. ADDON_LOADED and deferred update ticks handle late frame creation. Opening an auctioneer keeps Buy selected; neither the MS tab nor standalone window is automatically shown. A single controls frame moves between a 530-pixel native scroll viewport in the AH panel and a 530×570 manual window. Its frame strata/level follow its current parent. Diagnostics remain a separate manually opened copy dialog. Native visual layout and taint still require a live test.
 
 ## Repository tooling
 

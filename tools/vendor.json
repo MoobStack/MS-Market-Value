@@ -1,0 +1,19 @@
+{
+  "repository": "https://github.com/TheMouseNest/LibAHTab",
+  "commit": "2ddbec58c8be37b2cd911bee7512d597e7dfdfe1",
+  "normalization": "LF line endings and trailing whitespace only",
+  "files": {
+    "Libs/LibStub/LibStub.lua": {
+      "source_sha256": "d34235c85f869505fdd9ef321d2420f69db7d2eb873d2b3bbf57584a314060fa",
+      "bundled_sha256": "f378dd3e36f8c6cf6e72bdb79a41171649f59b07d6489ff3e7dab94403a2e9b1"
+    },
+    "Libs/LibAHTab/LibAHTab.lua": {
+      "source_sha256": "aed63f812cbd85df57e5f4ec0795f5188f473c81cea1317d4a0ed3e1df12c23f",
+      "bundled_sha256": "aed63f812cbd85df57e5f4ec0795f5188f473c81cea1317d4a0ed3e1df12c23f"
+    },
+    "Libs/LibAHTab/LICENSE.txt": {
+      "source_sha256": "f6d8cb184dddf2c940b71fa6d72c7654b4d2040f77dd82e133ff407e3a0c51b0",
+      "bundled_sha256": "f6d8cb184dddf2c940b71fa6d72c7654b4d2040f77dd82e133ff407e3a0c51b0"
+    }
+  }
+}

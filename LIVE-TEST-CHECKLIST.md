@@ -1,12 +1,12 @@
 # Live-client beta checklist
 
-Test the exact build `2026-10-04-beta001`. Record the client version/build and addon diagnostics before changing the environment. All boxes below are initially uncompleted; the headless test result is not a live pass.
+Test the exact build `2026-10-04-beta002`. Record the client version/build and addon diagnostics before changing the environment. Build001 startup/API availability and tooltip callback installation were reported by the user; its scan did not start because market lookup failed. Build002 boxes below remain uncompleted; the headless result is not a native pass.
 
 ## Startup and window
 
 - [ ] Install the Clean ZIP into the active Forever beta AddOns folder and restart the client.
 - [ ] Enable script errors using `/console scriptErrors 1`.
-- [ ] Confirm the addon list and `/msmv diagnostics` identify version 0.1.0-beta, build001 and Interface 16001.
+- [ ] Confirm the addon list and `/msmv diagnostics` identify version 0.1.0-beta, build002 and Interface 16001.
 - [ ] Open `/msmv`; check readable labels, no overlap, usable buttons and proper fonts.
 - [ ] Drag the window; close it with Escape; reopen it and confirm the position.
 - [ ] Toggle each tooltip setting and apply stale hours. Verify the control changes the corresponding behavior.
@@ -14,8 +14,13 @@ Test the exact build `2026-10-04-beta001`. Record the client version/build and a
 
 ## Native full scan
 
-- [ ] Open an auctioneer; verify the window opens when that preference is enabled.
+- [ ] Open an auctioneer; confirm Buy stays selected, the **MS Market Value** tab appears once, and no standalone settings popup opens.
+- [ ] Select the MS tab; check readable labels, a usable scrollbar and access to all lower controls.
+- [ ] Switch through Buy, Sell, Auctions, MS and Auctionator tabs if installed; confirm the panels do not overlap or produce blocked-action errors.
+- [ ] Close/reopen the auctioneer and confirm one MS tab is reused. Check `/msmv` selects/leaves it and opens a manual window away from the AH.
+- [ ] Copy diagnostics before scanning; confirm the market key is available and record realm/region/portal values and sources.
 - [ ] Click Scan entire AH exactly once. Observe WAITING, PROCESSING and COMPLETE without a Lua error.
+- [ ] Confirm the session full-scan request count increases after one permitted attempt. If it remains zero/IDLE, record the explicit market/readiness gate reason.
 - [ ] Save diagnostics showing row count and priced-item count.
 - [ ] Compare several native AH listings with tooltip prices: a normal item, a stack/commodity, low-level equipment and listed enchanting materials.
 - [ ] Include an uncommon weapon with a signed random suffix and check a known matching suffix separately from item-wide fallback.
@@ -53,6 +58,7 @@ Keep a copy of the SavedVariables backup while the client is closed. A save/relo
 - [ ] During a later permitted scan, press Stop; verify the prior complete timestamp/prices remain.
 - [ ] Close the auctioneer during local processing; verify the prior snapshot remains.
 - [ ] If a scan naturally times out or has delayed data, capture diagnostics and verify it does not clear prior prices.
+- [ ] After switching tabs and leaving the AH, exercise normal bag use in and out of combat; record any native taint/blocked-action error.
 - [ ] With another AH addon installed, run one full scanner at a time. Verify normal tooltip coexistence without duplicated MS sections.
 - [ ] If concurrent replication is intentionally tested, expect refusal/preservation and capture both addon versions.
 

@@ -2,7 +2,7 @@
 
 ## Reviewed target
 
-| Attribute | Build001 target |
+| Attribute | Build002 target |
 |---|---|
 | Game | World of Warcraft: Forever beta |
 | Client version | 1.60.1 |
@@ -10,17 +10,24 @@
 | Reviewed UI source | Blizzard UI mirror `forever`, 1.60.1 build 70205 |
 | Reviewed source commit | `e3ecc27b64d30fdc735a3f6579b866858f9f9df1` |
 | Lua validation | Lua 5.1.5 |
-| Live-client qualification | Pending |
+| User evidence | Build001 startup/API/tooltip callback reported; scan blocked by market lookup |
+| Build002 live-client qualification | Scan/tab retest pending |
 
-Forever uses a modern client API despite level-60 content. This addon targets that environment; the old MoobStack Interface 11200 client target does not apply to this project. Modern Retail, Classic Era, older private-server clients and later unreviewed Interface versions are not qualified targets for build001.
+Forever uses a modern client API despite level-60 content. This addon targets that environment; the old MoobStack Interface 11200 client target does not apply to this project. Modern Retail, Classic Era, older private-server clients and later unreviewed Interface versions are not qualified targets for build002.
 
 All three TOCs advertise Interface 16001. The `_Camelot` suffix corresponds to current Forever package conventions; the `_Forever` and unsuffixed copies provide equivalent naming alternatives. Including those manifests does not qualify a different API version. Runtime checks require the reviewed Interface number, restricted-value detection and the required modern auction functions.
 
 ## Full-house scan API
 
-The reviewed Blizzard-generated `AuctionHouseDocumentation.lua` directs full-house enumeration to `C_AuctionHouse.ReplicateItems`. Its `SendSearchQuery` documentation explicitly discourages using repeated item searches to enumerate the entire AH. Build001 follows the replication path and completion event.
+The reviewed Blizzard-generated `AuctionHouseDocumentation.lua` directs full-house enumeration to `C_AuctionHouse.ReplicateItems`. Its `SendSearchQuery` documentation explicitly discourages using repeated item searches to enumerate the entire AH. The beta follows the replication path and completion event.
 
 No legacy `QueryAuctionItems` scanner, fabricated browse completion, repeated full-scan retry loop or cooldown override is included. Reading is batched; a persistent minimum request interval controls load. Completion means all rows exposed in the native replication response were accounted for. Actual Forever coverage, including listed enchanting materials, must be checked in the client.
+
+## AH tabs and market identity
+
+The reviewed native `AuctionHouseFrame` uses modern display-mode tables and `AuctionHouseFrameDisplayModeTabTemplate`. Bundled LibAHTab minor 5 contains explicit Camelot handling and coordinates with another addon's same/newer registered library. It avoids inserting into the native tab-index arrays. LibStub minor 2 supplies the registry; no separately installed addon is required. The exact sources, licenses and bundled checksums are recorded in `tools/vendor.json` and THIRD-PARTY-NOTICES.md. Shared-library fixtures are not a native Auctionator compatibility pass.
+
+Market lookup tolerates a missing/empty normalized name and zero/unavailable native region by checking the public realm name and login portal. Restricted values are never inspected. Native numeric keys take precedence, recognized portals preserve matching keys, and other test portals remain separate. Missing all usable market identifiers still blocks a request rather than guessing a region from locale.
 
 ## Tooltip/restricted data handling
 

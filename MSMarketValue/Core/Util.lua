@@ -81,15 +81,87 @@ function U.VariantKey(link)
     return tostring(itemID) .. ":" .. tostring(suffix)
 end
 
-function U.MarketKey()
-    local realm = GetNormalizedRealmName and GetNormalizedRealmName() or GetRealmName()
-    local region = GetCurrentRegion and GetCurrentRegion() or nil
-    if not U.String(realm) or realm == "" or not U.Number(region, 1, 10, true) then
-        return nil, "Realm/region information is not available yet."
+local regions = { us = 1, kr = 2, eu = 3, tw = 4, cn = 5 }
+
+local function PublicCall(fn, ...)
+    if type(fn) ~= "function" then return nil, "unavailable" end
+    local ok, value = pcall(fn, ...)
+    if not ok then return nil, "error" end
+    if not U.Accessible(value) then return nil, "restricted" end
+    return value
+end
+
+local function RealmName(value)
+    if not U.String(value) then return nil end
+    -- The normalized API can exist but return nil/empty on this client. Match
+    -- WoW's whitespace/hyphen-free realm form when using the public name.
+    local realm = string.gsub(value, "[%s%-]", "")
+    if realm ~= "" then return realm end
+end
+
+local function PortalName(value)
+    if not U.String(value) then return nil end
+    local portal = string.lower(string.match(value, "^%s*(.-)%s*$"))
+    if #portal > 0 and #portal <= 80 and string.match(portal, "^[%w_.%-]+$") and
+       string.find(portal, "%a") then
+        return portal
     end
-    -- Modern AH markets are shared across factions. Separate realm/region caches
-    -- prevent a price from a different market being presented as a local price.
-    return tostring(region) .. "|" .. realm
+end
+
+local function Describe(value, errorReason)
+    if errorReason then return errorReason end
+    if U.String(value) then return value == "" and "empty" or string.sub(value, 1, 80) end
+    if U.Number(value) then return tostring(value) end
+    return "unavailable"
+end
+
+function U.MarketInfo()
+    local normalized, normalizedError = PublicCall(GetNormalizedRealmName)
+    local rawRealm, realmError = PublicCall(GetRealmName)
+    local rawRegion, regionError = PublicCall(GetCurrentRegion)
+    local portalValue, portalError = PublicCall(C_CVar and C_CVar.GetCVar, "portal")
+    local portal = PortalName(portalValue)
+    local portalSource = "C_CVar.GetCVar(portal)"
+    if not portal then
+        portalValue, portalError = PublicCall(GetCVar, "portal")
+        portal, portalSource = PortalName(portalValue), "GetCVar(portal)"
+    end
+    local info = {
+        normalizedRealm = Describe(normalized, normalizedError),
+        realmName = Describe(rawRealm, realmError),
+        nativeRegion = Describe(rawRegion, regionError),
+        portal = Describe(portalValue, portalError),
+    }
+    info.realm = RealmName(normalized) and normalized or nil
+    info.realmSource = "GetNormalizedRealmName"
+    if not info.realm then
+        info.realm, info.realmSource = RealmName(rawRealm), "GetRealmName"
+    end
+    if U.Number(rawRegion, 1, 10, true) then
+        info.region, info.regionSource = tostring(rawRegion), "GetCurrentRegion"
+    elseif regions[PortalName(rawRegion)] then
+        info.region, info.regionSource = tostring(regions[PortalName(rawRegion)]), "GetCurrentRegion"
+    elseif portal then
+        -- A named test/beta portal remains a separate market. Never guess a
+        -- region from locale or silently share prices with another portal.
+        info.region = regions[portal] and tostring(regions[portal]) or ("portal:" .. portal)
+        info.regionSource = portalSource
+    end
+    if not info.realm then
+        info.reason = "Realm name is unavailable. Try again after entering the world; diagnostics show the lookup values."
+    elseif not info.region then
+        info.reason = "Region and login portal are unavailable. Copy diagnostics to report the lookup values."
+    else
+        -- Numeric portal fallbacks keep build001 keys such as 1|Realm intact.
+        -- Markets are shared across factions, with no cross-region fallback.
+        info.key = info.region .. "|" .. info.realm
+    end
+    return info
+end
+
+function U.MarketKey()
+    local info = U.MarketInfo()
+    return info.key, info.reason
 end
 
 function U.Log(message)

@@ -12,11 +12,17 @@ The installed folder and SavedVariable names remain `MSMarketValue` and `MSMarke
 
 Do not mix Lua files from two builds. Do not install the source/Git repository directory inside AddOns. No legacy migration bridge or separate Update ZIP is required for this new addon.
 
+## Build001 to build002
+
+Schema remains 1. Existing completed market snapshots, settings, item exclusions and cooldown timestamps are retained. No fresh database or rescan is required solely for the code upgrade. Numeric native/recognized-portal keys reuse the existing market; a distinct named test portal intentionally has its own snapshot.
+
+After installing build002, open an auctioneer and click the new **MS Market Value** tab. The old automatic-popup setting is retained for rollback but no longer acts. `/msmv` opens a manual window away from the AH. Use the vertical scrollbar to reach the lower settings. Diagnostics include the public realm/region lookup fields needed for the scan retest.
+
 ## Roll back
 
 With WoW closed, replace the addon folder using the previous Clean ZIP. If the new revision changed the saved schema, restore the matching SavedVariables backup too. Never restore a saved-data file while WoW is open; the client's subsequent save can overwrite it.
 
-Build001 refuses future schema numbers and preserves the loaded variable. It does not silently downgrade a future database or delete it. The documented schema is version 1; any future migration must be reviewed and tested separately.
+Both builds refuse future schema numbers and preserves the loaded variable. It does not silently downgrade a future database or delete it. The documented schema is version 1; any future migration must be reviewed and tested separately.
 
 ## Move installations
 

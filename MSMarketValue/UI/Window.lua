@@ -37,6 +37,7 @@ end
 function UI.DiagnosticsText()
     local version, build, _, interface = GetBuildInfo()
     local snapshot = D.Snapshot()
+    local market = U.MarketInfo()
     local lines = {
         A.TITLE .. " " .. A.VERSION .. " / " .. A.BUILD,
         "Client: " .. tostring(version) .. " / " .. tostring(build) .. " / Interface " .. tostring(interface),
@@ -45,7 +46,15 @@ function UI.DiagnosticsText()
         "Addon disabled: " .. tostring(A.disabledReason or "no"),
         "Tooltip status: " .. tostring(A.tooltipReason or "ready"),
         "Scan state: " .. S.state,
+        "Full-scan requests this session: " .. tostring(S.requestCount),
         "Full-scan cooldown seconds: " .. tostring(S.RemainingCooldown()),
+        "Market key: " .. tostring(market.key or market.reason),
+        "Normalized realm: " .. market.normalizedRealm,
+        "Public realm name: " .. market.realmName,
+        "Native region: " .. market.nativeRegion,
+        "Login portal: " .. market.portal,
+        "Market sources: " .. tostring(market.realmSource) .. "; " .. tostring(market.regionSource or "unavailable"),
+        "Auction House tab: " .. (UI.tabInstalled and "installed" or (UI.tabReason or "waiting for the auctioneer")),
         "Disenchant profile: " .. A.DEProfile.id .. " (Forever unverified)",
     }
     if snapshot then
@@ -97,16 +106,16 @@ end
 function UI.Create()
     if UI.frame or U.Combat() then return end
     UI.checks = {}
-    local frame = CreateFrame("Frame", "MSMarketValueWindow", UIParent, "BackdropTemplate")
-    frame:SetSize(530, 570)
-    frame:SetPoint("CENTER")
-    frame:SetFrameStrata("DIALOG")
-    frame:SetClampedToScreen(true)
-    frame:EnableMouse(true)
-    frame:SetMovable(true)
-    frame:RegisterForDrag("LeftButton")
-    frame:SetScript("OnDragStart", function(self) if not U.Combat() then self:StartMoving() end end)
-    frame:SetScript("OnDragStop", function(self)
+    local window = CreateFrame("Frame", "MSMarketValueWindow", UIParent)
+    window:SetSize(530, 570)
+    window:SetPoint("CENTER")
+    window:SetFrameStrata("DIALOG")
+    window:SetClampedToScreen(true)
+    window:EnableMouse(true)
+    window:SetMovable(true)
+    window:RegisterForDrag("LeftButton")
+    window:SetScript("OnDragStart", function(self) if not U.Combat() then self:StartMoving() end end)
+    window:SetScript("OnDragStop", function(self)
         self:StopMovingOrSizing()
         local x, y = self:GetCenter()
         local px, py = UIParent:GetCenter()
@@ -116,15 +125,21 @@ function UI.Create()
     end)
     local pos = D.data and D.data.windowPosition
     if type(pos) == "table" and U.Number(pos.x, -10000, 10000) and U.Number(pos.y, -10000, 10000) then
-        frame:ClearAllPoints()
-        frame:SetPoint("CENTER", UIParent, "CENTER", pos.x, pos.y)
+        window:ClearAllPoints()
+        window:SetPoint("CENTER", UIParent, "CENTER", pos.x, pos.y)
     end
+    -- One set of controls is reparented between the AH's scrolling panel and
+    -- the manually opened window. AH opening never shows the standalone UI.
+    local frame = CreateFrame("Frame", nil, window, "BackdropTemplate")
+    frame:SetSize(530, 570)
+    frame:SetPoint("TOPLEFT", window, "TOPLEFT")
+    UI.content = frame
     frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
     frame:SetBackdropColor(0.06, 0.07, 0.09, 0.98)
     frame:SetBackdropBorderColor(0.25, 0.32, 0.37, 1)
     Label(frame, A.TITLE, 18, -18, 400, "GameFontNormalLarge")
     Label(frame, A.VERSION .. "  |  " .. A.BUILD, 18, -42, 490)
-    Button(frame, "Close", 426, -14, 85, function() frame:Hide() end)
+    UI.closeButton = Button(frame, "Close", 426, -14, 85, function() window:Hide() end)
     UI.snapshotText = Label(frame, "", 18, -77, 493)
     UI.statusText = Label(frame, "", 18, -118, 493)
     UI.progress = CreateFrame("StatusBar", nil, frame)
@@ -146,7 +161,6 @@ function UI.Create()
     Check(frame, "showDisenchant", "Estimated disenchant value", 16, -291)
     Check(frame, "showMaterials", "Material ranges and chances", 278, -291)
     Check(frame, "showAge", "Snapshot age and stale flag", 16, -323)
-    Check(frame, "openAtAH", "Open at auction house", 278, -323)
     Label(frame, "Mark prices stale after", 18, -370, 175)
     local stale = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
     stale:SetSize(45, 24)
@@ -187,8 +201,10 @@ function UI.Create()
     Label(frame, "Scanning and tooltip calculations run outside combat.", 18, -537, 493)
     table.insert(UISpecialFrames, "MSMarketValueWindow")
     frame:SetScript("OnShow", UI.Refresh)
-    frame:Hide()
-    UI.frame = frame
+    window:SetScript("OnShow", UI.Refresh)
+    window:Hide()
+    UI.frame = window
+    frame:Show()
 end
 
 function UI.Refresh()
@@ -197,7 +213,8 @@ function UI.Refresh()
     if snapshot then
         UI.snapshotText:SetText(string.format("Saved: %d auctions | %d priced items | %s%s\nA complete new scan replaces this realm's snapshot.", snapshot.totalRows, snapshot.distinctItems, U.Age(snapshot.startedAt), D.IsStale(snapshot) and " (stale)" or ""))
     else
-        UI.snapshotText:SetText("No complete scan saved for this realm/region.\nOpen an auctioneer and click Scan entire AH.")
+        local key, reason = U.MarketKey()
+        UI.snapshotText:SetText("No complete scan saved for this realm/region.\n" .. (key and "Click Scan entire AH at an open auctioneer." or reason))
     end
     local status = S.state .. (S.message and (": " .. S.message) or "")
     if S.work then
@@ -211,18 +228,102 @@ function UI.Refresh()
     UI.progress:SetValue(S.work and (S.totalRows > 0 and S.work.processedRows / S.totalRows or 1) or (S.state == "COMPLETE" and 1 or 0))
     UI.scanButton:SetEnabled(D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and not S.active and S.RemainingCooldown() == 0)
     UI.stopButton:SetEnabled(S.active)
+    if UI.tabButton then UI.tabButton:SetEnabled(not U.Combat()) end
     for key, check in pairs(UI.checks) do check:SetChecked(D.Settings()[key]) end
     if not UI.staleBox:HasFocus() then UI.staleBox:SetText(tostring(D.Settings().staleHours)) end
 end
 
-function UI.Toggle()
-    if U.Combat() then return U.Print("Open MS Market Value outside combat.") end
-    UI.Create()
-    if UI.frame:IsShown() then UI.frame:Hide() else UI.frame:Show() end
+function UI.Dock()
+    if not UI.panel or U.Combat() then return end
+    UI.frame:Hide()
+    UI.content:Hide()
+    UI.content:SetParent(UI.scroll)
+    UI.content:SetFrameStrata(UI.panel:GetFrameStrata())
+    UI.content:SetFrameLevel(UI.scroll:GetFrameLevel() + 1)
+    UI.content:ClearAllPoints()
+    UI.scroll:SetScrollChild(UI.content)
+    UI.content:SetPoint("TOPLEFT", UI.scroll, "TOPLEFT")
+    UI.closeButton:Hide()
+    UI.content:Show()
 end
 
-function UI.OpenAtAH()
-    if not D.Settings().openAtAH or U.Combat() then return end
+function UI.InstallAuctionTab()
+    if UI.tabInstalled then return true end
+    if UI.tabFailed then return false end
+    if U.Combat() then UI.tabReason = "deferred until combat ends"; return false end
+    local ah = AuctionHouseFrame
+    if not U.Table(ah) or not ah.IsShown or not ah:IsShown() or
+       (ah.IsForbidden and ah:IsForbidden()) then
+        UI.tabReason = "waiting for the Auction House frame"
+        return false
+    end
+    if type(ah.SetDisplayMode) ~= "function" or not U.Table(ah.Tabs) or #ah.Tabs == 0 or
+       type(LibStub) ~= "table" then
+        UI.tabReason = "the modern Auction House tab API is unavailable"
+        return false
+    end
+    local lib = LibStub:GetLibrary("LibAHTab-1-0", true)
+    if not lib then UI.tabReason = "the bundled tab library is unavailable"; return false end
     UI.Create()
-    UI.frame:Show()
+    if not UI.panel then
+        local panel = CreateFrame("Frame", nil, ah)
+        panel:SetPoint("TOPLEFT", ah, "TOPLEFT", 4, -34)
+        panel:SetPoint("BOTTOMRIGHT", ah, "BOTTOMRIGHT", -4, 33)
+        local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
+        scroll:SetPoint("TOP", panel, "TOP", -13, 0)
+        scroll:SetPoint("BOTTOM", panel, "BOTTOM", -13, 0)
+        scroll:SetWidth(530)
+        panel:SetScript("OnShow", UI.Refresh)
+        panel:Hide()
+        UI.panel, UI.scroll = panel, scroll
+    end
+    local ok, errorReason = pcall(lib.CreateTab, lib, "MSMarketValue", UI.panel, A.TITLE, A.TITLE)
+    if not ok then
+        UI.tabFailed = true
+        UI.tabReason = "could not register the Auction House tab"
+        U.Log(UI.tabReason .. (U.String(errorReason) and (": " .. errorReason) or ""))
+        return false
+    end
+    UI.tabInstalled, UI.tabReason, UI.tabLibrary = true, nil, lib
+    UI.tabButton = lib:GetButton("MSMarketValue")
+    UI.tabButton:SetScript("OnClick", function()
+        if U.Combat() or not A.auctionOpen then return end
+        UI.Dock()
+        lib:SetSelected("MSMarketValue")
+    end)
+    ah:HookScript("OnShow", function() if not U.Combat() then UI.Dock() end end)
+    ah:HookScript("OnHide", function() if UI.panel then UI.panel:Hide() end end)
+    UI.Dock()
+    UI.Refresh()
+    return true
+end
+
+function UI.OnAuctionShow()
+    if U.Combat() then return end
+    if UI.frame then UI.frame:Hide() end
+    if UI.InstallAuctionTab() then UI.Dock() end
+end
+
+function UI.Toggle()
+    if U.Combat() then return U.Print("Open MS Market Value outside combat.") end
+    if A.auctionOpen and UI.InstallAuctionTab() then
+        UI.Dock()
+        if UI.panel:IsShown() and AuctionHouseFrameDisplayMode and AuctionHouseFrameDisplayMode.Buy then
+            AuctionHouseFrame:SetDisplayMode(AuctionHouseFrameDisplayMode.Buy)
+        else
+            UI.tabLibrary:SetSelected("MSMarketValue")
+        end
+        return
+    end
+    UI.Create()
+    local wasShown = UI.frame:IsShown()
+    UI.content:Hide()
+    UI.content:SetParent(UI.frame)
+    UI.content:SetFrameStrata(UI.frame:GetFrameStrata())
+    UI.content:SetFrameLevel(UI.frame:GetFrameLevel() + 1)
+    UI.content:ClearAllPoints()
+    UI.content:SetPoint("TOPLEFT", UI.frame, "TOPLEFT")
+    UI.closeButton:Show()
+    UI.content:Show()
+    if wasShown then UI.frame:Hide() else UI.frame:Show() end
 end

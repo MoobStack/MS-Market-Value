@@ -1,53 +1,42 @@
 # Validation
 
-Build `2026-10-04-beta001`; version `0.1.0-beta`; target Interface 16001.
+Build `2026-10-04-beta002`; version `0.1.0-beta`; target Interface 16001 / client 1.60.1 / 70205.
 
-## Completed local checks
+## Completed checks and user evidence
 
 | Layer | Result | Evidence/limit |
 |---|---|---|
-| Lua syntax | PASS | All nine runtime Lua files parse under Lua 5.1.5 |
-| Behavioral fixtures | **45/45 PASS** | `tests/run.lua`, run with a separately compiled Lua 5.1 interpreter |
+| Lua syntax | PASS | All eleven runtime Lua files parse under Lua 5.1.5 |
+| Behavioral fixtures | **63/63 PASS** | Controlled native API/frame doubles load the actual bundled tab libraries |
 | TOC/source contracts | PASS | Interface, fixed beta version, build metadata, SavedVariables, load order and three identical manifests |
-| Runtime operation checks | PASS | No dynamic code evaluation, legacy AH query scanner, repeated per-item full enumeration, protected purchase/post/cast or automatic chat operations |
-| Live WoW session | **PENDING** | No Forever client was operated during development |
-| GitHub CI run | **PENDING** | Workflow is prepared; no external repository/action run is claimed |
+| Library integrity | PASS | Bundled files match the pinned hashes in `tools/vendor.json`; attribution/terms included |
+| Runtime operation checks | PASS | No dynamic evaluation, legacy query scanner, repeated search enumeration, protected purchase/post/cast or automatic chat |
+| Build001 user report | Partial native evidence | Correct client, modern APIs and tooltip callback installed; IDLE with failed realm/region gate and no snapshot |
+| Build002 native client | **PENDING RETEST** | Scan completion, coverage, UI layout/taint/coexistence and native disk persistence not yet tested |
+| GitHub CI | **PENDING** | Workflow prepared; no remote action run claimed |
 
-## Behaviors covered
+## Behavioral coverage
 
-- First/last zero-based row handling and all returned row accounting.
-- Per-unit stack prices, signed suffix lookup, item-wide fallback, bid-only and sold-row distinction.
-- Complete snapshot replacement and removal of formerly listed prices.
-- Explicit empty-market completion.
-- Prior-snapshot preservation during partial work, cancellation, combat, AH closure, failures and late responses.
-- Row/CPU budgets and delayed item-data retries without double-counting.
-- Replication ownership conflicts, duplicate updates, changed buffers and market changes.
-- Invalid/restricted counts, price fields, quantities and item IDs.
-- Request refusal, server-readiness gates, persistent cooldown and full saved-table serialization round-trips.
-- Future schema preservation and unsupported-client refusal.
-- Item-level material bracket selection, exhaustive green probabilities, rare/epic ranges and weighted values.
-- Missing material prices, unsupported equipment/ranges and explicit item exclusions.
-- Tooltip duplicates, uncached items, age/stale flags, forbidden/restricted tooltip inputs and combat suppression.
-- Settings availability, diagnostics generation, slash commands and money formatting.
+The original 45 cases cover row/CPU budgets, zero-based iteration, stack/suffix prices, bid-only/sold distinctions, replacement/removal, explicit empty responses, pending data/timeouts, cancellation, conflicts, hostile restricted values, schema preservation, serialized saved data, DE brackets/expectations/missing prices, native tooltip guards/duplicates/staleness, settings and money formatting.
 
-The mocked server and frame implementations are defined in the fixture file, not bundled into the installed addon. They cannot prove native event timing, UI layout, taint behavior or successful disk persistence.
+Build002 adds 18 cases: public realm/portal fallback scanning; missing or failing normalized API; all recognized region/portal mappings; native-key precedence; build001 snapshot/cooldown reuse across a fresh session; named-portal isolation; pre-request failures without cooldown; restricted/throwing lookup diagnostics; portal changes during scanning; tab creation without a popup; scanning from the tab; native/shared-addon tab switching without extending native indices; delayed frame loading and tick retries; retired popup preference; reopen/reuse; slash/manual docking; and combat gates.
+
+The other addon tab is a fixture, not a running Auctionator installation. Tests cannot prove native event timing, display layout, frame taint, actual server coverage or WoW disk saving. The user's live build001 report is preserved in [docs/BUILD002-INVESTIGATION.md](docs/BUILD002-INVESTIGATION.md); it did not expose the failed lookup's exact value.
 
 ## Delivery packaging gates
 
-`tools/package.py` requires a clean tagged checkout and runs Git object checks, ZIP CRC verification, and exact runtime byte parity between Clean ZIP, Source ZIP and the annotated build tag. It creates and verifies a full Git bundle and writes checksums.
+`tools/package.py` requires a clean checkout at the exact annotated tag and checks Git objects, ZIP CRCs, and runtime byte parity against source/tag. It creates/verifies the complete Git bundle and writes SHA-256 checksums. Build002 history contains the unchanged build001 tag.
 
-The delivery also has a companion `*-Validation.json` receipt recording the actual final commit, tag, archive/bundle checks, restored-bundle test result, checksum results and reproducible Clean/Source archive result. Compare its commit/tag with your checkout; it describes those specific delivered files. Git Repository ZIP metadata is not promised identical after additional local Git operations.
+A companion `*-Validation.json` records the delivered commit/tag, archive/bundle checks, restored-bundle test result, checksum verification and reproducible Clean/Source bytes. Git Repository ZIP metadata is not promised identical after additional local Git operations.
 
-## Pending live qualification
+## Pending native qualification
 
-Use [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md). Core pending items are successful native scan response and material coverage, partial/failure behavior, native tooltips/settings, reload/relog/restart persistence, coexistence with other addons and actual Forever DE loot observations.
+Use [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md). Retest market diagnostics, successful native scan/material coverage, scrolling tab layout, native/Auctionator switching and bag-use taint behavior, interruption, tooltips and reload/relog/restart persistence. Actual Forever DE loot remains a separate evidence task.
 
-Passing local tests establishes the tested logic, not Blizzard approval or verified Forever loot probabilities. The reference DE model remains marked unverified regardless of the fixture pass count.
-
-## Reproduce local checks
+## Reproduce
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-For a changed build, add focused fixtures for the changed behavior and update this file with the resulting pass count and native evidence. Do not change PENDING to PASS without running the relevant live scenario.
+Local passes establish the tested logic; they do not establish Blizzard approval or verified Forever DE probabilities. Keep live status pending until the exact build's native scenarios are exercised.
