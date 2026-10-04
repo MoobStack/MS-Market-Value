@@ -1,6 +1,6 @@
 local _, A = ...
 local U, D = A.Util, A.DB
-local S = { state = "IDLE", active = false, requestCount = 0 }
+local S = { state = "IDLE", active = false, requestCount = 0, responseCount = 0, dataUpdateCount = 0 }
 A.Scanner = S
 
 local function SetState(state, message)
@@ -59,10 +59,11 @@ function S.Start()
     local market = U.MarketInfo()
     local key = market.key
     if not key then return false, market.reason end
-    U.Log("Scan market: " .. key .. " (" .. market.realmSource .. "; " .. market.regionSource .. ").")
-    S.active, S.marketKey = true, key
+    U.Log("Scan market: " .. key .. " (" .. market.label .. "; " .. market.regionSource .. ").")
+    S.active, S.marketKey, S.marketInfo = true, key, market
     S.requestAt, S.startedMono = U.Now(), U.Mono()
     S.cursor, S.pending, S.loaded = 0, {}, {}
+    S.responseCount, S.dataUpdateCount = 0, 0
     S.work, S.retryWork, S.totalRows = nil, nil, nil
     -- Keep the throttle across reload/logout, including cancelled requests. A
     -- locally cancelled request is not evidence that the server cancelled it.
@@ -81,15 +82,27 @@ end
 
 function S.OnResponse()
     if not S.active then return end
-    if S.state ~= "WAITING" then
-        return S.Stop("The replication buffer was refreshed during this scan.", true)
-    end
+    S.responseCount = S.responseCount + 1
     local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
     if not ok or not U.Number(count, 0, A.MAX_ROWS, true) then
         return S.Stop("The server returned an unreadable or oversized auction count.", true)
     end
+    if S.state == "PROCESSING" or S.state == "RESOLVING" then
+        -- Native item-data readiness can emit the same event again. Accepted
+        -- rows stay accepted, pending rows are retried, and no request/restart
+        -- or duplicate price accumulation occurs for a same-count update.
+        if count ~= S.totalRows then
+            return S.Stop("The auction replication row count changed.", true)
+        end
+        S.dataUpdateCount = S.dataUpdateCount + 1
+        if S.state == "RESOLVING" then S.nextRetry = U.Mono() end
+        return
+    end
+    if S.state ~= "WAITING" then return end
     S.totalRows = count
     S.work = D.NewSnapshot(S.marketKey, count, S.requestAt)
+    S.work.marketKind, S.work.ruleset = S.marketInfo.kind, S.marketInfo.ruleset
+    S.work.region, S.work.faction = S.marketInfo.region, S.marketInfo.faction
     SetState("PROCESSING", "Reading every auction row.")
     if count == 0 then Complete() end
 end

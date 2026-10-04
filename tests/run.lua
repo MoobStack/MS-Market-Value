@@ -65,10 +65,12 @@ local function widget(name)
     function w:SetValue(value) self.value = value end
     function w:NumLines() return #self.lines end
     function w:GetItem() return "Test", self.link end
+    function w:GetPrimaryTooltipInfo() return self.info end
     function w:GetPrimaryTooltipData() return self.data end
     function w:AddLine(left) self.lines[#self.lines + 1] = { left = left } end
     function w:AddDoubleLine(left, right) self.lines[#self.lines + 1] = { left = left, right = right } end
     function w:RebuildFromTooltipInfo()
+        self.rebuilds = (self.rebuilds or 0) + 1
         self.lines = { {left = "Native item"} }
         if self.processor then self.processor(self, self.data) end
     end
@@ -79,7 +81,7 @@ local function widget(name)
 end
 
 local function fresh(saved)
-    local world = { wall = 1800000000, mono = 0, cpu = 0, rows = {}, requests = 0, loadRequests = 0, items = {}, realm = "FixtureRealm", region = 1, portal = "us", combat = false, ready = true, interface = 16001, messages = {} }
+    local world = { wall = 1800000000, mono = 0, cpu = 0, rows = {}, requests = 0, loadRequests = 0, items = {}, realm = "FixtureRealm", region = 1, portal = "us", faction = "Horde", hardcore = false, combat = false, ready = true, interface = 16001, messages = {} }
     _G.MSMarketValueDB = saved
     _G.issecretvalue = function(v) return rawequal(v, secret) end
     _G.canaccessvalue = function(v) return not rawequal(v, secret) end
@@ -89,6 +91,8 @@ local function fresh(saved)
     _G.GetNormalizedRealmName = function() return world.realm end
     _G.GetRealmName = GetNormalizedRealmName
     _G.GetCurrentRegion = function() return world.region end
+    _G.UnitFactionGroup = function() return world.faction end
+    _G.C_GameRules = { IsHardcoreActive = function() return world.hardcore end }
     _G.GetCVar = function() return world.legacyPortal end
     _G.C_CVar = { GetCVar = function() return world.portal end }
     _G.InCombatLockdown = function() return world.combat end
@@ -110,8 +114,12 @@ local function fresh(saved)
     _G.ItemRefShoppingTooltip1, _G.ItemRefShoppingTooltip2 = nil, nil
     _G.Enum = { TooltipDataType = { Item = 0 } }
     _G.date = os.date
-    _G.CreateFrame = function(_, name, parent)
-        local w = widget(name); w.parent = parent
+    _G.CreateFrame = function(_, name, parent, template)
+        local w = widget(name); w.parent, w.template = parent, template
+        if template == "PortraitFrameTemplate" then
+            w.CloseButton = widget()
+            function w:SetTitle(text) self.title = text end
+        end
         if name then _G[name] = w end
         return w
     end
@@ -316,9 +324,49 @@ test("changed replication count invalidates the staged snapshot", function()
     local w, A, old = initial(); newScan(w, {row(200, 1, 100)})
     w.overrideCount = 2; A.Scanner.Tick(); equal(A.Scanner.state, "FAILED"); equal(A.DB.Snapshot(), old)
 end)
-test("a second replication response during processing is refused", function()
-    local w, A, old = initial(); newScan(w, {row(200, 1, 100)})
-    A.Scanner.OnResponse(); equal(A.Scanner.state, "FAILED"); equal(A.DB.Snapshot(), old)
+test("same-count replication events continue processing without restarting or double-counting", function()
+    local w, A, old = initial(); local rows = {}
+    for i = 1, 250 do rows[i] = row(200, 1, i) end
+    newScan(w, rows); A.Scanner.Tick()
+    local staged = A.Scanner.work
+    equal(staged.processedRows, 100)
+    w:event("REPLICATE_ITEM_LIST_UPDATE"); w:event("REPLICATE_ITEM_LIST_UPDATE")
+    equal(A.Scanner.state, "PROCESSING"); equal(A.Scanner.work, staged)
+    equal(staged.processedRows, 100); equal(A.DB.Snapshot(), old)
+    w:drain(); equal(A.Scanner.state, "COMPLETE")
+    equal(A.DB.Snapshot().processedRows, 250)
+    equal(A.DB.Price(200).auctions, 250); equal(A.DB.Price(200).units, 250)
+    equal(w.requests, 2); equal(A.Scanner.responseCount, 3); equal(A.Scanner.dataUpdateCount, 2)
+end)
+test("replication updates accelerate pending data retries without resetting a partial retry pass", function()
+    local w, A = fresh(); local rows = {}
+    for i = 1, 205 do rows[i] = row(200, 1, 500, 0, false) end
+    w:start(rows); A.Scanner.Tick(); A.Scanner.Tick(); A.Scanner.Tick()
+    equal(A.Scanner.state, "RESOLVING"); equal(w.loadRequests, 1)
+    for i = 1, 50 do rows[i].allInfo = true end
+    w:event("REPLICATE_ITEM_LIST_UPDATE"); A.Scanner.Tick()
+    equal(A.Scanner.work.processedRows, 50); equal(A.Scanner.retryCursor, 101)
+    for i = 101, 120 do rows[i].allInfo = true end
+    w:event("REPLICATE_ITEM_LIST_UPDATE"); A.Scanner.Tick(); A.Scanner.Tick()
+    equal(A.Scanner.work.processedRows, 70); equal(#A.Scanner.pending, 135)
+    for _, r in ipairs(rows) do r.allInfo = true end
+    w:event("REPLICATE_ITEM_LIST_UPDATE"); A.Scanner.Tick()
+    equal(A.Scanner.work.processedRows, 170)
+    w:event("REPLICATE_ITEM_LIST_UPDATE"); A.Scanner.Tick()
+    equal(A.Scanner.state, "COMPLETE"); equal(A.DB.Price(200).auctions, 205)
+    equal(A.DB.Price(200).units, 205); equal(w.requests, 1); equal(w.loadRequests, 1)
+end)
+test("changed or unreadable counts in additional replication events keep the old snapshot", function()
+    for _, count in ipairs({2, secret, -1, 1.5}) do
+        local w, A, old = initial(); newScan(w, {row(200, 1, 100)})
+        w.overrideCount = count; w:event("REPLICATE_ITEM_LIST_UPDATE")
+        equal(A.Scanner.state, "FAILED"); equal(A.DB.Snapshot(), old)
+    end
+end)
+test("late replication events after completion do not reopen or modify the saved scan", function()
+    local w, A, old = initial(); local responses = A.Scanner.responseCount
+    w:event("REPLICATE_ITEM_LIST_UPDATE"); equal(A.Scanner.state, "COMPLETE")
+    equal(A.DB.Snapshot(), old); equal(A.Scanner.responseCount, responses); equal(w.requests, 1)
 end)
 test("switching realm does not expose a different market's prices", function()
     local w, A = initial(); w.realm = "AnotherRealm"
@@ -572,7 +620,7 @@ test("opening the AH adds one tab and keeps the native Buy pane selected", funct
     truth(A.UI.tabInstalled); truth(A.UI.tabButton)
     equal(ah.numTabs, 3); equal(#ah.Tabs, 3)
     equal(A.UI.panel:IsShown(), false); equal(A.UI.frame:IsShown(), false)
-    truth(ah.BuyContent:IsShown()); equal(A.UI.content:GetParent(), A.UI.scroll)
+    truth(ah.BuyContent:IsShown()); equal(A.UI.content:GetParent(), A.UI.panel)
     equal(A.UI.content:GetFrameStrata(), ah:GetFrameStrata())
     truth(string.find(A.UI.DiagnosticsText(), "Auction House tab: installed"))
 end)
@@ -627,7 +675,7 @@ test("slash menu moves controls between the AH tab and manual window", function(
     ah:Hide(); w:event("AUCTION_HOUSE_CLOSED")
     SlashCmdList.MSMARKETVALUE(""); truth(A.UI.frame:IsShown()); equal(A.UI.content:GetParent(), A.UI.frame)
     equal(A.UI.content:GetFrameStrata(), "DIALOG")
-    w:openAH(); equal(A.UI.frame:IsShown(), false); equal(A.UI.content:GetParent(), A.UI.scroll)
+    w:openAH(); equal(A.UI.frame:IsShown(), false); equal(A.UI.content:GetParent(), A.UI.panel)
 end)
 test("combat defers tab creation and hides addon controls until out of combat", function()
     local w, A = fresh(); w:load(); w.combat = true; w:openAH()
@@ -638,6 +686,163 @@ test("combat defers tab creation and hides addon controls until out of combat", 
     equal(A.UI.panel:IsShown(), false); equal(A.UI.tabButton.enabled, false)
     A.UI.tabButton.scripts.OnClick(); equal(A.UI.panel:IsShown(), false)
     w.combat = false; w:event("PLAYER_REGEN_ENABLED"); equal(A.UI.tabButton.enabled, true)
+end)
+
+
+test("first-hover item-cache refresh never rebuilds comparison or custom tooltips", function()
+    local w, A = fresh(); w:load()
+    local comparisons = {ShoppingTooltip1, ShoppingTooltip2, widget("ItemRefShoppingTooltip1"), widget("ItemRefShoppingTooltip2"), widget("OtherAllowedTooltip")}
+    local attempted = 0
+    for _, tooltip in ipairs(comparisons) do
+        A.Tooltips.Allow(tooltip)
+        tooltip.info = {append = true, getterName = "GetItemByID"}
+        tooltip.data = {id = 270018, type = 0}; tooltip.link = link(270018)
+        tooltip.RebuildFromTooltipInfo = function()
+            attempted = attempted + 1
+            error("insert: table expected, got nil")
+        end
+        tooltip:Show(); A.Tooltips.Handle(tooltip, tooltip.data)
+        truth(tooltip:NumLines() > 0)
+    end
+    w:event("GET_ITEM_INFO_RECEIVED", 270018, true)
+    A.eventFrame.scripts.OnUpdate(A.eventFrame, 0.25)
+    equal(attempted, 0); equal(A.Tooltips.refreshing, false)
+end)
+test("getter-backed primary item refresh updates loaded values without duplicate sections", function()
+    local w, A = initial()
+    for _, tooltip in ipairs({GameTooltip, ItemRefTooltip}) do
+        tooltip.info = {getterName = "GetItemByID"}
+        tooltip.data = {id = 100, type = 0}; tooltip.link = link(100)
+        tooltip:Show(); A.Tooltips.Handle(tooltip, tooltip.data)
+    end
+    w.items[100] = {level = 17, vendor = 4321}
+    w:event("GET_ITEM_INFO_RECEIVED", 100, true)
+    A.eventFrame.scripts.OnUpdate(A.eventFrame, 0.25)
+    for _, tooltip in ipairs({GameTooltip, ItemRefTooltip}) do
+        equal(tooltip.rebuilds, 1)
+        local headers, vendor = 0
+        for _, line in ipairs(tooltip.lines) do
+            if line.left == A.TITLE then headers = headers + 1 end
+            if line.left == "Vendor sell (each)" then vendor = line.right end
+        end
+        equal(headers, 1); equal(vendor, "43s 21c")
+    end
+end)
+test("primary refresh requires readable getter-backed non-append item information", function()
+    local w, A = fresh(); w:load(); GameTooltip:Show()
+    GameTooltip.data = {id = 100, type = 0}
+    for _, info in ipairs({false, secret, {}, {getterName=secret}, {getterName="GetItemByID", append=true}, {getterName="GetItemByID", append=1}, {getterName="GetItemByID", append=secret}}) do
+        GameTooltip.info = info or nil; A.Tooltips.RefreshVisible()
+        equal(GameTooltip.rebuilds, nil)
+    end
+    GameTooltip.info = {getterFunction=function() end}
+    for _, data in ipairs({secret, {id=100, type=secret}, {id=100, type=1}, {id=secret, type=0}}) do
+        GameTooltip.data = data; A.Tooltips.RefreshVisible(); equal(GameTooltip.rebuilds, nil)
+    end
+    GameTooltip.data = {id=100, type=0}; A.Tooltips.RefreshVisible()
+    equal(GameTooltip.rebuilds, 1)
+end)
+test("primary refresh skips combat and forbidden frames and resists recursive refresh", function()
+    local w, A = fresh(); w:load(); GameTooltip:Show()
+    GameTooltip.info = {getterName="GetItemByID"}; GameTooltip.data = {id=100, type=0}
+    w.combat = true; A.Tooltips.RefreshVisible(); equal(GameTooltip.rebuilds, nil)
+    w.combat = false; GameTooltip.forbidden = true
+    local shown = GameTooltip.IsShown
+    GameTooltip.IsShown = function(self)
+        if self.forbidden then error("forbidden frame inspected") end
+        return shown(self)
+    end
+    A.Tooltips.RefreshVisible(); equal(GameTooltip.rebuilds, nil)
+    GameTooltip.forbidden = false
+    local original = GameTooltip.RebuildFromTooltipInfo
+    GameTooltip.RebuildFromTooltipInfo = function(self)
+        A.Tooltips.RefreshVisible(); original(self)
+    end
+    A.Tooltips.RefreshVisible(); equal(GameTooltip.rebuilds, 1); equal(A.Tooltips.refreshing, false)
+end)
+test("primary refresh recovers after failing native getters or rebuilds", function()
+    local w, A = fresh(); w:load(); GameTooltip:Show()
+    GameTooltip.data = {id=100, type=0}
+    local getter = GameTooltip.GetPrimaryTooltipInfo
+    GameTooltip.GetPrimaryTooltipInfo = function() error("not ready") end
+    A.Tooltips.RefreshVisible(); equal(GameTooltip.rebuilds, nil); equal(A.Tooltips.refreshing, false)
+    GameTooltip.GetPrimaryTooltipInfo = getter; GameTooltip.info = {getterName="GetItemByID"}
+    local rebuild = GameTooltip.RebuildFromTooltipInfo
+    GameTooltip.RebuildFromTooltipInfo = function() error("not ready") end
+    A.Tooltips.RefreshVisible(); equal(A.Tooltips.refreshing, false)
+    GameTooltip.RebuildFromTooltipInfo = rebuild
+    A.Tooltips.RefreshVisible(); equal(GameTooltip.rebuilds, 1)
+end)
+
+test("Forever beta region 90 and PvP reporting hosts share one ruleset cache", function()
+    local w, A = fresh(); w.realm = "ClassicBetaPvP2"; w.region = 90; w.portal = "test"
+    w:start({row(100, 2, 1000)}); w:drain()
+    equal(A.Util.MarketKey(), "forever|90|pvp|Horde")
+    local snapshot = A.DB.Snapshot()
+    equal(snapshot.ruleset, "pvp"); equal(snapshot.region, "90"); equal(snapshot.faction, "Horde")
+    local info = A.Util.MarketInfo()
+    equal(info.regionSource, "GetCurrentRegion"); equal(info.kind, "realmless-ruleset")
+    truth(string.find(info.rulesetSource, "Forever reporting alias", 1, true))
+    w.realm = "ClassicBetaPvP1"; equal(A.DB.Snapshot(), snapshot); equal(A.DB.Price(100).low, 500)
+    w.realm = "ForeverPvP3"; equal(A.DB.Snapshot(), snapshot)
+end)
+test("Normal and PvP rulesets and unqualified faction markets remain isolated", function()
+    local w, A = fresh(); w.realm = "ClassicBetaPvP2"; w.region = 90
+    w:start({row(100, 1, 500)}); w:drain()
+    w.realm = "ClassicBetaNormal1"; equal(A.DB.Price(100), nil)
+    equal(A.Util.MarketKey(), "forever|90|normal|Horde")
+    w:advance(901); w.rows = {row(200, 1, 600)}
+    truth(A.Scanner.Start()); A.Scanner.OnResponse(); w:drain()
+    w.realm = "ClassicBetaPvE2"; equal(A.DB.Price(200).low, 600)
+    w.realm = "ClassicBetaPvP2"; equal(A.DB.Price(100).low, 500); equal(A.DB.Price(200), nil)
+    w.faction = "Alliance"; equal(A.DB.Price(100), nil)
+    w.faction = "Horde"; equal(A.DB.Price(100).low, 500)
+    w.region = 1; equal(A.DB.Price(100), nil)
+end)
+test("reporting-host changes during a scan remain valid and ruleset changes preserve previous prices", function()
+    local w, A = fresh(); w.realm = "ClassicBetaPvP2"; w.region = 90
+    w:start({row(100, 1, 500)}); w.realm = "ClassicBetaPvP1"; w:drain()
+    equal(A.Scanner.state, "COMPLETE"); local old = A.DB.Snapshot()
+    newScan(w, {row(200, 1, 600)}); w.realm = "ClassicBetaNormal1"; w:drain()
+    equal(A.Scanner.state, "FAILED"); w.realm = "ClassicBetaPvP2"; equal(A.DB.Snapshot(), old)
+end)
+test("ruleset snapshots persist across an independent session and a different reporting host", function()
+    local w, A = fresh(); w.realm = "ClassicBetaPvP2"; w.region = 90
+    w:start({row(100, 1, 500)}); w:drain()
+    local w2, A2 = fresh(A.DB.data); w2.realm = "ClassicBetaPvP1"; w2.region = 90; w2:load()
+    equal(A2.DB.Price(100).low, 500); equal(A2.Scanner.RemainingCooldown(), 900)
+end)
+test("legacy realm snapshots are kept but never promoted into detected ruleset caches", function()
+    local w, A, old = initial(); local key = old.marketKey
+    w.realm = "ClassicBetaPvP2"; w.region = 90
+    equal(A.DB.Snapshot(), nil); equal(A.DB.data.markets[key], old)
+    w:advance(901); w.rows = {row(200, 1, 600)}
+    truth(A.Scanner.Start()); A.Scanner.OnResponse(); w:drain()
+    equal(A.DB.Price(100), nil); equal(A.DB.Price(200).low, 600); equal(A.DB.data.markets[key], old)
+end)
+test("ruleset detection uses the native hardcore API and bounded reporting aliases", function()
+    local w, A = fresh(); w.hardcore = true; w.realm = ""; w.region = 90
+    equal(A.Util.MarketKey(), "forever|90|hardcore|Horde")
+    equal(A.Util.MarketInfo().rulesetSource, "C_GameRules.IsHardcoreActive")
+    w.hardcore = false
+    for alias, ruleset in pairs({["Classic Beta Normal 1"]="normal", ["Forever-RP2"]="roleplaying", ["WoWForeverHardcore1"]="hardcore"}) do
+        w.realm = alias; equal(A.Util.MarketInfo().ruleset, ruleset)
+    end
+    for _, alias in ipairs({"PvPRealm", "ClassicBetaPvP2Unexpected", "UnknownForeverRealm"}) do
+        w.realm = alias; local info = A.Util.MarketInfo()
+        equal(info.ruleset, nil); equal(info.kind, "isolated-alias"); equal(info.key, "90|" .. alias)
+    end
+    w.realm = "UnknownForeverRealm"; C_GameRules.GetForeverExperiencePreset = function() return 1 end
+    equal(A.Util.MarketInfo().ruleset, nil)
+end)
+test("restricted faction blocks a ruleset request and restricted hardcore values are not inspected", function()
+    local w, A = fresh(); w.realm = "ClassicBetaPvP2"; w.region = 90; w.faction = secret; w.hardcore = secret
+    w:load(); local ok, reason = A.Scanner.Start()
+    equal(ok, false); truth(string.find(reason, "Player faction")); equal(w.requests, 0)
+    equal(A.Scanner.RemainingCooldown(), 0)
+    local info = A.Util.MarketInfo(); equal(info.nativeFaction, "restricted"); equal(info.ruleset, "pvp")
+    C_GameRules.IsHardcoreActive = function() error("not ready") end; w.faction = "Horde"
+    equal(A.Util.MarketKey(), "forever|90|pvp|Horde")
 end)
 
 print(string.format("RESULT: %d/%d behavioral tests passed (Lua %s). Live-client validation pending.", testCount, testCount, _VERSION))

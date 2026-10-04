@@ -7,7 +7,7 @@
 ## IconTexture: Interface\Icons\INV_Misc_Coin_02
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
-## X-Build: 2026-10-04-beta002
+## X-Build: 2026-10-04-beta003
 
 Bootstrap.lua
 Libs\LibStub\LibStub.lua

@@ -6,8 +6,8 @@
 | Intended repository | `MoobStack/MS-Market-Value` |
 | Main branch | `main` |
 | Public beta version | `0.1.0-beta` |
-| Current build | `2026-10-04-beta002` |
-| Current annotated tag | `v0.1.0-beta-build002` |
+| Current build | `2026-10-04-beta003` |
+| Current annotated tag | `v0.1.0-beta-build003` |
 
 ## What the supplied artifacts contain
 
@@ -19,7 +19,7 @@
 | `*.bundle` | Portable complete Git history and refs, including the build tag |
 | `*-SHA256.txt` | Checksums of binary/archive artifacts and any separately supplied companion docs/receipt |
 
-No Update ZIP or migration bridge is needed. Build002 preserves schema 1, the build001 price/settings/cooldown contract, and the previous annotated tag. The new SavedVariable is `MSMarketValueDB`.
+No Update ZIP or migration bridge is needed. Build003 preserves schema 1, settings/exclusions/cooldowns and old completed records. Detected Forever markets use new ruleset/faction keys and require one fresh successful scan; old realm-keyed records are never automatically merged. The build001/build002 commits and annotated tags remain intact. The SavedVariable remains `MSMarketValueDB`.
 
 The initialized repository uses a local publisher identity `MoobStack <development@moobstack.invalid>`. The `.invalid` address cannot receive mail and is not a claim about the user's GitHub identity. Set your preferred name and email for future commits. The origin URL is a destination only; packaging does not create a remote repository, push commits, or publish a release.
 
@@ -32,7 +32,7 @@ git status --short
 git branch --show-current
 git log --oneline --decorate -5
 git remote -v
-git show --stat v0.1.0-beta-build002
+git show --stat v0.1.0-beta-build003
 git fsck --full
 ```
 
@@ -45,7 +45,7 @@ git config user.name "YOUR PREFERRED COMMIT NAME"
 git config user.email "YOUR VERIFIED OR GITHUB NOREPLY EMAIL"
 ```
 
-These are literal placeholders to replace; neither command sends email. They affect future commits in this repository. The publisher commits can remain as delivered. Both annotated build001/build002 tags and their commits are retained.
+These are literal placeholders to replace; neither command sends email. They affect future commits in this repository. The publisher commits can remain as delivered. All three annotated build001/build002/build003 tags and their commits are retained.
 
 ## Create the remote repository when ready
 
@@ -75,19 +75,19 @@ Run these commands after deciding to upload the prepared project:
 
 ```bash
 git push -u origin main
-git push origin refs/tags/v0.1.0-beta-build001 refs/tags/v0.1.0-beta-build002
+git push origin refs/tags/v0.1.0-beta-build001 refs/tags/v0.1.0-beta-build002 refs/tags/v0.1.0-beta-build003
 ```
 
 GitHub Actions runs read-only validation of source contracts and Lua 5.1 fixtures. It does not upload artifacts or publish a release. Runtime validation in WoW remains separate from CI.
 
 ## Develop the next revision under the SAME primary beta version
 
-For build003:
+For build004:
 
 1. Start from this full Git repository, or clone the remote after it exists.
 2. Reproduce the reported behavior with a focused fixture and preserve the previous complete-snapshot contract.
 3. Keep `A.VERSION`, all TOC `## Version` values, and `build.json.version` at **0.1.0-beta**.
-4. Set a new build ID such as `2026-10-05-beta003` in `Bootstrap.lua`, all three TOCs and `build.json`. Set `buildNumber` to `003`, `gitTag` to `v0.1.0-beta-build003`, and `archiveDate` to the new UTC build date.
+4. Set a new build ID such as `2026-10-05-beta004` in `Bootstrap.lua`, all three TOCs and `build.json`. Set `buildNumber` to `004`, `gitTag` to `v0.1.0-beta-build004`, and `archiveDate` to the new UTC build date.
 5. Add the new entry under the existing `0.1.0-beta` section in CHANGELOG.md. Update README's latest-build excerpt, release notes, validation status and any affected documentation.
 6. Run source and behavioral validation; run the applicable native-client checks.
 7. Commit on `main` and create a **new annotated build tag**. Preserve the earlier build tags.
@@ -96,13 +96,13 @@ For build003:
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 git diff --check
 git add .
-git commit -m "Beta build003: describe the concrete behavior change"
-git tag -a v0.1.0-beta-build003 -m "MS Market Value 0.1.0-beta build003"
+git commit -m "Beta build004: describe the concrete behavior change"
+git tag -a v0.1.0-beta-build004 -m "MS Market Value 0.1.0-beta build004"
 git status --short
 git fsck --full
 python3 tools/package.py
 git push origin main
-git push origin refs/tags/v0.1.0-beta-build003
+git push origin refs/tags/v0.1.0-beta-build004
 ```
 
 The example date is illustrative, not a required date for the next revision. Version remains fixed; build identifiers advance. No force-push or moving published beta tag is needed.
@@ -136,13 +136,13 @@ Outputs are under ignored `dist/`. To check downloaded checksums on Linux:
 
 ```bash
 cd dist
-sha256sum -c MoobStack-MSMarketValue-v0.1.0-beta-build002-SHA256.txt
+sha256sum -c MoobStack-MSMarketValue-v0.1.0-beta-build003-SHA256.txt
 ```
 
 On Windows, compute an individual artifact's hash and compare it with the matching manifest line:
 
 ```powershell
-Get-FileHash .\dist\MoobStack-MSMarketValue-v0.1.0-beta-build002-Clean.zip -Algorithm SHA256
+Get-FileHash .\dist\MoobStack-MSMarketValue-v0.1.0-beta-build003-Clean.zip -Algorithm SHA256
 ```
 
 Archive filenames and the immutable build tag identify a candidate even while its TOC version stays unchanged. Runtime/source ZIPs use fixed timestamps and sorted entries for reproducibility. Repository ZIP metadata includes Git's local history/configuration and may differ after additional local Git operations.
@@ -152,14 +152,14 @@ Archive filenames and the immutable build tag identify a candidate even while it
 Use the text in `GITHUB-RELEASE.md` and attach the four artifacts and checksum manifest. Mark a beta as **Pre-release**. A draft can be created after the tag has been pushed, using Bash:
 
 ```bash
-gh release create v0.1.0-beta-build002 \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build002-Clean.zip \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build002-Source.zip \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build002-Git-Repository.zip \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build002.bundle \
-  dist/MoobStack-MSMarketValue-v0.1.0-beta-build002-SHA256.txt \
+gh release create v0.1.0-beta-build003 \
+  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003-Clean.zip \
+  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003-Source.zip \
+  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003-Git-Repository.zip \
+  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003.bundle \
+  dist/MoobStack-MSMarketValue-v0.1.0-beta-build003-SHA256.txt \
   --repo MoobStack/MS-Market-Value \
-  --title "MS Market Value 0.1.0-beta — build002" \
+  --title "MS Market Value 0.1.0-beta — build003" \
   --notes-file GITHUB-RELEASE.md \
   --prerelease --draft
 ```
@@ -171,11 +171,11 @@ That command is documentation for your later publication decision; it was not ex
 Verify and clone the bundle in a new development directory:
 
 ```bash
-git clone MoobStack-MSMarketValue-v0.1.0-beta-build002.bundle MS-Market-Value-restored
+git clone MoobStack-MSMarketValue-v0.1.0-beta-build003.bundle MS-Market-Value-restored
 cd MS-Market-Value-restored
 git fsck --full
 git checkout main
-git show --stat v0.1.0-beta-build002
+git show --stat v0.1.0-beta-build003
 git remote set-url origin https://github.com/MoobStack/MS-Market-Value.git
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
@@ -184,7 +184,7 @@ A bundle clone's initial origin points to the local bundle; the `set-url` step r
 
 ## Change record for this candidate
 
-Build002 addresses the reported pre-request realm/region gate and adds an AH tab in place of the automatic popup. Public version remains `0.1.0-beta`. See [CHANGELOG.md](CHANGELOG.md), [docs/BUILD002-INVESTIGATION.md](docs/BUILD002-INVESTIGATION.md) and [VALIDATION.md](VALIDATION.md) for the problem, implementation and native evidence limits. The delivered repository is local; no GitHub push or publication is claimed.
+Build003 fixes first-hover comparison refresh and repeated replication-event handling, adds ruleset-aware caches with native beta region support, and rebuilds settings with native Blizzard frame templates. Public version remains `0.1.0-beta`. See [CHANGELOG.md](CHANGELOG.md), [docs/BUILD003-INVESTIGATION.md](docs/BUILD003-INVESTIGATION.md) and [VALIDATION.md](VALIDATION.md) for behavior, cache-upgrade implications and native evidence limits. The delivered repository is local; no GitHub push or publication is claimed.
 
 ## Repository hygiene
 

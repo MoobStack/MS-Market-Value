@@ -113,7 +113,7 @@ SlashCmdList.MSMARKETVALUE = function(message)
     elseif command == "status" then
         U.Print(S.state .. (S.message and (": " .. S.message) or ""))
         local snapshot = D.Snapshot()
-        U.Print(snapshot and ("Saved complete snapshot: " .. tostring(snapshot.totalRows) .. " rows, " .. U.Age(snapshot.startedAt) .. ".") or "No complete snapshot for this realm/region.")
+        U.Print(snapshot and ("Saved complete snapshot: " .. tostring(snapshot.totalRows) .. " rows, " .. U.Age(snapshot.startedAt) .. ".") or "No complete snapshot for this market.")
     elseif command == "diagnostics" then
         A.UI.ShowDiagnostics()
     else

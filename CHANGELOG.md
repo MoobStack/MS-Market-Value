@@ -4,6 +4,35 @@ Public version **0.1.0-beta** is fixed until the first finalized release. Each c
 
 ## 0.1.0-beta
 
+### Build003 — 2026-10-04 UTC
+
+| Build detail | Value |
+|---|---|
+| Build identifier | `2026-10-04-beta003` |
+| Git tag | `v0.1.0-beta-build003` |
+| Target | WoW Forever 1.60.1 / 70205 / Interface 16001 |
+
+Fixed:
+
+- First-hover item-cache updates no longer call `RebuildFromTooltipInfo` on comparison tooltips. The native generic rebuild changes the comparison's append-mode info and can clear `infoList` before inserting it. Only readable, getter-backed, non-append primary GameTooltip/ItemRefTooltip item data is refreshed; other registered frames are decoration-only.
+- A second `REPLICATE_ITEM_LIST_UPDATE` with the same row count no longer fails the scan. Accepted rows and cursor/retry state remain intact; updates can wake pending item-data retries. Count changes, unreadable data, market changes and another addon requesting replication still preserve the prior complete snapshot.
+- Native positive region IDs, including the reported beta region `90`, take precedence over portal fallback.
+
+Changed:
+
+- Detected Forever market keys now use region, ruleset and faction instead of a reporting-host suffix. Known PvP hosts share one PvP cache; Normal/PvE aliases have a different cache. Hardcore uses `C_GameRules.IsHardcoreActive` when available. Other detection uses bounded Forever reporting aliases and exposes that source; unknown aliases remain isolated.
+- Faction markets are conservatively separate until cross-faction AH sharing is qualified. Old realm-keyed snapshots remain stored and are not automatically promoted into a ruleset cache; a fresh successful scan is required for the new key.
+- Replaced the narrow dark settings viewport with full-width `InsetFrameTemplate` groups, native textured backgrounds/borders and stock controls. Settings fit in two columns. Standalone settings and diagnostics use `PortraitFrameTemplate` and native close buttons.
+- Added ruleset, ruleset source, identity kind, faction and replication-event/update counters to diagnostics. UI text now refers to markets/rulesets.
+- Updated complete Git/release/upgrade/research documentation. Version stays **0.1.0-beta**, schema stays 1, and build001/build002 commits and annotated tags remain intact.
+
+Validation:
+
+- **78/78** local Lua 5.1 behavioral tests pass. One obsolete second-event refusal case was replaced; 15 additional scanner, tooltip and realmless-market cases were added.
+- Runtime syntax, three TOCs, metadata/load order, bundled-library hashes and operation checks pass.
+- User build002 diagnostics establish that one request reached WAITING/PROCESSING and the MS tab installed; they also establish the duplicate-event failure and comparison-tooltip error. The screenshot establishes the prior layout, not this revised layout.
+- Build003 native scan completion/coverage, first-hover behavior, visual fit, taint/coexistence and SavedVariables disk saving remain pending. Forever DE outcomes remain an explicitly unverified Classic reference.
+
 ### Build002 — 2026-10-04 UTC
 
 | Build detail | Value |

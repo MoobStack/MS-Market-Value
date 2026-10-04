@@ -2,9 +2,9 @@
   "addon": "MSMarketValue",
   "repository": "MS-Market-Value",
   "version": "0.1.0-beta",
-  "build": "2026-10-04-beta002",
-  "buildNumber": "002",
+  "build": "2026-10-04-beta003",
+  "buildNumber": "003",
   "interface": 16001,
-  "gitTag": "v0.1.0-beta-build002",
+  "gitTag": "v0.1.0-beta-build003",
   "archiveDate": "2026-10-04"
 }

@@ -1,6 +1,6 @@
 # Research and source review
 
-Reviewed on **2026-10-04 UTC** for beta builds001 and 002. No game-client session was operated during development. The user supplied build001 startup/error diagnostics for the build002 investigation.
+Reviewed on **2026-10-04 UTC** for beta builds001, 002 and 003. No game-client session was operated during development. The user supplied earlier startup diagnostics, build002 scan/error diagnostics and a screenshot for the latest investigation.
 
 ## Primary references
 
@@ -18,6 +18,10 @@ Reviewed on **2026-10-04 UTC** for beta builds001 and 002. No game-client sessio
 | [Native AH layout XML](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_AuctionHouseUI/Shared/Blizzard_AuctionHouseFrame.xml) | Reviewed 800×538 frame and tab template/layout |
 | [Native CVar documentation](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_APIDocumentationGenerated/CVarDocumentation.lua) | Ordinary C_CVar.GetCVar access for portal fallback |
 | [LibAHTab/LibStub pinned source](https://github.com/TheMouseNest/LibAHTab/tree/2ddbec58c8be37b2cd911bee7512d597e7dfdfe1) | Bundled shared tab implementation, Camelot handling, original MIT/public-domain terms |
+| [Official Forever ruleset explanation](https://worldofwarcraft.blizzard.com/en-us/news/24302070) | Realmless Normal/PvP/Roleplaying/Hardcore ecosystem separation; not evidence of AH cross-faction pooling |
+| [Native TooltipComparisonManager at reviewed commit](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_SharedXMLGame/Tooltip/TooltipComparisonManager.lua) | Comparison header/append-mode ownership and generic rebuild boundary |
+| [Native GameRules documentation](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_APIDocumentationGenerated/GameRulesDocumentation.lua) | Hardcore API and Classic/Modern experience-preset distinction |
+| [Native shared panel templates XML](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_SharedXML/Mainline/SharedUIPanelTemplates.xml) | InsetFrame/PortraitFrame native textures, borders, title/portrait and close controls |
 | [Official checkout action v7.0.1](https://github.com/actions/checkout/releases/tag/v7.0.1) | Current reviewed, commit-pinned CI checkout dependency |
 
 The WoW UI mirror contains extracted Blizzard client UI/API definitions. It is useful primary implementation evidence, but it cannot establish live server behavior or automatic compatibility with later builds.
@@ -40,9 +44,17 @@ The native AH uses display-mode tables and a separate tab-index array. LibAHTab 
 
 The user's supplied market error matches build001's pre-request identity gate. It proves a failed gate, not which native lookup returned nil/empty/zero. The fix covers those cases and exposes the public lookup values for native retesting. Recognized portal mappings retain native numeric keys; other portals are isolated. See [BUILD002-INVESTIGATION.md](BUILD002-INVESTIGATION.md).
 
+## Build003 findings
+
+The user's build002 diagnostics show native region 90, an internal PvP alias, one request reaching PROCESSING, and the second-event refusal. Native comparison creation uses append-mode precomputed data while the generic rebuild forces non-append mode; this matches the reported ShoppingTooltip1 infoList insertion failure. The revised code refreshes only getter-backed primary item tooltips and preserves scan staging across stable-count updates. See [BUILD003-INVESTIGATION.md](BUILD003-INVESTIGATION.md).
+
+Official Forever documentation describes realmless, distinct ruleset ecosystems. That supports separating PvP and Normal instead of treating reporting-host suffixes as independent realms. No verified native Normal/PvP getter or cross-faction AH pooling behavior was established in the reviewed source. Alias-derived detection is bounded and labeled, unknown aliases stay isolated, and factions remain separate pending qualification. The Classic/Modern experience preset is a UI preset, not the Normal/PvP ruleset.
+
+The screenshot establishes the old narrow panel. Native InsetFrameTemplate and PortraitFrameTemplate definitions support the revised texture/border/control choices; source review and widget doubles cannot render or qualify the resulting native screen.
+
 ## Evidence boundaries
 
-The local source/API review supports the implementation choice. It does not prove that a particular Forever beta realm returns all intended auctions, that the client writes SavedVariables successfully, that the native UI lays out correctly, or that the DE model matches actual loot.
+The local source/API review supports the implementation choice. It does not prove that a particular Forever beta ruleset returns all intended auctions, that the client writes SavedVariables successfully, that the native UI lays out correctly, or that the DE model matches actual loot.
 
 No Auctionator scanner, art or proprietary database was copied. Its general full-scan-and-tooltip behavior was the user's feature reference. Build002 bundles the independently published LibAHTab and LibStub shared libraries from the pinned primary source above, preserving their terms. The rest of the runtime is original project code; game artwork/fonts are referenced from client resources. `tools/vendor.json` records original and normalized bundled hashes.
 

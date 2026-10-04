@@ -1,6 +1,6 @@
 local _, A = ...
 local U, D, V = A.Util, A.DB, A.Valuation
-local T = { seen = setmetatable({}, { __mode = "k" }), allowed = setmetatable({}, { __mode = "k" }) }
+local T = { seen = setmetatable({}, { __mode = "k" }), allowed = setmetatable({}, { __mode = "k" }), refreshing = false }
 A.Tooltips = T
 
 function T.Lines(itemID, link)
@@ -107,14 +107,34 @@ function T.Allow(tooltip)
 end
 
 function T.RefreshVisible()
-    if U.Combat() or A.disabledReason then return end
-    for tooltip in pairs(T.allowed) do
-        if tooltip:IsShown() and tooltip.RebuildFromTooltipInfo and
-           not (tooltip.IsForbidden and tooltip:IsForbidden()) then
-            T.seen[tooltip] = nil
-            pcall(tooltip.RebuildFromTooltipInfo, tooltip)
+    if not T.installed or U.Combat() or A.disabledReason or T.refreshing then return end
+    T.refreshing = true
+    -- Comparison tooltips start in append mode under the native comparison
+    -- manager. Generic rebuild changes that to append=false, and ClearLines
+    -- can clear their infoList before InternalProcessInfo inserts into it.
+    -- Refresh only getter-backed primary item tooltips. The native manager
+    -- owns comparison refreshes; arbitrary allowed frames are decoration-only.
+    for _, tooltip in ipairs({ GameTooltip, ItemRefTooltip }) do
+        if U.Accessible(tooltip) and T.allowed[tooltip] and
+           not (tooltip.IsForbidden and tooltip:IsForbidden()) and tooltip:IsShown() and
+           type(tooltip.GetPrimaryTooltipInfo) == "function" and
+           type(tooltip.RebuildFromTooltipInfo) == "function" then
+            local ok, info = pcall(tooltip.GetPrimaryTooltipInfo, tooltip)
+            if ok and U.Table(info) and U.Accessible(info.append) and not info.append and
+               (U.String(info.getterName) or (U.Accessible(info.getterFunction) and type(info.getterFunction) == "function")) then
+                local dataOK, data
+                if type(tooltip.GetPrimaryTooltipData) == "function" then
+                    dataOK, data = pcall(tooltip.GetPrimaryTooltipData, tooltip)
+                end
+                if dataOK and U.Table(data) and U.Accessible(data.type) and
+                   data.type == Enum.TooltipDataType.Item and U.Number(data.id, 1, 2147483647, true) then
+                    T.seen[tooltip] = nil
+                    pcall(tooltip.RebuildFromTooltipInfo, tooltip)
+                end
+            end
         end
     end
+    T.refreshing = false
 end
 
 function T.Install()

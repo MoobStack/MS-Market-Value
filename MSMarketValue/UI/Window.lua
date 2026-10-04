@@ -21,17 +21,39 @@ local function Button(parent, text, x, y, width, handler)
     return button
 end
 
-local function Check(parent, key, text, x, y)
+local function Check(parent, key, text, y)
     local button = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
     button:SetSize(26, 26)
-    button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
-    button.label = Label(parent, text, x + 29, y - 7, 205)
+    button:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, y)
+    button.label = Label(parent, text, 41, y - 7, 309)
     button:SetScript("OnClick", function(self)
         if not D.data then return end
         D.data.settings[key] = self:GetChecked() and true or false
         if A.Tooltips then A.Tooltips.RefreshVisible() end
     end)
     UI.checks[key] = button
+end
+
+local function Inset(parent, x, y, width, height)
+    local frame = CreateFrame("Frame", nil, parent, "InsetFrameTemplate")
+    frame:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y)
+    frame:SetSize(width, height)
+    return frame
+end
+
+local function PortraitWindow(name, title, width, height)
+    local frame = CreateFrame("Frame", name, UIParent, "PortraitFrameTemplate")
+    frame:SetSize(width, height)
+    frame:SetPoint("CENTER")
+    frame:SetFrameStrata("DIALOG")
+    frame:SetClampedToScreen(true)
+    frame:SetTitle(title)
+    if frame.PortraitContainer and frame.PortraitContainer.portrait then
+        frame.PortraitContainer.portrait:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")
+    end
+    frame.CloseButton:SetScript("OnClick", function() frame:Hide() end)
+    table.insert(UISpecialFrames, name)
+    return frame
 end
 
 function UI.DiagnosticsText()
@@ -47,10 +69,16 @@ function UI.DiagnosticsText()
         "Tooltip status: " .. tostring(A.tooltipReason or "ready"),
         "Scan state: " .. S.state,
         "Full-scan requests this session: " .. tostring(S.requestCount),
+        "Replication events this scan: " .. tostring(S.responseCount),
+        "Same-count data updates: " .. tostring(S.dataUpdateCount),
         "Full-scan cooldown seconds: " .. tostring(S.RemainingCooldown()),
         "Market key: " .. tostring(market.key or market.reason),
-        "Normalized realm: " .. market.normalizedRealm,
-        "Public realm name: " .. market.realmName,
+        "Market identity: " .. tostring(market.kind or "unavailable"),
+        "Ruleset: " .. tostring(market.ruleset or "undetected"),
+        "Ruleset source: " .. tostring(market.rulesetSource or "unavailable"),
+        "Player faction: " .. market.nativeFaction,
+        "Normalized reporting alias: " .. market.normalizedRealm,
+        "Public reporting alias: " .. market.realmName,
         "Native region: " .. market.nativeRegion,
         "Login portal: " .. market.portal,
         "Market sources: " .. tostring(market.realmSource) .. "; " .. tostring(market.regionSource or "unavailable"),
@@ -62,7 +90,7 @@ function UI.DiagnosticsText()
         lines[#lines + 1] = "Snapshot started UTC: " .. date("!%Y-%m-%dT%H:%M:%SZ", snapshot.startedAt)
         lines[#lines + 1] = "Snapshot age: " .. U.Age(snapshot.startedAt)
     else
-        lines[#lines + 1] = "Saved snapshot: none for this realm/region"
+        lines[#lines + 1] = "Saved snapshot: none for this market"
     end
     lines[#lines + 1] = "Recent local messages:"
     for _, message in ipairs(A.log) do lines[#lines + 1] = message end
@@ -72,30 +100,21 @@ end
 function UI.ShowDiagnostics()
     if U.Combat() then return U.Print("Open diagnostics outside combat.") end
     if not UI.diagnostics then
-        local frame = CreateFrame("Frame", "MSMarketValueDiagnostics", UIParent, "BackdropTemplate")
-        frame:SetSize(550, 410)
-        frame:SetPoint("CENTER")
-        frame:SetFrameStrata("DIALOG")
-        frame:SetClampedToScreen(true)
-        frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-        frame:SetBackdropColor(0.07, 0.08, 0.10, 0.98)
-        frame:SetBackdropBorderColor(0.25, 0.32, 0.37, 1)
-        Label(frame, "Diagnostics - Ctrl+C to copy", 18, -18, 460, "GameFontNormal")
-        Button(frame, "Close", 449, -12, 82, function() frame:Hide() end)
+        local frame = PortraitWindow("MSMarketValueDiagnostics", "Diagnostics - Ctrl+C to copy", 620, 440)
+        Inset(frame, 10, -35, 598, 386)
         local scroll = CreateFrame("ScrollFrame", nil, frame, "UIPanelScrollFrameTemplate")
-        scroll:SetPoint("TOPLEFT", 18, -53)
-        scroll:SetPoint("BOTTOMRIGHT", -40, 18)
+        scroll:SetPoint("TOPLEFT", 22, -47)
+        scroll:SetPoint("BOTTOMRIGHT", -40, 29)
         local edit = CreateFrame("EditBox", nil, scroll)
         edit:SetMultiLine(true)
         edit:SetAutoFocus(false)
         edit:SetFontObject(GameFontHighlightSmall)
-        edit:SetWidth(488)
-        edit:SetHeight(800)
+        edit:SetWidth(548)
+        edit:SetHeight(1100)
         edit:SetMaxLetters(16384)
         edit:SetScript("OnEscapePressed", function() frame:Hide() end)
         scroll:SetScrollChild(edit)
         UI.diagnostics, UI.diagnosticsEdit = frame, edit
-        table.insert(UISpecialFrames, "MSMarketValueDiagnostics")
     end
     UI.diagnosticsEdit:SetText(UI.DiagnosticsText())
     UI.diagnostics:Show()
@@ -106,11 +125,7 @@ end
 function UI.Create()
     if UI.frame or U.Combat() then return end
     UI.checks = {}
-    local window = CreateFrame("Frame", "MSMarketValueWindow", UIParent)
-    window:SetSize(530, 570)
-    window:SetPoint("CENTER")
-    window:SetFrameStrata("DIALOG")
-    window:SetClampedToScreen(true)
+    local window = PortraitWindow("MSMarketValueWindow", A.TITLE, 800, 538)
     window:EnableMouse(true)
     window:SetMovable(true)
     window:RegisterForDrag("LeftButton")
@@ -128,50 +143,53 @@ function UI.Create()
         window:ClearAllPoints()
         window:SetPoint("CENTER", UIParent, "CENTER", pos.x, pos.y)
     end
-    -- One set of controls is reparented between the AH's scrolling panel and
-    -- the manually opened window. AH opening never shows the standalone UI.
-    local frame = CreateFrame("Frame", nil, window, "BackdropTemplate")
-    frame:SetSize(530, 570)
-    frame:SetPoint("TOPLEFT", window, "TOPLEFT")
+    -- Shared controls fill the native AH body. Blizzard templates provide the
+    -- textured backgrounds, nine-slice borders, buttons, inputs and checkboxes.
+    local frame = CreateFrame("Frame", nil, window)
+    frame:SetSize(768, 460)
+    frame:SetPoint("TOPLEFT", window, "TOPLEFT", 16, -38)
     UI.content = frame
-    frame:SetBackdrop({ bgFile = "Interface\\Buttons\\WHITE8X8", edgeFile = "Interface\\Buttons\\WHITE8X8", edgeSize = 1 })
-    frame:SetBackdropColor(0.06, 0.07, 0.09, 0.98)
-    frame:SetBackdropBorderColor(0.25, 0.32, 0.37, 1)
-    Label(frame, A.TITLE, 18, -18, 400, "GameFontNormalLarge")
-    Label(frame, A.VERSION .. "  |  " .. A.BUILD, 18, -42, 490)
-    UI.closeButton = Button(frame, "Close", 426, -14, 85, function() window:Hide() end)
-    UI.snapshotText = Label(frame, "", 18, -77, 493)
-    UI.statusText = Label(frame, "", 18, -118, 493)
-    UI.progress = CreateFrame("StatusBar", nil, frame)
-    UI.progress:SetPoint("TOPLEFT", 18, -167)
-    UI.progress:SetSize(493, 9)
-    UI.progress:SetStatusBarTexture("Interface\\Buttons\\WHITE8X8")
-    UI.progress:SetStatusBarColor(0.35, 0.65, 0.68)
+    local scan = Inset(frame, 12, -8, 744, 196)
+    Label(scan, "Price snapshot", 14, -13, 365, "GameFontNormal")
+    Label(scan, A.VERSION .. "  |  " .. A.BUILD, 395, -14, 335)
+    UI.marketText = Label(scan, "", 14, -34, 716)
+    UI.snapshotText = Label(scan, "", 14, -55, 716)
+    UI.statusText = Label(scan, "", 14, -89, 716)
+    UI.progress = CreateFrame("StatusBar", nil, scan)
+    UI.progress:SetPoint("TOPLEFT", 14, -135)
+    UI.progress:SetSize(716, 10)
+    UI.progress:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
+    UI.progress:SetStatusBarColor(0.2, 0.7, 0.2)
     UI.progress:SetMinMaxValues(0, 1)
     UI.progress:SetValue(0)
-    UI.scanButton = Button(frame, "Scan entire AH", 18, -188, 152, function()
+    UI.scanButton = Button(scan, "Scan entire AH", 14, -155, 152, function()
         local ok, message = S.Start()
         if not ok then U.Print(message) end
     end)
-    UI.stopButton = Button(frame, "Stop scan", 182, -188, 105, function() S.Stop() end)
-    Button(frame, "Copy diagnostics", 299, -188, 160, UI.ShowDiagnostics)
-    Label(frame, "Tooltip settings", 18, -236, 493, "GameFontNormal")
-    Check(frame, "showVendor", "Vendor sell price", 16, -259)
-    Check(frame, "showAuction", "Lowest AH buyout", 278, -259)
-    Check(frame, "showDisenchant", "Estimated disenchant value", 16, -291)
-    Check(frame, "showMaterials", "Material ranges and chances", 278, -291)
-    Check(frame, "showAge", "Snapshot age and stale flag", 16, -323)
-    Label(frame, "Mark prices stale after", 18, -370, 175)
-    local stale = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
+    UI.stopButton = Button(scan, "Stop scan", 178, -155, 110, function() S.Stop() end)
+    Button(scan, "Copy diagnostics", 300, -155, 150, UI.ShowDiagnostics)
+
+    local settings = Inset(frame, 12, -216, 366, 204)
+    Label(settings, "Tooltip settings", 14, -13, 338, "GameFontNormal")
+    Check(settings, "showVendor", "Vendor sell price", -36)
+    Check(settings, "showAuction", "Lowest AH buyout", -64)
+    Check(settings, "showDisenchant", "Estimated disenchant value", -92)
+    Check(settings, "showMaterials", "Material ranges and chances", -120)
+    Check(settings, "showAge", "Snapshot age and stale flag", -148)
+
+    local prices = Inset(frame, 390, -216, 366, 204)
+    Label(prices, "Price settings", 14, -13, 338, "GameFontNormal")
+    Label(prices, "Mark prices stale after", 14, -41, 165)
+    local stale = CreateFrame("EditBox", nil, prices, "InputBoxTemplate")
     stale:SetSize(45, 24)
-    stale:SetPoint("TOPLEFT", 191, -363)
+    stale:SetPoint("TOPLEFT", 185, -34)
     stale:SetAutoFocus(false)
     stale:SetNumeric(true)
     stale:SetMaxLetters(3)
     stale:SetScript("OnEscapePressed", function(self) self:ClearFocus(); UI.Refresh() end)
     UI.staleBox = stale
-    Label(frame, "hours (1-168)", 247, -370, 112)
-    Button(frame, "Apply", 374, -363, 85, function()
+    Label(prices, "hours (1-168)", 237, -41, 113)
+    Button(prices, "Apply", 260, -72, 90, function()
         if not D.data then return end
         local value = tonumber(stale:GetText())
         if not U.Number(value, 1, 168, true) then return U.Print("Choose a stale age from 1 to 168 hours.") end
@@ -180,10 +198,10 @@ function UI.Create()
         A.Tooltips.RefreshVisible()
         UI.Refresh()
     end)
-    Label(frame, "Disenchant exclusions (for item-specific exceptions)", 18, -413, 493, "GameFontNormal")
-    local exclude = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-    exclude:SetSize(110, 24)
-    exclude:SetPoint("TOPLEFT", 25, -436)
+    Label(prices, "Disenchant exclusions", 14, -118, 338, "GameFontNormal")
+    local exclude = CreateFrame("EditBox", nil, prices, "InputBoxTemplate")
+    exclude:SetSize(95, 24)
+    exclude:SetPoint("TOPLEFT", 20, -143)
     exclude:SetAutoFocus(false)
     exclude:SetNumeric(true)
     exclude:SetMaxLetters(10)
@@ -195,11 +213,10 @@ function UI.Create()
         exclude:ClearFocus()
         A.Tooltips.RefreshVisible()
     end
-    Button(frame, "Exclude item", 151, -436, 140, function() Exclude(true) end)
-    Button(frame, "Restore estimate", 303, -436, 156, function() Exclude(false) end)
-    Label(frame, "AH values are asking prices, before fees. Disenchant outcomes use a\nClassic reference; Forever probabilities and item eligibility need testing.", 18, -483, 493)
-    Label(frame, "Scanning and tooltip calculations run outside combat.", 18, -537, 493)
-    table.insert(UISpecialFrames, "MSMarketValueWindow")
+    Button(prices, "Exclude", 120, -143, 90, function() Exclude(true) end)
+    Button(prices, "Restore estimate", 218, -143, 128, function() Exclude(false) end)
+    Label(prices, "Enter an item ID to override the reference model.", 14, -181, 338)
+    Label(frame, "AH values are asking prices, before fees. Disenchant outcomes use an unverified Classic reference.\nScanning and tooltip calculations run outside combat.", 14, -433, 740)
     frame:SetScript("OnShow", UI.Refresh)
     window:SetScript("OnShow", UI.Refresh)
     window:Hide()
@@ -210,11 +227,12 @@ end
 function UI.Refresh()
     if not UI.frame then return end
     local snapshot = D.Snapshot()
+    local market = U.MarketInfo()
+    UI.marketText:SetText("Market: " .. (market.label or "Waiting for market identity"))
     if snapshot then
-        UI.snapshotText:SetText(string.format("Saved: %d auctions | %d priced items | %s%s\nA complete new scan replaces this realm's snapshot.", snapshot.totalRows, snapshot.distinctItems, U.Age(snapshot.startedAt), D.IsStale(snapshot) and " (stale)" or ""))
+        UI.snapshotText:SetText(string.format("Saved: %d auctions | %d priced items | %s%s\nA complete new scan replaces this market's snapshot.", snapshot.totalRows, snapshot.distinctItems, U.Age(snapshot.startedAt), D.IsStale(snapshot) and " (stale)" or ""))
     else
-        local key, reason = U.MarketKey()
-        UI.snapshotText:SetText("No complete scan saved for this realm/region.\n" .. (key and "Click Scan entire AH at an open auctioneer." or reason))
+        UI.snapshotText:SetText("No complete scan saved for this market.\n" .. (market.key and "Click Scan entire AH at an open auctioneer." or market.reason))
     end
     local status = S.state .. (S.message and (": " .. S.message) or "")
     if S.work then
@@ -237,13 +255,11 @@ function UI.Dock()
     if not UI.panel or U.Combat() then return end
     UI.frame:Hide()
     UI.content:Hide()
-    UI.content:SetParent(UI.scroll)
+    UI.content:SetParent(UI.panel)
     UI.content:SetFrameStrata(UI.panel:GetFrameStrata())
-    UI.content:SetFrameLevel(UI.scroll:GetFrameLevel() + 1)
+    UI.content:SetFrameLevel(UI.panel:GetFrameLevel() + 1)
     UI.content:ClearAllPoints()
-    UI.scroll:SetScrollChild(UI.content)
-    UI.content:SetPoint("TOPLEFT", UI.scroll, "TOPLEFT")
-    UI.closeButton:Hide()
+    UI.content:SetPoint("TOPLEFT", UI.panel, "TOPLEFT", 12, -5)
     UI.content:Show()
 end
 
@@ -269,13 +285,9 @@ function UI.InstallAuctionTab()
         local panel = CreateFrame("Frame", nil, ah)
         panel:SetPoint("TOPLEFT", ah, "TOPLEFT", 4, -34)
         panel:SetPoint("BOTTOMRIGHT", ah, "BOTTOMRIGHT", -4, 33)
-        local scroll = CreateFrame("ScrollFrame", nil, panel, "UIPanelScrollFrameTemplate")
-        scroll:SetPoint("TOP", panel, "TOP", -13, 0)
-        scroll:SetPoint("BOTTOM", panel, "BOTTOM", -13, 0)
-        scroll:SetWidth(530)
         panel:SetScript("OnShow", UI.Refresh)
         panel:Hide()
-        UI.panel, UI.scroll = panel, scroll
+        UI.panel = panel
     end
     local ok, errorReason = pcall(lib.CreateTab, lib, "MSMarketValue", UI.panel, A.TITLE, A.TITLE)
     if not ok then
@@ -322,8 +334,7 @@ function UI.Toggle()
     UI.content:SetFrameStrata(UI.frame:GetFrameStrata())
     UI.content:SetFrameLevel(UI.frame:GetFrameLevel() + 1)
     UI.content:ClearAllPoints()
-    UI.content:SetPoint("TOPLEFT", UI.frame, "TOPLEFT")
-    UI.closeButton:Show()
+    UI.content:SetPoint("TOPLEFT", UI.frame, "TOPLEFT", 16, -38)
     UI.content:Show()
     if wasShown then UI.frame:Hide() else UI.frame:Show() end
 end

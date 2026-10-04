@@ -115,10 +115,30 @@ local function Describe(value, errorReason)
     return "unavailable"
 end
 
+local rulesetNames = { normal = "Normal", pvp = "PvP", roleplaying = "Roleplaying", hardcore = "Hardcore" }
+
+local function Ruleset(realm, source)
+    local hardcore = PublicCall(C_GameRules and C_GameRules.IsHardcoreActive)
+    if hardcore == true then return "hardcore", "C_GameRules.IsHardcoreActive" end
+    if not realm then return nil end
+    local compact = string.lower(RealmName(realm) or "")
+    -- These are internal reporting aliases, not traditional market realms.
+    -- Match known Forever beta/future alias forms conservatively. Never infer
+    -- a ruleset from the player's PvP flag or Classic/Modern UI preset.
+    for _, prefix in ipairs({ "classicbeta", "forever", "wowforever" }) do
+        for token, ruleset in pairs({ normal = "normal", pve = "normal", pvp = "pvp", rp = "roleplaying", roleplaying = "roleplaying", hardcore = "hardcore" }) do
+            if string.match(compact, "^" .. prefix .. token .. "%d*$") then
+                return ruleset, source .. " (Forever reporting alias)"
+            end
+        end
+    end
+end
+
 function U.MarketInfo()
     local normalized, normalizedError = PublicCall(GetNormalizedRealmName)
     local rawRealm, realmError = PublicCall(GetRealmName)
     local rawRegion, regionError = PublicCall(GetCurrentRegion)
+    local faction, factionError = PublicCall(UnitFactionGroup, "player")
     local portalValue, portalError = PublicCall(C_CVar and C_CVar.GetCVar, "portal")
     local portal = PortalName(portalValue)
     local portalSource = "C_CVar.GetCVar(portal)"
@@ -131,13 +151,16 @@ function U.MarketInfo()
         realmName = Describe(rawRealm, realmError),
         nativeRegion = Describe(rawRegion, regionError),
         portal = Describe(portalValue, portalError),
+        nativeFaction = Describe(faction, factionError),
     }
     info.realm = RealmName(normalized) and normalized or nil
     info.realmSource = "GetNormalizedRealmName"
     if not info.realm then
         info.realm, info.realmSource = RealmName(rawRealm), "GetRealmName"
     end
-    if U.Number(rawRegion, 1, 10, true) then
+    -- Forever beta reports native region 90. Accept the API's positive integer
+    -- identifier rather than restricting it to production regions 1-10.
+    if U.Number(rawRegion, 1, 2147483647, true) then
         info.region, info.regionSource = tostring(rawRegion), "GetCurrentRegion"
     elseif regions[PortalName(rawRegion)] then
         info.region, info.regionSource = tostring(regions[PortalName(rawRegion)]), "GetCurrentRegion"
@@ -147,13 +170,29 @@ function U.MarketInfo()
         info.region = regions[portal] and tostring(regions[portal]) or ("portal:" .. portal)
         info.regionSource = portalSource
     end
-    if not info.realm then
-        info.reason = "Realm name is unavailable. Try again after entering the world; diagnostics show the lookup values."
-    elseif not info.region then
+    info.ruleset, info.rulesetSource = Ruleset(info.realm, info.realmSource)
+    if U.String(faction) and (faction == "Horde" or faction == "Alliance" or faction == "Neutral") then
+        info.faction = faction
+    end
+    if not info.region then
         info.reason = "Region and login portal are unavailable. Copy diagnostics to report the lookup values."
+    elseif info.ruleset then
+        info.kind = "realmless-ruleset"
+        if not info.faction then
+            info.reason = "Player faction is unavailable. Try again after entering the world; copy diagnostics if it persists."
+        else
+            -- Share reporting hosts in one ruleset, keep Normal/PvP separate,
+            -- and conservatively keep faction prices separate until the AH's
+            -- cross-faction sharing has been qualified on this client.
+            info.key = "forever|" .. info.region .. "|" .. info.ruleset .. "|" .. info.faction
+            info.label = rulesetNames[info.ruleset] .. " ruleset (" .. info.faction .. ")"
+        end
+    elseif not info.realm then
+        info.reason = "Realm name is unavailable. Try again after entering the world; diagnostics show the lookup values."
     else
-        -- Numeric portal fallbacks keep build001 keys such as 1|Realm intact.
-        -- Markets are shared across factions, with no cross-region fallback.
+        -- An unrecognized alias stays isolated. Old realm-key records remain
+        -- readable in this fallback but are not merged into ruleset caches.
+        info.kind, info.label = "isolated-alias", "Ruleset undetected (" .. info.realm .. ")"
         info.key = info.region .. "|" .. info.realm
     end
     return info

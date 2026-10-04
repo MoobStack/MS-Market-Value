@@ -25,3 +25,7 @@ All **63/63** local Lua 5.1 behavioral tests pass. Added cases prove the tested 
 No Forever client was operated during this fix. The supplied startup report is live user evidence for build001; it is not a build002 scan, visual layout, native taint, Auctionator coexistence or SavedVariables disk pass. Use [LIVE-TEST-CHECKLIST.md](../LIVE-TEST-CHECKLIST.md) for retests. DE material probabilities and special eligibility remain Classic reference estimates unverified for Forever.
 
 Primary review is recorded in [RESEARCH.md](RESEARCH.md); provenance is in [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md). Both builds retain **0.1.0-beta**, immutable build tags and schema 1.
+
+## Later evidence
+
+The subsequent build002 report establishes native region 90, one scan request reaching PROCESSING, AH tab installation and the next failures. Build003 revises region bounds, ruleset identity, comparison refresh and repeated-event handling. See [BUILD003-INVESTIGATION.md](BUILD003-INVESTIGATION.md). The statements above describe the evidence available when build002 was prepared.

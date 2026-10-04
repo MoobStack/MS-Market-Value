@@ -7,10 +7,10 @@ MS Market Value saves a complete auction-house price snapshot and adds vendor se
 | Publisher | MoobStack |
 | Addon folder | `MSMarketValue` |
 | Public beta version | `0.1.0-beta` |
-| Build | `2026-10-04-beta002` |
+| Build | `2026-10-04-beta003` |
 | Target | WoW Forever 1.60.1, Interface 16001 |
 | Dependencies | Bundled LibStub and LibAHTab; no separate addon installation |
-| Status | Revised beta candidate; 63 local tests pass; native scan/tab retest pending |
+| Status | Revised beta candidate; 78 local tests pass; native scan/tooltip/UI retest pending |
 
 This is a separate modern-client addon. It does not extend or migrate the older Interface 11200 MS Auction addon.
 
@@ -18,13 +18,13 @@ This is a separate modern-client addon. It does not extend or migrate the older 
 
 ## Changelog
 
-### 0.1.0-beta — build002 — 2026-10-04 UTC
+### 0.1.0-beta — build003 — 2026-10-04 UTC
 
-- Fixed the pre-request market lookup failure: missing/empty normalized realm names fall back to the public realm name; unavailable/zero regions fall back to the login portal.
-- Added a new **MS Market Value** Auction House tab with scan controls and scrolling settings. Opening an auctioneer keeps the native Buy tab selected and no longer opens the standalone settings window.
-- Bundled LibAHTab and LibStub for shared addon-tab coordination; no separate dependency installation is required.
-- Added realm/region lookup values, lookup sources, tab status, and session request count to diagnostics.
-- Retained the same primary beta version, schema, completed snapshots, and immutable build001 tag. All **63/63** local behavioral tests pass; native scan/tab retest remains pending.
+- Fixed first-hover refresh errors by refreshing only getter-backed primary item tooltips. Comparison tooltips remain under Blizzard's comparison manager.
+- Same-count replication updates now continue a scan and wake pending item-data retries without restarting, requesting again, or double-counting accepted rows.
+- Added ruleset-aware Forever caches: PvP and Normal remain separate, reporting-host suffixes share the detected ruleset, and native region `90` is accepted. Faction caches remain separate pending native market qualification.
+- Rebuilt the AH pane with full-width Blizzard inset textures, borders, stock controls, and two settings columns. Manual settings and diagnostics use native portrait frames.
+- Added ruleset/source/faction and replication-event diagnostics. Public version stays **0.1.0-beta**; all **78/78** local tests pass. Native build003 checks remain pending.
 
 All revisions before the first finalized release remain **0.1.0-beta**. Build identifiers and immutable build tags distinguish revisions. See [CHANGELOG.md](CHANGELOG.md).
 
@@ -49,7 +49,7 @@ All revisions before the first finalized release remain **0.1.0-beta**. Build id
 | `/msmv status` | Show scan state and saved snapshot age |
 | `/msmv diagnostics` | Open text that can be copied into a beta report |
 
-Every normal option is available in the AH tab and the manually opened window. The tab has a vertical scrollbar for its lower settings. Scanning and tooltip calculations run outside combat.
+Every normal option is available in the AH tab and the manually opened window. The native inset layout shows scan controls above two settings columns without a settings scrollbar. Scanning and tooltip calculations run outside combat.
 
 ### How to interpret the tooltip
 
@@ -69,7 +69,8 @@ Every normal option is available in the AH tab and the manually opened window. T
 | [COMPATIBILITY.md](COMPATIBILITY.md) | Client/API target, Blizzard policy design, restrictions and limits |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | Modules, scan lifecycle and saved-data schema |
 | [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) | Reference tables, formula and eligibility limits |
-| [docs/BUILD002-INVESTIGATION.md](docs/BUILD002-INVESTIGATION.md) | Reported failure, fix and evidence limits |
+| [docs/BUILD003-INVESTIGATION.md](docs/BUILD003-INVESTIGATION.md) | Tooltip/scan failures, realmless caches, native styling and evidence limits |
+| [docs/BUILD002-INVESTIGATION.md](docs/BUILD002-INVESTIGATION.md) | Earlier pre-request failure and first AH tab |
 | [docs/RESEARCH.md](docs/RESEARCH.md) | Primary sources and research provenance |
 | [GIT-WORKFLOW.md](GIT-WORKFLOW.md) | Full local Git, GitHub, beta revision, packaging and recovery workflow |
 | [VALIDATION.md](VALIDATION.md) | Completed checks and pending live checks |

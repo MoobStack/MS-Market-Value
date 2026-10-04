@@ -1,6 +1,6 @@
 # MS Market Value documentation
 
-Version `0.1.0-beta`, build `2026-10-04-beta002`.
+Version `0.1.0-beta`, build `2026-10-04-beta003`.
 
 ## Installation
 
@@ -28,7 +28,7 @@ The previous snapshot stays authoritative while a scan is running. Commit occurs
 
 The addon maintains a persistent **15-minute minimum interval** between replication requests. Cancelling, logging out, or reloading does not bypass this interval. Blizzard can impose additional cooldowns. A dropped or refused response can produce a timeout; open diagnostics and retain the previous prices until another permitted attempt.
 
-Closing the auction house or entering combat cancels a scan. Another addon's replication request, a changed replication count, or another completion event during processing fails the staged scan. Normal browse/search operations use a separate native API buffer, but only one full-scanning addon should run at a time.
+Closing the auction house or entering combat cancels a scan. Additional replication events with the same readable row count preserve the scan's cursor and accepted rows, and can immediately wake pending item-data retries. They do not issue another request or restart accumulation. A changed/unreadable count, changed market, or another addon's replication request fails the staged scan and retains prior prices. The API exposes no scan generation token; stable-count handling plus request observation is the tested boundary. Only one full-scanning addon should run at a time.
 
 ## Prices
 
@@ -76,13 +76,27 @@ See [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) for complete bracket de
 | Stop scan | — | Stop local work and retain the complete snapshot |
 | Copy diagnostics | — | Select diagnostic text for Ctrl+C |
 
-Opening an auctioneer leaves the native Buy tab selected and adds an **MS Market Value** tab. Click it for scan controls and settings; scroll down for lower options. Native tabs and other shared-library addon tabs hide the MS panel when selected. The AH tab is reused on subsequent openings.
+Opening an auctioneer leaves the native Buy tab selected and adds an **MS Market Value** tab. Click it for scan controls above two settings columns. Native Blizzard inset textures/borders, fonts, buttons, checkboxes and inputs match the surrounding game frame. All settings fit without a settings scrollbar. Native tabs and other shared-library addon tabs hide the MS panel when selected. The AH tab is reused on subsequent openings.
 
-`/msmv` selects the MS tab at an auctioneer; running it again returns to Buy. Away from an auctioneer, it opens a manual window whose position is saved account-wide. Escape closes that window. No standalone settings window opens automatically. The former `openAtAH` preference remains stored for rollback but is ignored. Item exclusions can be reversed without changing the snapshot.
+`/msmv` selects the MS tab at an auctioneer; running it again returns to Buy. Away from an auctioneer, it opens a native portrait window whose position is saved account-wide. Diagnostics use a separate native portrait dialog with a scrolling copy field. Escape closes that window. No standalone settings window opens automatically. The former `openAtAH` preference remains stored for rollback but is ignored. Item exclusions can be reversed without changing the snapshot.
 
 ## Persistence and backup
 
-`MSMarketValueDB` is a normal account-wide SavedVariable. It contains settings, exclusions, cooldown state and separate realm/region snapshots. Modern AH data is shared across factions; the addon does not create artificial faction-specific markets. Connected realms are conservatively stored under the reporting character's realm name. A usable normalized realm name and numeric region remain the primary identity. A missing/empty normalized name falls back to the whitespace/hyphen-free public realm name. A missing/zero region falls back to `C_CVar.GetCVar("portal")`, then legacy `GetCVar("portal")`; us/kr/eu/tw/cn map to the existing numeric keys. Other named test portals have separate keys. Locale is never used to guess a region. If neither public name nor region/portal is available, no request is sent and no cooldown is consumed.
+`MSMarketValueDB` is an account-wide SavedVariable holding settings, exclusions, cooldown state and one replacement snapshot per market key. Forever is realmless: its reporting aliases are not treated as independent market realms when a ruleset can be detected.
+
+| Identity | Cache behavior |
+|---|---|
+| Detected ruleset | `forever|<region>|<ruleset>|<faction>`; reporting-host number does not split the cache |
+| PvP vs Normal/PvE | Separate `pvp` and `normal` snapshots |
+| Hardcore | Native `C_GameRules.IsHardcoreActive` takes precedence |
+| Normal/PvP/RP alias detection | Bounded `ClassicBeta`, `Forever` or `WoWForever` prefix plus recognized ruleset token and optional numeric host suffix; diagnostics label the alias-derived source |
+| Unrecognized alias | Isolated `<region>|<alias>` fallback; diagnostics say ruleset undetected |
+| Faction | Conservatively separate Horde/Alliance/Neutral caches until native cross-faction AH sharing is qualified |
+| Old realm-keyed snapshot | Retained untouched; never automatically merged/promoted into the new ruleset cache |
+
+For the reported `ClassicBetaPvP2`, native region `90` and Horde, the key is `forever|90|pvp|Horde`. A character reporting `ClassicBetaPvP1` in the same region/faction reads that cache. A Normal character does not read the PvP cache. Only the supplied PvP alias is live evidence; Normal/RP and other host aliases still need native confirmation. Unrecognized aliases remain safely isolated and can be reported for a later mapping update.
+
+A positive native region identifier, including beta `90`, is preferred. An unavailable/zero region falls back to accessible modern/legacy login-portal values; us/kr/eu/tw/cn map to numeric regions and other named portals remain separate. Missing/empty normalized aliases fall back to the public name. Locale, PvP flags and Classic/Modern UI presets never select a ruleset. A missing usable identity blocks the request before consuming cooldown. See [UPGRADE.md](UPGRADE.md) for the fresh scan required when moving an old cache to this new namespace.
 
 WoW writes SavedVariables on a successful UI reload or normal logout/exit. The addon cannot force an immediate disk write. A crash, interrupted shutdown, or client-side SavedVariables regression can lose changes made since the last successful write. `LoadSavedVariablesFirst: 1` is included, and initialization waits for the addon's `ADDON_LOADED` event.
 
@@ -92,7 +106,9 @@ Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak
 
 Enable native script errors with `/console scriptErrors 1`, then reproduce the issue once. Copy `/msmv diagnostics`, the exact error text, client version/build, and addon build. For a material mismatch include item ID/link, item level, quality and actual loot. Diagnostics omit auction seller names and stored account credentials.
 
-For the build001 message “Realm/region information is not available yet”, install build002 and check the expanded market fields in diagnostics. IDLE with zero session requests means no native request was sent; report the market key, normalized/public realm, native region, portal and lookup sources. These values are public market identifiers, not credentials.
+Install build003 for the build001 identity failure or build002 “replication buffer was refreshed” failure and `ShoppingTooltip1` first-hover error. IDLE with zero session requests means a request was not sent. Report the market key, ruleset/source, faction, reporting aliases, region/portal, event counts and exact failure. These are public market identifiers, not credentials.
+
+Comparison tooltips still receive values through the native postprocessing callback. MSMV only requests refresh of readable getter-backed primary item tooltips; Blizzard owns comparison layout and rebuilding. A comparison may update with the next native comparison refresh/rehover.
 
 If scan state remains WAITING, preserve the old snapshot and wait for the cooldown. If RESOLVING fails, report the state and exact client build. If saved prices disappear after reload, stop overwriting the backup and report the client-side persistence behavior. Do not install an external executable or SavedVariables workaround as part of this addon without a separate review.
 
