@@ -283,16 +283,21 @@ function C.BeginCatalog()
     if reason or #C.ids == 0 then Publish() end
 end
 
-function C.Ranked(mode)
+function C.Ranked(mode, showAll)
     mode = mode == "return" and "return" or "profit"
-    local cache = C.rankedCache and C.rankedCache[mode]
+    showAll = showAll == true
+    local cacheKey = mode .. (showAll and "-all" or "-profitable")
+    local cache = C.rankedCache and C.rankedCache[cacheKey]
     if cache and cache.rows == C.rows and cache.count == #C.rows then return cache.result end
     local result = {}
     for _, row in ipairs(C.rows) do
-        if row.profitMin and row.profitMin > 0 and (mode ~= "return" or row.returnMin) then result[#result + 1] = row end
+        if showAll or (row.profitMin and row.profitMin > 0 and (mode ~= "return" or row.returnMin)) then result[#result + 1] = row end
     end
     table.sort(result, function(a, b)
-        local av, bv = mode == "return" and a.returnMin or a.profitMin, mode == "return" and b.returnMin or b.profitMin
+        local av, bv
+        if mode == "return" then av, bv = a.returnMin, b.returnMin else av, bv = a.profitMin, b.profitMin end
+        if av == nil and bv ~= nil then return false end
+        if bv == nil and av ~= nil then return true end
         if av == bv then
             if a.name == b.name then return a.recipeID < b.recipeID end
             return a.name < b.name
@@ -300,7 +305,7 @@ function C.Ranked(mode)
         return av > bv
     end)
     C.rankedCache = C.rankedCache or {}
-    C.rankedCache[mode] = { rows = C.rows, count = #C.rows, result = result }
+    C.rankedCache[cacheKey] = { rows = C.rows, count = #C.rows, result = result }
     return result
 end
 

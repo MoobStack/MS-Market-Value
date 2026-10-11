@@ -2,7 +2,7 @@
 
 ## Target
 
-This test targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The earlier completed scan report was from build 70205 on PvP/Horde. The Test revision 1 report came from build 70338, exposed buffer loss on reopen and recipe-list churn, and retained 98,455 saved rows. Test revision 2 needs its own native checks.
+This test targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The earlier completed scan report was from build 70205 on PvP/Horde. The Test revision 1 report came from build 70338, exposed buffer loss on reopen and recipe-list churn, and retained 98,455 saved rows. The user reports successful revision 2 resumes under multiple conditions. Revision 3 history and controls need native checks.
 
 All three TOCs—standard, `_Camelot` and `_Forever`—describe the same addon and load order. Initialization checks the Interface number, saved schema, restricted-value API and auction functions. Different clients or Interface versions need an API review.
 
@@ -28,14 +28,14 @@ The native GetRecipeLink is used where available, matching profession-book shift
 
 Public item tooltips receive saved prices during combat. Restricted IDs are not read; unavailable stack context shows each-item values. GUID/location and bag/equipment quantity reads are guarded. Native primary-tooltip rebuilds remain outside combat; comparison rebuilds remain under Blizzard ownership.
 
-AH and crafting controls use Blizzard templates. LibAHTab coordinates addon tabs through the shared LibStub registry without extending Blizzard's tab arrays. Frame doubles check lifecycle behavior, not visual fit, native taint or running-addon coexistence.
+AH and crafting controls use Blizzard templates. LibAHTab coordinates addon tabs through the shared LibStub registry without extending Blizzard's tab arrays. The profession toggle follows the raised native CraftingPage level and sits in the title bar. Frame doubles check lifecycle behavior, not visual fit, native taint or running-addon coexistence.
 
 ## Prices and DE estimates
 
-AH lows are asking prices before fees. Missing buyouts are not zero values or guaranteed sale prices. Suffix-specific prices retain a labeled item-wide fallback. Recipe ranking uses minimum output yield; quotes use full market material cost, including owned materials.
+AH lows are asking prices before fees. Missing buyouts are not zero values or guaranteed sale prices. Suffix-specific prices retain a labeled item-wide fallback. Recipe ranking uses minimum output yield; quotes use full market material cost, including owned materials. The optional all-recipes view retains unavailable learned entries, without assigning zero prices.
 
 DE values use the named Classic reference model. Forever loot probabilities, new materials, exceptional eligibility and skill requirements remain unverified. The addon does not perform auction transactions, crafting or disenchanting actions.
 
 ## Persistence
 
-Schema-1 completed prices and preferences carry forward from 1.0.0. WoW writes account SavedVariables on its normal save lifecycle; verify reload/relog/restart behavior in the actual client. Future schemas and invalid roots are preserved and refused. The next test revision will introduce documented history retention; this revision keeps only the latest completed snapshot per market.
+Schema-1 completed prices and preferences carry forward from 1.0.0. WoW writes account SavedVariables on its normal save lifecycle; verify reload/relog/restart behavior in the actual client. Future schemas and invalid roots are preserved and refused. Daily history retains 1–30 UTC calendar days, using the latest completed scan per request day. The existing current snapshot stays separate. Upgrade can import its latest valid snapshot once, but cannot reconstruct earlier days. Matching suffix series and market keys stay isolated; missing listings are skipped in averages. Unknown history sub-schemas remain untouched while current prices continue.

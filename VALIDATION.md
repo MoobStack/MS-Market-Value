@@ -1,39 +1,37 @@
 # Validation
 
-`1.1.0-beta / 2026-10-11-beta001` · Test revision 2 · Tag `v1.1.0-beta-test2`
+`1.1.0-beta / 2026-10-11-beta001` · Test revision 3 · Tag `v1.1.0-beta-test3`
 
 | Check | Result |
 |---|---|
-| Lua 5.1 behavior | **169/169 passed** |
-| Runtime syntax | All 13 Lua files passed |
-| Metadata/load order | Version/build/revision and three identical TOCs passed |
+| Lua 5.1 behavior | **227/227 passed** |
+| Runtime syntax | All 14 Lua files passed |
+| Metadata/load order | Fixed beta version/build, revision 3 and three identical TOCs passed |
 | Bundled libraries | Pinned hashes and notices retained |
 | Runtime operations | No dynamic evaluation, auction transaction, automatic craft or chat send |
-| Native test revision 1 | Reported reopen failure and recipe-list churn on build 70338 |
-| Native test revision 2 | Retest pending |
+| Native revision 2 | User reports improved behavior and successful resumes under multiple conditions |
+| Native revision 3 | New history, controls and persistence checks pending |
 | Remote CI/publication | Not run or claimed |
 
-## Behavioral coverage
+## Local coverage
 
-The earlier 90 cases retain the price, suffix, DE, schema, market isolation, native-tab, budget, saved-data and stack-display checks. Interruption and combat expectations now match pause/resume and combat price decoration.
+The 169 prior cases retain scan/price arithmetic, atomic snapshots, suffixes, market isolation, DE, schema/settings migration, stack quantities, native tab coordination, combat decoration, and scan/copy/retry budgets. Recovery includes the reported 98,455-row size, copied buffers surviving AH closure, early buffer loss, cooldown-gated restart and request identity checks. Crafting covers quantities, losses, quotes, native selection, service/unsupported shapes and stable catalog publication.
 
-Forty-five added cases cover paused WAITING/PROCESSING/RESOLVING phases, late and empty responses, partial retry passes, data timeouts, AH/combat gates, changed buffers/markets, competing paused requests, commands and controls, unchanged request counts/cooldown, and combat prices with restricted quantity fallback.
+Fifty-eight new cases cover daily replacement, request-day boundaries, missing listings/days, empty scans, exclusion of partial/bid-only/sold data, 1–30 day pruning, immediate retention changes, rollover, market/suffix isolation, fractions and large prices, existing-snapshot import, saved-table serialization, invalid history preservation, numeric-record validation and bounded caching.
 
-Crafting cases cover costs, losses, return denominator, multiple/variable outputs, markup and fractional inputs, missing prices, non-item services, alternatives and optional allocations, incomplete ownership, restricted/malformed data, currencies, variable quantities, quality-dependent output, unsupported recipe types, zero cost, overflow, batching/sorting, catalog invalidation, full/filtered APIs, selection/window lifecycle, and 1.0.0 migration.
+They also check tooltip ordering, sample counts, historical stack totals and combat decoration; settings categories, retention inputs, auto-open/manual-close behavior, the profession button above a raised crafting page, all-recipes sorting and colors, undefined returns, services, saved filters and atomic list refreshes.
 
-Thirty-four Test revision 2 cases cover public price fields before cosmetic readiness, native buffer loss after complete copying, paused background copying, unavailable native getters, early buffer loss without discarded progress, cooldown-gated fresh restart, count/row/suffix identity checks, resolved local retries, copy budgets, and the reported 98,455-row size.
+Fixtures load the actual runtime under Lua 5.1 with native API/frame doubles. They do not render client art, establish taint behavior, contact auction servers or prove WoW disk saving. Serialization is a saved-table round trip, not a game save. Every profession's native recipe shapes still need checking.
 
-They also cover item-event floods, atomic catalog publication, unchanged native list events, learned/new recipes, loaded names, snapshot timestamps and profession/market isolation; concise/native-linked quotes, unavailable link fallbacks, fixed-output unit quotes, variable-yield wording, native chat drafts, focused stale text and missing-price controls. Synchronous item events and competing requests during item loading also have regressions.
+## Native evidence
 
-Fixtures load the real runtime under Lua 5.1 with native API/frame doubles. They do not render Blizzard textures or prove live UI fit, server buffer retention, native taint, profession coverage or WoW disk saving. Use [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md) for those checks.
+The earlier successful build003 PvP/Horde scan had 104,763 rows, 2,856 priced items and one full-scan request; see [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md).
 
-## Existing native evidence
+The revision 1 report came from Forever 1.60.1 / 70338 / Interface 16001, region 110. It retained 98,455 rows and exposed reopen/resume failure and recipe-list churn. After revision 2, the user reports that scanning resumed correctly under multiple test conditions and the addon is working better. No new row counts, exact timings or exhaustive native coverage were supplied. Revision 3 requires its own history and UI checks.
 
-The user reported a successful earlier build003 PvP/Horde scan: 104,763 rows, 2,856 priced items, one full-scan request, and normal tab behavior. It is preserved in [docs/RELEASE-1.0.0.md](docs/RELEASE-1.0.0.md). That report remains baseline evidence and does not validate all market/loot rules.
+The pinned native layout shows Forever's CraftingPage at frame level 100. The toggle now follows that page's level and uses the title bar, above its background and away from equipment slots. This source check explains the placement; native appearance still needs verification.
 
-The Test revision 1 report shows client 1.60.1 / 70338 / Interface 16001, region 110, a retained completed snapshot of 98,455 rows/3,179 priced items, and a failed resume after AH closure. The user also reported a repeatedly changing recipe list and requested shorter linked quotes. This is evidence of those problems, not proof of the Test revision 2 fixes.
-
-## Packaging and reproduction
+## Reproduction and packages
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
@@ -41,6 +39,4 @@ git diff --check
 python3 tools/package.py
 ```
 
-The package tool requires a clean checkout at the annotated build tag and checks Git objects, ZIP CRC, bundle validity and tagged runtime byte parity. The companion Validation JSON records actual archive/bundle restores, their tests, retained tags, package hashes and deterministic Clean/Source output checks for the delivered commit.
-
-Price history is not implemented or tested in this revision. Its retention, daily replacement and average calculations will be tested in the next revision of the same beta.
+Packaging requires a clean checkout at the annotated build tag. The delivered Validation JSON records actual Source/Git ZIP and bundle restores, tests, retained tags, byte parity, package hashes and deterministic Clean/Source checks for the exact commit. Personal SavedVariables are not included. Use [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md) for native checks.

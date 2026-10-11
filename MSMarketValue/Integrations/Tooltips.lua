@@ -62,7 +62,8 @@ function T.Lines(itemID, link, stackCount)
         if count > 1 then return each .. " / " .. U.Money(value * count) end
         return each
     end
-    if not settings.showVendor and not settings.showAuction and not settings.showDisenchant then return lines end
+    local average = settings.showHistory and A.History.Average(itemID, link) or nil
+    if not settings.showVendor and not average and not settings.showAuction and not settings.showDisenchant then return lines end
     local outcomes, reason, deValue
     if settings.showDisenchant and info then
         outcomes, reason = V.Outcomes(info)
@@ -71,6 +72,13 @@ function T.Lines(itemID, link, stackCount)
     add(A.TITLE, count > 1 and ("Each / Stack (" .. tostring(count) .. ")") or "Each", "header")
     if settings.showVendor then
         add("Vendor sell", info and (info.vendor == 0 and "No vendor sale" or money(info.vendor)) or "Item data loading")
+    end
+    if settings.showHistory then
+        if average then
+            local label = "Historic avg (" .. average.days .. (average.days == 1 and " day)" or " days)")
+            add(label, money(average.value))
+            if average.mode == "item-wide" and U.VariantKey(link) then add("History scope", "Item-wide", "muted") end
+        end
     end
     if settings.showAuction then
         local price, mode = D.Price(itemID, link, snapshot)

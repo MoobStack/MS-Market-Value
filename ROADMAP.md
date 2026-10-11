@@ -1,28 +1,19 @@
 # Roadmap to 1.1.0
 
-All testing uses `1.1.0-beta / 2026-10-11-beta001`. Test revision numbers advance without changing that version or build. Official `1.1.0` follows completion and live verification of both features.
+Testing stays on `1.1.0-beta / 2026-10-11-beta001`. Immutable test tags distinguish revisions. Official `1.1.0` follows live verification of crafting, history and the scan/tooltip fixes.
 
-## First: crafting and fixes
+## Implemented for testing
 
-Test revision 1 adds recipe costs, gross profit/loss, return percentage, profitable-recipe sorting, and copyable markup quotes. It also keeps tooltip prices available in combat and pauses/resumes incomplete scans in the current session.
+- Revision 1: recipe cost, gross profit/loss, return percentage, recipe ranking and markup quotes; combat prices and pause/resume.
+- Revision 2: local auction-copy recovery, stable recipe publication, concise native-linked quotes and recovery diagnostics.
+- Revision 3: daily history, 1–30 day retention, tooltip averages/sample days, crafting toggle/auto-open preference and an all-recipes filter.
 
-Test revision 2 fixes the reported AH buffer-loss recovery, recipe-list churn and quote wording/links. It retains the same beta version/build.
+The user reports successful revision 2 resumes under multiple test conditions. Revision 3 still needs daily rollover, retention, native saving and UI checks. Every profession needs representative recipes, including services, missing prices and variable output. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
 
-Check native recipe quantities and output prices in each profession, service quotes for Enchanting, reagent changes, visual fit, and closing/reopening after Local copy is complete. Report any unsupported native recipe shape before it is assigned a price.
+## Useful follow-ups
 
-## Next: price history
+- Optional auction-cut-aware net profit, with gross profit still clearly identified. Confirm Forever's fee rules before assuming a percentage; deposits and relisting need separate treatment.
+- A material shopping list for a chosen craft count, with owned/missing quantities and a draft quote for customer-supplied materials plus a labor fee.
+- A small price trend view with dates and sample counts. Daily asking-price history does not establish sale volume or liquidity.
 
-- Retain up to **30 calendar days** of completed pricing data, with a user setting for days kept.
-- Keep the **most recent completed scan for each day** in each market. Repeated scans replace that day's entry.
-- Average the available daily unit prices; show the observation count and avoid treating missing listings as zero.
-- Preserve the latest complete snapshot separately for current prices and crafting.
-- Order the tooltip price block: **vendor**, **historic average** when available, **recent scan**, then **DE expected**.
-- Prune expired history and apply retention changes consistently. Keep markets and item variants isolated.
-
-Daily boundaries, existing-data seeding and the exact average label will be documented with that implementation. Neither test revision 1 nor 2 collects history.
-
-## Release checks
-
-Verify native crafting UI and arithmetic, combat hovers, pause/resume, settings and completed-price persistence, price history pruning/averaging, scale and AH-addon coexistence. Keep the successful earlier PvP scan evidence and every existing Git tag.
-
-Forever-specific disenchant probabilities and special eligibility remain a separate evidence task. Buying, posting and crafting automation are not planned for 1.1.0.
+These are proposals, not implemented features or release requirements. Forever-specific disenchant probabilities remain a separate evidence task. Buying, posting and crafting automation are not planned for 1.1.0.

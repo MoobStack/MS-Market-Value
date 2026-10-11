@@ -1,61 +1,49 @@
-# Test revision 2: live checks
+# Test revision 3: live checks
 
-Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 2**, on the Forever client. Local fixtures do not establish native UI fit, link rendering or server timing.
+Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 3**, in Forever. Revision 2 resume tests were reported successful under multiple conditions. Local fixtures do not establish native appearance or disk saving.
 
-## Install and baseline
+## Install and controls
 
-- [ ] Close WoW, replace the addon with the Clean ZIP, preserve WTF, and restart.
-- [ ] Enable script errors with `/console scriptErrors 1`.
-- [ ] Verify **Test revision: 2** in `/msmv diagnostics`, with Interface 16001 and the expected market key.
-- [ ] Confirm the previous completed prices, tooltip settings and DE exclusions remain.
-- [ ] Open an auctioneer: Buy remains selected, one MS tab appears, and the scan/settings controls fit at your UI scale.
+- [ ] Close WoW, replace the addon with the Clean ZIP, preserve WTF, and restart. Confirm Test revision: 3, Interface 16001 and the expected market in `/msmv diagnostics`.
+- [ ] Verify existing completed prices, markup, tooltip preferences and DE exclusions.
+- [ ] Open a profession. The profit window starts closed; **Show profits** is visible in the title bar, clear of native controls. Click it to open, then **Hide profits** to close. Recipe changes must not reopen it.
+- [ ] In **/msmv → Crafting & history**, enable Auto-open crafting profits. Close/reopen the profession: the window opens. Close it manually; it stays closed until requested or the next profession session. Disable the setting and repeat.
+- [ ] Check the settings category buttons, long labels, title-bar button, dragging, Escape and UI scales. Report overlap with a screenshot.
 
-## Crafting
+## History and retention
 
-- [ ] Open each available profession and select a learned item recipe. The MS crafting window opens and follows recipe changes.
-- [ ] Compare every required material quantity and its latest AH unit price with the displayed material list and total cost.
-- [ ] Check a profitable recipe and a losing recipe. Confirm `profit = sale - materials` and `% = profit / materials × 100`, before fees.
-- [ ] Check a multi-item output. Cost is per craft; sale uses the number produced; cost per item divides by output count.
-- [ ] If output quantity varies, check both endpoints. The ranking uses minimum output.
-- [ ] Leave **Profitable recipes** open for a minute while item data loads. Rows/page count stay stable; catalog build/publication counts stop increasing for unchanged data.
-- [ ] Switch Profit / craft and Return %, page through results, and select a row. It selects the native recipe and does not craft anything.
-- [ ] Complete a new price scan while the profession stays open. The previous list remains visible until a complete refresh replaces it; the displayed scan age follows the published list.
-- [ ] Confirm missing material prices prevent a full cost, profit and quote. Missing output price still allows a complete material quote.
-- [ ] Change optional or alternative reagents where supported. The selected recipe follows public allocations; incomplete choices remain unavailable.
-- [ ] Test Cooking and a direct Enchanting service. A service has material cost/quote without a fabricated auction profit.
-- [ ] Apply 0%, then 25% markup. A one-output/service quote equals material cost × 1.25 and ends in **ea**. Fixed multi-item outputs divide by quantity; variable yields say **per craft**.
-- [ ] For Enchant Chest - Lesser Absorption, compare the quote link with shift-clicking the native recipe. **Insert in chat** opens a draft with the same clickable recipe link and no extra markup wording. It sends nothing until you choose a channel and press Enter.
-- [ ] Change recipes/markup with the quote focused. The previous quote is replaced correctly. Missing material prices disable Insert in chat.
-- [ ] Verify quote markup persists after a normal save/reload.
-- [ ] Close/reopen the crafting window with its MS button and `/msmv craft`; close the profession and confirm the addon window closes.
-- [ ] Check long recipe/material names, window dragging, Escape, UI scales and readability. Report overlap with a screenshot.
+- [ ] Confirm history length defaults to 30 and accepts 1–30 days; 0 and values above 30 are rejected. Apply/Enter saves the input; Escape restores it.
+- [ ] Check imported history against the last saved complete scan, if it falls within retention. Diagnostics shows UTC dates and retained daily scan count. A one-day average is valid.
+- [ ] Complete a scan and hover a priced item. The order is Vendor sell, Historic avg (N days), AH low, then applicable DE expected. Each/Stack totals must match real quantities.
+- [ ] Complete another permitted scan on the same UTC day. The daily scan count stays unchanged and that day's prices are replaced. An item missing from the final scan loses that day's sample.
+- [ ] After the next UTC day, complete a scan at another price. Check `(daily price 1 + daily price 2) / 2` and the displayed two-day count. Days without a buyout must not add zero samples.
+- [ ] With at least two stored UTC days, set retention to 1. Older history disappears immediately; current prices remain. Return to 30: deleted days do not return.
+- [ ] Verify automatic pruning when a stored day expires, without needing a new scan.
+- [ ] Disable the average under Tooltips: it disappears but collection continues. Re-enable it.
+- [ ] Check a matching random suffix and an item-wide fallback. Different variants/markets must not blend into one average.
+- [ ] Pause or fail an unfinished scan: current prices and history remain unchanged. Only a completed response enters history.
+- [ ] Save normally, then reload/relog/restart. Daily history, retention and both crafting preferences survive. Allow WoW to save before replacing files.
 
-## Combat tooltips
+## Recipe list, arithmetic and quotes
 
-- [ ] Hover the same priced bag item outside and during combat. Vendor, AH and applicable DE values remain present.
-- [ ] Check an actual stack, a single item, equipment, a chat link and comparisons. Stack quantities remain correct where public; unavailable quantity shows Each.
-- [ ] Rehover and change stacks. No duplicate price block or comparison header damage occurs.
-- [ ] Allow uncached item information to load; no tooltip getter/rebuild or blocked-action error occurs. Deferred native refresh can finish after combat.
+- [ ] Open each available profession, select a learned recipe and compare raw quantities/unit prices with material cost, sale and `profit = sale - materials`; return is profit divided by material cost, before fees.
+- [ ] In Recipe list, Show all recipes includes positive, negative, break-even and unpriced learned entries. Losses appear red; unknown values say Unavailable and sort last. Profitable only hides those entries. The filter survives a normal save.
+- [ ] Switch Profit / craft and Return %, page through results and select a row. Selection changes the native recipe and never crafts it. Service/unsupported entries explain unavailable profit on the selected page.
+- [ ] Check fixed multi-item output, variable yield, zero material cost, optional/alternative selection and missing prices. The catalog uses minimum yield and fixed required materials.
+- [ ] Leave the list open while item data loads. Catalog build/publication counts stabilize. A new completed price scan replaces the results once after the refresh completes.
+- [ ] Check Cooking and a direct Enchanting service. A service keeps a material quote without an invented auction profit.
+- [ ] Apply 0%, then 25% quote markup. Fixed outputs and services end in ea; variable/unknown output says per craft. The native recipe link matches profession-book shift-click. Insert in chat opens a draft without sending it.
+- [ ] Change recipe/markup while the quote is focused. The old quote must update; missing material prices disable chat insertion.
 
-## Pause and resume
+## Combat and scan regression
 
-- [ ] Start one permitted scan and capture diagnostics. Click Pause while it is processing; the previous completed timestamp/prices remain usable.
-- [ ] Click Resume during the full-scan cooldown. It continues staged work and does **not** increase the session request count.
-- [ ] Pause while waiting for a response if possible. A response received while paused stays staged until Resume.
-- [ ] Wait for **Local copy: complete**, pause pricing, close/reopen the auctioneer and click Resume during cooldown. It finishes the same local scan with no new request, even if the client cleared its buffer.
-- [ ] Pause before copying finishes while keeping the AH open. Copy progress continues; staged pricing and completed prices remain unchanged. Close/reopen after copy completion, then resume.
-- [ ] If the AH closes before copying finishes and loses unread rows, Resume stays PAUSED with progress retained. Retry if the original buffer returns. Otherwise, after cooldown, Restart starts one fresh request without mixing partial prices. Capture diagnostics for this case.
-- [ ] If combat interrupts a scan, confirm PAUSED, then resume outside combat at an auctioneer.
-- [ ] If native item data is delayed, resume after a timeout. Accepted rows must not be counted twice.
-- [ ] Confirm COMPLETE accounts for the full response, updates the saved timestamp once, and leaves the original request cooldown intact.
-- [ ] Use `/msmv discard` on another incomplete scan. Completed prices remain; the new-request cooldown is not bypassed.
-- [ ] Do not expect incomplete work to survive `/reload` or quitting. Verify completed prices and cooldown still do.
-- [ ] Check normal AH tab switching and another AH addon with one scanner active at a time; capture any error.
+- [ ] Hover the same public item outside/during combat: vendor, historic, recent AH and applicable DE values remain, with correct stack totals and no duplicate block.
+- [ ] Check bag items, equipment, chat links and comparison tooltips. Unavailable quantity contexts show Each without errors.
+- [ ] Open the AH: Buy remains selected, one MS tab appears, and controls fit.
+- [ ] Start, pause and resume during cooldown. Once Local copy is complete, close/reopen and resume; request count remains unchanged. Repeat after combat.
+- [ ] If the buffer is lost before copying finishes, work remains paused. Fresh Restart waits for the cooldown and adds one request; prior completed prices/history remain until the new scan completes.
+- [ ] Reload/logout ends unfinished work without discarding completed prices or history.
 
-## Save and report
+## Report
 
-- [ ] Verify completed prices, settings and exclusions after `/reload`, relog and full exit/restart.
-- [ ] Compare several current AH listings, including enchanting materials and a signed-suffix item, with saved unit prices.
-- [ ] Keep different rulesets/factions isolated and verify a same-market reporting-host change reuses the cache.
-
-Send `/msmv diagnostics`, the profession and recipe name/ID, exact Lua errors, and the failed checklist item. For resume, include before/after request counts, local-copy completion and staged-row progress. For a changing recipe list, include catalog build/publication counts while the same profession remains open. Price history is not part of this revision's checks.
+Send `/msmv diagnostics`, the failed check, profession/recipe name or ID, exact Lua error and a screenshot for layout issues. For history, include scan request times in UTC, retained/sample day counts and retention. For resume, include before/after request counts, copy progress and staged rows.

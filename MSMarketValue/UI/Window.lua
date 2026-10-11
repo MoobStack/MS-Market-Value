@@ -30,6 +30,7 @@ local function Check(parent, key, text, y)
         if not D.data then return end
         D.data.settings[key] = self:GetChecked() and true or false
         if A.Tooltips then A.Tooltips.RefreshVisible() end
+        UI.Refresh()
     end)
     UI.checks[key] = button
 end
@@ -80,6 +81,8 @@ function UI.DiagnosticsText()
         "Recipe catalog builds: " .. tostring(A.Crafting.builds),
         "Recipe catalog publications: " .. tostring(A.Crafting.publications),
         "Selected recipe link: " .. (A.Crafting.selected and A.Crafting.RecipeLink(A.Crafting.selected.recipeID) and "available" or "unavailable"),
+        "Craft auto-open: " .. tostring(D.Settings().craftAutoOpen),
+        "Recipe list filter: " .. (D.Settings().showAllRecipes and "all learned recipes" or "profitable only"),
         "Full-scan requests this session: " .. tostring(S.requestCount),
         "Replication events this scan: " .. tostring(S.responseCount),
         "Same-count data updates: " .. tostring(S.dataUpdateCount),
@@ -97,6 +100,11 @@ function UI.DiagnosticsText()
         "Auction House tab: " .. (UI.tabInstalled and "installed" or (UI.tabReason or "waiting for the auctioneer")),
         "Disenchant profile: " .. A.DEProfile.id .. " (Forever unverified)",
     }
+    local history = A.History.Status()
+    lines[#lines + 1] = "Historic pricing: " .. (history.reason or (tostring(history.days) .. " UTC days for this market; retention=" .. tostring(history.retention) .. " days"))
+    if history.firstDay then
+        lines[#lines + 1] = "History dates UTC: " .. date("!%Y-%m-%d", history.firstDay * 86400) .. " to " .. date("!%Y-%m-%d", history.lastDay * 86400)
+    end
     if snapshot then
         lines[#lines + 1] = string.format("Saved snapshot: complete; rows=%d; priced_items=%d; bid_only=%d; sold=%d", snapshot.totalRows, snapshot.distinctItems, snapshot.bidOnlyRows, snapshot.soldRows)
         lines[#lines + 1] = "Snapshot started UTC: " .. date("!%Y-%m-%dT%H:%M:%SZ", snapshot.startedAt)
@@ -107,6 +115,23 @@ function UI.DiagnosticsText()
     lines[#lines + 1] = "Recent local messages:"
     for _, message in ipairs(A.log) do lines[#lines + 1] = message end
     return table.concat(lines, "\n")
+end
+
+function UI.SettingsPage(page)
+    UI.settingsPage = page == "craft" and "craft" or "tooltips"
+    if not UI.tooltipSettings then return end
+    if UI.settingsPage == "craft" then UI.tooltipSettings:Hide(); UI.craftSettings:Show()
+    else UI.tooltipSettings:Show(); UI.craftSettings:Hide() end
+    UI.tooltipSettingsTab:SetEnabled(UI.settingsPage ~= "tooltips")
+    UI.craftSettingsTab:SetEnabled(UI.settingsPage ~= "craft")
+end
+
+function UI.ApplyRetention()
+    local value = tonumber(UI.retentionBox:GetText())
+    if not A.History.SetRetention(value) then return U.Print("Choose a history length from 1 to 30 days.") end
+    UI.retentionBox:ClearFocus()
+    A.Tooltips.RefreshVisible()
+    UI.Refresh()
 end
 
 function UI.ShowDiagnostics()
@@ -186,12 +211,34 @@ function UI.Create()
     end)
 
     local settings = Inset(frame, 12, -216, 366, 204)
-    Label(settings, "Tooltip settings", 14, -13, 338, "GameFontNormal")
-    Check(settings, "showVendor", "Vendor sell price", -36)
-    Check(settings, "showAuction", "Lowest AH buyout", -64)
-    Check(settings, "showDisenchant", "Estimated disenchant value", -92)
-    Check(settings, "showMaterials", "Material ranges and chances", -120)
-    Check(settings, "showAge", "Snapshot age and stale flag", -148)
+    UI.tooltipSettingsTab = Button(settings, "Tooltips", 10, -7, 146, function() UI.SettingsPage("tooltips") end)
+    UI.craftSettingsTab = Button(settings, "Crafting & history", 163, -7, 193, function() UI.SettingsPage("craft") end)
+    local tooltipSettings = CreateFrame("Frame", nil, settings)
+    tooltipSettings:SetPoint("TOPLEFT", 0, -40); tooltipSettings:SetSize(366, 158)
+    UI.tooltipSettings = tooltipSettings
+    Check(tooltipSettings, "showVendor", "Vendor sell price", 0)
+    Check(tooltipSettings, "showHistory", "Historic average and sample days", -25)
+    Check(tooltipSettings, "showAuction", "Lowest AH buyout", -50)
+    Check(tooltipSettings, "showDisenchant", "Estimated disenchant value", -75)
+    Check(tooltipSettings, "showMaterials", "Material ranges and chances", -100)
+    Check(tooltipSettings, "showAge", "Snapshot age and stale flag", -125)
+    local craftSettings = CreateFrame("Frame", nil, settings)
+    craftSettings:SetPoint("TOPLEFT", 0, -40); craftSettings:SetSize(366, 158)
+    UI.craftSettings = craftSettings
+    Check(craftSettings, "craftAutoOpen", "Auto-open crafting profits", 0)
+    Label(craftSettings, "Keep price history for", 14, -42, 155)
+    local retention = CreateFrame("EditBox", nil, craftSettings, "InputBoxTemplate")
+    retention:SetSize(36, 24); retention:SetPoint("TOPLEFT", 177, -35)
+    retention:SetAutoFocus(false); retention:SetNumeric(true); retention:SetMaxLetters(2)
+    retention:SetScript("OnEnterPressed", UI.ApplyRetention)
+    retention:SetScript("OnEscapePressed", function(self) self:ClearFocus(); UI.Refresh() end)
+    UI.retentionBox = retention
+    Label(craftSettings, "days", 220, -42, 42)
+    UI.retentionApply = Button(craftSettings, "Apply", 272, -34, 76, UI.ApplyRetention)
+    Label(craftSettings, "1-30 days. Latest complete scan per UTC day.", 14, -72, 338)
+    UI.historyText = Label(craftSettings, "", 14, -98, 338)
+    Label(craftSettings, "Shortening history removes older days.\nEarlier scans cannot be recovered.", 14, -124, 338)
+    UI.SettingsPage("tooltips")
 
     local prices = Inset(frame, 390, -216, 366, 204)
     Label(prices, "Price settings", 14, -13, 338, "GameFontNormal")
@@ -267,6 +314,9 @@ function UI.Refresh()
     if UI.tabButton then UI.tabButton:SetEnabled(not U.Combat()) end
     for key, check in pairs(UI.checks) do check:SetChecked(D.Settings()[key]) end
     if not UI.staleBox:HasFocus() then UI.staleBox:SetText(tostring(D.Settings().staleHours)) end
+    if not UI.retentionBox:HasFocus() then UI.retentionBox:SetText(tostring(D.Settings().historyDays)) end
+    local history = A.History.Status()
+    UI.historyText:SetText(history.reason or ("Saved daily scans for this market: " .. history.days))
 end
 
 function UI.Dock()

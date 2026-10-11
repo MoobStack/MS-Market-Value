@@ -5,9 +5,12 @@ A.DB = D
 
 D.defaults = {
     showVendor = true, showAuction = true, showDisenchant = true,
-    showMaterials = true, showAge = true,
-    staleHours = 24, quoteMarkup = 0,
+    showMaterials = true, showAge = true, showHistory = true,
+    craftAutoOpen = false, showAllRecipes = false,
+    staleHours = 24, quoteMarkup = 0, historyDays = 30,
 }
+
+local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, historyDays = { 1, 30 } }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB
@@ -26,8 +29,7 @@ function D.Initialize()
     for key, value in pairs(D.defaults) do
         if type(value) == "boolean" then
             if type(db.settings[key]) ~= "boolean" then db.settings[key] = value end
-        elseif not U.Number(db.settings[key], key == "quoteMarkup" and 0 or 1,
-                           key == "quoteMarkup" and 1000 or 168, true) then
+        elseif not U.Number(db.settings[key], settingBounds[key][1], settingBounds[key][2], true) then
             db.settings[key] = value
         end
     end
@@ -37,6 +39,7 @@ function D.Initialize()
     db.build = A.BUILD
     _G.MSMarketValueDB = db
     D.data = db
+    A.History.Initialize()
     return true
 end
 
@@ -44,21 +47,25 @@ function D.Settings()
     return D.data and D.data.settings or D.defaults
 end
 
+function D.ValidSnapshot(snapshot, key)
+    if not U.Table(snapshot) or not U.Accessible(snapshot.complete) or snapshot.complete ~= true or
+       not U.String(snapshot.marketKey) or snapshot.marketKey ~= key or not U.Table(snapshot.prices) or
+       not U.Table(snapshot.variants) or
+       not U.Table(snapshot.bidOnlyItems) or
+       not U.Number(snapshot.totalRows, 0, A.MAX_ROWS, true) or
+       not U.Number(snapshot.distinctItems, 0, A.MAX_ROWS, true) or
+       not U.Number(snapshot.bidOnlyRows, 0, A.MAX_ROWS, true) or
+       not U.Number(snapshot.soldRows, 0, A.MAX_ROWS, true) or
+       not U.Number(snapshot.startedAt, 0) then return false end
+    return true
+end
+
 function D.Snapshot()
     if not D.data then return nil end
     local key = U.MarketKey()
     if not key then return nil end
     local snapshot = D.data.markets[key]
-    if type(snapshot) ~= "table" or snapshot.complete ~= true or
-       snapshot.marketKey ~= key or type(snapshot.prices) ~= "table" or
-       type(snapshot.variants) ~= "table" or
-       type(snapshot.bidOnlyItems) ~= "table" or
-       not U.Number(snapshot.totalRows, 0, A.MAX_ROWS, true) or
-       not U.Number(snapshot.distinctItems, 0, A.MAX_ROWS, true) or
-       not U.Number(snapshot.bidOnlyRows, 0, A.MAX_ROWS, true) or
-       not U.Number(snapshot.soldRows, 0, A.MAX_ROWS, true) or
-       not U.Number(snapshot.startedAt, 0) then return nil end
-    return snapshot
+    if D.ValidSnapshot(snapshot, key) then return snapshot end
 end
 
 local function AddPrice(map, key, unitPrice, quantity)
@@ -117,9 +124,10 @@ function D.Commit(snapshot)
     if key ~= snapshot.marketKey then return false, "Market changed while scanning." end
     snapshot.finishedAt = U.Now()
     snapshot.complete = true
-    -- The sole authoritative price write. No partial rows or historical prices
-    -- are merged into a replacement snapshot.
+    -- The sole authoritative current-price write. History receives only a
+    -- completed snapshot and never fills gaps in current prices.
     D.data.markets[key] = snapshot
+    A.History.Record(snapshot)
     return true
 end
 

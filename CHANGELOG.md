@@ -2,6 +2,18 @@
 
 The current 1.1.0 work uses one testing version and build. Test revision numbers and immutable tags distinguish packages. Earlier releases and their evidence remain below.
 
+## 1.1.0-beta — Test revision 3 — 2026-10-11
+
+Same version and build, `2026-10-11-beta001`; tag `v1.1.0-beta-test3`.
+
+- Add daily price history with 1–30 day retention, defaulting to 30. Each UTC day's latest completed scan replaces its entry; partial scans never enter history.
+- Show Historic avg and its sample-day count between vendor and recent AH prices. Missing listings/days are skipped; suffixes and markets stay separate. Import the last existing complete scan once, when it is within retention.
+- Add Show profits / Hide profits in the profession title bar, above Forever's raised crafting page. Auto-open is optional and off by default.
+- Add Show all recipes / Profitable only. Losses, break-even and unpriced learned recipes can be viewed; unknown values remain unavailable and sort last.
+- Add Crafting & history settings, saved preferences and history diagnostics. Update the guide, release notes and native checklist.
+
+**227/227 local Lua 5.1 checks pass.** The user reports successful revision 2 resumes under multiple conditions. New history, controls and native saving need revision 3 checks. Official 1.1.0 remains pending.
+
 ## 1.1.0-beta — Test revision 2 — 2026-10-11
 
 Same version and build, `2026-10-11-beta001`; tag `v1.1.0-beta-test2`.

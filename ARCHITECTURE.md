@@ -1,15 +1,16 @@
 # Architecture
 
-`1.1.0-beta / 2026-10-11-beta001` · Test revision 2 · Saved-data schema 1
+`1.1.0-beta / 2026-10-11-beta001` · Test revision 3 · Saved-data schema 1
 
 ## Runtime
 
-The three identical TOCs load 13 Lua files. Bootstrap creates the addon namespace, followed by the bundled libraries, utilities/database, DE data and valuation, crafting analysis, scanner, tooltips, both UI modules, and event wiring. Original code uses the per-addon namespace; `MSMarketValue` and the TOC's `MSMarketValueDB` are its public globals. Blizzard functions are not replaced.
+The three identical TOCs load 14 Lua files. Bootstrap creates the addon namespace, followed by the bundled libraries, utilities/database/history, DE data and valuation, crafting analysis, scanner, tooltips, both UI modules, and event wiring. Original code uses the per-addon namespace; `MSMarketValue` and the TOC's `MSMarketValueDB` are its public globals. Blizzard functions are not replaced.
 
 | Module | Responsibility |
 |---|---|
 | `Core/Util.lua` | Public-value guards, item/suffix and market keys, money and age formatting |
 | `Core/Database.lua` | Schema-1 initialization, atomic completed snapshots, price lookup and settings |
+| `Core/History.lua` | Compact daily unit lows, UTC retention, migration and cached averages |
 | `Core/Valuation.lua`, `Data/Disenchant.lua` | Native metadata and labeled Classic DE estimates |
 | `Crafting/Analysis.lua` | Native schematic/selection adapter, costs, quotes and batched recipe ranking |
 | `Auction/Scanner.lua` | One replication request, bounded local copying/processing, retries and recovery |
@@ -41,7 +42,7 @@ The adapter reads the visible `ProfessionsFrame.CraftingPage.SchematicForm`, nat
 
 Fixed required reagents come from schematics. Public native transaction allocations choose required alternatives and optional materials for the selected recipe; copied item/quantity/slot fields are validated before valuation. Currency and variable quantity costs, unresolved choices, salvage and recrafting remain unavailable. Native output quantity ranges produce conservative minimum and maximum gross returns. Non-item services retain material quotes without an auction sale estimate.
 
-Catalog valuation runs in batches of 20 recipes with a four-millisecond budget on 0.25-second ticks while the profession is open. Staged rows publish atomically after the full catalog completes. The preceding list and source timestamp remain visible during a same-market refresh. Profession or market changes clear unrelated rows. Price replacement, profession/data-source changes and learned-recipe events rebuild it. Native list events check the sorted unique ID set at most once a second and rebuild only on a change. Item-data events update pending material names without repricing or sorting. Selected recipe values follow the native form on those ticks. Ranking caches sorted fully priced positive results by profit or return; minimum yield determines order. Selecting a rank row calls native `OpenRecipe`, never a crafting action.
+Catalog valuation runs in batches of 20 recipes with a four-millisecond budget on 0.25-second ticks while the profession is open. Staged rows publish atomically after the full catalog completes. The preceding list and source timestamp remain visible during a same-market refresh. Profession or market changes clear unrelated rows. Price replacement, profession/data-source changes and learned-recipe events rebuild it. Native list events check the sorted unique ID set at most once a second and rebuild only on a change. Item-data events update pending material names without repricing or sorting. Selected recipe values follow the native form on those ticks. Ranking caches profit/return results separately for profitable-only and all-learned filters. All mode includes negative, break-even and unavailable rows. Missing metrics sort last by name/ID; minimum yield determines order. Selecting a rank row calls native `OpenRecipe`, never a crafting action.
 
 ## Tooltips and UI
 
@@ -49,12 +50,20 @@ Catalog valuation runs in batches of 20 recipes with a four-millisecond budget o
 
 Decoration reads saved prices during combat. Unreadable item data is not inspected. Native getter-backed primary tooltip rebuilds remain outside combat; comparison rebuilds remain owned by Blizzard. A reentrancy guard and recorded line count prevent recursive refresh and duplicate blocks.
 
-Scan/settings controls use native inset and portrait templates. Their controls move between the AH tab and manual window. The separate draggable crafting portrait has Selected recipe and Profitable recipes views, scrollable materials, and a copyable native-linked quote with a user-clicked chat-draft button. Fixed-yield quotes divide by output count for ea; unknown/variable yields remain per craft. ChatFrameUtil.OpenChat is preferred, with the legacy opener as fallback. No chat send is called. Closing it suppresses automatic reopening until requested or a new profession session. Combat hides addon controls while price decoration remains available.
+Scan/settings controls use native inset and portrait templates. Their controls move between the AH tab and manual window. The separate draggable crafting portrait has Selected recipe and Recipe list views, a Show all recipes / Profitable only filter, scrollable materials, and a copyable native-linked quote with a user-clicked chat-draft button. Fixed-yield quotes divide by output count for ea; unknown/variable yields remain per craft. ChatFrameUtil.OpenChat is preferred, with the legacy opener as fallback. No chat send is called. A portrait-owned title-bar toggle follows the raised CraftingPage frame level. Auto-open defaults to off and applies on a new profession session; manual closure stays respected during that session. Combat hides addon controls while price decoration remains available.
+
+## Daily history
+
+Only successful completed snapshot commits call history recording. The request timestamp determines the UTC day (`floor(startedAt / 86400)`); the latest request replaces that day atomically, including removal of absent listings. The completed current snapshot is independent and history never fills current-price gaps. Empty completed scans retain an empty daily entry; paused/failed/partial scans do not write history.
+
+Retention includes today plus the preceding N−1 days. Loading, rollover, recording and setting changes prune older/future entries across markets. Lowering retention deletes entries immediately; later increasing it cannot restore them. An incremental mean avoids oversized sums, gives each available daily low equal weight, and skips missing/invalid prices. A suffix average uses only matching days; item-wide fallback uses its own series. Tooltip totals multiply the fractional average before formatting.
+
+Average caching is limited to 4,096 queried item/variant/market keys and invalidated by record, pruning or retention changes. Calendar lookups use at most 30 daily entries. Only numeric prices and request times are saved, without copies of auction rows or sellers.
 
 ## Saved data and builds
 
-Schema 1 retains `markets`, settings, exclusions, window position and `cooldownUntil`. This beta adds only `settings.quoteMarkup`, an integer 0–1000 defaulting to zero. Completed price records keep unit minimum, listed units and auction count; personal auction rows and sellers are not saved. Existing schema-1 snapshots remain usable.
+Schema 1 retains `markets`, settings, exclusions, window position and `cooldownUntil`. The beta adds `quoteMarkup` (0–1000, default 0), `historyDays` (1–30, default 30), `showHistory` (true), `craftAutoOpen` (false), and `showAllRecipes` (false) settings. Completed price records keep unit minimum, listed units and auction count; personal auction rows and sellers are not saved. Existing schema-1 snapshots remain usable.
 
-Known Forever markets use region/ruleset/faction keys; host suffixes do not split a detected ruleset. Unknown aliases remain isolated and old caches are not promoted automatically. History is not yet stored; its implementation belongs to the next test revision.
+Known Forever markets use region/ruleset/faction keys; host suffixes do not split a detected ruleset. Unknown aliases remain isolated and old caches are not promoted automatically. History has its own optional schema-1 root: `history = { schema = 1, markets = { [marketKey] = { [UTCday] = { startedAt, prices, variants } } } }`. Prices/variants contain only numeric unit lows. Initialization validates/prunes saved history, and first upgrade imports the latest existing complete snapshot per market once if it is in retention. An unsupported history root is preserved and leaves current pricing active.
 
 The testing version and build remain fixed. `TEST_REVISION` and the matching build.json/TOC fields advance for each immutable test tag. Packaging requires a clean tagged checkout and verifies runtime/source/tag parity. Lua 5.1 fixtures exercise behavior; live UI, buffer retention and client disk persistence require native checks.

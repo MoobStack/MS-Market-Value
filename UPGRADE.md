@@ -1,29 +1,29 @@
 # Upgrade and rollback
 
-Current test: `1.1.0-beta / 2026-10-11-beta001`, **Test revision 2**. The addon folder, SavedVariable name and schema remain `MSMarketValue`, `MSMarketValueDB`, and 1.
+Current test: `1.1.0-beta / 2026-10-11-beta001`, **Test revision 3**. Folder, SavedVariable name and root schema remain `MSMarketValue`, `MSMarketValueDB`, and 1.
 
-## Install this test revision
+## Install
 
-1. Finish a running scan and close WoW normally. Paused scans are session-only and cannot survive an addon replacement/restart.
-2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` if present. Keep the prior Clean ZIP.
-3. Replace `Interface/AddOns/MSMarketValue` with the new Clean ZIP's `MSMarketValue` folder. Keep WTF/SavedVariables.
-4. Restart the Forever client and open `/msmv diagnostics`. Confirm the version, build, and **Test revision: 2**.
-5. Verify saved prices and settings, then follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
+1. Finish any running scan and close WoW normally. Incomplete work is session-only.
+2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`. Keep the prior Clean ZIP.
+3. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP's addon folder. Keep WTF/SavedVariables.
+4. Restart Forever, check **Test revision: 3** in `/msmv diagnostics`, and confirm existing prices/preferences.
+5. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
 
-Do not mix files from different revisions or install the outer source repository as an addon. Restart the client for this update.
+Do not mix runtime files or install the outer source repository as an addon.
 
 ## What carries forward
 
-Existing 1.0.0, build003 and earlier 1.1.0-beta schema-1 completed snapshots, market keys, settings, exclusions, window position and cooldown remain. No new scan is needed solely for this upgrade. Existing quote markup is kept; a missing setting defaults to zero.
+Schema-1 completed scans, market keys, existing settings, exclusions, position, markup and cooldown are retained. No scan is needed solely to upgrade. Older realm-keyed prices remain isolated from detected ruleset caches.
 
-Older build001/build002 realm-keyed records remain stored, but are not merged into the later ruleset keys. If that ruleset has no completed snapshot yet, its first successful scan is still required. See the historical entries in [CHANGELOG.md](CHANGELOG.md).
+New settings default to 30 history days, visible averages, manual crafting-window opening and profitable-only recipes. **Show profits** is in the profession title bar. Change auto-open and days retained in **/msmv → Crafting & history**.
 
-Incomplete work is not saved between game sessions. Pause/resume uses the current session's local auction copy once copying finishes. Keep the AH open until Local copy is complete. Restarting retains the last completed prices and request cooldown; it does not preserve an unfinished buffer.
+The latest existing complete scan is imported once into its request-time UTC day if it falls within retention. Earlier scans were not stored by revisions 1 and 2. Subsequent completed scans replace that day's entry. Partial scans never enter history. Shortening retention deletes older days; it leaves current prices intact.
 
-Price history is planned for the next test revision and does not exist in this package.
+The session's complete local auction copy survives AH closure, but not reload/logout or addon replacement. Keep the AH open until Local copy is complete. A fresh request still respects the saved cooldown.
 
-## Roll back or move installations
+## Rollback and recovery
 
-With WoW closed, restore the earlier Clean ZIP's addon folder. Both 1.0.0 and this test use schema 1; the additional markup setting is harmless to 1.0.0. Restore a matching SavedVariables backup only if needed, with WoW closed. Future schemas are preserved and refused rather than silently downgraded.
+With WoW closed, restore the prior Clean ZIP. Earlier schema-1 versions ignore the new settings/history but do not maintain them; on returning to revision 3, complete a new scan to refresh history. Keep a SavedVariables backup if you need the exact prior daily data. Future root schemas are preserved and refused; an unsupported history sub-schema is preserved while current pricing continues.
 
-The Clean ZIP restores game files. Source/Git Repository ZIPs and the bundle restore code and history. Your account SavedVariables backup restores personal prices and settings. When moving clients, copy the matching addon and account data while both clients are closed, then verify that the game saves them normally.
+Clean restores game files. Source/Git Repository ZIPs and the bundle restore code and Git history. Your SavedVariables backup restores personal prices and preferences. Move matching addon/account data only while the clients are closed, then verify normal saving in the game.

@@ -93,6 +93,14 @@ The user reported that closing/reopening lost the buffer in Test revision 1. The
 
 Unconditional GET_ITEM_INFO_RECEIVED invalidation and incremental publication explained the constantly changing recipe list. Names now update separately; unchanged list events do not revalue the catalog; a complete batch replaces the published list atomically. Native source review establishes available calls, not in-game link rendering or timing. No additional third-party runtime code was imported.
 
+## Test revision 3: history and profession controls
+
+The user reports that revision 2 resumes worked under multiple conditions. The new work preserves that scanner and adds local daily history without a new native pricing API. UTC request days and equal-weight daily low averages are addon policies; they are not an assertion about auction sales or server retention.
+
+The build-70338 [Camelot profession frame](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_Professions/Camelot/Blizzard_ProfessionsFrame.xml) puts CraftingPage at frame level 100 above the portrait. Its [crafting template](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_Professions/Blizzard_ProfessionsCrafting.xml) anchors equipment slots at the upper right below the title bar. The former portrait-child opener could be obscured there. The revised toggle follows the page's frame level and sits in the title bar; native appearance still requires testing.
+
+History stores only unit lows and request times. It imports the latest existing completed scan once, retains 1–30 calendar days per market, replaces each day's complete entry, and uses matching suffix series without mixing fallback prices. Retention never removes the current snapshot. Schema 1 is retained with an optional history sub-schema; unknown history is preserved without disabling current prices.
+
 ## Evidence boundaries
 
 The local source/API review supports the implementation choice. The successful user scan report establishes completion for the supplied PvP replication buffer. Neither that report nor source review proves that every ruleset returns all intended auctions, that the client writes SavedVariables successfully, that the native UI lays out correctly, or that the DE model matches actual loot.

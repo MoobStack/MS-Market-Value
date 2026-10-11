@@ -69,12 +69,22 @@ function UI.Create()
     frame:SetScript("OnDragStart", function(self) if not U.Combat() then self:StartMoving() end end)
     frame:SetScript("OnDragStop", function(self) self:StopMovingOrSizing() end)
     frame.CloseButton:SetScript("OnClick", function() UI.suppressed = true; frame:Hide() end)
-    frame:SetScript("OnHide", function() if C.Form() then UI.suppressed = true end end)
+    frame:SetScript("OnHide", function()
+        if C.Form() then UI.suppressed = true end
+        if UI.opener then UI.opener:SetText("Show profits") end
+    end)
+    frame:SetScript("OnShow", function() if UI.opener then UI.opener:SetText("Hide profits") end end)
     table.insert(UISpecialFrames, "MSMarketValueCrafting")
     UI.frame = frame
     UI.age = Label(frame, "", 18, -38, 524)
     UI.recipeTab = Button(frame, "Selected recipe", 16, -61, 156, function() UI.mode = "recipe"; UI.Refresh() end)
-    UI.profitTab = Button(frame, "Profitable recipes", 181, -61, 174, function() UI.mode = "profit"; UI.Refresh() end)
+    UI.profitTab = Button(frame, "Recipe list", 181, -61, 174, function() UI.mode = "profit"; UI.Refresh() end)
+    UI.showAllButton = Button(frame, "Show all recipes", 368, -61, 176, function()
+        if not D.data then return end
+        D.data.settings.showAllRecipes = not D.Settings().showAllRecipes
+        UI.page = 1
+        UI.Refresh()
+    end)
 
     local details = CreateFrame("Frame", nil, frame)
     details:SetPoint("TOPLEFT", 0, -95)
@@ -177,6 +187,7 @@ function UI.Refresh()
     UI.age:SetText(snapshot and ("Price scan: " .. U.Age(snapshot.startedAt) .. (D.IsStale(snapshot) and " (stale)" or "")) or "No complete price scan for this market")
     if UI.mode == "recipe" then
         UI.details:Show(); UI.catalog:Hide()
+        UI.showAllButton:Hide()
         local row = C.selected
         UI.recipeName:SetText(row and row.name or "Select a learned recipe")
         UI.yield:SetText(row and row.quantityMin and ("Output per craft: " .. (row.quantityMin == row.quantityMax and tostring(row.quantityMin) or (row.quantityMin .. "-" .. row.quantityMax))) or "")
@@ -214,21 +225,31 @@ function UI.Refresh()
         UI.reason:SetText(row and row.reason or (row and row.estimated and "Variable output: profit shows the minimum and maximum yield." or ""))
     else
         UI.details:Hide(); UI.catalog:Show()
-        local rows = C.Ranked(UI.sort)
+        UI.showAllButton:Show()
+        local showAll = D.Settings().showAllRecipes
+        UI.showAllButton:SetText(showAll and "Profitable only" or "Show all recipes")
+        local rows = C.Ranked(UI.sort, showAll)
         local pages = math.max(1, math.ceil(#rows / 8))
         UI.page = math.min(UI.page, pages)
         for index, button in ipairs(UI.catalogRows) do
             local row = rows[(UI.page - 1) * 8 + index]
             button.recipeID = row and row.recipeID or nil
             if row then
-                button.name:SetText(row.name); button.profit:SetText(UI.SignedMoney(row.profitMin))
-                button.percent:SetText(row.returnMin and Return(row.returnMin) or "No cost"); button:Show()
+                button.name:SetText(row.name)
+                button.profit:SetText(row.profitMin and UI.SignedMoney(row.profitMin) or "Unavailable")
+                button.percent:SetText(row.returnMin and Return(row.returnMin) or (row.cost == 0 and "No cost" or "Unavailable"))
+                local r, g, b = 0.61, 0.66, 0.70
+                if row.profitMin then
+                    r, g, b = row.profitMin >= 0 and 0.35 or 1, row.profitMin >= 0 and 0.87 or 0.38, 0.38
+                end
+                button.profit:SetTextColor(r, g, b); button.percent:SetTextColor(r, g, b)
+                button:Show()
             else button:Hide() end
         end
-        UI.pageText:SetText(string.format("%d profitable | Page %d / %d", #rows, UI.page, pages))
+        UI.pageText:SetText(string.format("%d %s | Page %d / %d", #rows, showAll and "recipes" or "profitable", UI.page, pages))
         UI.previous:SetEnabled(UI.page > 1); UI.next:SetEnabled(UI.page < pages)
         UI.catalogStatus:SetText(C.reason or (C.ready and ("Catalog ready. " .. C.skipped .. " recipes lack a complete valuation.") or ("Checking recipes: " .. math.min(C.cursor - 1, #(C.ids or {})) .. " / " .. #(C.ids or {}) .. (#C.rows > 0 and ". Showing the last complete list." or ""))))
-        UI.catalogNote:SetText((C.catalogScope == "filtered" and "Uses the profession's current filters. " or "Open profession; fixed reagents. ") .. "Minimum yield is used\nfor ranking. Missing prices and unresolved choices are omitted.")
+        UI.catalogNote:SetText((C.catalogScope == "filtered" and "Uses the profession's current filters. " or "Learned recipes in this profession. ") .. "Minimum yield sets ranking.\n" .. (showAll and "Unknown values are shown last. Select a recipe for details." or "Only fully priced recipes with a positive profit are shown."))
     end
 end
 
@@ -237,15 +258,19 @@ function UI.Update()
     if not UI.frame then return end
     if not UI.opener or UI.opener:GetParent() ~= ProfessionsFrame then
         local opener = CreateFrame("Button", nil, ProfessionsFrame, "UIPanelButtonTemplate")
-        opener:SetPoint("TOPRIGHT", ProfessionsFrame, "TOPRIGHT", -45, -28)
-        opener:SetSize(146, 24)
-        opener:SetText("MS Market Value")
-        opener:SetScript("OnClick", function() UI.suppressed = false; UI.frame:Show(); UI.Refresh() end)
+        opener:SetPoint("TOPRIGHT", ProfessionsFrame, "TOPRIGHT", -45, -4)
+        opener:SetSize(146, 22)
+        opener:SetScript("OnClick", UI.Toggle)
         UI.opener = opener
     end
+    -- Forever's CraftingPage is raised above the portrait frame. Keep this
+    -- portrait-owned button above that page's background and controls.
+    local level = ProfessionsFrame.CraftingPage:GetFrameLevel()
+    if U.Number(level, 0, 65525, true) then UI.opener:SetFrameLevel(level + 10) end
     UI.opener:Show()
-    if not UI.session then UI.session = true; UI.suppressed = false end
+    if not UI.session then UI.session = true; UI.suppressed = not D.Settings().craftAutoOpen end
     if not UI.suppressed then UI.frame:Show() end
+    UI.opener:SetText(UI.frame:IsShown() and "Hide profits" or "Show profits")
     if UI.frame:IsShown() then UI.Refresh() end
 end
 
@@ -258,6 +283,14 @@ end
 function UI.Show()
     if U.Combat() then return U.Print("Open crafting analysis outside combat.") end
     if not C.Form() then return U.Print("Open a profession and select a learned recipe first.") end
-    UI.suppressed = false
     C.Tick()
+    if UI.frame then UI.suppressed = false; UI.frame:Show(); UI.Refresh() end
+end
+
+function UI.Toggle()
+    if U.Combat() or not C.Form() then return end
+    if UI.frame and UI.frame:IsShown() then
+        UI.suppressed = true
+        UI.frame:Hide()
+    else UI.Show() end
 end
