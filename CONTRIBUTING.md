@@ -15,7 +15,7 @@ Use focused behavioral fixtures for changed price, persistence, scanner or restr
 
 ## Release identity
 
-Version **1.0.0** is the first finalized release. Keep all three historical **0.1.0-beta** build tags immutable. Stable changes use a new semantic version, unique build identifier and annotated `v<version>` tag; update Bootstrap, all TOCs, build.json, changelog and release notes together. Never overwrite a released version or rewrite public history. Full instructions are in [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
+Keep **1.1.0-beta / 2026-10-11-beta001** throughout this testing cycle. Advance `TEST_REVISION`, the three TOC revision fields, build.json.testRevision and the immutable `v1.1.0-beta-testN` tag together. Update the changelog and live-check status. Preserve 1.0.0 and all historical beta tags. Official 1.1.0 gets its own stable metadata/tag after both features are verified. See [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
 
 ## Review expectations
 

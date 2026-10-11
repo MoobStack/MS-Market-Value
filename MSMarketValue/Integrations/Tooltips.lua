@@ -20,7 +20,7 @@ local function StackFromLocation(location, itemID)
 end
 
 function T.StackCount(tooltip, data, itemID)
-    if U.Combat() or not U.Accessible(tooltip) or not tooltip or
+    if not U.Accessible(tooltip) or not tooltip or
        (tooltip.IsForbidden and tooltip:IsForbidden()) or
        not U.Table(data) or not U.Number(itemID, 1, 2147483647, true) then return 1 end
     -- A GUID identifies one actual owned item instance, including stacks in
@@ -119,13 +119,13 @@ local colors = {
 }
 
 function T.Handle(tooltip, data)
-    if A.disabledReason or not D.data or U.Combat() then return end
+    if A.disabledReason or not D.data then return end
     if not U.Accessible(tooltip) or not T.allowed[tooltip] or not U.Table(data) then return end
     if tooltip.IsForbidden and tooltip:IsForbidden() then return end
     local itemID = data.id
     if not U.Number(itemID, 1, 2147483647, true) then return end
     if tooltip.GetPrimaryTooltipData then
-        local primary = tooltip:GetPrimaryTooltipData()
+        local primary = PublicCall(tooltip.GetPrimaryTooltipData, tooltip)
         if not U.Table(primary) or primary ~= data then return end
     end
     local old = T.seen[tooltip]

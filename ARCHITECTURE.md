@@ -1,71 +1,58 @@
 # Architecture
 
-Version `1.0.0`, build `2026-10-04-release001`; database schema 1.
+`1.1.0-beta / 2026-10-11-beta001` · Test revision 1 · Saved-data schema 1
 
-## Runtime modules and load order
+## Runtime
 
-| File | Responsibility |
+The three identical TOCs load 13 Lua files. Bootstrap creates the addon namespace, followed by the bundled libraries, utilities/database, DE data and valuation, crafting analysis, scanner, tooltips, both UI modules, and event wiring. Original code uses the per-addon namespace; `MSMarketValue` and the TOC's `MSMarketValueDB` are its public globals. Blizzard functions are not replaced.
+
+| Module | Responsibility |
 |---|---|
-| `MSMarketValue/Bootstrap.lua` | Publisher identity, version/build constants and public namespace |
-| `Libs/LibStub/LibStub.lua` | Public-domain versioned library registry |
-| `Libs/LibAHTab/LibAHTab.lua` | Shared addon AH tabs without extending native tab indices |
-| `Core/Util.lua` | Access checks, numeric validation, item/suffix keys, money/age formatting and guarded ruleset/faction/region identity and isolated alias/portal fallback |
-| `Core/Database.lua` | Saved data initialization, price accumulation, snapshot lookup and atomic replacement |
-| `Data/Disenchant.lua` | Named reference material/outcome profiles; no executable third-party loot code |
-| `Core/Valuation.lua` | Native item metadata, estimated eligibility, outcomes and expected value |
-| `Auction/Scanner.lua` | Serialized replication request, bounded row processing, retries and cancellation |
-| `Integrations/Tooltips.lua` | Modern item tooltip callback, actual stack quantity, each/stack price block, accessible allowlist and duplicate prevention |
-| `UI/Window.lua` | Shared AH tab, reparented native inset/manual controls, progress, item exclusions and diagnostics |
-| `Core/Events.lua` | ADDON_LOADED/login initialization, scan events, ticks and slash commands |
+| `Core/Util.lua` | Public-value guards, item/suffix and market keys, money and age formatting |
+| `Core/Database.lua` | Schema-1 initialization, atomic completed snapshots, price lookup and settings |
+| `Core/Valuation.lua`, `Data/Disenchant.lua` | Native metadata and labeled Classic DE estimates |
+| `Crafting/Analysis.lua` | Native schematic/selection adapter, costs, quotes and batched recipe ranking |
+| `Auction/Scanner.lua` | One replication request, bounded processing, retry queue, pause/resume |
+| `Integrations/Tooltips.lua` | Public item decoration, verified stack quantities and duplicate prevention |
+| `UI/Window.lua`, `UI/Crafting.lua` | Native scan/settings/diagnostics and profession analysis windows |
+| `Core/Events.lua` | Initialization, native events, update budgets and slash commands |
 
-The addon uses the per-addon namespace supplied to Lua files. `_G.MSMarketValue` is the one intentionally published module namespace. `_G.MSMarketValueDB` is the TOC-declared persistent variable. The bundled libraries also publish their standard `LibStub` registry. No Blizzard function is replaced in runtime code. A secure post-hook observes replication requests to detect conflicts.
+LibStub minor 2 and LibAHTab minor 5 retain their pinned bytes, licenses and provenance. LibAHTab coordinates addon tabs without changing Blizzard's tab indices.
 
-## Scan lifecycle
+## Scanning
 
-Start gates check client compatibility, initialized data, auction availability, combat, API support, cooldown, readiness and market identity. Market resolution prefers positive native region IDs (including beta 90), then guarded portal fallback. Native hardcore detection or bounded Forever reporting aliases determine the ruleset. Detected keys use `forever|region|ruleset|faction`; unknown aliases stay isolated under `region|alias`. Reporting-host numbers do not split a detected ruleset. Old alias-keyed records are retained without promotion. Failing the identity gate returns a specific reason before the request/cooldown write. One replication request transitions to WAITING. A native completion event supplies the total row count and transitions to PROCESSING. Indices range from **0 to count−1**.
+A new request requires initialized data, Interface 16001, a supported API, an open auctioneer, no combat, server readiness, an available market key, and an expired persisted request interval. It records the 15-minute cooldown before sending one `C_AuctionHouse.ReplicateItems` request.
 
-Processing occurs at most once per 0.05 seconds. Each tick handles at most 100 rows and checks an approximate four-millisecond budget using `debugprofilestop` when available. The row limit remains in effect if that optional profiler is absent.
+The response starts PROCESSING over zero-based rows. Each 0.05-second tick handles at most 100 rows or approximately four milliseconds. Rows lacking item metadata enter RESOLVING, with one native load request per unresolved item ID. Retries preserve accepted rows and normally wait half a second between passes.
 
-Rows with incomplete item information enter a retry queue. Each unresolved item ID requests native cached item data at most once per scan. Retry passes revisit only unresolved rows and normally wait half a second between passes; same-count replication updates can wake the next retry immediately. The resolution deadline is 45 seconds. Accepted rows are accumulated once.
+Pause stores the preceding phase and leaves work, cursor, pending queue, retry cursor, partially completed retry pass, and load-request set intact. It never writes partial prices. Combat, auction closure, a 120-second response timeout and a 45-second item-data timeout pause. A response received while paused can stage rows without committing them.
 
-The scanner verifies the replication count and market identity on each processing/retry tick. Request timeout is 120 seconds. A same-count replication event retains the original staging/cursor/retry state and increments update diagnostics. A changed/unreadable count or another replication request invalidates active work. There is no native scan generation token, so this is a stable-count/request-observation boundary rather than proof of immutable row contents. Close/combat/logout cancels it. Staging tables are session-only and never SavedVariables.
+Resume validates the current market and existing readable buffer count, restores the phase, and gives waiting/resolving work a fresh timeout budget. It calls no replication request and changes no cooldown. A partially accepted retry pass continues at its existing cursor to avoid counting rows twice.
 
-After every row is accounted for, the database checks row-category totals and the market key, stamps completion and replaces `markets[key]` in one assignment. There is no partial merge, price history append, or cross-market fallback. An explicit empty response is a valid replacement.
+Changed counts, inaccessible row data, a changed market, or an observed competing replication request discard staged work. The secure request observer covers paused work too. The API has no generation token; request observation and count checks remain the boundary. Incomplete buffers are session-only and do not survive reload/logout.
 
-## Saved-data contract
+Commit verifies row totals and the market key before replacing the completed snapshot in one assignment. An explicit completed empty response is valid. Sold and bid-only rows are accounted for but do not contribute buyouts.
 
-| Field | Contents |
-|---|---|
-| `schema` | Integer 1; future schemas disable this build and are retained |
-| `version`, `build` | Addon identities of the last initialization |
-| `settings` | Tooltip visibility and stale-hours preferences; obsolete openAtAH is preserved but ignored |
-| `windowPosition` | Optional center-relative x/y coordinates |
-| `excludedItems[itemID]` | Optional DE exclusion flag |
-| `cooldownUntil` | Persisted minimum next replication request timestamp |
-| `markets[marketKey]` | One completed snapshot per detected region/ruleset/faction key or isolated region/alias fallback |
+## Crafting
 
-New snapshots additionally record market kind, region, detected ruleset and faction. Each snapshot records start/end timestamps, method, addon version/build, completeness, total/processed row counts, buyout/bid-only/sold counts, distinct priced items, `prices`, `variants`, and bid-only item flags.
+The adapter reads the visible `ProfessionsFrame.CraftingPage.SchematicForm`, native recipe info, schematic and output data. It uses learned recipe IDs from the full catalog where available, otherwise a labeled filtered catalog. It never modifies profession filters or the native transaction.
 
-Each price record contains `low` (unit copper minimum), `units` (quantity of included buyout listings) and `auctions` (number of included listings). Item-wide records use numeric item IDs. Suffix records use strings `itemID:suffix`. These are compact aggregates, not retained auction rows; seller identity is not stored.
+Fixed required reagents come from schematics. Public native transaction allocations choose required alternatives and optional materials for the selected recipe; copied item/quantity/slot fields are validated before valuation. Currency and variable quantity costs, unresolved choices, salvage and recrafting remain unavailable. Native output quantity ranges produce conservative minimum and maximum gross returns. Non-item services retain material quotes without an auction sale estimate.
 
-Saved-data initialization occurs on this addon's `ADDON_LOADED`, not at Lua file load time. No migration from MS Auction is attempted. Invalid root structures or future schema numbers disable the build instead of silently replacing the user's data.
+Catalog valuation runs in batches of 20 recipes with a four-millisecond budget on 0.25-second ticks while the profession is open. Price replacement, profession/list events and item-data events invalidate it. Selected recipe values follow the native form on those ticks. Ranking caches sorted fully priced positive results by profit or return; minimum yield determines order. Selecting a rank row calls native `OpenRecipe`, never a crafting action.
 
-## Tooltip and restriction boundary
+## Tooltips and UI
 
-`TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Item, ...)` decorates registered public item tooltips. Primary item data is checked for access before reading the item ID. Restricted numeric/string values are checked before comparisons, arithmetic, formatting or table lookup. Forbidden and unregistered tooltips are skipped. The old `OnTooltipSetItem` hook is not used.
+`TooltipDataProcessor` decorates only registered public item tooltips. Item IDs and quantity contexts are checked before use. GUID/location or matching bag/equipment context can supply an actual stack count; unknown contexts show each-only values. Values multiply before display rounding.
 
-Default allowed frames are the native game tooltip, item-reference tooltip and comparison tooltips. Integrations may explicitly register an ordinary accessible tooltip through `MSMarketValue.Tooltips.Allow(frame)`. This is an internal integration API, without a stable external compatibility promise.
+Decoration reads saved prices during combat. Unreadable item data is not inspected. Native getter-backed primary tooltip rebuilds remain outside combat; comparison rebuilds remain owned by Blizzard. A reentrancy guard and recorded line count prevent recursive refresh and duplicate blocks.
 
-The tooltip resolves quantity from an accessible native item GUID/location, or from matching bag/equipment getter arguments. It validates the returned item ID and positive integer stack count before use. Generic links and unknown/restricted contexts show each-only values. Quantity is read for each decoration and is not persisted. No maximum-capacity or aggregate-ownership lookup is used. Unit copper values remain unchanged; each/stack formatting multiplies before rounding. Vendor/AH/DE values and snapshot age precede a blank line and per-item material estimates. Missing materials preserve unavailable-full-total/labeled-subtotal semantics.
+Scan/settings controls use native inset and portrait templates. Their controls move between the AH tab and manual window. The separate draggable crafting portrait has Selected recipe and Profitable recipes views, scrollable materials, and a copyable quote. Closing it suppresses automatic reopening until requested or a new profession session. Combat hides addon controls while price decoration remains available.
 
-All feature calculations run outside combat. Tooltip refreshes are coalesced at 0.25-second intervals after successful scan/item-data events. Only allowed, visible GameTooltip/ItemRefTooltip frames with accessible getter-backed, non-append primary item information can be rebuilt. Comparison/custom frames are decoration-only and remain owned by the native comparison manager. A reentrancy guard prevents nested refreshes; failed getter/rebuild calls do not leave it latched. No combat telemetry, aura analysis, secure buttons, protected actions, posting, purchasing, disenchant casting or automated communication is implemented.
+## Saved data and builds
 
-## Auction House UI
+Schema 1 retains `markets`, settings, exclusions, window position and `cooldownUntil`. This beta adds only `settings.quoteMarkup`, an integer 0–1000 defaulting to zero. Completed price records keep unit minimum, listed units and auction count; personal auction rows and sellers are not saved. Existing schema-1 snapshots remain usable.
 
-LibAHTab minor 5 coordinates addon tabs through its standard LibStub registry. MS does not add to Blizzard's `Tabs`, `numTabs` or display-mode maps. Selecting a custom tab uses the library to clear native content, deselect other addon tabs and show the MS panel. Selecting a native mode hides custom panels through the library's secure post-hook.
+Known Forever markets use region/ruleset/faction keys; host suffixes do not split a detected ruleset. Unknown aliases remain isolated and old caches are not promoted automatically. History is not yet stored; its implementation belongs to the next test revision.
 
-The MS tab is installed only when the native AH frame is visible and outside combat. ADDON_LOADED and deferred update ticks handle late frame creation. Opening an auctioneer keeps Buy selected; neither the MS tab nor standalone window is automatically shown. A single 768×460 controls frame moves directly between the AH body and an 800×538 native portrait window. Full-width scan controls and two settings columns use native InsetFrameTemplate textures/nine-slice borders and stock controls; no settings scroll viewport is needed. Its frame strata/level follow its current parent. Diagnostics remain a separate native portrait copy dialog with a scrollable edit field. The user's build003 report confirms tab installation and reports normal behavior; exact 1.0.0 tooltip fit and dedicated native taint/coexistence checks remain separate.
-
-## Repository tooling
-
-`tests/run.lua` uses mocked native API boundaries under Lua 5.1. `tools/validate.py` checks identity/TOCs/source order and runs those fixtures. `tools/package.py` requires a clean checkout at the annotated build tag, produces archives and a complete bundle, verifies runtime parity against the tag and writes SHA-256 checksums. Runtime files contain none of these development dependencies.
+The testing version and build remain fixed. `TEST_REVISION` and the matching build.json/TOC fields advance for each immutable test tag. Packaging requires a clean tagged checkout and verifies runtime/source/tag parity. Lua 5.1 fixtures exercise behavior; live UI, buffer retention and client disk persistence require native checks.

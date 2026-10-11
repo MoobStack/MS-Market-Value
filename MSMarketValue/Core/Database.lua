@@ -6,7 +6,7 @@ A.DB = D
 D.defaults = {
     showVendor = true, showAuction = true, showDisenchant = true,
     showMaterials = true, showAge = true,
-    staleHours = 24,
+    staleHours = 24, quoteMarkup = 0,
 }
 
 function D.Initialize()
@@ -26,7 +26,8 @@ function D.Initialize()
     for key, value in pairs(D.defaults) do
         if type(value) == "boolean" then
             if type(db.settings[key]) ~= "boolean" then db.settings[key] = value end
-        elseif not U.Number(db.settings[key], 1, 168, true) then
+        elseif not U.Number(db.settings[key], key == "quoteMarkup" and 0 or 1,
+                           key == "quoteMarkup" and 1000 or 168, true) then
             db.settings[key] = value
         end
     end

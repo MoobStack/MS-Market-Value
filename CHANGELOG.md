@@ -1,6 +1,22 @@
 # Changelog
 
-The first stable release is **1.0.0**. Before this release, all revisions used the same primary **0.1.0-beta** version with distinct build identifiers and immutable annotated tags. Earlier entries record the evidence available when each beta was prepared; the new native report is recorded below.
+The current 1.1.0 work uses one testing version and build. Test revision numbers and immutable tags distinguish packages. Earlier releases and their evidence remain below.
+
+## 1.1.0-beta — Test revision 1 — 2026-10-11
+
+Build `2026-10-11-beta001`; tag `v1.1.0-beta-test1`.
+
+- Added selected-recipe material costs, per-craft sale value, gross profit/loss and percentage return on material cost.
+- Added a profitable-recipe list for the open profession, sortable by profit or return. Minimum output is used for variable-yield ranking.
+- Added copyable craft quotes with saved markup. Non-auctionable services can show material quotes.
+- Included readable selected optional/alternative reagents. Missing prices and unsupported recipe shapes stay unavailable rather than producing a misleading profit.
+- Kept public tooltip prices and available actual-stack totals visible during combat.
+- Added pause/resume for the current session's incomplete scans, including response/item-data timeouts. Resume retains accepted rows and retry progress without sending another full-scan request or changing the cooldown.
+- Preserved schema-1 completed prices/settings and all release history. Shortened the user guide and updated the test, upgrade and Git instructions.
+
+Local Lua 5.1 checks cover the new calculations, native UI lifecycle and scan interruptions. Live profession/UI/buffer checks remain pending. Reload/logout ends incomplete work because the native buffer is session-only.
+
+Price history is next, under the same version/build with a new test revision. Official 1.1.0 publication follows both features and live verification.
 
 ## 1.0.0 — 2026-10-04 UTC
 

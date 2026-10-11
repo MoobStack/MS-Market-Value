@@ -1,115 +1,78 @@
-# MS Market Value documentation
+# Using MS Market Value
 
-Version `1.0.0`, build `2026-10-04-release001`.
+`1.1.0-beta / 2026-10-11-beta001` · Test revision **1**
 
-## Installation
+## Crafting costs and profit
 
-Use the Clean ZIP for the game. Its top-level folder is `MSMarketValue`; copying that folder into the active Forever client's `Interface/AddOns` directory produces `AddOns/MSMarketValue/MSMarketValue.toc`. Do not install the outer `MS-Market-Value` repository directory as an addon.
+Open a profession and select a learned recipe. **Selected recipe** shows the cost of materials for one craft, cost per output item, total sale value, gross profit or loss, and percentage return on material cost. The window follows recipe and reagent selection changes while open. Use the profession's **MS Market Value** button or `/msmv craft` to reopen it.
 
-The package includes identical fallback, `_Camelot`, and `_Forever` TOCs. The client selects the applicable TOC; these are alternative manifests for one addon, not three addons. The current verified metadata target is Interface 16001. Beta's usual game folder is `_classic_beta_`. Use the folder belonging to the client you actually start.
+Material quantities come from the native recipe schematic. Prices come from the latest completed scan for the current market. Materials already in your bags have the same market cost as materials you buy. Required tools are not purchased afresh for each craft.
 
-A newly added addon folder requires a client restart. Subsequent replacements of already known files can usually be followed by `/reload`.
+| Value | Calculation |
+|---|---|
+| Materials / craft | Sum of required quantities × unit material buyouts |
+| Cost / item | Material cost divided by output quantity |
+| Sale / craft | Unit output buyout × output quantity |
+| Gross profit / craft | Sale value minus material cost |
+| Return on cost | Gross profit divided by material cost × 100 |
+| Quote | Material cost × (1 + markup percentage / 100) |
 
-## Full scans
+For example, materials costing 4g and an output listed at 5g give a 1g gross profit and **+25%** return. A 3g output gives **-1g** and **-25%**. These values are before auction fees and listing costs.
 
-Open an auctioneer, select the **MS Market Value** tab, and choose **Scan entire AH**. The addon sends one replication request, waits for `REPLICATE_ITEM_LIST_UPDATE`, and processes the entire returned zero-based row range. It does not loop through per-item search queries to enumerate the marketplace.
+Recipes producing a range of quantities show the corresponding cost and profit ranges. **Profitable recipes** ranks by the minimum output. Choose **Profit / craft** or **Return %**, then click a row to select that recipe through the native profession UI. The list includes only positive, fully priced estimates in the open profession. If the full native catalog is unavailable, it uses and labels the current profession filters without changing them.
+
+The adapter uses native recipe data across professions, including Cooking. Direct enchants and other services without an auctionable result show their material cost and quote; there is no invented output sale price. Select alternative reagents completely before pricing them. The selected recipe includes readable optional reagent allocations. The catalog uses fixed required materials with no optional extras. Quality-dependent outputs need selection before they can be valued. Currency costs, variable reagent quantities, salvage and recrafting are left unavailable in this test revision.
+
+A missing material price makes full cost, profit and quote unavailable. The materials list identifies missing prices. A missing output price still allows a quote when all material prices are known. The scan's age and stale status are shown above the recipe tabs.
+
+## Craft quotes
+
+Enter a whole-number **Markup** from 0 to 1000 percent and click **Apply** or press Enter. The default is zero. The quote covers one craft, including its full material cost. Click the quote field, select the text and press Ctrl+C. Paste it wherever you normally give quotes.
+
+The addon does not send the quote or craft anything automatically. Customer-supplied materials and a separate labor fee are not modeled in this revision; adjust those in your agreement with the customer.
+
+## Full scans and interruptions
+
+At an open auctioneer, select **MS Market Value** and click **Scan entire AH**. One full-snapshot request reads every returned auction row in small batches. The previous complete snapshot remains usable until the new scan finishes.
 
 | State | Meaning |
 |---|---|
-| IDLE | No local scan is running |
-| WAITING | One full-snapshot request was sent; awaiting the native response |
-| PROCESSING | Reading the returned auction rows in bounded batches |
-| RESOLVING | Waiting for incomplete item information and rechecking only those rows |
-| COMPLETE | All rows were accounted for and the saved snapshot was replaced |
-| CANCELLED | Local work stopped; prior complete prices remain |
-| FAILED | Data, server response, context, or ownership checks failed; prior prices remain |
+| WAITING | The server response has not arrived |
+| PROCESSING | Reading auction rows |
+| RESOLVING | Waiting for missing item data |
+| PAUSED | Progress retained; use Resume scan |
+| COMPLETE | All rows accounted for and saved prices replaced |
+| CANCELLED | Incomplete work explicitly discarded |
+| FAILED | Invalid data, a changed market/buffer, or a competing request stopped the scan |
 
-The previous snapshot stays authoritative while a scan is running. Commit occurs only after every returned row was processed. Prices absent from a complete new scan are removed from that market's snapshot. An explicit completed zero-row response saves an empty snapshot; a missing response cannot clear data.
+**Pause scan**, `/msmv pause`, and the existing `/msmv stop` command retain progress. Combat, auction closure and data timeouts also pause. Reopen an auctioneer outside combat and use **Resume scan** or `/msmv resume`. Resume continues the existing request, including a response received while paused. It does not issue another request or wait for the new-request cooldown.
 
-The addon maintains a persistent **15-minute minimum interval** between replication requests. Cancelling, logging out, or reloading does not bypass this interval. Blizzard can impose additional cooldowns. A dropped or refused response can produce a timeout; open diagnostics and retain the previous prices until another permitted attempt.
+The existing buffer must remain available. Another full-scanning addon, a changed market, or a replaced buffer prevents resume. Use `/msmv discard` to abandon incomplete work deliberately. Reloading or quitting ends the session's unfinished scan. These actions keep completed prices and retain the persistent **15-minute minimum interval** between new requests. The server may impose additional limits.
 
-Closing the auction house or entering combat cancels a scan. Additional replication events with the same readable row count preserve the scan's cursor and accepted rows, and can immediately wake pending item-data retries. They do not issue another request or restart accumulation. A changed/unreadable count, changed market, or another addon's replication request fails the staged scan and retains prior prices. The API exposes no scan generation token; stable-count handling plus request observation is the tested boundary. Only one full-scanning addon should run at a time.
+Only a fully processed response replaces prices. An explicit completed empty response clears that market's listings. Missing or partial responses do not. Bid-only and sold rows do not supply buyout prices.
 
-## Prices
+## Item tooltips
 
-Prices are stored **per individual item**, in copper internally. The tooltip groups vendor, AH and applicable **DE expected** values in one block. For a readable hovered stack larger than one, its heading is **Each / Stack (N)** and each row shows the unit value followed by the total for N items. A single item or unavailable quantity shows **Each** only. Native GUID/location or a matching bag/equipment context supplies the quantity; generic links, child-item contexts and restricted values do not supply an invented stack count. For a listing of 10 items with a total buyout of 1 gold, the recorded unit price is 10 silver. Fractional unit copper values are retained during calculations, then rounded for display; positive values below one copper show `<1c`. Stack totals multiply the unrounded unit value before display rounding, so the displayed unit value multiplied by N can differ slightly from the correctly rounded stack total. Maximum stack capacity and total ownership are never used as the hovered count.
+The price block shows **Vendor sell**, **AH low**, and applicable **DE expected** values. A stack with a public, verified quantity shows **Each / Stack (N)**. Generic links and unavailable quantity contexts show **Each**. Totals multiply the original unit price before display rounding.
 
-The AH value is the lowest buyout per unit in the latest completed replication snapshot. Bid-only auctions do not supply a buyout price. Sold rows do not contribute. This is a snapshot of asking prices, not a confirmed sale value, historical average, liquidity measurement, or guaranteed profit.
+Prices remain available in combat on supported public item tooltips. Restricted item identifiers cannot be valued; unavailable stack quantities fall back to each-item prices. Native primary-tooltip rebuilds remain deferred until combat ends. Comparison tooltip rebuilds remain under Blizzard's control.
 
-Signed random suffixes are indexed separately using `itemID:suffix`. Enchantments, gems, unique instance IDs and the viewer's level are not pricing keys. Where no matching suffix is available, the base item ID minimum is labeled **item-wide**. Retail bonus-list/upgrade-level valuation and battle-pet cage valuation are outside this release's scope.
+**AH low** is the lowest observed unit buyout, not a confirmed sale. A matching signed random suffix uses its own price; a fallback is labeled **item-wide**. Stale prices remain visible and dated. **Scan required**, **Not listed in scan**, and **No buyout in scan** describe missing auction values.
 
-| Tooltip result | Interpretation |
-|---|---|
-| Scan required | No complete local market snapshot is available |
-| Not listed in scan | This item has no recorded buyout in the new snapshot |
-| No buyout in scan | Only bid-only active listings were observed for this item |
-| Item data loading | Native cached information needed for vendor/DE details is not ready |
-| No vendor sale | Native sell price is zero |
-| Stale | Snapshot exceeds the configured age threshold |
+A blank line separates price values from the per-item disenchant material ranges and chances. DE expected value sums probability-weighted quantities at market prices. Every possible material needs a price; a known subtotal is labeled separately when the full estimate is unavailable. The Classic reference model remains unverified for Forever. See [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md).
 
-Stale data remains available and visibly dated by default. Age is based on the scan's request/start time rather than the later processing completion time.
+## Settings and saved data
 
-## Disenchant estimates
+The AH tab and `/msmv` settings window control vendor, AH, DE, material and age display; stale age accepts 1–168 hours. Item-ID exclusions can suppress and restore DE estimates. Craft quote markup is saved account-wide.
 
-The model uses native item level, quality, equipment class and subclass. Required character level is not substituted for item level. Uncommon armor and ordinary weapons have different reference outcome probabilities; wands use the dust-heavy reference treatment.
+`MSMarketValueDB` retains settings, exclusions, cooldown, window position and one completed snapshot per market. Known Forever rulesets use region/ruleset/faction keys. Reporting-host numbers share a detected ruleset cache; different rulesets or unqualified factions do not. Older realm caches remain untouched.
 
-A blank line separates the price block from **Disenchant estimate**. For each possible material, the tooltip shows a per-item quantity range, outcome probability and expected quantity. Material ranges and chances do not become stack loot guarantees; only monetary expected values are multiplied by the actual stack count. For example, `1-2 (80%; avg 1.20)` means that outcome occurs with 80% probability in the reference model and supplies an expected 1.20 units per disenchant. You do not receive all listed alternative outcomes together.
+Use a normal logout, exit or `/reload` to let WoW write completed prices and settings. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` while the client is closed. Code archives do not contain personal prices. A future saved-data schema is preserved and disables this build rather than being overwritten.
 
-The expected value is the sum of probability-weighted quantities times per-unit material buyout prices from the same snapshot. Each possible material needs a price. If one is missing, the total is **Unavailable** and any known subtotal is labeled **DE priced portion only** in the price block. Prices are gross, before AH fees and listing costs.
+## Reporting a problem
 
-The release's loot model is a **Classic reference estimate**. It is not a verified Forever loot dataset. Standard gear eligibility is inferred from quality/class/equipment slot, not confirmed by a native disenchantability API. Item exceptions, new Forever materials, changed probabilities, and profession/skill requirements can invalidate an estimate. The addon does not claim your character can currently disenchant the item. Check the native profession behavior and use item exclusions for exceptions.
+Open `/msmv diagnostics` and copy the text. Include the recipe name/ID, profession, selected reagent choices, scan age, exact Lua error, and a screenshot if the layout is wrong. Diagnostics identify **Test revision: 1** and the scan's resume phase.
 
-See [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) for complete bracket details. Items outside those brackets are labeled as having no profile rather than extrapolated.
+For a pause problem, capture diagnostics before pausing and after resuming. A changed request count on Resume is a regression. For crafting, compare native quantities and individual material/output AH prices with the displayed totals.
 
-## Auction House tab and manual settings window
-
-| Setting/control | Default | Effect |
-|---|---|---|
-| Vendor sell price | On | Show native vendor each/stack values |
-| Lowest AH buyout | On | Show saved minimum buyout each/stack values |
-| Estimated disenchant value | On | Show eligible DE each/stack values and reference details |
-| Material ranges and chances | On | Show possible materials, ranges, probabilities, averages |
-| Snapshot age and stale flag | On | Display snapshot age and stale marker |
-| Mark prices stale after | 24 hours | Configurable integer, 1–168 hours |
-| Exclude item | None | Suppress DE estimates for the entered numeric item ID |
-| Restore estimate | — | Remove that item ID's exclusion |
-| Stop scan | — | Stop local work and retain the complete snapshot |
-| Copy diagnostics | — | Select diagnostic text for Ctrl+C |
-
-Opening an auctioneer leaves the native Buy tab selected and adds an **MS Market Value** tab. Click it for scan controls above two settings columns. Native Blizzard inset textures/borders, fonts, buttons, checkboxes and inputs match the surrounding game frame. All settings fit without a settings scrollbar. Native tabs and other shared-library addon tabs hide the MS panel when selected. The AH tab is reused on subsequent openings.
-
-`/msmv` selects the MS tab at an auctioneer; running it again returns to Buy. Away from an auctioneer, it opens a native portrait window whose position is saved account-wide. Diagnostics use a separate native portrait dialog with a scrolling copy field. Escape closes that window. No standalone settings window opens automatically. The former `openAtAH` preference remains stored for rollback but is ignored. Item exclusions can be reversed without changing the snapshot.
-
-## Persistence and backup
-
-`MSMarketValueDB` is an account-wide SavedVariable holding settings, exclusions, cooldown state and one replacement snapshot per market key. Forever is realmless: its reporting aliases are not treated as independent market realms when a ruleset can be detected.
-
-| Identity | Cache behavior |
-|---|---|
-| Detected ruleset | `forever|<region>|<ruleset>|<faction>`; reporting-host number does not split the cache |
-| PvP vs Normal/PvE | Separate `pvp` and `normal` snapshots |
-| Hardcore | Native `C_GameRules.IsHardcoreActive` takes precedence |
-| Normal/PvP/RP alias detection | Bounded `ClassicBeta`, `Forever` or `WoWForever` prefix plus recognized ruleset token and optional numeric host suffix; diagnostics label the alias-derived source |
-| Unrecognized alias | Isolated `<region>|<alias>` fallback; diagnostics say ruleset undetected |
-| Faction | Conservatively separate Horde/Alliance/Neutral caches until native cross-faction AH sharing is qualified |
-| Old realm-keyed snapshot | Retained untouched; never automatically merged/promoted into the new ruleset cache |
-
-For the reported `ClassicBetaPvP2`, native region `90` and Horde, the key is `forever|90|pvp|Horde`. A character reporting `ClassicBetaPvP1` in the same region/faction reads that cache. A Normal character does not read the PvP cache. Only the supplied PvP alias is live evidence; Normal/RP and other host aliases still need native confirmation. Unrecognized aliases remain safely isolated and can be reported for a later mapping update.
-
-A positive native region identifier, including beta `90`, is preferred. An unavailable/zero region falls back to accessible modern/legacy login-portal values; us/kr/eu/tw/cn map to numeric regions and other named portals remain separate. Missing/empty normalized aliases fall back to the public name. Locale, PvP flags and Classic/Modern UI presets never select a ruleset. A missing usable identity blocks the request before consuming cooldown. Build003 already used this namespace, so upgrading from build003 to 1.0.0 preserves its completed snapshot without rescanning. See [UPGRADE.md](UPGRADE.md) for the fresh scan required only when moving an older realm-keyed cache into this namespace.
-
-WoW writes SavedVariables on a successful UI reload or normal logout/exit. The addon cannot force an immediate disk write. A crash, interrupted shutdown, or client-side SavedVariables regression can lose changes made since the last successful write. `LoadSavedVariablesFirst: 1` is included, and initialization waits for the addon's `ADDON_LOADED` event.
-
-Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` if present while the client is closed. Back up your full WTF folder when moving installations. Do not place player data or account identifiers in the Git repository.
-
-## Troubleshooting and reporting
-
-Enable native script errors with `/console scriptErrors 1`, then reproduce the issue once. Copy `/msmv diagnostics`, the exact error text, client version/build, and addon build. For a material mismatch include item ID/link, item level, quality and actual loot. Diagnostics omit auction seller names and stored account credentials.
-
-Install 1.0.0 for the earlier build001 identity failure or build002 “replication buffer was refreshed” failure and `ShoppingTooltip1` first-hover error. The user reported successful build003 completion; 1.0.0 retains those scanner/refresh fixes. IDLE with zero session requests means a request was not sent. Report the market key, ruleset/source, faction, reporting aliases, region/portal, event counts and exact failure. These are public market identifiers, not credentials.
-
-Comparison tooltips still receive values through the native postprocessing callback. MSMV only requests refresh of readable getter-backed primary item tooltips; Blizzard owns comparison layout and rebuilding. A comparison may update with the next native comparison refresh/rehover.
-
-If scan state remains WAITING, preserve the old snapshot and wait for the cooldown. If RESOLVING fails, report the state and exact client build. If saved prices disappear after reload, stop overwriting the backup and report the client-side persistence behavior. Do not install an external executable or SavedVariables workaround as part of this addon without a separate review.
-
-An Interface number change or unavailable/restricted API requires a new compatibility review. Enabling “Load out of date AddOns” only changes loading metadata; it does not qualify runtime compatibility.
+Price history is the next feature in this beta. It is not collected by test revision 1.

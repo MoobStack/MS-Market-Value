@@ -21,11 +21,53 @@ function S.Supported()
     return true
 end
 
-function S.Stop(reason, failed)
-    if not S.active then return false end
-    S.active, S.work, S.pending, S.retryWork = false, nil, nil, nil
-    SetState(failed and "FAILED" or "CANCELLED", reason or "Stopped by player.")
+function S.Discard(reason, failed)
+    if not S.active and not S.paused then return false end
+    S.active, S.paused, S.resumeState = false, false, nil
+    S.work, S.pending, S.retryWork = nil, nil, nil
+    SetState(failed and "FAILED" or "CANCELLED", reason or "Incomplete scan discarded.")
     U.Print(S.message .. " Previous snapshot kept.")
+    return true
+end
+
+function S.Pause(reason)
+    if not S.active then return false end
+    S.resumeState, S.active, S.paused = S.state, false, true
+    SetState("PAUSED", reason or "Paused by player. Resume at an auctioneer.")
+    return true
+end
+
+-- Existing callers keep their failure semantics. A normal stop now preserves
+-- the staged rows instead of consuming the request with no way to finish it.
+function S.Stop(reason, failed)
+    if failed then return S.Discard(reason, true) end
+    return S.Pause(reason)
+end
+
+function S.Resume()
+    if not S.paused then return false, "No incomplete scan to resume." end
+    if A.disabledReason then return false, A.disabledReason end
+    if not A.auctionOpen then return false, "Open an auctioneer to resume." end
+    if U.Combat() then return false, "Resume outside combat." end
+    if not S.Supported() then return false, "The auction API is unavailable." end
+    if U.MarketKey() ~= S.marketKey then
+        S.Discard("The market changed; the incomplete scan cannot be resumed.", true)
+        return false, S.message
+    end
+    if S.work then
+        local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
+        if not ok or not U.Number(count, 0, A.MAX_ROWS, true) or count ~= S.totalRows then
+            S.Discard("The auction buffer is no longer available. Wait for a new full scan.", true)
+            return false, S.message
+        end
+    end
+    local state = S.resumeState
+    S.active, S.paused, S.resumeState = true, false, nil
+    S.startedMono = U.Mono()
+    if state == "RESOLVING" then
+        S.resolveDeadline, S.nextRetry = U.Mono() + A.RESOLVE_TIMEOUT, U.Mono()
+    end
+    SetState(state, "Resuming the existing scan; no new server request.")
     return true
 end
 
@@ -35,7 +77,7 @@ local function Complete()
     if #S.pending ~= 0 then return S.Stop("Some auction rows remain unresolved.", true) end
     local ok, reason = D.Commit(work)
     if not ok then return S.Stop(reason, true) end
-    S.active, S.work, S.pending, S.retryWork = false, nil, nil, nil
+    S.active, S.paused, S.work, S.pending, S.retryWork = false, false, nil, nil, nil
     SetState("COMPLETE", string.format("%d rows; %d priced items. Snapshot replaced.", work.totalRows, work.distinctItems))
     U.Print(S.message)
 end
@@ -44,6 +86,7 @@ function S.Start()
     if A.disabledReason then return false, A.disabledReason end
     if not D.data then return false, "Saved data is not ready." end
     if S.active then return false, "A scan is already running." end
+    if S.paused then return S.Resume() end
     if not A.auctionOpen then return false, "Open an auctioneer first." end
     if U.Combat() then return false, "Scanning is available outside combat." end
     if not S.Supported() then return false, "The required modern auction API is unavailable." end
@@ -81,13 +124,14 @@ function S.Start()
 end
 
 function S.OnResponse()
-    if not S.active then return end
+    if not S.active and not S.paused then return end
     S.responseCount = S.responseCount + 1
     local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
     if not ok or not U.Number(count, 0, A.MAX_ROWS, true) then
         return S.Stop("The server returned an unreadable or oversized auction count.", true)
     end
-    if S.state == "PROCESSING" or S.state == "RESOLVING" then
+    local phase = S.paused and S.resumeState or S.state
+    if phase == "PROCESSING" or phase == "RESOLVING" then
         -- Native item-data readiness can emit the same event again. Accepted
         -- rows stay accepted, pending rows are retried, and no request/restart
         -- or duplicate price accumulation occurs for a same-count update.
@@ -95,14 +139,19 @@ function S.OnResponse()
             return S.Stop("The auction replication row count changed.", true)
         end
         S.dataUpdateCount = S.dataUpdateCount + 1
-        if S.state == "RESOLVING" then S.nextRetry = U.Mono() end
+        if phase == "RESOLVING" then S.nextRetry = U.Mono() end
         return
     end
-    if S.state ~= "WAITING" then return end
+    if phase ~= "WAITING" then return end
     S.totalRows = count
     S.work = D.NewSnapshot(S.marketKey, count, S.requestAt)
     S.work.marketKind, S.work.ruleset = S.marketInfo.kind, S.marketInfo.ruleset
     S.work.region, S.work.faction = S.marketInfo.region, S.marketInfo.faction
+    if S.paused then
+        S.resumeState = "PROCESSING"
+        U.Notify()
+        return
+    end
     SetState("PROCESSING", "Reading every auction row.")
     if count == 0 then Complete() end
 end
@@ -154,7 +203,7 @@ function S.Tick()
     local now = U.Mono()
     if S.state == "WAITING" then
         if now - S.startedMono > A.REQUEST_TIMEOUT then
-            S.Stop("No full-scan response arrived. The server may still be on cooldown.", true)
+            S.Pause("Response delayed. Resume to keep waiting; no new request is needed.")
         end
         return
     end
@@ -181,7 +230,7 @@ function S.Tick()
             SetState("RESOLVING", "Waiting for missing auction item data.")
         end
     elseif S.state == "RESOLVING" then
-        if now > S.resolveDeadline then return S.Stop("Auction item data did not finish loading.", true) end
+        if now > S.resolveDeadline then return S.Pause("Item data is still loading. Resume to retry the missing rows.") end
         if now < S.nextRetry then return end
         while S.active and S.retryCursor <= #S.pending do
             local index = S.pending[S.retryCursor]
@@ -204,7 +253,7 @@ function S.InstallObserver()
     if S.observerInstalled or not S.Supported() or not hooksecurefunc then return end
     S.observerInstalled = true
     hooksecurefunc(C_AuctionHouse, "ReplicateItems", function()
-        if S.active and not S.sending then
+        if (S.active or S.paused) and not S.sending then
             S.Stop("Another addon requested a full scan at the same time.", true)
         end
     end)

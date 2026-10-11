@@ -1,19 +1,26 @@
-# Roadmap
+# Roadmap to 1.1.0
 
-Version **1.0.0** finalizes the first release with actual-stack prices and grouped DE values. The user reported successful build003 native scanning on PvP/Horde. Preserve that behavior and the complete-snapshot replacement contract in later releases.
+All testing uses `1.1.0-beta / 2026-10-11-beta001`. Test revision numbers advance without changing that version or build. Official `1.1.0` follows completion and live verification of both features.
 
-## Client coverage
+## First: crafting and fixes
 
-1. Record native 1.0.0 each/stack display, changing bag quantities and DE spacing.
-2. Confirm reload, relog, character switching and full-exit/restart persistence.
-3. Collect Normal and other ruleset/region/faction aliases, host-sharing evidence and cross-faction AH pooling qualification.
-4. Check material/variant listing coverage, first-hover comparisons, UI scale, Auctionator coexistence and native taint.
-5. Review actual APIs when the client build or Interface changes; update supported targets using evidence.
+Test revision 1 adds recipe costs, gross profit/loss, return percentage, profitable-recipe sorting, and copyable markup quotes. It also keeps tooltip prices available in combat and pauses/resumes incomplete scans in the current session.
 
-Fix concrete regressions in stable patch releases without moving existing tags. A verified native Normal/PvP getter could replace alias detection without merging unknown markets.
+Check native recipe quantities and output prices in each profession, service quotes for Enchanting, reagent changes, visual fit, and scan-buffer retention after closing/reopening an auctioneer. Report any unsupported native recipe shape before it is assigned a price.
 
-## Loot-model coverage
+## Next: price history
 
-Collect item IDs/links, native levels/qualities, actual loot and sample counts for Forever-specific brackets and exceptions. Track each bracket's evidence separately and update profiles/fixtures/research together. Continue labeling unverified outcomes. A single observed outcome does not establish its probability.
+- Retain up to **30 calendar days** of completed pricing data, with a user setting for days kept.
+- Keep the **most recent completed scan for each day** in each market. Repeated scans replace that day's entry.
+- Average the available daily unit prices; show the observation count and avoid treating missing listings as zero.
+- Preserve the latest complete snapshot separately for current prices and crafting.
+- Order the tooltip price block: **vendor**, **historic average** when available, **recent scan**, then **DE expected**.
+- Prune expired history and apply retention changes consistently. Keep markets and item variants isolated.
 
-Automatic buying, posting, disenchant execution, price history and combat features remain outside the requested scope.
+Daily boundaries, existing-data seeding and the exact average label will be documented with that implementation. Test revision 1 does not collect history.
+
+## Release checks
+
+Verify native crafting UI and arithmetic, combat hovers, pause/resume, settings and completed-price persistence, price history pruning/averaging, scale and AH-addon coexistence. Keep the successful earlier PvP scan evidence and every existing Git tag.
+
+Forever-specific disenchant probabilities and special eligibility remain a separate evidence task. Buying, posting and crafting automation are not planned for 1.1.0.

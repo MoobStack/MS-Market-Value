@@ -1,67 +1,39 @@
-# Compatibility and policy design
+# Compatibility
 
-## Reviewed target
+## Target
 
-| Attribute | 1.0.0 target |
-|---|---|
-| Game | World of Warcraft: Forever beta |
-| Client version | 1.60.1 |
-| Interface | 16001 |
-| Reviewed UI source | Blizzard UI mirror `forever`, 1.60.1 build 70205 |
-| Reviewed source commit | `e3ecc27b64d30fdc735a3f6579b866858f9f9df1` |
-| Lua validation | Lua 5.1.5 |
-| User evidence | Build003 completed 104,763 rows on PvP/Horde, one request, 6,329 events; AH tab installed; user reported normal behavior |
-| 1.0.0 native coverage | New stack display, other rulesets, complete disk lifecycle and dedicated taint/coexistence checks pending |
+This test targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The earlier native scan report was from build 70205 on PvP/Horde. The new crafting and resume features need their own client checks.
 
-Forever uses a modern client API despite level-60 content. This addon targets that environment; the old MoobStack Interface 11200 client target does not apply to this project. Modern Retail, Classic Era, older private-server clients and later unreviewed Interface versions are not qualified targets for 1.0.0.
+All three TOCs—standard, `_Camelot` and `_Forever`—describe the same addon and load order. Initialization checks the Interface number, saved schema, restricted-value API and auction functions. Different clients or Interface versions need an API review.
 
-All three TOCs advertise Interface 16001. The `_Camelot` suffix corresponds to current Forever package conventions; the `_Forever` and unsuffixed copies provide equivalent naming alternatives. Including those manifests does not qualify a different API version. Runtime checks require the reviewed Interface number, restricted-value detection and the required modern auction functions.
+The pinned Blizzard UI/API mirror and source references are listed in [docs/RESEARCH.md](docs/RESEARCH.md). A source contract supports implementation; it does not establish live server behavior.
 
-## Full-house scan API
+## Auction and market data
 
-The reviewed Blizzard-generated `AuctionHouseDocumentation.lua` directs full-house enumeration to `C_AuctionHouse.ReplicateItems`. Its `SendSearchQuery` documentation explicitly discourages using repeated item searches to enumerate the entire AH. The beta follows the replication path and completion event.
+Full enumeration uses one user-started `C_AuctionHouse.ReplicateItems` request. Reading and retries are batched. Only a completed response replaces prices. The persistent 15-minute minimum request interval and server limits remain intact.
 
-No legacy `QueryAuctionItems` scanner, fabricated browse completion, repeated full-scan retry loop or cooldown override is included. Reading is batched; a persistent minimum request interval controls load. Completion means all rows exposed in the native replication response were accounted for. Additional same-count events preserve progress and may wake item-data retries; changed/unreadable counts and observed competing requests still refuse a staged scan. No native scan generation token is exposed. Actual Forever coverage, including listed enchanting materials, must be checked in the client.
+Pause/resume is supported within the current session while the original buffer remains available. The API exposes no scan generation token. Changed counts, market changes and observed competing full-scan requests invalidate staging, including while paused. Reload/logout does not preserve an incomplete buffer. Use one full scanner at a time.
 
-## AH tabs and market identity
+Detected market keys combine region, Forever ruleset and faction. Native positive region IDs include the reported beta region 90. Hardcore uses the native API; Normal/PvP/RP detection uses bounded public reporting aliases with the source shown in diagnostics. Host numbers share a detected ruleset cache. Unrecognized aliases remain isolated. Cross-faction AH pooling is not yet qualified, and older cache keys are not merged automatically.
 
-The reviewed native `AuctionHouseFrame` uses modern display-mode tables and `AuctionHouseFrameDisplayModeTabTemplate`. Bundled LibAHTab minor 5 contains explicit Camelot handling and coordinates with another addon's same/newer registered library. It avoids inserting into the native tab-index arrays. LibStub minor 2 supplies the registry; no separately installed addon is required. The exact sources, licenses and bundled checksums are recorded in `tools/vendor.json` and THIRD-PARTY-NOTICES.md. Shared-library fixtures are not a native Auctionator compatibility pass.
+## Crafting coverage
 
-Forever's realmless rulesets are distinct ecosystems. Detected market keys combine region, ruleset and faction; reporting-host suffixes do not split a known ruleset. Native positive region IDs include the observed beta region 90. Hardcore uses the documented native API; Normal/PvP/RP detection currently uses bounded reporting aliases with the source exposed in diagnostics. No verified native Normal/PvP getter was established from the reviewed definitions. The Classic/Modern experience preset is not a ruleset and is never used for identity.
+The generic adapter reads native learned recipes and consumed material schematics rather than maintaining a profession whitelist. It follows the visible native crafting form and includes validated selected optional reagents. A full recipe catalog is preferred; a filtered fallback is explicitly labeled and leaves native filters alone.
 
-Unknown aliases remain isolated. Public-name/portal fallbacks still handle missing values without reading restricted inputs or guessing from locale. Cross-faction AH pooling is unqualified, so factions remain separate. Old realm-keyed records stay stored but are not promoted into a new cache. A first successful ruleset-keyed scan is required; see [UPGRADE.md](UPGRADE.md).
+Fixed item-reagent crafts support cost, output quantity, sale value, gross profit and return. Non-auctionable services support material quotes. Unknown material prices, incomplete variant choices, currency costs, variable reagent quantities, salvage and recrafting cannot supply a full estimate in this revision. Quality-dependent output requires selection. Every profession's live native recipe shapes remain part of testing.
 
-## Tooltip/restricted data handling
+## Tooltips and frames
 
-- Item decoration uses `TooltipDataProcessor.AddTooltipPostCall` for the native item type.
-- Only registered accessible public tooltips are decorated; forbidden tooltips are skipped.
-- Refresh requests are limited to getter-backed, non-append primary item tooltips. Comparison layout/rebuilds remain under Blizzard ownership; generic rebuild is never invoked directly on ShoppingTooltip frames.
-- `issecretvalue`, and `canaccessvalue` where available, are checked before using input values.
-- Secret inputs are not converted, inspected, compared, formatted, stored or calculated with.
-- Scanning and tooltip calculations stop/suppress their work in combat.
-- Native item and auction data is accessed using ordinary validated inputs. Stack quantities come from matching native item GUID/location or bag/equipment contexts; inaccessible or unverified quantities retain each-only prices.
-- No combat analytics, aura reads, combat-log computation, protected interaction or automatic chat communication is used.
+Public item tooltips receive saved prices during combat. Restricted IDs are not read; unavailable stack context shows each-item values. GUID/location and bag/equipment quantity reads are guarded. Native primary-tooltip rebuilds remain outside combat; comparison rebuilds remain under Blizzard ownership.
 
-These are conservative design choices, not a Blizzard approval or a guarantee that all future client updates permit the same APIs. An unavailable/changed/restricted function is a compatibility issue to report, not a reason to bypass its restriction.
+AH and crafting controls use Blizzard templates. LibAHTab coordinates addon tabs through the shared LibStub registry without extending Blizzard's tab arrays. Frame doubles check lifecycle behavior, not visual fit, native taint or running-addon coexistence.
 
-## Blizzard addon policy alignment
+## Prices and DE estimates
 
-The implementation is designed around Blizzard's published UI Add-On Development Policy: free distribution and visible source, reasonable client/server load, no advertisements or in-game donation solicitation, appropriate content and normal game API boundaries. The project does not include premium features, an executable companion, external networking or hidden code.
+AH lows are asking prices before fees. Missing buyouts are not zero values or guaranteed sale prices. Suffix-specific prices retain a labeled item-wide fallback. Recipe ranking uses minimum output yield; quotes use full market material cost, including owned materials.
 
-Blizzard retains control over available addon functionality. The reviewed policy is linked in [docs/RESEARCH.md](docs/RESEARCH.md). No claim of legal certification or official endorsement is made.
+DE values use the named Classic reference model. Forever loot probabilities, new materials, exceptional eligibility and skill requirements remain unverified. The addon does not perform auction transactions, crafting or disenchanting actions.
 
 ## Persistence
 
-TOCs declare account-wide `MSMarketValueDB` and `LoadSavedVariablesFirst: 1`. Initialization additionally waits for the matching ADDON_LOADED event. Disk writes use the client's standard SavedVariables lifecycle. The addon has no filesystem-writing API and cannot repair a client loader or persistence regression.
-
-Native reload, relog, character switch and full-exit/restart checks remain mandatory live tests. In particular, a passing mocked serialization test is not evidence that the current beta client successfully saves addon data on a specific operating system/account.
-
-## Disenchant model qualification
-
-The default model is explicitly a Classic reference. No reviewed native API exposes a complete Forever-specific disenchant loot probability table to this addon. Class/quality/equipment slot only estimate standard eligibility. Player profession capability and individual exceptions are not guaranteed.
-
-New Forever items/materials or changed drop rates must be modeled from new evidence before they can be represented as verified. Keep the label and exclusions until that evidence exists. [docs/DISENCHANT-MODEL.md](docs/DISENCHANT-MODEL.md) explains the bounds.
-
-## Update response
-
-For a new client build with unchanged Interface, rerun affected live checks and compare the API surface if behavior changes. For a new Interface number, review the actual UI/API definitions before updating metadata and the runtime gate together. After the first stable release, update semantic versions and immutable version tags for released changes; preserve the three historical beta tags. Do not mark a client qualified based solely on a TOC edit.
+Schema-1 completed prices and preferences carry forward from 1.0.0. WoW writes account SavedVariables on its normal save lifecycle; verify reload/relog/restart behavior in the actual client. Future schemas and invalid roots are preserved and refused. The next test revision will introduce documented history retention; this revision keeps only the latest completed snapshot per market.

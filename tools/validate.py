@@ -18,8 +18,10 @@ def run(lua: str, luac: str | None = None) -> None:
     meta = json.loads((ROOT / "build.json").read_text(encoding="utf-8"))
     channel = meta.get("releaseChannel", "beta")
     if channel == "beta":
-        assert meta["version"] == "0.1.0-beta", "Hold the primary beta version until the finalized release"
-        assert meta["gitTag"] == f'v{meta["version"]}-build{meta["buildNumber"]}'
+        assert meta["version"] == "1.1.0-beta", "Keep one testing version until the 1.1.0 release"
+        assert meta["build"] == "2026-10-11-beta001", "Hold the testing build; advance testRevision"
+        assert isinstance(meta["testRevision"], int) and meta["testRevision"] >= 1
+        assert meta["gitTag"] == f'v{meta["version"]}-test{meta["testRevision"]}'
     else:
         assert channel == "stable", "Unknown release channel"
         assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", meta["version"]), "Use a stable semantic version"
@@ -30,13 +32,16 @@ def run(lua: str, luac: str | None = None) -> None:
     bootstrap = (RUNTIME / "Bootstrap.lua").read_text(encoding="utf-8")
     assert f'A.VERSION = "{meta["version"]}"' in bootstrap
     assert f'A.BUILD = "{meta["build"]}"' in bootstrap
+    if channel == "beta":
+        assert f'A.TEST_REVISION = {meta["testRevision"]}' in bootstrap
+        assert f'## X-Test-Revision: {meta["testRevision"]}\n' in text
     assert f'A.INTERFACE = {meta["interface"]}' in bootstrap
     assert "## SavedVariables: MSMarketValueDB\n" in text
     assert "## LoadSavedVariablesFirst: 1\n" in text
     for suffix in ("Camelot", "Forever"):
         assert (RUNTIME / f"MSMarketValue_{suffix}.toc").read_bytes() == toc.read_bytes()
     paths = [line.replace("\\", "/") for line in text.splitlines() if line and not line.startswith("#")]
-    assert len(paths) == len(set(paths)) == 11
+    assert len(paths) == len(set(paths)) == 13
     assert paths[0] == "Bootstrap.lua" and paths[-1] == "Core/Events.lua"
     assert paths[1:3] == ["Libs/LibStub/LibStub.lua", "Libs/LibAHTab/LibAHTab.lua"]
     assert set(paths) == {p.relative_to(RUNTIME).as_posix() for p in RUNTIME.rglob("*.lua")}

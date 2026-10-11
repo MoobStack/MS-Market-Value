@@ -1,82 +1,54 @@
-# Live-client checklist
+# Test revision 1: live checks
 
-Test exact release `1.0.0 / 2026-10-04-release001`. The user reported build003 COMPLETE on PvP/Horde: 104,763 rows, 2,856 priced items, one request, 6,329 events and 6,328 same-count updates; the tab installed and behavior appeared normal. This is successful baseline evidence. The boxes below track the exact 1.0.0 release or dedicated scenarios not established by that report; local checks are separate.
+Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 1**, on the Forever client. Local fixtures do not establish native UI fit or server buffer retention.
 
-## Startup and window
+## Install and baseline
 
-- [ ] Install the Clean ZIP into the active Forever beta AddOns folder and restart the client.
-- [ ] Enable script errors using `/console scriptErrors 1`.
-- [ ] Confirm the addon list and `/msmv diagnostics` identify version 1.0.0, build 2026-10-04-release001 and Interface 16001.
-- [ ] Open `/msmv`; check readable labels, no overlap, usable buttons and proper fonts.
-- [ ] Drag the window; close it with Escape; reopen it and confirm the position.
-- [ ] Toggle each tooltip setting and apply stale hours. Verify the control changes the corresponding behavior.
-- [ ] Open diagnostics, copy with Ctrl+C, and close the dialog.
+- [ ] Close WoW, replace the addon with the Clean ZIP, preserve WTF, and restart.
+- [ ] Enable script errors with `/console scriptErrors 1`.
+- [ ] Verify **Test revision: 1** in `/msmv diagnostics`, with Interface 16001 and the expected market key.
+- [ ] Confirm the previous completed prices, tooltip settings and DE exclusions remain.
+- [ ] Open an auctioneer: Buy remains selected, one MS tab appears, and the scan/settings controls fit at your UI scale.
 
-## Native full scan
+## Crafting
 
-- [ ] Open an auctioneer; confirm Buy stays selected, the **MS Market Value** tab appears once, and no standalone settings popup opens.
-- [ ] Select the MS tab; check native textured inset borders, stock controls, readable labels and no overlap. Confirm scan controls and both settings columns fit without a settings scrollbar at your UI scale.
-- [ ] Switch through Buy, Sell, Auctions, MS and Auctionator tabs if installed; confirm the panels do not overlap or produce blocked-action errors.
-- [ ] Close/reopen the auctioneer and confirm one MS tab is reused. Check `/msmv` selects/leaves it and opens a manual window away from the AH.
-- [ ] Copy diagnostics before scanning; confirm the market key is available and record ruleset/source, faction, reporting aliases, region/portal and lookup sources. On the supplied PvP host expect ruleset pvp and native region 90. Record the actual Normal alias when available.
-- [ ] Click Scan entire AH exactly once. Observe WAITING, PROCESSING and COMPLETE without a Lua error.
-- [ ] Confirm the session full-scan request count increases after one permitted attempt. If it remains zero/IDLE, record the explicit market/readiness gate reason.
-- [ ] Save diagnostics showing row count, priced-item count, replication-event count and same-count data updates. Additional stable-count updates must not cause the old buffer-refreshed failure.
-- [ ] Compare several native AH listings with tooltip prices: a normal item, a stack/commodity, low-level equipment and listed enchanting materials.
-- [ ] Include an uncommon weapon with a signed random suffix and check a known matching suffix separately from item-wide fallback.
-- [ ] Where bid-only listings are available, verify they do not become a buyout price.
-- [ ] Check that listed enchanting materials are covered by the native replication response. Report missing materials even if the scanner says COMPLETE.
-- [ ] Confirm the persistent minimum cooldown disables another immediate full scan.
+- [ ] Open each available profession and select a learned item recipe. The MS crafting window opens and follows recipe changes.
+- [ ] Compare every required material quantity and its latest AH unit price with the displayed material list and total cost.
+- [ ] Check a profitable recipe and a losing recipe. Confirm `profit = sale - materials` and `% = profit / materials × 100`, before fees.
+- [ ] Check a multi-item output. Cost is per craft; sale uses the number produced; cost per item divides by output count.
+- [ ] If output quantity varies, check both endpoints. The ranking uses minimum output.
+- [ ] Open **Profitable recipes**, switch Profit / craft and Return %, page through results, and select a row. It selects the native recipe and does not craft anything.
+- [ ] Confirm missing material prices prevent a full cost, profit and quote. Missing output price still allows a complete material quote.
+- [ ] Change optional or alternative reagents where supported. The selected recipe follows public allocations; incomplete choices remain unavailable.
+- [ ] Test Cooking and a direct Enchanting service. A service has material cost/quote without a fabricated auction profit.
+- [ ] Apply 0%, then 25% markup. Confirm the quote equals material cost × 1.25, can be copied, and the setting persists after a normal save/reload.
+- [ ] Close/reopen the crafting window with its MS button and `/msmv craft`; close the profession and confirm the addon window closes.
+- [ ] Check long recipe/material names, window dragging, Escape, UI scales and readability. Report overlap with a screenshot.
 
-Use `GetReplicateItemInfo`/`GetNumReplicateItems` only through the loaded addon for further diagnostics; do not paste an AH API call into `/run` or use a dynamic Lua editor to bypass the addon's boundaries.
+## Combat tooltips
 
-## Tooltip values
+- [ ] Hover the same priced bag item outside and during combat. Vendor, AH and applicable DE values remain present.
+- [ ] Check an actual stack, a single item, equipment, a chat link and comparisons. Stack quantities remain correct where public; unavailable quantity shows Each.
+- [ ] Rehover and change stacks. No duplicate price block or comparison header damage occurs.
+- [ ] Allow uncached item information to load; no tooltip getter/rebuild or blocked-action error occurs. Deferred native refresh can finish after combat.
 
-- [ ] Hover a known bag stack: verify **Each / Stack (N)** uses its actual count and vendor/AH totals equal the unrounded unit value times N.
-- [ ] Hover two different stacks of the same item and split/merge a stack; rehover and confirm the totals change without duplicate sections.
-- [ ] Hover a single item, an equipped item and a generic chat link; verify each-only prices when no reliable stack context is available.
-- [ ] On eligible gear, confirm **DE expected** is in the price block, with each/stack totals where applicable, followed by one blank line before the material section.
-- [ ] Confirm material ranges/chances/averages remain per item. Toggle material display and verify the DE price remains available.
-- [ ] Upgrade from build003 with an existing snapshot; confirm prices/settings/exclusions/cooldown remain without a forced scan.
+## Pause and resume
 
-- [ ] Hover a vendor-sellable item outside combat and compare the native sell value for one item.
-- [ ] Hover an item with zero vendor sale value and verify it is distinguished from unavailable data.
-- [ ] Check native bag/equipment tooltips, chat item-reference tooltips and comparison tooltips.
-- [ ] Hover a previously uncached item with comparisons shown, including item 270018 if available. Allow native item data to load; confirm no TooltipDataHandler insert/infoList error, intact comparison headers/deltas and one MS section. Rehover to check deferred comparison values.
-- [ ] Hover the same item repeatedly and verify there is only one MS Market Value section per tooltip.
-- [ ] Verify missing AH prices read Scan required/Not listed/No buyout appropriately.
-- [ ] On eligible green gear, verify material names, quantities, probabilities and expected value lines appear.
-- [ ] When a possible material is unpriced, verify the complete DE total is unavailable and any known portion is labeled as partial.
-- [ ] Set a short stale threshold on an old snapshot and verify the stale marker.
-- [ ] Enter combat with an item tooltip/scan window present; confirm no addon calculation/error runs and local scanning stops safely.
+- [ ] Start one permitted scan and capture diagnostics. Click Pause while it is processing; the previous completed timestamp/prices remain usable.
+- [ ] Click Resume during the full-scan cooldown. It continues staged work and does **not** increase the session request count.
+- [ ] Pause while waiting for a response if possible. A response received while paused stays staged until Resume.
+- [ ] Close/reopen the auctioneer during processing and resume. Record whether Forever retains the buffer; an unavailable buffer must fail clearly and keep previous prices.
+- [ ] If combat interrupts a scan, confirm PAUSED, then resume outside combat at an auctioneer.
+- [ ] If native item data is delayed, resume after a timeout. Accepted rows must not be counted twice.
+- [ ] Confirm COMPLETE accounts for the full response, updates the saved timestamp once, and leaves the original request cooldown intact.
+- [ ] Use `/msmv discard` on another incomplete scan. Completed prices remain; the new-request cooldown is not bypassed.
+- [ ] Do not expect incomplete work to survive `/reload` or quitting. Verify completed prices and cooldown still do.
+- [ ] Check normal AH tab switching and another AH addon with one scanner active at a time; capture any error.
 
-## Persistence and replacement
+## Save and report
 
-- [ ] After a successful scan, use `/reload`, then verify prices/settings/window position remain.
-- [ ] Log out normally and log back in; verify the same complete snapshot and cooldown state remain.
-- [ ] Exit WoW normally and restart it; verify the same values load from disk.
-- [ ] Change characters in the same detected region/ruleset/faction; verify account-wide prices remain. If the reporting-host suffix changes, confirm the market key stays the same.
-- [ ] Test Normal and PvP separately when available; confirm each keeps its own snapshot. Record the Normal reporting alias and detection source.
-- [ ] Confirm another region or unqualified faction cache never substitutes the first market's prices.
-- [ ] Verify old realm-keyed records survive the upgrade but do not appear in the new ruleset cache before its first complete scan.
-- [ ] After a permitted later scan, confirm its timestamp replaces the old snapshot and missing listings do not retain old prices.
+- [ ] Verify completed prices, settings and exclusions after `/reload`, relog and full exit/restart.
+- [ ] Compare several current AH listings, including enchanting materials and a signed-suffix item, with saved unit prices.
+- [ ] Keep different rulesets/factions isolated and verify a same-market reporting-host change reuses the cache.
 
-Keep a copy of the SavedVariables backup while the client is closed. A save/reload failure must be recorded as a client-persistence issue; do not claim completion from an in-memory price alone.
-
-## Interrupted scans and coexistence
-
-- [ ] During a later permitted scan, press Stop; verify the prior complete timestamp/prices remain.
-- [ ] Close the auctioneer during local processing; verify the prior snapshot remains.
-- [ ] If a scan naturally times out or has delayed data, capture diagnostics and verify it does not clear prior prices.
-- [ ] After switching tabs and leaving the AH, exercise normal bag use in and out of combat; record any native taint/blocked-action error.
-- [ ] With another AH addon installed, run one full scanner at a time. Verify normal tooltip coexistence without duplicated MS sections.
-- [ ] If concurrent replication is intentionally tested, expect refusal/preservation and capture both addon versions.
-
-## Forever disenchant evidence
-
-- [ ] While normally disenchanting spare low-level items, record item link/ID, native iLvl, quality, actual material and quantity, client build and sample count.
-- [ ] Verify special non-disenchantable items can be excluded and their estimates restored through the UI.
-- [ ] Treat an unexpected material or quantity as a model mismatch requiring a model update.
-- [ ] Leave unobserved high-level/rare/epic brackets marked unverified. A low-level test cannot qualify them.
-
-Native auction/API/UI/persistence checks and loot-model checks are separate. Submit `/msmv diagnostics`, any exact Lua error and the relevant checklist results for the next build. The three prerelease revisions remain in the 0.1.0-beta history; subsequent stable releases use new semantic version tags.
+Send `/msmv diagnostics`, the profession and recipe name/ID, exact Lua errors, and the failed checklist item. For resume, include before/after request counts and staged-row progress. Price history is not part of this revision's checks.

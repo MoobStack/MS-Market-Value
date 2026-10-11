@@ -53,6 +53,7 @@ local function widget(name)
     function w:SetHeight(height) self.height = height end
     function w:CreateFontString() return widget() end
     function w:SetText(text) self.text = text end
+    function w:SetTextColor(...) self.color = { ... } end
     function w:GetText() return self.text end
     function w:SetChecked(value) self.checked = value end
     function w:GetChecked() return self.checked end
@@ -102,6 +103,7 @@ local function fresh(saved)
     _G.SlashCmdList, _G.UISpecialFrames = {}, {}
     _G.UIParent = widget("UIParent")
     _G.LibStub, _G.AuctionHouseFrame, _G.AuctionHouseFrameDisplayMode = nil, nil, nil
+    _G.ProfessionsFrame, _G.C_TradeSkillUI = nil, nil
     _G.WOW_PROJECT_MAINLINE, _G.WOW_PROJECT_CAMELOT = 1, 14
     _G.WOW_PROJECT_ID = WOW_PROJECT_CAMELOT
     _G.strmatch = string.match
@@ -227,6 +229,36 @@ local function fresh(saved)
         end
         error("scan did not terminate")
     end
+    function world:openProfession()
+        self.recipes, self.recipeIDs = self.recipes or {}, self.recipeIDs or {}
+        self.allocations, self.modified = self.allocations or {}, self.modified or {}
+        _G.C_TradeSkillUI = {
+            GetAllRecipeIDs = function() self.catalogCalls = (self.catalogCalls or 0) + 1; return self.recipeIDs end,
+            GetRecipeInfo = function(id) return self.recipes[id] and self.recipes[id].info end,
+            GetRecipeSchematic = function(id) return self.recipes[id] and self.recipes[id].schematic end,
+            GetRecipeOutputItemData = function(id, reagents) self.outputReagents = reagents; return self.recipes[id] and self.recipes[id].output end,
+            GetBaseProfessionInfo = function() return { professionID = self.professionID or 164 } end,
+            OpenRecipe = function(id) self.selectedID = id; self.openRecipeCalls = (self.openRecipeCalls or 0) + 1 end,
+        }
+        local profession = widget("ProfessionsFrame")
+        local form = widget()
+        local transaction = {
+            CreateReagentInfoTbl = function() return self.allocations end,
+            CreateCraftingReagentInfoTbl = function() return self.modified end,
+            GetAllocationItemGUID = function() return nil end,
+        }
+        function form:GetRecipeInfo() return self.recipesWorld.recipes[self.recipesWorld.selectedID] and self.recipesWorld.recipes[self.recipesWorld.selectedID].info end
+        function form:GetTransaction() return transaction end
+        function form:GetCurrentRecipeLevel() return 1 end
+        function form:GetOutputOverrideQualityID() return self.recipesWorld.outputQuality end
+        form.recipesWorld = self
+        profession.CraftingPage = widget()
+        profession.CraftingPage.SchematicForm = form
+        profession.CraftingPage:Show(); profession:Show()
+        _G.ProfessionsFrame = profession
+        self.form = form
+        return form
+    end
     return world, A
 end
 
@@ -313,21 +345,21 @@ test("unresolved item data timeout keeps the old snapshot", function()
     local w, A, old = initial()
     newScan(w, {row(200, 1, 100, 0, false)})
     A.Scanner.Tick(); w:advance(46)
-    equal(A.Scanner.state, "FAILED"); equal(A.DB.Snapshot(), old)
+    equal(A.Scanner.state, "PAUSED"); equal(A.DB.Snapshot(), old)
 end)
 test("request timeout and a late response keep the old snapshot", function()
     local w, A, old = initial(); w:advance(901); truth(A.Scanner.Start()); w:advance(121)
-    equal(A.Scanner.state, "FAILED"); A.Scanner.OnResponse(); equal(A.DB.Snapshot(), old)
+    equal(A.Scanner.state, "PAUSED"); A.Scanner.OnResponse(); equal(A.DB.Snapshot(), old)
 end)
-test("auction-house close cancels safely", function()
+test("auction-house close pauses safely", function()
     local w, A, old = initial(); newScan(w, {row(200, 1, 100)})
-    A.auctionOpen = false; A.Scanner.Tick(); equal(A.Scanner.state, "CANCELLED"); equal(A.DB.Snapshot(), old)
+    A.auctionOpen = false; A.Scanner.Tick(); equal(A.Scanner.state, "PAUSED"); equal(A.DB.Snapshot(), old)
 end)
-test("combat cancels a scan and suppresses tooltip calculations", function()
+test("combat pauses a scan and retains public tooltip prices", function()
     local w, A, old = initial(); newScan(w, {row(200, 1, 100)})
     w.combat = true; A.Scanner.Tick(); equal(A.DB.Snapshot(), old)
     GameTooltip.data = {id = 100}; A.Tooltips.Handle(GameTooltip, GameTooltip.data)
-    equal(GameTooltip:NumLines(), 0); equal(w.itemCalls, nil)
+    truth(GameTooltip:NumLines() > 0); truth(w.itemCalls > 0); equal(A.Scanner.state, "PAUSED")
 end)
 test("another addon's replication request invalidates the staged snapshot", function()
     local w, A, old = initial(); newScan(w, {row(200, 1, 100)})
@@ -940,11 +972,11 @@ test("restricted or malformed quantity contexts keep usable each-only prices", f
     w.locations["Fixture-Stack"] = {itemID=secret, stackCount=secret}
     equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
 end)
-test("combat and forbidden frames suppress quantity API reads and native getter failures recover", function()
+test("combat permits public quantity reads while forbidden frames stay protected", function()
     local w, A = initial(); local tooltip = bagTooltip(w, 100, 20)
-    w.combat = true; equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
+    w.combat = true; equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 20)
     w.combat = false; tooltip.forbidden = true
-    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1); equal(w.containerReads, nil)
+    equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1); equal(w.containerReads, 1)
     tooltip.forbidden = false
     C_Container.GetContainerItemInfo = function() error("not ready") end
     equal(A.Tooltips.StackCount(tooltip, tooltip.data, 100), 1)
@@ -1014,7 +1046,7 @@ test("display options and zero vendor values retain their meaning in a stack pri
     A.DB.data.settings.showVendor, A.DB.data.settings.showAuction = false, false
     equal(#A.Tooltips.Lines(300, link(300),20),0)
 end)
-test("1.0.0 retains the completed beta003 market, settings, exclusions and cooldown without rescanning", function()
+test("beta upgrade retains the completed beta003 market, settings, exclusions and cooldown without rescanning", function()
     local w, A = fresh(); w.realm="ClassicBetaPvP2"; w.region=90
     w:start({row(100,1,500)}); w:drain()
     local saved, snapshot = A.DB.data, A.DB.Snapshot()
@@ -1022,9 +1054,322 @@ test("1.0.0 retains the completed beta003 market, settings, exclusions and coold
     snapshot.version, snapshot.build = saved.version, saved.build
     saved.settings.staleHours=72; saved.excludedItems[300]=true
     local w2,A2 = fresh(saved); w2.realm="ClassicBetaPvP2"; w2.region=90; w2:load()
-    equal(A2.VERSION,"1.0.0"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
+    equal(A2.VERSION,"1.1.0-beta"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
     equal(A2.DB.data.settings.staleHours,72); equal(A2.DB.data.excludedItems[300],true)
     equal(A2.Scanner.RemainingCooldown(),900); equal(w2.requests,0)
+end)
+
+local function craftRecipe(id, outputID, minimum, maximum, slots)
+    return {
+        info = { recipeID = id, name = "Recipe " .. id, learned = true, supportsQualities = false },
+        schematic = { recipeID = id, quantityMin = minimum or 1, quantityMax = maximum or minimum or 1,
+            outputItemID = outputID, isRecraft = false, reagentSlotSchematics = slots or {
+                { reagents = {{itemID = 100}}, quantityRequired = 2, required = true, dataSlotIndex = 1, variableQuantities = {} },
+                { reagents = {{itemID = 101}}, quantityRequired = 1, required = true, dataSlotIndex = 2, variableQuantities = {} },
+            } },
+        output = { itemID = outputID, hyperlink = outputID and link(outputID) or nil },
+    }
+end
+
+local function craftingWorld()
+    local w, A = fresh()
+    w:start({row(100,1,100),row(101,1,200),row(102,1,50),row(200,1,900),row(201,1,300),row(202,1,500)})
+    w:drain()
+    w.recipes = { [1] = craftRecipe(1,200), [2] = craftRecipe(2,201), [3] = craftRecipe(3,202,2,4) }
+    w.recipeIDs, w.selectedID = {1,2,3}, 1
+    w:openProfession()
+    return w, A
+end
+
+test("paused processing resumes during cooldown with one request and no duplicate rows", function()
+    local w, A = fresh(); local rows = {}
+    for index=1,251 do rows[index]=row(100,1,100+index) end
+    w:start(rows); A.Scanner.Tick(); equal(A.Scanner.work.processedRows,100)
+    local cooldown=A.DB.data.cooldownUntil
+    truth(A.Scanner.Pause()); w:advance(100); equal(A.Scanner.state,"PAUSED")
+    truth(A.Scanner.Start()); w:drain()
+    equal(w.requests,1); equal(A.DB.data.cooldownUntil,cooldown)
+    equal(A.DB.Snapshot().processedRows,251); equal(A.DB.Price(100).auctions,251); equal(A.DB.Price(100).units,251)
+end)
+test("a response arriving while paused is staged and committed only after resume", function()
+    local w,A=fresh(); w:load(); w.rows={row(100,1,100)}
+    truth(A.Scanner.Start()); truth(A.Scanner.Pause()); A.Scanner.OnResponse()
+    equal(A.Scanner.resumeState,"PROCESSING"); equal(A.DB.Snapshot(),nil)
+    truth(A.Scanner.Resume()); w:drain(); equal(A.DB.Price(100).low,100); equal(w.requests,1)
+end)
+test("an empty response while paused replaces prices only on resume", function()
+    local w,A,old=initial(); w:advance(901); w.rows={}
+    truth(A.Scanner.Start()); truth(A.Scanner.Pause()); A.Scanner.OnResponse()
+    equal(A.DB.Snapshot(),old); truth(A.Scanner.Resume()); w:drain()
+    equal(A.DB.Snapshot().totalRows,0); equal(w.requests,2)
+end)
+test("waiting resume makes no duplicate request and later server data completes", function()
+    local w,A=fresh(); w:load(); w.rows={row(100,1,100)}
+    truth(A.Scanner.Start()); truth(A.Scanner.Pause()); w:advance(500)
+    truth(A.Scanner.Resume()); equal(A.Scanner.state,"WAITING"); equal(w.requests,1)
+    A.Scanner.OnResponse(); w:drain(); equal(A.DB.Price(100).low,100)
+end)
+test("resuming midway through a pending retry preserves its accepted rows", function()
+    local w,A=fresh(); local rows={}
+    for index=1,205 do rows[index]=row(100,1,100,0,false) end
+    w:start(rows); while A.Scanner.state=="PROCESSING" do A.Scanner.Tick() end
+    for _,entry in ipairs(rows) do entry.allInfo=true end
+    w:advance(0.6); equal(A.Scanner.work.processedRows,100)
+    truth(A.Scanner.Pause()); truth(A.Scanner.Resume()); w:drain()
+    equal(A.DB.Price(100).units,205); equal(A.DB.Price(100).auctions,205); equal(w.loadRequests,1)
+end)
+test("missing item data can be picked up after the resolution timeout", function()
+    local w,A=fresh(); w:start({row(100,1,100,0,false)})
+    A.Scanner.Tick(); w:advance(46); equal(A.Scanner.state,"PAUSED")
+    w.rows[1].allInfo=true; truth(A.Scanner.Resume()); w:drain()
+    equal(A.DB.Price(100).low,100); equal(w.requests,1)
+end)
+test("combat and AH close require safe reopen before resuming the same buffer", function()
+    local w,A=fresh(); w:start({row(100,1,100)})
+    w.combat=true; w:event("PLAYER_REGEN_DISABLED"); equal(A.Scanner.state,"PAUSED")
+    equal(A.Scanner.Resume(),false); w.combat=false; w:event("AUCTION_HOUSE_CLOSED")
+    equal(A.Scanner.Resume(),false); w:event("AUCTION_HOUSE_SHOW")
+    truth(A.Scanner.Resume()); w:drain(); equal(w.requests,1); equal(A.DB.Price(100).low,100)
+end)
+test("a paused scan rejects a replaced buffer and retains the full-scan cooldown", function()
+    local w,A,old=initial(); newScan(w,{row(200,1,100)})
+    truth(A.Scanner.Pause()); w.overrideCount=2
+    equal(A.Scanner.Resume(),false); equal(A.Scanner.state,"FAILED")
+    equal(A.DB.Snapshot(),old); truth(A.Scanner.RemainingCooldown()>0); equal(w.requests,2)
+end)
+test("another addon invalidates a paused same-count buffer", function()
+    local w,A,old=initial(); newScan(w,{row(200,1,100)})
+    truth(A.Scanner.Pause()); C_AuctionHouse.ReplicateItems()
+    equal(A.Scanner.state,"FAILED"); equal(A.Scanner.Resume(),false); equal(A.DB.Snapshot(),old)
+end)
+test("paused same-count readiness events retain cursor and market changes prevent resume", function()
+    local w,A=fresh(); local rows={}
+    for index=1,151 do rows[index]=row(100,1,100) end
+    w:start(rows); A.Scanner.Tick(); truth(A.Scanner.Pause()); A.Scanner.OnResponse()
+    equal(A.Scanner.cursor,100); equal(A.Scanner.dataUpdateCount,1)
+    w.region=2; equal(A.Scanner.Resume(),false); equal(A.Scanner.state,"FAILED")
+end)
+test("pause resume and discard commands expose the intended lifecycle", function()
+    local w,A=fresh(); w:start({row(100,1,100)})
+    SlashCmdList.MSMARKETVALUE("pause"); equal(A.Scanner.state,"PAUSED")
+    SlashCmdList.MSMARKETVALUE("resume"); truth(A.Scanner.active)
+    SlashCmdList.MSMARKETVALUE("stop"); truth(A.Scanner.paused)
+    SlashCmdList.MSMARKETVALUE("discard"); equal(A.Scanner.work,nil); equal(A.Scanner.state,"CANCELLED")
+    equal(w.requests,1); truth(A.Scanner.RemainingCooldown()>0)
+end)
+test("scan controls enable resume while cooldown is active", function()
+    local w,A=fresh(); w:openAH(); w:start({row(100,1,100)})
+    A.Scanner.Pause(); A.UI.Refresh()
+    equal(A.UI.scanButton.text,"Resume scan"); equal(A.UI.scanButton.enabled,true); equal(A.UI.stopButton.enabled,false)
+    A.UI.scanButton.scripts.OnClick(); truth(A.Scanner.active); equal(w.requests,1)
+end)
+test("combat item tooltips retain vendor AH and DE values without duplicates", function()
+    local w,A=initial(); w.items[100]={quality=2,level=17,vendor=100}
+    w.combat=true; local tooltip=bagTooltip(w,100,20)
+    A.Tooltips.Handle(tooltip,tooltip.data); local count=tooltip:NumLines()
+    equal(findLine(tooltip.lines,A.TITLE).right,"Each / Stack (20)")
+    truth(findLine(tooltip.lines,"Vendor sell")); truth(findLine(tooltip.lines,"AH low")); truth(findLine(tooltip.lines,"DE expected"))
+    A.Tooltips.Handle(tooltip,tooltip.data); equal(tooltip:NumLines(),count)
+    tooltip.lines={}; tooltip.data={id=secret}; A.Tooltips.Handle(tooltip,tooltip.data); equal(tooltip:NumLines(),0)
+end)
+test("crafting shows total raw cost profit and return on cost", function()
+    local w,A=craftingWorld(); local value=A.Crafting.Analyze(1,w.form)
+    equal(value.cost,400); equal(value.saleMin,900); equal(value.profitMin,500); equal(value.returnMin,125)
+    equal(value.quote,400); equal(#value.materials,2); equal(value.materials[1].quantity,2)
+end)
+test("crafting losses are negative and percentage uses material cost", function()
+    local w,A=craftingWorld(); local value=A.Crafting.Analyze(2,w.form)
+    equal(value.profitMin,-100); equal(value.returnMin,-25)
+    equal(A.CraftingUI.SignedMoney(value.profitMin),"-1s 00c")
+end)
+test("crafting multi-output yield scales sale and unit costs conservatively", function()
+    local w,A=craftingWorld(); local value=A.Crafting.Analyze(3,w.form)
+    equal(value.quantityMin,2); equal(value.quantityMax,4)
+    equal(value.saleMin,1000); equal(value.saleMax,2000)
+    equal(value.profitMin,600); equal(value.profitMax,1600)
+    equal(value.unitCostMin,100); equal(value.unitCostMax,200); equal(value.returnMin,150)
+end)
+test("quotes add configurable markup once without rounding material inputs", function()
+    local w,A=craftingWorld(); A.DB.data.settings.quoteMarkup=25
+    near(A.Crafting.Analyze(1,w.form).quote,500)
+    near(A.Crafting.Quote(2/3,50),1)
+    equal(A.Crafting.Quote(400,-1),nil); equal(A.Crafting.Quote(400,1001),nil)
+    equal(A.Crafting.Quote(secret,25),nil)
+end)
+test("missing material prices keep profit and quote unavailable", function()
+    local w,A=craftingWorld(); w.recipes[1].schematic.reagentSlotSchematics[2].reagents={{itemID=999}}
+    local value=A.Crafting.Analyze(1,w.form)
+    equal(value.cost,nil); equal(value.quote,nil); equal(value.profitMin,nil)
+    equal(value.subtotal,200); equal(value.missing[1],999)
+end)
+test("missing output price retains a complete material quote", function()
+    local w,A=craftingWorld(); w.recipes[1].output={itemID=999}
+    local value=A.Crafting.Analyze(1,w.form)
+    equal(value.cost,400); equal(value.quote,400); equal(value.profitMin,nil); truth(value.reason)
+end)
+test("direct enchants and other services receive material quotes without invented sale values", function()
+    local w,A=craftingWorld(); w.recipes[4]=craftRecipe(4,nil); w.recipes[4].info.isEnchantingRecipe=true
+    local value=A.Crafting.Analyze(4,w.form)
+    equal(value.cost,400); equal(value.quote,400); equal(value.service,true); equal(value.saleMin,nil)
+end)
+test("required alternative reagents are priced only after complete selection", function()
+    local w,A=craftingWorld(); local slot=w.recipes[1].schematic.reagentSlotSchematics[1]
+    slot.reagents={{itemID=100},{itemID=102}}
+    equal(A.Crafting.Analyze(1).cost,nil)
+    w.allocations={{dataSlotIndex=1,reagent={itemID=102},quantity=2}}
+    equal(A.Crafting.Analyze(1,w.form).cost,300)
+    w.allocations[1].quantity=1; equal(A.Crafting.Analyze(1,w.form).cost,nil)
+end)
+test("selected optional materials are included and unselected slots are omitted", function()
+    local w,A=craftingWorld()
+    w.recipes[1].schematic.reagentSlotSchematics[3]={required=false,quantityRequired=1,dataSlotIndex=3,reagents={{itemID=102}},variableQuantities={}}
+    equal(A.Crafting.Analyze(1).cost,400)
+    w.modified={{dataSlotIndex=3,reagent={itemID=102},quantity=1}}
+    equal(A.Crafting.Analyze(1,w.form).cost,450); equal(w.outputReagents[1].reagent.itemID,102)
+end)
+test("a fixed reagent is costed in full when only part is owned", function()
+    local w,A=craftingWorld(); w.allocations={{dataSlotIndex=1,reagent={itemID=100},quantity=1}}
+    equal(A.Crafting.Analyze(1,w.form).cost,400)
+end)
+test("malformed or restricted reagent choices never produce a profit", function()
+    for _,bad in ipairs({secret,-1,1.5}) do
+        local w,A=craftingWorld(); w.recipes[1].schematic.reagentSlotSchematics[1].quantityRequired=bad
+        equal(A.Crafting.Analyze(1,w.form).profitMin,nil)
+    end
+    local w,A=craftingWorld(); w.allocations={{dataSlotIndex=1,reagent={itemID=secret},quantity=2}}
+    equal(A.Crafting.Analyze(1,w.form).cost,nil)
+end)
+test("currencies and variable reagent quantities are not assigned fictitious market values", function()
+    local w,A=craftingWorld(); local slot=w.recipes[1].schematic.reagentSlotSchematics[1]
+    slot.reagents={{currencyID=1}}; equal(A.Crafting.Analyze(1).cost,nil)
+    slot.reagents={{itemID=100}}; slot.variableQuantities={{quantity=2}}
+    equal(A.Crafting.Analyze(1).cost,nil)
+end)
+test("stale and mismatched selected reagent slots are rejected", function()
+    local w,A=craftingWorld(); w.allocations={{dataSlotIndex=9,reagent={itemID=102},quantity=1}}
+    equal(A.Crafting.Analyze(1,w.form).cost,nil)
+    w.allocations[1].dataSlotIndex=1; equal(A.Crafting.Analyze(1,w.form).cost,nil)
+end)
+test("quality output recipes require selection for a ranking price", function()
+    local w,A=craftingWorld(); w.recipes[1].info.supportsQualities=true
+    equal(A.Crafting.Analyze(1).profitMin,nil)
+    equal(A.Crafting.Analyze(1,w.form).profitMin,500)
+end)
+test("unlearned recipes and non-fixed salvage or recraft recipes are excluded", function()
+    local w,A=craftingWorld(); w.recipes[1].info.learned=false
+    equal(A.Crafting.Analyze(1),nil)
+    w.recipes[1].info.learned=true; w.recipes[1].info.isSalvageRecipe=true
+    equal(A.Crafting.Analyze(1).cost,nil)
+end)
+test("zero material cost has no divided-by-zero return percentage", function()
+    local w,A=craftingWorld(); w.recipes[1].schematic.reagentSlotSchematics={}
+    local value=A.Crafting.Analyze(1,w.form)
+    equal(value.cost,0); equal(value.profitMin,900); equal(value.returnMin,nil); equal(value.quote,0)
+end)
+test("profit catalog is batched and ranks only profitable fully priced recipes", function()
+    local w,A=craftingWorld(); A.Crafting.Tick()
+    local rows=A.Crafting.Ranked("profit")
+    equal(#rows,2); equal(rows[1].recipeID,3); equal(rows[2].recipeID,1)
+    equal(A.Crafting.selected.recipeID,1); equal(A.Crafting.ready,true)
+    w.recipeIDs={}
+    for index=1,45 do w.recipeIDs[index]=index; w.recipes[index]=craftRecipe(index,200) end
+    A.Crafting.Invalidate(); A.Crafting.Tick(); equal(A.Crafting.cursor,21); equal(A.Crafting.ready,false)
+    A.Crafting.Tick(); A.Crafting.Tick(); equal(A.Crafting.ready,true); equal(#A.Crafting.Ranked("profit"),45)
+end)
+test("profit and return sorting use separate metrics with deterministic ties", function()
+    local w,A=craftingWorld()
+    A.Crafting.rows={
+        {recipeID=1,name="A",profitMin=1000,returnMin=10},
+        {recipeID=2,name="B",profitMin=500,returnMin=100},
+        {recipeID=3,name="C",profitMin=500,returnMin=100},
+    }
+    equal(A.Crafting.Ranked("profit")[1].recipeID,1)
+    local rows=A.Crafting.Ranked("return"); equal(rows[1].recipeID,2); equal(rows[2].recipeID,3)
+end)
+test("catalog ignores duplicate and unlearned IDs without changing profession filters", function()
+    local w,A=craftingWorld(); w.recipeIDs={1,1,2,3}; w.recipes[2].info.learned=false
+    A.Crafting.Tick(); equal(#A.Crafting.rows,2); equal(w.catalogCalls,1)
+end)
+test("new complete prices and profession changes rebuild the catalog", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); equal(A.Crafting.selected.profitMin,500)
+    newScan(w,{row(100,1,200),row(101,1,200),row(200,1,900)}); w:drain()
+    A.Crafting.Tick(); equal(A.Crafting.selected.cost,600); equal(A.Crafting.selected.profitMin,300)
+    equal(w.catalogCalls,2); w.professionID=171; A.Crafting.Tick(); equal(w.catalogCalls,3)
+end)
+test("selected recipe and selected optional reagents refresh without changing native state", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); equal(A.Crafting.selected.recipeID,1)
+    w.selectedID=2; A.Crafting.Tick(); equal(A.Crafting.selected.profitMin,-100)
+    equal(w.openRecipeCalls,nil); equal(w.requests,1)
+end)
+test("native crafting panel displays values and quote markup and preserves close behavior", function()
+    local w,A=craftingWorld(); A.Crafting.Tick()
+    truth(A.CraftingUI.frame:IsShown()); equal(A.CraftingUI.values[1].text,"4s 00c")
+    equal(A.CraftingUI.values[4].text,"+5s 00c"); equal(A.CraftingUI.values[5].text,"+125.0%")
+    A.CraftingUI.frame.CloseButton.scripts.OnClick(); A.Crafting.Tick(); equal(A.CraftingUI.frame:IsShown(),false)
+    A.CraftingUI.opener.scripts.OnClick(); truth(A.CraftingUI.frame:IsShown())
+    w.selectedID=2; A.Crafting.Tick(); equal(A.CraftingUI.values[4].text,"-1s 00c"); equal(A.CraftingUI.values[5].text,"-25.0%")
+end)
+test("profit recipe buttons select through the native API without crafting", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); A.CraftingUI.mode="profit"; A.CraftingUI.Refresh()
+    local button=A.CraftingUI.catalogRows[1]; equal(button.recipeID,3)
+    button.scripts.OnClick(button); equal(w.selectedID,3); equal(w.openRecipeCalls,1); equal(w.requests,1)
+end)
+test("crafting closes with professions and defers combat work", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local calls=w.catalogCalls
+    w.combat=true; w:event("PLAYER_REGEN_DISABLED"); A.Crafting.Tick()
+    equal(A.CraftingUI.frame:IsShown(),false); equal(w.catalogCalls,calls)
+    w.combat=false; ProfessionsFrame:Hide(); A.Crafting.Tick(); equal(A.CraftingUI.opener:IsShown(),false)
+    ProfessionsFrame:Show(); A.Crafting.Tick(); truth(A.CraftingUI.frame:IsShown())
+end)
+test("unsupported native profession APIs report cleanly and keep auction prices", function()
+    local w,A=craftingWorld(); C_TradeSkillUI.GetAllRecipeIDs=nil
+    A.Crafting.Tick(); truth(A.Crafting.reason); equal(A.Crafting.selected.cost,400); equal(A.DB.Price(100).low,100)
+    C_TradeSkillUI.GetRecipeSchematic=nil; equal(A.Crafting.Supported(),false); equal(A.Crafting.Analyze(1),nil)
+end)
+test("test revision diagnostics identify resumable progress and crafting support", function()
+    local w,A=craftingWorld(); A.Crafting.Tick()
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"Test revision: 1",1,true))
+    truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
+    equal(A.VERSION,"1.1.0-beta"); equal(A.BUILD,"2026-10-11-beta001")
+end)
+test("filtered native catalog fallback is labeled and leaves the user's filters intact", function()
+    local w,A=craftingWorld(); C_TradeSkillUI.GetAllRecipeIDs=nil
+    C_TradeSkillUI.GetFilteredRecipeIDs=function() return {2,3} end
+    A.Crafting.Tick(); equal(A.Crafting.catalogScope,"filtered")
+    equal(#A.Crafting.Ranked("profit"),1); equal(A.Crafting.Ranked("profit")[1].recipeID,3)
+    A.CraftingUI.mode="profit"; A.CraftingUI.Refresh()
+    truth(string.find(A.CraftingUI.catalogNote.text,"current filters",1,true))
+end)
+test("public combat prices survive inaccessible quantities as each-only values", function()
+    local w,A=initial(); w.combat=true; local tooltip=bagTooltip(w,100,20)
+    w.containers["0:1"].stackCount=secret
+    A.Tooltips.Handle(tooltip,tooltip.data)
+    equal(findLine(tooltip.lines,A.TITLE).right,"Each"); truth(findLine(tooltip.lines,"AH low"))
+end)
+test("crafting output values outside the exact copper range remain quote-only", function()
+    local w,A=craftingWorld(); A.DB.Snapshot().prices[200].low=9007199254740991
+    A.DB.Snapshot().variants["200:0"].low=9007199254740991
+    w.recipes[1].schematic.quantityMin=2; w.recipes[1].schematic.quantityMax=2
+    local value=A.Crafting.Analyze(1,w.form)
+    equal(value.cost,400); equal(value.saleMin,nil); equal(value.profitMin,nil); truth(value.reason)
+end)
+test("a missing selected output quality cannot substitute a generic recipe output", function()
+    local w,A=craftingWorld(); w.recipes[1].info.supportsQualities=true; w.recipes[1].output={}
+    local value=A.Crafting.Analyze(1,w.form)
+    equal(value.cost,400); equal(value.profitMin,nil); truth(value.reason)
+    w.recipes[1].output={itemID=secret}; equal(A.Crafting.Analyze(1,w.form).profitMin,nil)
+end)
+test("native output hyperlinks identify an item when the output ID is not yet cached", function()
+    local w,A=craftingWorld(); w.recipes[1].output={hyperlink=link(200)}
+    w.recipes[1].schematic.outputItemID=nil
+    local value=A.Crafting.Analyze(1,w.form)
+    equal(value.outputID,200); equal(value.profitMin,500)
+end)
+test("1.0.0 settings and snapshot survive beta upgrade with a safe quote default", function()
+    local w,A=initial(); local snapshot=A.DB.Snapshot(); local saved=A.DB.data
+    saved.version="1.0.0"; saved.settings.quoteMarkup=nil; saved.settings.staleHours=72
+    local w2,A2=fresh(saved); w2:load(); equal(A2.DB.Snapshot(),snapshot)
+    equal(A2.DB.Settings().quoteMarkup,0); equal(A2.DB.Settings().staleHours,72); equal(w2.requests,0)
 end)
 
 print(string.format("RESULT: %d/%d behavioral tests passed (Lua %s). Live-client validation pending.", testCount, testCount, _VERSION))

@@ -24,6 +24,7 @@ local function Initialize()
     for _, event in ipairs({
         "AUCTION_HOUSE_SHOW", "AUCTION_HOUSE_CLOSED", "REPLICATE_ITEM_LIST_UPDATE",
         "GET_ITEM_INFO_RECEIVED", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED", "PLAYER_LOGOUT",
+        "TRADE_SKILL_SHOW", "TRADE_SKILL_CLOSE", "TRADE_SKILL_LIST_UPDATE", "TRADE_SKILL_DATA_SOURCE_CHANGED",
     }) do frame:RegisterEvent(event) end
     S.InstallObserver()
 end
@@ -59,9 +60,15 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "REPLICATE_ITEM_LIST_UPDATE" then
         S.OnResponse()
         if S.state == "COMPLETE" then A.refreshTooltips = true end
+    elseif event == "TRADE_SKILL_SHOW" or event == "TRADE_SKILL_LIST_UPDATE" or event == "TRADE_SKILL_DATA_SOURCE_CHANGED" then
+        A.Crafting.Invalidate()
+    elseif event == "TRADE_SKILL_CLOSE" then
+        A.Crafting.wasOpen = false
+        A.CraftingUI.Hide()
     elseif event == "GET_ITEM_INFO_RECEIVED" then
         if U.Number(arg1, 1, 2147483647, true) and U.Accessible(arg2) and arg2 == true then
             A.refreshTooltips = true
+            A.Crafting.Invalidate()
         end
     elseif event == "PLAYER_REGEN_DISABLED" then
         S.Stop("Combat started.")
@@ -69,12 +76,14 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
         if A.UI.panel then A.UI.panel:Hide() end
         U.Notify()
         if A.UI.diagnostics then A.UI.diagnostics:Hide() end
+        if A.CraftingUI.frame then A.CraftingUI.frame:Hide() end
+        if A.CraftingUI.opener then A.CraftingUI.opener:Hide() end
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.refreshTooltips = true
         if A.auctionOpen then A.UI.OnAuctionShow() end
         U.Notify()
     elseif event == "PLAYER_LOGOUT" then
-        S.Stop("Logging out.")
+        S.Discard("Logging out; the current client session's auction buffer cannot be saved.")
     end
 end)
 
@@ -89,6 +98,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     if uiElapsed >= 0.25 then
         uiElapsed = 0
+        A.Crafting.Tick()
         if A.auctionOpen and not A.UI.tabInstalled and not U.Combat() then A.UI.InstallAuctionTab() end
         if (A.UI.frame and A.UI.frame:IsShown()) or (A.UI.panel and A.UI.panel:IsShown()) then A.UI.Refresh() end
         if A.refreshTooltips and not U.Combat() then
@@ -108,8 +118,15 @@ SlashCmdList.MSMARKETVALUE = function(message)
     elseif command == "scan" then
         local ok, reason = S.Start()
         if not ok then U.Print(reason) end
-    elseif command == "stop" then
-        if not S.Stop() then U.Print("No scan is running.") end
+    elseif command == "pause" or command == "stop" then
+        if not S.Pause() then U.Print("No scan is running.") end
+    elseif command == "resume" then
+        local ok, reason = S.Resume()
+        if not ok then U.Print(reason) end
+    elseif command == "discard" then
+        if not S.Discard() then U.Print("No incomplete scan to discard.") end
+    elseif command == "craft" then
+        A.CraftingUI.Show()
     elseif command == "status" then
         U.Print(S.state .. (S.message and (": " .. S.message) or ""))
         local snapshot = D.Snapshot()
@@ -117,6 +134,6 @@ SlashCmdList.MSMARKETVALUE = function(message)
     elseif command == "diagnostics" then
         A.UI.ShowDiagnostics()
     else
-        U.Print("/msmv | /msmv scan | /msmv stop | /msmv status | /msmv diagnostics")
+        U.Print("/msmv | scan | pause | resume | discard | craft | status | diagnostics")
     end
 end

@@ -62,6 +62,22 @@ The user's build003 report establishes COMPLETE on `forever|90|pvp|Horde`: 104,7
 
 The pinned native `C_Item.GetItemLocation`, `GetItemID` and `GetStackCount` definitions support resolving one readable owned item GUID. Native tooltip primary getter information carries bag/inventory coordinates; `C_Container.GetContainerItemInfo` supplies a matching bag item's stack count. Equipment fallback is limited to the player's matching item location. `GetItemCount` is aggregate ownership, and item stack size is capacity; neither answers the hovered-quantity question. Generic links and child-item getters lack verified parent stack identity and retain each-only display. Calls are guarded and run outside combat.
 
+## 1.1.0 beta: profession and interruption contracts
+
+The profession adapter was reviewed against the same build70205 source commit used by 1.0.0, `e3ecc27b64d30fdc735a3f6579b866858f9f9df1`. These five files were also compared with the later reviewed mirror commit `15666a6e67938a1ab5caf041406464251db111ca`; their bytes are identical. No new third-party runtime code was imported.
+
+| Primary client source | Contract used |
+|---|---|
+| [TradeSkillUI documentation](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_APIDocumentationGenerated/TradeSkillUIDocumentation.lua) | Recipe info, schematic, output item data, OpenRecipe and profession events |
+| [TradeSkillUI types](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_APIDocumentationGenerated/TradeSkillUITypesDocumentation.lua) | Required slot quantities, item/currency reagents, output ranges and learned flags |
+| [Native recipe form](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_ProfessionsTemplates/Blizzard_ProfessionsRecipeSchematicForm.lua) | GetRecipeInfo/GetTransaction, current level, selected output and native output calls |
+| [Native transaction](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_ProfessionsTemplates/Blizzard_ProfessionsTransaction.lua) | Regular versus modified allocations and copied reagent/slot/quantity information |
+| [Native profession catalog](https://github.com/Gethe/wow-ui-source/blob/e3ecc27b64d30fdc735a3f6579b866858f9f9df1/Interface/AddOns/Blizzard_ProfessionsTemplates/Blizzard_Professions.lua) | GetFilteredRecipeIDs as the native recipe-list source |
+
+The adapter probes GetAllRecipeIDs for a full catalog; where unavailable, it uses the reviewed filtered source and labels that scope without changing native filters. Generic native schematics avoid a hardcoded profession whitelist. This supports shared calculations, not a claim that every live recipe shape has been tested.
+
+Combat tooltip decoration reads only accessible saved/native item values. The old blanket combat return was removed; protected primary-tooltip rebuilds remain deferred. Pause/resume keeps session staging, accepted rows and retry cursors, and observes competing requests while paused. The native replication API still has no buffer generation token or persistent incomplete-buffer contract. No new request or cooldown override is used to resume.
+
 ## Evidence boundaries
 
 The local source/API review supports the implementation choice. The successful user scan report establishes completion for the supplied PvP replication buffer. Neither that report nor source review proves that every ruleset returns all intended auctions, that the client writes SavedVariables successfully, that the native UI lays out correctly, or that the DE model matches actual loot.
