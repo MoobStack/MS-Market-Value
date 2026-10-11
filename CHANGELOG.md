@@ -2,6 +2,16 @@
 
 The current 1.1.0 work uses one testing version and build. Test revision numbers and immutable tags distinguish packages. Earlier releases and their evidence remain below.
 
+## 1.1.0-beta — Test revision 4 — 2026-10-11
+
+Same version and build, `2026-10-11-beta001`; tag `v1.1.0-beta-test4`.
+
+- Fix the missing profession toggle reported in Tailoring. It now follows the native border/title level rather than just the recipe page and sits beside the close button. Auto-open can remain disabled.
+- Hide the toggle and profit window immediately when the crafting page closes. Keep manual opening through `/msmv craft`.
+- Add toggle visibility, header levels and crafting-window state to diagnostics. Update installation, live checks and release notes.
+
+**238/238 local Lua 5.1 tests pass.** Eleven new cases include a header regression that fails against revision 3. Button appearance, history rollover and native saving still need live checks. Previous scans, settings, history and Git tags are retained.
+
 ## 1.1.0-beta — Test revision 3 — 2026-10-11
 
 Same version and build, `2026-10-11-beta001`; tag `v1.1.0-beta-test3`.

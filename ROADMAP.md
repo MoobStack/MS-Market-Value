@@ -7,8 +7,9 @@ Testing stays on `1.1.0-beta / 2026-10-11-beta001`. Immutable test tags distingu
 - Revision 1: recipe cost, gross profit/loss, return percentage, recipe ranking and markup quotes; combat prices and pause/resume.
 - Revision 2: local auction-copy recovery, stable recipe publication, concise native-linked quotes and recovery diagnostics.
 - Revision 3: daily history, 1–30 day retention, tooltip averages/sample days, crafting toggle/auto-open preference and an all-recipes filter.
+- Revision 4: fix the missing profession toggle by accounting for the native title and border; add visibility diagnostics and page-hide handling.
 
-The user reports successful revision 2 resumes under multiple test conditions. Revision 3 still needs daily rollover, retention, native saving and UI checks. Every profession needs representative recipes, including services, missing prices and variable output. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
+The user reports successful revision 2 resumes under multiple test conditions. The missing revision 3 toggle has a local fix in revision 4. Daily rollover, retention, native saving and revised UI checks remain. Every profession needs representative recipes, including services, missing prices and variable output. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
 
 ## Useful follow-ups
 

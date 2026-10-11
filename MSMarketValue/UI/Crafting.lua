@@ -253,20 +253,75 @@ function UI.Refresh()
     end
 end
 
+local strataOrder = { BACKGROUND = 1, LOW = 2, MEDIUM = 3, HIGH = 4, DIALOG = 5, FULLSCREEN = 6, FULLSCREEN_DIALOG = 7, TOOLTIP = 8 }
+
+local function UsableFrame(frame)
+    return U.Table(frame) and not C.Call(frame.IsForbidden, frame)
+end
+
+local function FrameValue(frame, method)
+    if not UsableFrame(frame) then return nil end
+    return C.Call(frame[method], frame)
+end
+
+local function HeaderLayout(native)
+    local level, strata = 0, "MEDIUM"
+    if not UsableFrame(native) then return level, strata end
+    for _, key in ipairs({ "frame", "CraftingPage", "NineSlice", "PortraitContainer", "TitleContainer", "CloseButton" }) do
+        local frame = key == "frame" and native or native[key]
+        local value = FrameValue(frame, "GetFrameLevel")
+        if U.Number(value, 0, 65534, true) then level = math.max(level, value) end
+        value = FrameValue(frame, "GetFrameStrata")
+        if U.String(value) and strataOrder[value] and strataOrder[value] > strataOrder[strata] then strata = value end
+    end
+    return level, strata
+end
+
+local function AttachToggle()
+    local native, page = ProfessionsFrame, ProfessionsFrame.CraftingPage
+    if not UI.opener then
+        UI.opener = CreateFrame("Button", "MSMarketValueCraftingToggle", page, "UIPanelButtonTemplate")
+        UI.opener:SetSize(146, 22)
+        UI.opener:SetScript("OnClick", UI.Toggle)
+    end
+    if UI.nativePage ~= page then
+        UI.opener:SetParent(page)
+        UI.nativePage = page
+        page:HookScript("OnHide", function(self) if UI.nativePage == self then UI.Hide() end end)
+    end
+    UI.opener:ClearAllPoints()
+    if UsableFrame(native.CloseButton) then
+        UI.opener:SetPoint("RIGHT", native.CloseButton, "LEFT", -4, 0)
+    else
+        UI.opener:SetPoint("TOPRIGHT", native, "TOPRIGHT", -45, -4)
+    end
+    -- The native portrait border and title sit at levels 500 and 510.
+    -- Following CraftingPage alone leaves a title-bar button underneath them.
+    local level, strata = HeaderLayout(native)
+    UI.opener:SetFrameStrata(strata)
+    UI.opener:SetFrameLevel(level + 1)
+end
+
+function UI.Diagnostics()
+    local function Level(frame)
+        local value = FrameValue(frame, "GetFrameLevel")
+        return U.Number(value, 0, 65535, true) and tostring(value) or "unavailable"
+    end
+    local visible = FrameValue(UI.opener, "IsVisible")
+    local strata = FrameValue(UI.opener, "GetFrameStrata")
+    local native = UsableFrame(ProfessionsFrame) and ProfessionsFrame or {}
+    return "Crafting toggle: " .. (UI.opener and (UI.opener:IsShown() and "shown" or "hidden") or "not created") ..
+        "; visible=" .. (type(visible) == "boolean" and tostring(visible) or "unavailable") ..
+        "; strata=" .. (U.String(strata) and strata or "unavailable") .. "; level=" .. Level(UI.opener) ..
+        "\nProfession header levels: border=" .. Level(native.NineSlice) .. "; title=" .. Level(native.TitleContainer) .. "; page=" .. Level(native.CraftingPage) ..
+        "\nCrafting window: " .. (UI.frame and (UI.frame:IsShown() and "shown" or "hidden") or "not created")
+end
+
 function UI.Update()
+    if U.Combat() or not C.Form() then return end
+    AttachToggle()
     UI.Create()
     if not UI.frame then return end
-    if not UI.opener or UI.opener:GetParent() ~= ProfessionsFrame then
-        local opener = CreateFrame("Button", nil, ProfessionsFrame, "UIPanelButtonTemplate")
-        opener:SetPoint("TOPRIGHT", ProfessionsFrame, "TOPRIGHT", -45, -4)
-        opener:SetSize(146, 22)
-        opener:SetScript("OnClick", UI.Toggle)
-        UI.opener = opener
-    end
-    -- Forever's CraftingPage is raised above the portrait frame. Keep this
-    -- portrait-owned button above that page's background and controls.
-    local level = ProfessionsFrame.CraftingPage:GetFrameLevel()
-    if U.Number(level, 0, 65525, true) then UI.opener:SetFrameLevel(level + 10) end
     UI.opener:Show()
     if not UI.session then UI.session = true; UI.suppressed = not D.Settings().craftAutoOpen end
     if not UI.suppressed then UI.frame:Show() end

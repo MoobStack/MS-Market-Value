@@ -23,7 +23,7 @@ function C.Form()
     if not U.Table(ProfessionsFrame) or (ProfessionsFrame.IsForbidden and ProfessionsFrame:IsForbidden()) or
        not ProfessionsFrame:IsShown() then return nil end
     local page = ProfessionsFrame.CraftingPage
-    if not U.Table(page) or (page.IsShown and not page:IsShown()) then return nil end
+    if not U.Table(page) or (page.IsForbidden and page:IsForbidden()) or (page.IsShown and not page:IsShown()) then return nil end
     return U.Table(page.SchematicForm) and page.SchematicForm or nil
 end
 

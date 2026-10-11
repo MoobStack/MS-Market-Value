@@ -1,14 +1,15 @@
-# Test revision 3: live checks
+# Test revision 4: live checks
 
-Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 3**, in Forever. Revision 2 resume tests were reported successful under multiple conditions. Local fixtures do not establish native appearance or disk saving.
+Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 4**, in Forever. Revision 2 resume tests were reported successful under multiple conditions. Local fixtures do not establish native appearance or disk saving.
 
 ## Install and controls
 
-- [ ] Close WoW, replace the addon with the Clean ZIP, preserve WTF, and restart. Confirm Test revision: 3, Interface 16001 and the expected market in `/msmv diagnostics`.
+- [ ] Close WoW, replace the addon with the Clean ZIP, preserve WTF, and restart. Confirm Test revision: 4, Interface 16001 and the expected market in `/msmv diagnostics`.
 - [ ] Verify existing completed prices, markup, tooltip preferences and DE exclusions.
-- [ ] Open a profession. The profit window starts closed; **Show profits** is visible in the title bar, clear of native controls. Click it to open, then **Hide profits** to close. Recipe changes must not reopen it.
+- [ ] Open a profession. The profit window starts closed; **Show profits** is visible beside the native close button, clear of the title and equipment. Test Tailoring first with auto-open disabled, then another profession. Click it to open, then **Hide profits** to close. Recipe changes must not reopen it.
 - [ ] In **/msmv → Crafting & history**, enable Auto-open crafting profits. Close/reopen the profession: the window opens. Close it manually; it stays closed until requested or the next profession session. Disable the setting and repeat.
-- [ ] Check the settings category buttons, long labels, title-bar button, dragging, Escape and UI scales. Report overlap with a screenshot.
+- [ ] With auto-open off, try `/msmv craft` before choosing a recipe. Close it, then reopen it with Show profits. Switch to the profession overview: both the toggle and profit window hide. Return to a profession and repeat.
+- [ ] Check the settings category buttons, long labels, title-bar button, dragging, Escape and UI scales. If the toggle is missing, capture `/msmv diagnostics` while Tailoring remains open, including Crafting toggle and Profession header levels.
 
 ## History and retention
 

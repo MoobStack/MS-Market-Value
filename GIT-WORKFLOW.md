@@ -1,6 +1,6 @@
 # Git workflow and recovery
 
-The development checkout is on `develop/1.1.0`, with testing metadata `1.1.0-beta / 2026-10-11-beta001`, Test revision 3, and annotated tag `v1.1.0-beta-test3`. `main` and `v1.0.0` retain the stable baseline. The configured origin is `https://github.com/MoobStack/MS-Market-Value.git`; a configured URL does not mean these changes were pushed.
+The development checkout is on `develop/1.1.0`, with testing metadata `1.1.0-beta / 2026-10-11-beta001`, Test revision 4, and annotated tag `v1.1.0-beta-test4`. `main` and `v1.0.0` retain the stable baseline. The configured origin is `https://github.com/MoobStack/MS-Market-Value.git`; a configured URL does not mean these changes were pushed.
 
 ## Packages
 
@@ -25,7 +25,7 @@ git status --short
 git branch --show-current
 git log --oneline --decorate -5
 git tag --list
-git show --stat v1.1.0-beta-test3
+git show --stat v1.1.0-beta-test4
 git fsck --full
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
@@ -44,7 +44,7 @@ Continue on `develop/1.1.0`. Keep `A.VERSION`, all TOC versions, and build.json.
 4. Update the changelog, user docs, release notes and validation/live-check status.
 5. Validate, review the staged diff and commit. Create a new annotated tag on that exact commit.
 
-For the next package, use `v1.1.0-beta-test4`; never move test1, test2 or test3 to a different commit. Crafting and daily history are implemented for testing; focus subsequent revisions on native feedback and concrete fixes.
+For the next package, use `v1.1.0-beta-test5`; never move existing test tags to a different commit. Crafting and daily history are implemented for testing; focus subsequent revisions on native feedback and concrete fixes.
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
@@ -52,22 +52,22 @@ git diff --check
 git add .
 git diff --cached
 git commit -m "Describe the implemented change"
-git tag -a v1.1.0-beta-test4 -m "MS Market Value 1.1.0 beta, test revision 4"
+git tag -a v1.1.0-beta-test5 -m "MS Market Value 1.1.0 beta, test revision 5"
 python3 tools/package.py
 ```
 
-The example tag applies only after metadata has advanced to revision 4. Packaging requires a clean checkout at the annotated tag named in build.json. It checks Git objects, ZIP CRC, bundle integrity and runtime/source/tag byte parity, then writes files to ignored `dist/`.
+The example tag applies only after metadata has advanced to revision 5. Packaging requires a clean checkout at the annotated tag named in build.json. It checks Git objects, ZIP CRC, bundle integrity and runtime/source/tag byte parity, then writes files to ignored `dist/`.
 
 ## Recovery
 
 The Repository ZIP already includes `.git`; do not initialize a new repository over it. Alternatively, restore the bundle:
 
 ```bash
-git clone MoobStack-MSMarketValue-v1.1.0-beta-test3.bundle MS-Market-Value-restored
+git clone MoobStack-MSMarketValue-v1.1.0-beta-test4.bundle MS-Market-Value-restored
 cd MS-Market-Value-restored
 git switch develop/1.1.0
 git fsck --full
-git show --stat v1.1.0-beta-test3
+git show --stat v1.1.0-beta-test4
 git remote set-url origin https://github.com/MoobStack/MS-Market-Value.git
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```

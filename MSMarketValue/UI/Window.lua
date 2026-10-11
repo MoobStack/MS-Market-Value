@@ -82,6 +82,7 @@ function UI.DiagnosticsText()
         "Recipe catalog publications: " .. tostring(A.Crafting.publications),
         "Selected recipe link: " .. (A.Crafting.selected and A.Crafting.RecipeLink(A.Crafting.selected.recipeID) and "available" or "unavailable"),
         "Craft auto-open: " .. tostring(D.Settings().craftAutoOpen),
+        A.CraftingUI.Diagnostics(),
         "Recipe list filter: " .. (D.Settings().showAllRecipes and "all learned recipes" or "profitable only"),
         "Full-scan requests this session: " .. tostring(S.requestCount),
         "Replication events this scan: " .. tostring(S.responseCount),

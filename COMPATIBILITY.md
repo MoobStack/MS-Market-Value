@@ -2,7 +2,7 @@
 
 ## Target
 
-This test targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The earlier completed scan report was from build 70205 on PvP/Horde. The Test revision 1 report came from build 70338, exposed buffer loss on reopen and recipe-list churn, and retained 98,455 saved rows. The user reports successful revision 2 resumes under multiple conditions. Revision 3 history and controls need native checks.
+This test targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The earlier completed scan report was from build 70205 on PvP/Horde. The Test revision 1 report came from build 70338, exposed buffer loss on reopen and recipe-list churn, and retained 98,455 saved rows. The user reports successful revision 2 resumes under multiple conditions. The user reports a missing profession toggle in revision 3. Revision 4 corrects header layering; history, button appearance and native saving still need checks.
 
 All three TOCs—standard, `_Camelot` and `_Forever`—describe the same addon and load order. Initialization checks the Interface number, saved schema, restricted-value API and auction functions. Different clients or Interface versions need an API review.
 
@@ -28,7 +28,7 @@ The native GetRecipeLink is used where available, matching profession-book shift
 
 Public item tooltips receive saved prices during combat. Restricted IDs are not read; unavailable stack context shows each-item values. GUID/location and bag/equipment quantity reads are guarded. Native primary-tooltip rebuilds remain outside combat; comparison rebuilds remain under Blizzard ownership.
 
-AH and crafting controls use Blizzard templates. LibAHTab coordinates addon tabs through the shared LibStub registry without extending Blizzard's tab arrays. The profession toggle follows the raised native CraftingPage level and sits in the title bar. Frame doubles check lifecycle behavior, not visual fit, native taint or running-addon coexistence.
+AH and crafting controls use Blizzard templates. LibAHTab coordinates addon tabs through the shared LibStub registry without extending Blizzard's tab arrays. The profession toggle sits beside the close button, above the actual native border/title levels, and hides with CraftingPage. Auto-open is not required; `/msmv craft` is also available. Frame doubles check lifecycle behavior, not visual fit, native taint or running-addon coexistence.
 
 ## Prices and DE estimates
 

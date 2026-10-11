@@ -1,10 +1,10 @@
 # Using MS Market Value
 
-`1.1.0-beta / 2026-10-11-beta001` · Test revision **3**
+`1.1.0-beta / 2026-10-11-beta001` · Test revision **4**
 
 ## Crafting
 
-Open a profession, select a learned recipe, and click **Show profits** in the title bar. The same button becomes **Hide profits**. `/msmv craft` also opens the window. Closing it keeps it closed during that profession session.
+Open a profession, select a learned recipe, and click **Show profits** beside the profession close button. It remains available with auto-open disabled, including before a recipe is selected. The same button becomes **Hide profits**. `/msmv craft` also opens the window. Closing it keeps it closed during that profession session.
 
 **Selected recipe** follows recipe and reagent changes. Owned materials use their market value; required tools are not purchased afresh for each craft.
 
@@ -65,4 +65,4 @@ If rows disappear before copying finishes, progress stays paused. Retry if the o
 
 `MSMarketValueDB` keeps current snapshots, compact daily history, settings, exclusions, window position and cooldown. Use normal logout, exit or `/reload` to let WoW save it. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` with WoW closed. Code archives do not include personal data.
 
-Copy `/msmv diagnostics` when reporting a problem. It identifies **Test revision: 3**, history dates/retention, crafting preferences, scan progress, and catalog build/publication counts. Include the profession/recipe, exact error and a screenshot for layout issues. For resume, capture before/after diagnostics; a complete local resume must keep the request count unchanged. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
+Copy `/msmv diagnostics` when reporting a problem. It identifies **Test revision: 4**, history dates/retention, crafting preferences, toggle visibility/header levels, scan progress, and catalog build/publication counts. Include the profession/recipe, exact error and a screenshot for layout issues. For resume, capture before/after diagnostics; a complete local resume must keep the request count unchanged. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).

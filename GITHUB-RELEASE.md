@@ -1,15 +1,13 @@
-# MS Market Value 1.1.0 beta — Test revision 3
+# MS Market Value 1.1.0 beta — Test revision 4
 
-`1.1.0-beta / 2026-10-11-beta001` · `v1.1.0-beta-test3`
+`1.1.0-beta / 2026-10-11-beta001` · `v1.1.0-beta-test4`
 
-Price history is now collected: keep 1–30 UTC calendar days, with each day's latest completed scan replacing that entry. Tooltips show the average of the days with a price, between vendor and recent AH values. One day is enough. The latest existing saved scan is imported on upgrade when it is within retention; earlier scans cannot be recovered.
+Fix the missing **Show profits / Hide profits** button reported in Tailoring. Forever draws the native title and border above the recipe page; the previous button remained underneath them. The button now follows the actual header level, sits beside the profession close button and hides with the crafting page. It works with **Auto-open crafting profits** disabled. `/msmv craft` also opens the window for the open profession.
 
-The profession title-bar button now toggles Show profits / Hide profits and sits above Forever's crafting page. Auto-open is optional and off by default. Configure it and history length in **/msmv → Crafting & history**.
+Diagnostics now include toggle visibility, its level/strata, native header levels and the crafting-window state. If the button remains missing, copy `/msmv diagnostics` while Tailoring is open.
 
-**Recipe list → Show all recipes** includes losses, break-even recipes and unavailable estimates. **Profitable only** restores the original filter. Unknown values sort last and remain unavailable. Both list modes keep the last complete results during a refresh.
+**238/238 local Lua 5.1 tests pass**, including the header regression that fails against revision 3. The button still needs a native visual check. Daily history, retention, both recipe filters, linked quotes and the scanner are retained; the user reports successful revision 2 resumes. Native history rollover/saving and Forever DE outcomes remain unverified.
 
-The user reports successful revision 2 scan resumes under multiple conditions. This revision preserves that scanner, linked quotes, combat prices and existing settings. **227/227 local Lua 5.1 tests pass**; new UI fit, daily rollover and native saving still need checks. DE loot remains an unverified Classic reference.
+Close WoW, replace the addon folder using the Clean ZIP and keep WTF/SavedVariables. Confirm **Test revision: 4**. Use [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md) for the live checks. The Documentation ZIP contains the updated guide and changelog; the Complete Package also includes source and Git recovery files.
 
-Close WoW, install the Clean ZIP and keep WTF/SavedVariables. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md). The Documentation ZIP has the updated guide and changelog; Source/Repository ZIPs and the bundle retain all code and Git history.
-
-This remains a testing prerelease. The beta version and build are unchanged; official 1.1.0 publication follows live verification. No remote publication is claimed.
+The beta version/build are unchanged. This is a testing package, not the official 1.1.0 release; it has not been pushed or published to GitHub.

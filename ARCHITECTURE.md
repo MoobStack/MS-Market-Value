@@ -1,6 +1,6 @@
 # Architecture
 
-`1.1.0-beta / 2026-10-11-beta001` · Test revision 3 · Saved-data schema 1
+`1.1.0-beta / 2026-10-11-beta001` · Test revision 4 · Saved-data schema 1
 
 ## Runtime
 
@@ -50,7 +50,7 @@ Catalog valuation runs in batches of 20 recipes with a four-millisecond budget o
 
 Decoration reads saved prices during combat. Unreadable item data is not inspected. Native getter-backed primary tooltip rebuilds remain outside combat; comparison rebuilds remain owned by Blizzard. A reentrancy guard and recorded line count prevent recursive refresh and duplicate blocks.
 
-Scan/settings controls use native inset and portrait templates. Their controls move between the AH tab and manual window. The separate draggable crafting portrait has Selected recipe and Recipe list views, a Show all recipes / Profitable only filter, scrollable materials, and a copyable native-linked quote with a user-clicked chat-draft button. Fixed-yield quotes divide by output count for ea; unknown/variable yields remain per craft. ChatFrameUtil.OpenChat is preferred, with the legacy opener as fallback. No chat send is called. A portrait-owned title-bar toggle follows the raised CraftingPage frame level. Auto-open defaults to off and applies on a new profession session; manual closure stays respected during that session. Combat hides addon controls while price decoration remains available.
+Scan/settings controls use native inset and portrait templates. Their controls move between the AH tab and manual window. The separate draggable crafting portrait has Selected recipe and Recipe list views, a Show all recipes / Profitable only filter, scrollable materials, and a copyable native-linked quote with a user-clicked chat-draft button. Fixed-yield quotes divide by output count for ea; unknown/variable yields remain per craft. ChatFrameUtil.OpenChat is preferred, with the legacy opener as fallback. No chat send is called. The named title-bar toggle belongs to CraftingPage and anchors beside the native close button. It follows the highest actual level and strata of the page, border, portrait, title and close button; following the page alone left it below the native header. Hiding the page immediately hides both addon controls. Diagnostics report toggle visibility, strata and level, native header levels, and crafting-window state. Auto-open defaults to off and applies on a new profession session; manual closure stays respected during that session. Combat hides addon controls while price decoration remains available.
 
 ## Daily history
 

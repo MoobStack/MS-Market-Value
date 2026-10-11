@@ -38,6 +38,7 @@ local function widget(name)
     function w:Show() self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
     function w:Hide() self.shown = false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
     function w:IsShown() return self.shown end
+    function w:IsVisible() return self.shown and (not self.parent or self.parent:IsVisible()) end
     function w:SetParent(parent) self.parent = parent end
     function w:GetParent() return self.parent end
     function w:IsObjectType(kind) return kind == "Frame" end
@@ -103,6 +104,7 @@ local function fresh(saved)
     _G.DEFAULT_CHAT_FRAME = { AddMessage = function(_, message) world.messages[#world.messages + 1] = message end }
     _G.SlashCmdList, _G.UISpecialFrames = {}, {}
     _G.UIParent = widget("UIParent")
+    UIParent:Show()
     _G.LibStub, _G.AuctionHouseFrame, _G.AuctionHouseFrameDisplayMode = nil, nil, nil
     _G.ProfessionsFrame, _G.C_TradeSkillUI = nil, nil
     _G.ChatFrameUtil, _G.ChatFrame_OpenChat = nil, nil
@@ -124,6 +126,7 @@ local function fresh(saved)
     _G.ItemLocation = { CreateFromEquipmentSlot = function(_, slot) return world.equipment[slot] or {} end }
     _G.date = os.date
     _G.CreateFrame = function(_, name, parent, template)
+        world.createdFrames = (world.createdFrames or 0) + 1
         local w = widget(name); w.parent, w.template = parent, template
         if template == "PortraitFrameTemplate" then
             w.CloseButton = widget()
@@ -246,6 +249,13 @@ local function fresh(saved)
             OpenRecipe = function(id) self.selectedID = id; self.openRecipeCalls = (self.openRecipeCalls or 0) + 1 end,
         }
         local profession = widget("ProfessionsFrame")
+        profession:SetParent(UIParent)
+        for key, level in pairs({ NineSlice = 500, PortraitContainer = 400, TitleContainer = 510, CloseButton = 510 }) do
+            profession[key] = widget()
+            profession[key]:SetParent(profession)
+            profession[key]:SetFrameLevel(level)
+            profession[key]:Show()
+        end
         local form = widget()
         local transaction = {
             CreateReagentInfoTbl = function() return self.allocations end,
@@ -258,6 +268,8 @@ local function fresh(saved)
         function form:GetOutputOverrideQualityID() return self.recipesWorld.outputQuality end
         form.recipesWorld = self
         profession.CraftingPage = widget()
+        profession.CraftingPage:SetParent(profession)
+        profession.CraftingPage:SetFrameLevel(100)
         profession.CraftingPage.SchematicForm = form
         profession.CraftingPage:Show(); profession:Show()
         _G.ProfessionsFrame = profession
@@ -1336,7 +1348,7 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("test revision diagnostics identify resumable progress and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"Test revision: 3",1,true))
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"Test revision: 4",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
     equal(A.VERSION,"1.1.0-beta"); equal(A.BUILD,"2026-10-11-beta001")
 end)
@@ -1598,7 +1610,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 3",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"Test revision: 4",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -1935,7 +1947,8 @@ test("new profession sessions stay closed by default and expose a top toggle", f
     local w,A=craftingWorld(); A.DB.data.settings.craftAutoOpen=false; A.Crafting.Tick()
     equal(A.CraftingUI.frame:IsShown(),false); truth(A.CraftingUI.opener:IsShown())
     equal(A.CraftingUI.opener.text,"Show profits")
-    equal(A.CraftingUI.opener.points[1][1],"TOPRIGHT"); equal(A.CraftingUI.opener:GetParent(),ProfessionsFrame)
+    equal(A.CraftingUI.opener.points[1][1],"RIGHT"); equal(A.CraftingUI.opener.points[1][2],ProfessionsFrame.CloseButton)
+    equal(A.CraftingUI.opener:GetParent(),ProfessionsFrame.CraftingPage); truth(A.CraftingUI.opener:IsVisible())
     A.CraftingUI.opener.scripts.OnClick(); truth(A.CraftingUI.frame:IsShown())
     equal(A.CraftingUI.opener.text,"Hide profits"); equal(A.CraftingUI.values[1].text,"4s 00c")
     A.CraftingUI.opener.scripts.OnClick(); equal(A.CraftingUI.frame:IsShown(),false)
@@ -1957,6 +1970,80 @@ test("the profession toggle stays above Forever's raised crafting page", functio
     truth(A.CraftingUI.opener:GetFrameLevel()>ProfessionsFrame.CraftingPage:GetFrameLevel())
     ProfessionsFrame.CraftingPage:SetFrameLevel(160); A.Crafting.Tick()
     truth(A.CraftingUI.opener:GetFrameLevel()>ProfessionsFrame.CraftingPage:GetFrameLevel())
+end)
+test("the manual toggle clears Forever's level 500 border and level 510 title", function()
+    local _,A=craftingWorld(); A.DB.data.settings.craftAutoOpen=false; A.Crafting.Tick()
+    local button=A.CraftingUI.opener
+    for _,frame in ipairs({ProfessionsFrame.NineSlice,ProfessionsFrame.TitleContainer,ProfessionsFrame.CloseButton,ProfessionsFrame.CraftingPage}) do
+        truth(button:GetFrameLevel()>frame:GetFrameLevel(),"toggle covered by native header")
+    end
+    truth(button:IsVisible()); equal(A.CraftingUI.frame:IsShown(),false)
+    button.scripts.OnClick(); truth(A.CraftingUI.frame:IsShown())
+end)
+test("the profession toggle follows changes to header levels and strata", function()
+    local _,A=craftingWorld(); A.Crafting.Tick()
+    ProfessionsFrame.TitleContainer:SetFrameLevel(830); ProfessionsFrame.TitleContainer:SetFrameStrata("HIGH")
+    A.Crafting.Tick(); truth(A.CraftingUI.opener:GetFrameLevel()>830); equal(A.CraftingUI.opener:GetFrameStrata(),"HIGH")
+    ProfessionsFrame.NineSlice:SetFrameLevel(920); ProfessionsFrame.NineSlice:SetFrameStrata("DIALOG")
+    A.Crafting.Tick(); truth(A.CraftingUI.opener:GetFrameLevel()>920); equal(A.CraftingUI.opener:GetFrameStrata(),"DIALOG")
+end)
+test("manual opening needs neither an auto-open setting nor a selected priced recipe", function()
+    local w,A=craftingWorld(); A.DB.data.settings.craftAutoOpen=false; w.selectedID=nil; A.DB.data.markets={}
+    A.Crafting.Tick(); truth(A.CraftingUI.opener:IsVisible()); equal(A.CraftingUI.frame:IsShown(),false)
+    A.CraftingUI.opener.scripts.OnClick(); truth(A.CraftingUI.frame:IsShown())
+    equal(A.CraftingUI.recipeName.text,"Select a learned recipe"); equal(A.CraftingUI.values[1].text,"Unavailable")
+end)
+test("switching to the profession book immediately hides the profits window and toggle", function()
+    local _,A=craftingWorld(); A.DB.data.settings.craftAutoOpen=false; A.Crafting.Tick()
+    A.CraftingUI.opener.scripts.OnClick(); truth(A.CraftingUI.frame:IsShown())
+    ProfessionsFrame.CraftingPage:Hide(); truth(ProfessionsFrame:IsShown())
+    equal(A.CraftingUI.opener:IsVisible(),false); equal(A.CraftingUI.frame:IsShown(),false)
+    ProfessionsFrame.CraftingPage:Show(); A.Crafting.Tick()
+    truth(A.CraftingUI.opener:IsVisible()); equal(A.CraftingUI.frame:IsShown(),false)
+end)
+test("replacing the native page reuses and reanchors the toggle without stale hide hooks", function()
+    local w,A=craftingWorld(); A.Crafting.Tick()
+    local button,oldPage=A.CraftingUI.opener,ProfessionsFrame.CraftingPage
+    w:openProfession(); A.Crafting.Tick()
+    equal(A.CraftingUI.opener,button); equal(button:GetParent(),ProfessionsFrame.CraftingPage)
+    equal(button.points[1][2],ProfessionsFrame.CloseButton); equal(#button.points,1)
+    oldPage:Hide(); truth(button:IsVisible()); truth(A.CraftingUI.frame:IsShown())
+end)
+test("unchanged profession refreshes do not create more controls or anchors", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local count,button=w.createdFrames,A.CraftingUI.opener
+    for i=1,40 do A.Crafting.Tick() end
+    equal(w.createdFrames,count); equal(A.CraftingUI.opener,button); equal(#button.points,1)
+end)
+test("a missing native close button uses a guarded title-bar anchor", function()
+    local _,A=craftingWorld(); ProfessionsFrame.CloseButton=nil; A.Crafting.Tick()
+    truth(A.CraftingUI.opener:IsVisible()); equal(A.CraftingUI.opener.points[1][1],"TOPRIGHT")
+    equal(A.CraftingUI.opener.points[1][2],ProfessionsFrame)
+    truth(A.CraftingUI.opener:GetFrameLevel()>ProfessionsFrame.TitleContainer:GetFrameLevel())
+end)
+test("crafting diagnostics report manual visibility and actual header levels", function()
+    local _,A=craftingWorld(); A.DB.data.settings.craftAutoOpen=false
+    truth(string.find(A.UI.DiagnosticsText(),"Crafting toggle: not created",1,true)); equal(A.CraftingUI.opener,nil)
+    A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
+    truth(string.find(text,"Crafting toggle: shown; visible=true; strata=MEDIUM; level=511",1,true))
+    truth(string.find(text,"Profession header levels: border=500; title=510; page=100",1,true))
+    truth(string.find(text,"Crafting window: hidden",1,true))
+    A.CraftingUI.opener.scripts.OnClick(); truth(string.find(A.UI.DiagnosticsText(),"Crafting window: shown",1,true))
+end)
+test("restricted header values are neither compared nor formatted by controls or diagnostics", function()
+    local _,A=craftingWorld()
+    ProfessionsFrame.NineSlice.GetFrameLevel=function() return secret end
+    ProfessionsFrame.TitleContainer.GetFrameStrata=function() return secret end
+    A.Crafting.Tick(); truth(A.CraftingUI.opener:IsVisible())
+    truth(string.find(A.UI.DiagnosticsText(),"border=unavailable; title=510",1,true))
+end)
+test("a forbidden profession page cannot create a manual toggle", function()
+    local _,A=craftingWorld(); ProfessionsFrame.CraftingPage.forbidden=true
+    A.Crafting.Tick(); equal(A.CraftingUI.opener,nil); equal(A.CraftingUI.frame,nil)
+    SlashCmdList.MSMARKETVALUE("craft"); equal(A.CraftingUI.frame,nil)
+end)
+test("direct crafting updates in combat cannot create manual controls", function()
+    local w,A=craftingWorld(); w.combat=true
+    A.CraftingUI.Update(); equal(A.CraftingUI.opener,nil); equal(A.CraftingUI.frame,nil)
 end)
 test("manual close stays closed through refreshes even when auto-open is enabled", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); A.CraftingUI.opener.scripts.OnClick()
@@ -2040,7 +2127,7 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report revision retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 3",1,true)); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"Test revision: 4",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
