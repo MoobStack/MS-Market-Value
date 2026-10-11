@@ -78,6 +78,21 @@ The adapter probes GetAllRecipeIDs for a full catalog; where unavailable, it use
 
 Combat tooltip decoration reads only accessible saved/native item values. The old blanket combat return was removed; protected primary-tooltip rebuilds remain deferred. Pause/resume keeps session staging, accepted rows and retry cursors, and observes competing requests while paused. The native replication API still has no buffer generation token or persistent incomplete-buffer contract. No new request or cooldown override is used to resume.
 
+## Test revision 2: build 70338
+
+The native source mirror was rechecked at commit `943764493e6b16d63ded3ab304150d1f05e58b57`, labeled **1.60.1 (70338)** and matching the reported client build.
+
+| Reviewed client source | Use |
+|---|---|
+| [Auction API](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_APIDocumentationGenerated/AuctionHouseDocumentation.lua) | Public row quantity, buyout, sale status and item ID are distinct from allInfo; no persistent buffer/generation contract is declared |
+| [Profession events](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_APIDocumentationGenerated/TradeSkillUIDocumentation.lua) | NEW_RECIPE_LEARNED and list/data-source events |
+| [Native recipe list](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_ProfessionsTemplates/Blizzard_ProfessionsRecipeList.lua) | Shift-click obtains C_TradeSkillUI.GetRecipeLink(recipeID) |
+| [Native chat editor](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_ChatFrameBase/Shared/ChatFrameUtil.lua) | ChatFrameUtil.OpenChat(text) opens the edit box with supplied text |
+
+The user reported that closing/reopening lost the buffer in Test revision 1. The new scanner copies validated public price rows into local memory in bounded batches, independently of cosmetic name readiness. This survives native clearance only after all needed fields have been copied; unread cleared rows cannot be reconstructed. An early loss retains staging and supports a fresh user-requested scan after the existing cooldown.
+
+Unconditional GET_ITEM_INFO_RECEIVED invalidation and incremental publication explained the constantly changing recipe list. Names now update separately; unchanged list events do not revalue the catalog; a complete batch replaces the published list atomically. Native source review establishes available calls, not in-game link rendering or timing. No additional third-party runtime code was imported.
+
 ## Evidence boundaries
 
 The local source/API review supports the implementation choice. The successful user scan report establishes completion for the supplied PvP replication buffer. Neither that report nor source review proves that every ruleset returns all intended auctions, that the client writes SavedVariables successfully, that the native UI lays out correctly, or that the DE model matches actual loot.

@@ -6,7 +6,9 @@ All testing uses `1.1.0-beta / 2026-10-11-beta001`. Test revision numbers advanc
 
 Test revision 1 adds recipe costs, gross profit/loss, return percentage, profitable-recipe sorting, and copyable markup quotes. It also keeps tooltip prices available in combat and pauses/resumes incomplete scans in the current session.
 
-Check native recipe quantities and output prices in each profession, service quotes for Enchanting, reagent changes, visual fit, and scan-buffer retention after closing/reopening an auctioneer. Report any unsupported native recipe shape before it is assigned a price.
+Test revision 2 fixes the reported AH buffer-loss recovery, recipe-list churn and quote wording/links. It retains the same beta version/build.
+
+Check native recipe quantities and output prices in each profession, service quotes for Enchanting, reagent changes, visual fit, and closing/reopening after Local copy is complete. Report any unsupported native recipe shape before it is assigned a price.
 
 ## Next: price history
 
@@ -17,7 +19,7 @@ Check native recipe quantities and output prices in each profession, service quo
 - Order the tooltip price block: **vendor**, **historic average** when available, **recent scan**, then **DE expected**.
 - Prune expired history and apply retention changes consistently. Keep markets and item variants isolated.
 
-Daily boundaries, existing-data seeding and the exact average label will be documented with that implementation. Test revision 1 does not collect history.
+Daily boundaries, existing-data seeding and the exact average label will be documented with that implementation. Neither test revision 1 nor 2 collects history.
 
 ## Release checks
 

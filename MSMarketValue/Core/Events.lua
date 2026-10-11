@@ -25,6 +25,7 @@ local function Initialize()
         "AUCTION_HOUSE_SHOW", "AUCTION_HOUSE_CLOSED", "REPLICATE_ITEM_LIST_UPDATE",
         "GET_ITEM_INFO_RECEIVED", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED", "PLAYER_LOGOUT",
         "TRADE_SKILL_SHOW", "TRADE_SKILL_CLOSE", "TRADE_SKILL_LIST_UPDATE", "TRADE_SKILL_DATA_SOURCE_CHANGED",
+        "NEW_RECIPE_LEARNED",
     }) do frame:RegisterEvent(event) end
     S.InstallObserver()
 end
@@ -60,7 +61,9 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "REPLICATE_ITEM_LIST_UPDATE" then
         S.OnResponse()
         if S.state == "COMPLETE" then A.refreshTooltips = true end
-    elseif event == "TRADE_SKILL_SHOW" or event == "TRADE_SKILL_LIST_UPDATE" or event == "TRADE_SKILL_DATA_SOURCE_CHANGED" then
+    elseif event == "TRADE_SKILL_LIST_UPDATE" then
+        A.Crafting.RequestCatalogCheck()
+    elseif event == "TRADE_SKILL_SHOW" or event == "TRADE_SKILL_DATA_SOURCE_CHANGED" or event == "NEW_RECIPE_LEARNED" then
         A.Crafting.Invalidate()
     elseif event == "TRADE_SKILL_CLOSE" then
         A.Crafting.wasOpen = false
@@ -68,7 +71,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
     elseif event == "GET_ITEM_INFO_RECEIVED" then
         if U.Number(arg1, 1, 2147483647, true) and U.Accessible(arg2) and arg2 == true then
             A.refreshTooltips = true
-            A.Crafting.Invalidate()
+            A.Crafting.OnItemInfo(arg1)
         end
     elseif event == "PLAYER_REGEN_DISABLED" then
         S.Stop("Combat started.")
@@ -90,6 +93,7 @@ end)
 local scanElapsed, uiElapsed = 0, 0
 frame:SetScript("OnUpdate", function(_, elapsed)
     scanElapsed, uiElapsed = scanElapsed + elapsed, uiElapsed + elapsed
+    S.CopyTick()
     if scanElapsed >= 0.05 then
         scanElapsed = 0
         local wasActive = S.active
@@ -125,6 +129,9 @@ SlashCmdList.MSMARKETVALUE = function(message)
         if not ok then U.Print(reason) end
     elseif command == "discard" then
         if not S.Discard() then U.Print("No incomplete scan to discard.") end
+    elseif command == "restart" then
+        local ok, reason = S.Restart()
+        if not ok then U.Print(reason) end
     elseif command == "craft" then
         A.CraftingUI.Show()
     elseif command == "status" then
@@ -134,6 +141,6 @@ SlashCmdList.MSMARKETVALUE = function(message)
     elseif command == "diagnostics" then
         A.UI.ShowDiagnostics()
     else
-        U.Print("/msmv | scan | pause | resume | discard | craft | status | diagnostics")
+        U.Print("/msmv | scan | pause | resume | restart | discard | craft | status | diagnostics")
     end
 end

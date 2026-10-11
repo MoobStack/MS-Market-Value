@@ -1,15 +1,15 @@
-# MS Market Value 1.1.0 beta — Test revision 1
+# MS Market Value 1.1.0 beta — Test revision 2
 
-`1.1.0-beta / 2026-10-11-beta001` · `v1.1.0-beta-test1`
+`1.1.0-beta / 2026-10-11-beta001` · `v1.1.0-beta-test2`
 
-This test package adds selected-recipe crafting costs, sale value, gross profit or loss, percentage return, a profitable-recipe list, and copyable markup quotes. The profession window uses native Blizzard frames and controls. Services can receive material quotes without an auctionable output.
+This revision fixes the reported AH reopen/resume failure, changing recipe list and long quote wording. The version and build stay the same; diagnostics identify **Test revision: 2**.
 
-Tooltip prices remain visible during combat. Incomplete auction scans can be paused and resumed within the current session without another full-scan request. Completed prices stay usable until the new scan finishes; the existing server cooldown is preserved.
+Auction rows are copied locally. Keep the AH open until **Local copy** is complete; then close/reopen and resume without another server request. Pause stops pricing while unread rows continue copying. If the buffer is lost too early, progress stays paused and a fresh restart waits for the original cooldown. Only a completed scan replaces prices.
 
-Price history follows in another test revision of the same version and build. This package does not collect history, and the official 1.1.0 release is not yet ready for publication.
+Quotes read `Recipe - price ea`, with the native recipe link when available. **Insert in chat** opens a draft for the player to send. Fixed multi-item outputs quote per item; variable/unknown yields stay per craft. Profitable recipes now remain visible until a complete refresh is ready, without restarting on unrelated item data.
 
-Install the Clean ZIP with WoW closed and preserve WTF/SavedVariables. Existing 1.0.0 schema-1 prices/settings carry forward. Confirm **Test revision: 1** in diagnostics and follow the live checklist.
+Crafting costs, gross profit/loss, return percentage, combat tooltip prices and existing saved settings remain available. **169/169 local Lua 5.1 checks pass**; native UI, link rendering and scan recovery still need testing. DE loot remains an unverified Classic reference.
 
-Crafting uses the latest completed scan's asking prices before fees. Missing prices or unresolved reagent choices stay unavailable. Resume requires the current session's original buffer; unfinished work ends on reload/logout. DE loot remains a labeled Classic reference, unverified for Forever.
+Install the Clean ZIP with WoW closed and keep WTF/SavedVariables. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md). The Documentation ZIP contains the updated guide and changelog; Source/Repository ZIPs and the bundle retain code and history.
 
-If distributed on GitHub for testing, mark this as a **prerelease**. The Source ZIP includes all updated documentation; Repository ZIP and bundle preserve the full Git history. No remote publication is claimed by these local packages.
+Price history comes next. This is a testing prerelease, not the official 1.1.0 release. No remote publication is claimed.

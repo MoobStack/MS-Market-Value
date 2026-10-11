@@ -8,7 +8,7 @@
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
 ## X-Build: 2026-10-11-beta001
-## X-Test-Revision: 1
+## X-Test-Revision: 2
 
 Bootstrap.lua
 Libs\LibStub\LibStub.lua

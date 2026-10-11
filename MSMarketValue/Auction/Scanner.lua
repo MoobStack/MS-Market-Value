@@ -25,6 +25,9 @@ function S.Discard(reason, failed)
     if not S.active and not S.paused then return false end
     S.active, S.paused, S.resumeState = false, false, nil
     S.work, S.pending, S.retryWork = nil, nil, nil
+    S.copy, S.copyPending, S.copyRetryWork, S.anchor = nil, nil, nil, nil
+    S.localReady, S.bufferLost = false, false
+    S.copiedRows, S.copyCursor, S.totalRows = 0, 0, nil
     SetState(failed and "FAILED" or "CANCELLED", reason or "Incomplete scan discarded.")
     U.Print(S.message .. " Previous snapshot kept.")
     return true
@@ -44,6 +47,20 @@ function S.Stop(reason, failed)
     return S.Pause(reason)
 end
 
+local function AnchorMatches()
+    if not S.anchor then return true end
+    local values = { pcall(C_AuctionHouse.GetReplicateItemInfo, S.anchor.index) }
+    if not values[1] or not U.Accessible(values[4]) or not U.Accessible(values[11]) or
+       not U.Accessible(values[17]) or not U.Accessible(values[18]) or
+       values[4] ~= S.anchor.quantity or values[11] ~= S.anchor.buyout or
+       values[17] ~= S.anchor.saleStatus or values[18] ~= S.anchor.itemID then return false end
+    if S.anchor.link then
+        local ok, link = pcall(C_AuctionHouse.GetReplicateItemLink, S.anchor.index)
+        if not ok or not U.String(link) or link ~= S.anchor.link then return false end
+    end
+    return true
+end
+
 function S.Resume()
     if not S.paused then return false, "No incomplete scan to resume." end
     if A.disabledReason then return false, A.disabledReason end
@@ -54,10 +71,20 @@ function S.Resume()
         S.Discard("The market changed; the incomplete scan cannot be resumed.", true)
         return false, S.message
     end
-    if S.work then
+    if S.work and not S.localReady then
         local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
-        if not ok or not U.Number(count, 0, A.MAX_ROWS, true) or count ~= S.totalRows then
-            S.Discard("The auction buffer is no longer available. Wait for a new full scan.", true)
+        if not ok or (U.Number(count, 0, A.MAX_ROWS, true) and count == 0 and S.totalRows > 0) then
+            S.bufferLost = true
+            if S.RemainingCooldown() == 0 then return S.Restart() end
+            SetState("PAUSED", "Auction buffer unavailable before copying finished. Progress kept; retry at the auctioneer or restart after the full-scan cooldown.")
+            return false, S.message
+        end
+        if not U.Number(count, 0, A.MAX_ROWS, true) or count ~= S.totalRows then
+            S.Discard("The auction replication buffer changed.", true)
+            return false, S.message
+        end
+        if not AnchorMatches() then
+            S.Discard("The auction rows changed; the incomplete scan cannot be combined with a new buffer.", true)
             return false, S.message
         end
     end
@@ -67,7 +94,8 @@ function S.Resume()
     if state == "RESOLVING" then
         S.resolveDeadline, S.nextRetry = U.Mono() + A.RESOLVE_TIMEOUT, U.Mono()
     end
-    SetState(state, "Resuming the existing scan; no new server request.")
+    S.bufferLost = false
+    SetState(state, S.localReady and "Resuming the local auction copy; no new server request." or "Resuming the existing scan; no new server request.")
     return true
 end
 
@@ -78,15 +106,16 @@ local function Complete()
     local ok, reason = D.Commit(work)
     if not ok then return S.Stop(reason, true) end
     S.active, S.paused, S.work, S.pending, S.retryWork = false, false, nil, nil, nil
+    S.copy, S.copyPending, S.copyRetryWork, S.anchor = nil, nil, nil, nil
     SetState("COMPLETE", string.format("%d rows; %d priced items. Snapshot replaced.", work.totalRows, work.distinctItems))
     U.Print(S.message)
 end
 
-function S.Start()
+function S.Start(restart)
     if A.disabledReason then return false, A.disabledReason end
     if not D.data then return false, "Saved data is not ready." end
     if S.active then return false, "A scan is already running." end
-    if S.paused then return S.Resume() end
+    if S.paused and not restart then return S.Resume() end
     if not A.auctionOpen then return false, "Open an auctioneer first." end
     if U.Combat() then return false, "Scanning is available outside combat." end
     if not S.Supported() then return false, "The required modern auction API is unavailable." end
@@ -102,12 +131,15 @@ function S.Start()
     local market = U.MarketInfo()
     local key = market.key
     if not key then return false, market.reason end
+    if restart then S.Discard("Starting a fresh full scan; previous completed prices kept.") end
     U.Log("Scan market: " .. key .. " (" .. market.label .. "; " .. market.regionSource .. ").")
     S.active, S.marketKey, S.marketInfo = true, key, market
     S.requestAt, S.startedMono = U.Now(), U.Mono()
     S.cursor, S.pending, S.loaded = 0, {}, {}
     S.responseCount, S.dataUpdateCount = 0, 0
     S.work, S.retryWork, S.totalRows = nil, nil, nil
+    S.copy, S.copyPending, S.copyRetryWork, S.anchor = nil, nil, nil, nil
+    S.copiedRows, S.copyCursor, S.localReady, S.bufferLost = 0, 0, false, false
     -- Keep the throttle across reload/logout, including cancelled requests. A
     -- locally cancelled request is not evidence that the server cancelled it.
     D.data.cooldownUntil = S.requestAt + A.SCAN_COOLDOWN
@@ -123,9 +155,21 @@ function S.Start()
     return true
 end
 
+function S.Restart()
+    return S.Start(true)
+end
+
 function S.OnResponse()
     if not S.active and not S.paused then return end
     S.responseCount = S.responseCount + 1
+    if S.localReady then
+        -- Count native notifications for diagnostics, but a copied snapshot
+        -- no longer depends on the lifetime or contents of the server buffer.
+        local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
+        if ok and U.Number(count, 0, A.MAX_ROWS, true) and count == S.totalRows then S.dataUpdateCount = S.dataUpdateCount + 1 end
+        if (S.paused and S.resumeState or S.state) == "RESOLVING" then S.nextRetry = U.Mono() end
+        return
+    end
     local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
     if not ok or not U.Number(count, 0, A.MAX_ROWS, true) then
         return S.Stop("The server returned an unreadable or oversized auction count.", true)
@@ -135,10 +179,15 @@ function S.OnResponse()
         -- Native item-data readiness can emit the same event again. Accepted
         -- rows stay accepted, pending rows are retried, and no request/restart
         -- or duplicate price accumulation occurs for a same-count update.
-        if count ~= S.totalRows then
+        if count == 0 and S.totalRows > 0 then
+            S.bufferLost = true
+            S.Pause("Auction buffer unavailable before copying finished. Progress kept; reopen the auctioneer to retry.")
+            return
+        elseif count ~= S.totalRows then
             return S.Stop("The auction replication row count changed.", true)
         end
         S.dataUpdateCount = S.dataUpdateCount + 1
+        S.copyNextRetry = U.Mono()
         if phase == "RESOLVING" then S.nextRetry = U.Mono() end
         return
     end
@@ -147,12 +196,15 @@ function S.OnResponse()
     S.work = D.NewSnapshot(S.marketKey, count, S.requestAt)
     S.work.marketKind, S.work.ruleset = S.marketInfo.kind, S.marketInfo.ruleset
     S.work.region, S.work.faction = S.marketInfo.region, S.marketInfo.faction
+    S.copy, S.copyPending, S.copyRetryWork = {}, {}, {}
+    S.copyCursor, S.copyRetryCursor, S.copyNextRetry, S.copiedRows = 0, 1, U.Mono(), 0
+    S.localReady = count == 0
     if S.paused then
         S.resumeState = "PROCESSING"
         U.Notify()
         return
     end
-    SetState("PROCESSING", "Reading every auction row.")
+    SetState("PROCESSING", "Copying auction rows locally and reading prices.")
     if count == 0 then Complete() end
 end
 
@@ -163,7 +215,12 @@ local function ReadRow(index)
     for _, field in ipairs({ 4, 11, 17, 18, 19 }) do
         if not U.Accessible(values[field]) then return nil, "Auction data is restricted; scan stopped." end
     end
-    if allInfo ~= true then
+    local valid = U.Number(quantity, 1, A.MAX_ROWS * 10000, true) and
+        U.Number(buyout, 0, 9007199254740991, true) and
+        U.Number(itemID, 1, 2147483647, true) and U.Number(saleStatus, 0, 1, true)
+    -- allInfo includes name/texture readiness. Public price fields can be
+    -- complete while that flag is false; do not wait for cosmetic item data.
+    if not valid and allInfo ~= true then
         if U.Number(itemID, 1, 2147483647, true) and not S.loaded[itemID] and
            C_Item and C_Item.RequestLoadItemDataByID then
             S.loaded[itemID] = true
@@ -171,10 +228,7 @@ local function ReadRow(index)
         end
         return false
     end
-    if not U.Number(quantity, 1, A.MAX_ROWS * 10000, true) or
-       not U.Number(buyout, 0, 9007199254740991, true) or
-       not U.Number(itemID, 1, 2147483647, true) or
-       not U.Number(saleStatus, 0, 1, true) then
+    if not valid then
         return nil, "An auction row contains invalid price, quantity, item ID, or sale status."
     end
     local ok, link = pcall(C_AuctionHouse.GetReplicateItemLink, index)
@@ -182,11 +236,88 @@ local function ReadRow(index)
     return { itemID = itemID, quantity = quantity, buyout = buyout, link = link, saleStatus = saleStatus }
 end
 
+local function SaveCopy(index, row)
+    S.copy[index] = row
+    if row then
+        S.copiedRows = S.copiedRows + 1
+        if not S.anchor then
+            S.anchor = { index = index, quantity = row.quantity, buyout = row.buyout,
+                itemID = row.itemID, saleStatus = row.saleStatus, link = row.link }
+        end
+        S.localReady = S.copiedRows == S.totalRows
+    end
+end
+
+local function BufferAvailable()
+    if S.localReady then return true end
+    local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
+    if not ok or (U.Number(count, 0, A.MAX_ROWS, true) and count == 0 and S.totalRows > 0) then
+        S.bufferLost = true
+        S.Pause("Auction buffer unavailable before copying finished. Progress kept; reopen the auctioneer to retry.")
+        return false
+    end
+    if not U.Number(count, 0, A.MAX_ROWS, true) or count ~= S.totalRows then
+        S.Stop("The auction replication buffer changed.", true)
+        return false
+    end
+    if S.bufferLost and not AnchorMatches() then
+        S.Stop("The auction rows changed; the incomplete scan cannot be combined with a new buffer.", true)
+        return false
+    end
+    S.bufferLost = false
+    return true
+end
+
+-- Keep protecting unread rows while manually paused, without advancing the
+-- valuation or committing prices. Once copied, closing the AH cannot erase
+-- them. Capture runs each frame with its own bounded CPU/row budget.
+function S.CopyTick()
+    if (not S.active and not S.paused) or not S.copy or S.localReady or
+       not A.auctionOpen or U.Combat() then return end
+    if U.MarketKey() ~= S.marketKey then return S.Stop("The market changed.", true) end
+    if not BufferAvailable() then return end
+    local startMS, processed = debugprofilestop and debugprofilestop() or 0, 0
+    local function Expired()
+        return processed >= A.COPY_BATCH_SIZE or
+            (debugprofilestop and debugprofilestop() - startMS >= A.FRAME_BUDGET_MS)
+    end
+    while S.copyCursor < S.totalRows do
+        local index = S.copyCursor
+        local value, reason = ReadRow(index)
+        if not S.copy then return end
+        if value == nil then return S.Stop(reason, true) end
+        SaveCopy(index, value)
+        if value == false then S.copyPending[#S.copyPending + 1] = index end
+        S.copyCursor, processed = index + 1, processed + 1
+        if Expired() then return end
+    end
+    if U.Mono() < S.copyNextRetry then return end
+    while S.copyRetryCursor <= #S.copyPending do
+        local index = S.copyPending[S.copyRetryCursor]
+        if S.copy[index] == false then
+            local value, reason = ReadRow(index)
+            if not S.copy then return end
+            if value == nil then return S.Stop(reason, true) end
+            if value then SaveCopy(index, value) else S.copyRetryWork[#S.copyRetryWork + 1] = index end
+        end
+        S.copyRetryCursor, processed = S.copyRetryCursor + 1, processed + 1
+        if Expired() then return end
+    end
+    S.copyPending, S.copyRetryWork, S.copyRetryCursor = S.copyRetryWork, {}, 1
+    S.copyNextRetry = U.Mono() + 0.5
+end
+
 local function Process(index)
-    local row, reason = ReadRow(index)
+    local row, reason = S.copy[index]
+    if row == false then
+        row, reason = ReadRow(index)
+        if not S.work then return nil end
+        if row then SaveCopy(index, row) end
+    end
     if row == nil then S.Stop(reason, true); return nil end
     if row == false then return false end
     D.AddRow(S.work, row.itemID, row.quantity, row.buyout, row.link, row.saleStatus)
+    S.copy[index] = nil -- Aggregated rows no longer need a second in-memory copy.
     return true
 end
 
@@ -207,14 +338,12 @@ function S.Tick()
         end
         return
     end
-    local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
-    if not ok or not U.Number(count, 0, A.MAX_ROWS, true) or count ~= S.totalRows then
-        return S.Stop("The auction replication buffer changed.", true)
-    end
+    S.CopyTick()
+    if not S.active or not BufferAvailable() then return end
     local startMS = debugprofilestop and debugprofilestop() or 0
     local processed = 0
     if S.state == "PROCESSING" then
-        while S.active and S.cursor < S.totalRows do
+        while S.active and S.cursor < S.copyCursor do
             local index = S.cursor
             local result = Process(index)
             if result == nil then return end
@@ -253,7 +382,7 @@ function S.InstallObserver()
     if S.observerInstalled or not S.Supported() or not hooksecurefunc then return end
     S.observerInstalled = true
     hooksecurefunc(C_AuctionHouse, "ReplicateItems", function()
-        if (S.active or S.paused) and not S.sending then
+        if (S.active or S.paused) and not S.localReady and not S.sending then
             S.Stop("Another addon requested a full scan at the same time.", true)
         end
     end)

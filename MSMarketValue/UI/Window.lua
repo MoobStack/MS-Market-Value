@@ -71,10 +71,15 @@ function UI.DiagnosticsText()
         "Scan state: " .. S.state,
         "Resume phase: " .. tostring(S.resumeState or "none"),
         "Staged rows: " .. tostring(S.work and S.work.processedRows or 0),
+        "Local auction copy: " .. (S.localReady and "complete" or "incomplete") .. "; rows=" .. tostring(S.copiedRows or 0) .. "/" .. tostring(S.totalRows or 0),
+        "Native buffer lost: " .. tostring(S.bufferLost or false),
         "Crafting API: " .. tostring(A.Crafting.Supported()),
         "Recipe catalog: " .. tostring(A.Crafting.reason or (A.Crafting.ready and "ready" or "waiting for a profession")),
         "Selected recipe: " .. tostring(A.Crafting.selected and A.Crafting.selected.recipeID or "none"),
         "Craft valuation: " .. tostring(A.Crafting.selected and (A.Crafting.selected.reason or "complete") or "none"),
+        "Recipe catalog builds: " .. tostring(A.Crafting.builds),
+        "Recipe catalog publications: " .. tostring(A.Crafting.publications),
+        "Selected recipe link: " .. (A.Crafting.selected and A.Crafting.RecipeLink(A.Crafting.selected.recipeID) and "available" or "unavailable"),
         "Full-scan requests this session: " .. tostring(S.requestCount),
         "Replication events this scan: " .. tostring(S.responseCount),
         "Same-count data updates: " .. tostring(S.dataUpdateCount),
@@ -175,6 +180,10 @@ function UI.Create()
     end)
     UI.stopButton = Button(scan, "Pause scan", 178, -155, 110, function() S.Pause() end)
     Button(scan, "Copy diagnostics", 300, -155, 150, UI.ShowDiagnostics)
+    UI.restartButton = Button(scan, "Restart scan", 462, -155, 124, function()
+        local ok, message = S.Restart()
+        if not ok then U.Print(message) end
+    end)
 
     local settings = Inset(frame, 12, -216, 366, 204)
     Label(settings, "Tooltip settings", 14, -13, 338, "GameFontNormal")
@@ -223,7 +232,7 @@ function UI.Create()
     Button(prices, "Exclude", 120, -143, 90, function() Exclude(true) end)
     Button(prices, "Restore estimate", 218, -143, 128, function() Exclude(false) end)
     Label(prices, "Enter an item ID to override the reference model.", 14, -181, 338)
-    Label(frame, "AH values are asking prices, before fees. Disenchant outcomes use an unverified Classic reference.\nTooltip prices stay available in combat. Scans resume outside combat at an auctioneer.", 14, -433, 740)
+    Label(frame, "AH values are asking prices, before fees. Disenchant outcomes use an unverified Classic reference.\nKeep the AH open until Local copy is complete. Paused scans resume outside combat at an auctioneer.", 14, -433, 740)
     frame:SetScript("OnShow", UI.Refresh)
     window:SetScript("OnShow", UI.Refresh)
     window:Hide()
@@ -243,7 +252,7 @@ function UI.Refresh()
     end
     local status = S.state .. (S.message and (": " .. S.message) or "")
     if S.work then
-        status = status .. string.format("\nRead %d/%d; unresolved %d.", S.work.processedRows, S.totalRows, #S.pending)
+        status = status .. string.format("\nLocal copy %d/%d%s | Read %d; unresolved %d.", S.copiedRows or 0, S.totalRows, S.localReady and " (complete)" or "", S.work.processedRows, #S.pending)
     elseif S.RemainingCooldown() > 0 then
         status = status .. string.format("\nNext full scan in %dm %ds.", math.floor(S.RemainingCooldown() / 60), S.RemainingCooldown() % 60)
     end
@@ -251,9 +260,10 @@ function UI.Refresh()
     if A.tooltipReason then status = status .. "\n" .. A.tooltipReason end
     UI.statusText:SetText(status)
     UI.progress:SetValue(S.work and (S.totalRows > 0 and S.work.processedRows / S.totalRows or 1) or (S.state == "COMPLETE" and 1 or 0))
-    UI.scanButton:SetText(S.paused and "Resume scan" or "Scan entire AH")
+    UI.scanButton:SetText(S.paused and (S.bufferLost and S.RemainingCooldown() == 0 and "Restart scan" or "Resume scan") or "Scan entire AH")
     UI.scanButton:SetEnabled(D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and not S.active and (S.paused == true or S.RemainingCooldown() == 0))
     UI.stopButton:SetEnabled(S.active)
+    UI.restartButton:SetEnabled(D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and S.paused == true and S.RemainingCooldown() == 0)
     if UI.tabButton then UI.tabButton:SetEnabled(not U.Combat()) end
     for key, check in pairs(UI.checks) do check:SetChecked(D.Settings()[key]) end
     if not UI.staleBox:HasFocus() then UI.staleBox:SetText(tostring(D.Settings().staleHours)) end

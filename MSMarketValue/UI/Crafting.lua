@@ -32,6 +32,18 @@ function UI.SignedMoney(value)
     return (value < 0 and "-" or "+") .. U.Money(math.abs(value))
 end
 
+local function ChatOpener()
+    if U.Table(ChatFrameUtil) and type(ChatFrameUtil.OpenChat) == "function" then return ChatFrameUtil.OpenChat end
+    if type(ChatFrame_OpenChat) == "function" then return ChatFrame_OpenChat end
+end
+
+function UI.InsertQuote()
+    if U.Combat() or not C.Form() or not UI.quoteText then return end
+    local open = ChatOpener()
+    if not open then return U.Print("Copy the quote text; the chat editor is unavailable.") end
+    open(UI.quoteText) -- A draft only; the player chooses when and where to send it.
+end
+
 local function Range(a, b, formatter)
     if a == nil then return "Unavailable" end
     if a == b then return formatter(a) end
@@ -105,11 +117,12 @@ function UI.Create()
     quote:SetPoint("TOPLEFT", 20, -42)
     quote:SetSize(499, 23)
     quote:SetAutoFocus(false)
-    quote:SetMaxLetters(512)
+    quote:SetMaxLetters(1500)
     quote:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
     quote:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     UI.quoteBox = quote
-    Label(quotes, "Materials + markup; select the text and Ctrl+C to copy.", 14, -73, 507)
+    Label(quotes, "Materials + markup. Ctrl+C to copy.", 14, -73, 350)
+    UI.insertQuote = Button(quotes, "Insert in chat", 383, -67, 137, UI.InsertQuote)
     local materials = Inset(details, -310, 154)
     Label(materials, "Materials", 14, -12, 507, "GameFontNormal")
     local scroll = CreateFrame("ScrollFrame", nil, materials, "UIPanelScrollFrameTemplate")
@@ -144,6 +157,7 @@ function UI.Create()
             if U.Combat() or not self.recipeID or not C_TradeSkillUI then return end
             C.Call(C_TradeSkillUI.OpenRecipe, self.recipeID)
             UI.mode = "recipe"
+            C.Tick()
             UI.Refresh()
         end)
         UI.catalogRows[index] = row
@@ -159,7 +173,7 @@ end
 
 function UI.Refresh()
     if not UI.frame then return end
-    local snapshot = D.Snapshot()
+    local snapshot = UI.mode == "profit" and C.publishedSnapshot or D.Snapshot()
     UI.age:SetText(snapshot and ("Price scan: " .. U.Age(snapshot.startedAt) .. (D.IsStale(snapshot) and " (stale)" or "")) or "No complete price scan for this market")
     if UI.mode == "recipe" then
         UI.details:Show(); UI.catalog:Hide()
@@ -180,8 +194,12 @@ function UI.Refresh()
                 UI.values[index]:SetTextColor(profit >= 0 and 0.35 or 1, profit >= 0 and 0.87 or 0.38, 0.38)
             else UI.values[index]:SetTextColor(0.83, 0.86, 0.89) end
         end
+        local quoteText = C.QuoteText(row)
+        if UI.quoteText ~= quoteText or UI.quoteRecipeID ~= (row and row.recipeID) then UI.quoteBox:ClearFocus() end
+        UI.quoteRecipeID, UI.quoteText = row and row.recipeID, quoteText
+        UI.insertQuote:SetEnabled(quoteText ~= nil and ChatOpener() ~= nil)
         if not UI.quoteBox:HasFocus() then
-            UI.quoteBox:SetText(row and row.quote and (row.name .. " - " .. U.Money(row.quote) .. " per craft (materials + " .. D.Settings().quoteMarkup .. "%)") or "Quote unavailable until all material prices are known")
+            UI.quoteBox:SetText(quoteText or "Quote unavailable until all material prices are known")
         end
         local count = row and #row.materials or 0
         for index = 1, math.max(count, #UI.materialRows) do
@@ -209,7 +227,7 @@ function UI.Refresh()
         end
         UI.pageText:SetText(string.format("%d profitable | Page %d / %d", #rows, UI.page, pages))
         UI.previous:SetEnabled(UI.page > 1); UI.next:SetEnabled(UI.page < pages)
-        UI.catalogStatus:SetText(C.reason or (C.ready and ("Catalog ready. " .. C.skipped .. " recipes lack a complete valuation.") or ("Checking recipes: " .. math.min(C.cursor - 1, #(C.ids or {})) .. " / " .. #(C.ids or {}))))
+        UI.catalogStatus:SetText(C.reason or (C.ready and ("Catalog ready. " .. C.skipped .. " recipes lack a complete valuation.") or ("Checking recipes: " .. math.min(C.cursor - 1, #(C.ids or {})) .. " / " .. #(C.ids or {}) .. (#C.rows > 0 and ". Showing the last complete list." or ""))))
         UI.catalogNote:SetText((C.catalogScope == "filtered" and "Uses the profession's current filters. " or "Open profession; fixed reagents. ") .. "Minimum yield is used\nfor ranking. Missing prices and unresolved choices are omitted.")
     end
 end

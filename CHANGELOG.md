@@ -2,6 +2,18 @@
 
 The current 1.1.0 work uses one testing version and build. Test revision numbers and immutable tags distinguish packages. Earlier releases and their evidence remain below.
 
+## 1.1.0-beta — Test revision 2 — 2026-10-11
+
+Same version and build, `2026-10-11-beta001`; tag `v1.1.0-beta-test2`.
+
+- Copy auction price rows locally so a completed copy survives closing/reopening the AH. Pause keeps pricing stopped while unread rows continue copying at the open auctioneer.
+- Use complete public prices without waiting for item names. An early buffer loss keeps progress paused; a fresh restart becomes available after the original cooldown. Partial prices never replace or mix with completed scans.
+- Shorten quotes to `Recipe - price ea`, using the native profession-book recipe link when available. Insert in chat opens a draft. Fixed multi-item outputs quote per item; variable/unknown yields stay per craft.
+- Keep profitable recipes visible until a complete refresh is ready. Item-data events update names without clearing or repricing the list; repeated unchanged list events no longer restart it.
+- Add local-copy and catalog build/publication diagnostics. Update the guide, live checks and recovery notes.
+
+**169/169 local Lua 5.1 checks pass.** The Test revision 1 report was from client build 70338; these fixes still need a native retest. Price history follows in a later revision of this beta.
+
 ## 1.1.0-beta — Test revision 1 — 2026-10-11
 
 Build `2026-10-11-beta001`; tag `v1.1.0-beta-test1`.

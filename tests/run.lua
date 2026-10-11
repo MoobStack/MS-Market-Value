@@ -104,6 +104,7 @@ local function fresh(saved)
     _G.UIParent = widget("UIParent")
     _G.LibStub, _G.AuctionHouseFrame, _G.AuctionHouseFrameDisplayMode = nil, nil, nil
     _G.ProfessionsFrame, _G.C_TradeSkillUI = nil, nil
+    _G.ChatFrameUtil, _G.ChatFrame_OpenChat = nil, nil
     _G.WOW_PROJECT_MAINLINE, _G.WOW_PROJECT_CAMELOT = 1, 14
     _G.WOW_PROJECT_ID = WOW_PROJECT_CAMELOT
     _G.strmatch = string.match
@@ -141,8 +142,11 @@ local function fresh(saved)
         GetReplicateItemInfo = function(index)
             local row = world.rows[index + 1]
             if not row then error("bad auction index") end
-            return nil, nil, row.quantity, 2, true, 20, nil, 0, 0,
-                   row.buyout, 0, nil, nil, nil, nil, row.saleStatus or 0, row.id, row.allInfo
+            local quantity, buyout = row.quantity, row.buyout
+            -- Truly pending price data differs from a missing item name.
+            if row.allInfo == false and not row.publicPrices then quantity, buyout = nil, nil end
+            return nil, nil, quantity, 2, true, 20, nil, 0, 0,
+                   buyout, 0, nil, nil, nil, nil, row.saleStatus or 0, row.id, row.allInfo
         end,
         GetReplicateItemLink = function(index) return world.rows[index + 1].link end,
     }
@@ -1328,7 +1332,7 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("test revision diagnostics identify resumable progress and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"Test revision: 1",1,true))
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"Test revision: 2",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
     equal(A.VERSION,"1.1.0-beta"); equal(A.BUILD,"2026-10-11-beta001")
 end)
@@ -1370,6 +1374,264 @@ test("1.0.0 settings and snapshot survive beta upgrade with a safe quote default
     saved.version="1.0.0"; saved.settings.quoteMarkup=nil; saved.settings.staleHours=72
     local w2,A2=fresh(saved); w2:load(); equal(A2.DB.Snapshot(),snapshot)
     equal(A2.DB.Settings().quoteMarkup,0); equal(A2.DB.Settings().staleHours,72); equal(w2.requests,0)
+end)
+
+test("public auction prices do not wait for cosmetic item information", function()
+    local w,A=fresh(); local value=row(100,3,1000,0,false); value.publicPrices=true
+    w:start({value}); w:drain()
+    equal(A.Scanner.state,"COMPLETE"); near(A.DB.Price(100).low,1000/3); equal(w.loadRequests,0)
+end)
+test("closing and reopening after copying resumes with an empty native buffer", function()
+    local w,A,old=initial(); local rows={}
+    for i=1,250 do rows[i]=row(200,2,1000) end
+    newScan(w,rows); A.Scanner.Tick(); truth(A.Scanner.localReady); equal(A.Scanner.work.processedRows,100)
+    local cooldown=A.DB.data.cooldownUntil
+    w:event("AUCTION_HOUSE_CLOSED"); w.rows={}; w:event("REPLICATE_ITEM_LIST_UPDATE")
+    equal(A.Scanner.state,"PAUSED"); equal(A.DB.Snapshot(),old)
+    w:event("AUCTION_HOUSE_SHOW"); truth(A.Scanner.Resume()); w:drain()
+    equal(A.Scanner.state,"COMPLETE"); equal(A.DB.Price(200).auctions,250); equal(A.DB.Price(200).units,500)
+    equal(w.requests,2); equal(A.DB.data.cooldownUntil,cooldown)
+end)
+test("a local copy needs no native auction row getters to resume", function()
+    local w,A=fresh(); local rows={}
+    for i=1,151 do rows[i]=row(100,1,100) end
+    w:start(rows); A.Scanner.Tick(); truth(A.Scanner.Pause())
+    C_AuctionHouse.GetNumReplicateItems=function() error("native buffer cleared") end
+    C_AuctionHouse.GetReplicateItemInfo=function() error("native rows cleared") end
+    C_AuctionHouse.GetReplicateItemLink=function() error("native links cleared") end
+    truth(A.Scanner.Resume()); w:drain(); equal(A.DB.Price(100).auctions,151); equal(w.requests,1)
+end)
+test("paused copying protects unread rows without changing completed or staged prices", function()
+    local w,A,old=initial(); local rows={}
+    for i=1,1601 do rows[i]=row(200,1,100) end
+    newScan(w,rows); A.Scanner.Tick(); truth(A.Scanner.Pause())
+    local staged=A.Scanner.work.processedRows
+    for _=1,20 do A.eventFrame.scripts.OnUpdate(A.eventFrame,0.016) end
+    truth(A.Scanner.localReady); equal(A.Scanner.work.processedRows,staged); equal(A.DB.Snapshot(),old)
+    w:event("AUCTION_HOUSE_CLOSED"); w.rows={}; w:event("AUCTION_HOUSE_SHOW")
+    truth(A.Scanner.Resume()); w:drain(); equal(A.DB.Price(200).auctions,1601); equal(w.requests,2)
+end)
+test("an early buffer loss keeps the incomplete scan and cooldown", function()
+    local w,A,old=initial(); local rows={}
+    for i=1,251 do rows[i]=row(200,1,100) end
+    A.COPY_BATCH_SIZE=100; newScan(w,rows); A.Scanner.Tick(); equal(A.Scanner.work.processedRows,100)
+    local staged=A.Scanner.work; local cooldown=A.DB.data.cooldownUntil
+    w:event("AUCTION_HOUSE_CLOSED"); w.rows={}; w:event("AUCTION_HOUSE_SHOW")
+    local ok,reason=A.Scanner.Resume()
+    equal(ok,false); truth(string.find(reason,"Progress kept",1,true)); equal(A.Scanner.state,"PAUSED")
+    equal(A.Scanner.work,staged); equal(A.DB.Snapshot(),old); equal(A.DB.data.cooldownUntil,cooldown); equal(w.requests,2)
+end)
+test("a temporarily absent buffer can resume without another request", function()
+    local w,A=fresh(); local rows={}
+    for i=1,251 do rows[i]=row(100,1,100) end
+    A.COPY_BATCH_SIZE=100; w:start(rows); A.Scanner.Tick(); A.Scanner.Pause()
+    w.overrideCount=0; equal(A.Scanner.Resume(),false); w.overrideCount=nil
+    truth(A.Scanner.Resume()); w:drain(); equal(A.DB.Price(100).auctions,251); equal(w.requests,1)
+end)
+test("lost-buffer restart waits for the cooldown and never mixes partial prices", function()
+    local w,A,old=initial(); local rows={}
+    for i=1,251 do rows[i]=row(200,1,100) end
+    A.COPY_BATCH_SIZE=100; newScan(w,rows); A.Scanner.Tick(); A.Scanner.Pause()
+    w.rows={}; equal(A.Scanner.Resume(),false)
+    local staged=A.Scanner.work
+    equal(A.Scanner.Restart(),false); equal(A.Scanner.work,staged); equal(A.DB.Snapshot(),old)
+    w:advance(901); truth(A.Scanner.Resume()); equal(A.Scanner.state,"WAITING"); equal(w.requests,3)
+    equal(A.DB.Snapshot(),old); w.rows={row(200,1,900),row(300,1,800)}
+    A.Scanner.OnResponse(); w:drain(); equal(A.DB.Price(200).low,900); equal(A.DB.Price(200).auctions,1)
+    equal(A.DB.Snapshot().processedRows,2)
+end)
+test("same-count replacement rows cannot be merged with an incomplete local copy", function()
+    local w,A,old=initial(); local rows={}
+    for i=1,251 do rows[i]=row(200,1,100) end
+    A.COPY_BATCH_SIZE=100; newScan(w,rows); A.Scanner.Tick(); A.Scanner.Pause()
+    rows[1]=row(200,1,999)
+    equal(A.Scanner.Resume(),false); equal(A.Scanner.state,"FAILED"); equal(A.DB.Snapshot(),old)
+end)
+test("a competing scan cannot overwrite a complete local copy", function()
+    local w,A=fresh(); local rows={}
+    for i=1,151 do rows[i]=row(100,1,100) end
+    w:start(rows); A.Scanner.Tick(); A.Scanner.Pause(); truth(A.Scanner.localReady)
+    C_AuctionHouse.ReplicateItems(); w.rows={row(200,1,999)}; A.Scanner.OnResponse()
+    equal(A.Scanner.state,"PAUSED"); truth(A.Scanner.Resume()); w:drain()
+    equal(A.DB.Price(100).auctions,151); equal(A.DB.Price(200),nil)
+end)
+test("resolved copied rows survive native buffer loss during a paused retry", function()
+    local w,A=fresh(); w:start({row(100,1,100,0,false)})
+    A.Scanner.Tick(); equal(A.Scanner.state,"RESOLVING"); A.Scanner.Pause()
+    w.rows[1].allInfo=true; w.mono=w.mono+0.6; A.Scanner.CopyTick(); truth(A.Scanner.localReady)
+    w:event("AUCTION_HOUSE_CLOSED"); w.rows={}; w:event("AUCTION_HOUSE_SHOW")
+    truth(A.Scanner.Resume()); w:drain(); equal(A.DB.Price(100).low,100); equal(w.requests,1)
+end)
+test("copying respects its row and CPU budgets", function()
+    local w,A=fresh(); local rows={}
+    for i=1,1001 do rows[i]=row(100,1,100) end
+    w:start(rows); A.COPY_BATCH_SIZE=50; A.Scanner.CopyTick(); equal(A.Scanner.copiedRows,50)
+    debugprofilestop=function() w.cpu=w.cpu+2; return w.cpu end
+    A.Scanner.CopyTick(); equal(A.Scanner.copiedRows,52); equal(A.Scanner.work.processedRows,0)
+end)
+test("the reported 98455-row scan can copy and resume without loading item names", function()
+    local w,A=fresh(); local rows={}
+    for i=1,98455 do local value=row(100,2,200,0,false); value.publicPrices=true; rows[i]=value end
+    w:start(rows); A.Scanner.Pause()
+    for _=1,1000 do if A.Scanner.localReady then break end; A.Scanner.CopyTick() end
+    truth(A.Scanner.localReady); equal(A.Scanner.copiedRows,98455); equal(A.Scanner.work.processedRows,0)
+    equal(w.loadRequests,0); w:event("AUCTION_HOUSE_CLOSED"); w.rows={}; w:event("AUCTION_HOUSE_SHOW")
+    truth(A.Scanner.Resume()); w:drain()
+    equal(A.DB.Snapshot().totalRows,98455); equal(A.DB.Price(100).auctions,98455); equal(A.DB.Price(100).units,196910)
+    equal(w.requests,1)
+end)
+test("item-data event floods do not rebuild or empty a completed profitability list", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local rows=A.Crafting.rows; local ranked=A.Crafting.Ranked("profit")
+    local calls=w.itemCalls; local builds=A.Crafting.builds
+    w.items[100]={name="Loaded material"}
+    for i=1,100 do
+        w:event("GET_ITEM_INFO_RECEIVED",100,true); w:event("GET_ITEM_INFO_RECEIVED",10000+i,true); A.Crafting.Tick()
+        equal(A.Crafting.rows,rows); equal(A.Crafting.Ranked("profit"),ranked)
+    end
+    equal(A.Crafting.builds,builds); equal(A.Crafting.publications,1)
+    truth(w.itemCalls<=calls+1)
+end)
+test("a rebuilding profitability list publishes only the complete replacement", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local rows=A.Crafting.rows; local ranked=A.Crafting.Ranked("profit")
+    w.recipeIDs={}
+    for i=1,45 do w.recipeIDs[i]=i; w.recipes[i]=craftRecipe(i,200) end
+    A.Crafting.Invalidate(); A.Crafting.Tick(); equal(A.Crafting.ready,false)
+    equal(A.Crafting.rows,rows); equal(A.Crafting.Ranked("profit"),ranked)
+    w:event("GET_ITEM_INFO_RECEIVED",101,true); w:event("TRADE_SKILL_LIST_UPDATE")
+    A.Crafting.Tick(); equal(A.Crafting.cursor,41); equal(A.Crafting.rows,rows)
+    A.Crafting.Tick(); truth(A.Crafting.ready); equal(#A.Crafting.Ranked("profit"),45); equal(A.Crafting.publications,2)
+end)
+test("repeated native list updates leave identical recipe valuations and builds stable", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local rows=A.Crafting.rows
+    for i=1,40 do
+        w.mono=w.mono+0.25; w.recipeIDs=i%2==0 and {3,2,1,1} or {1,2,3}
+        w:event("TRADE_SKILL_LIST_UPDATE"); A.Crafting.Tick(); equal(A.Crafting.rows,rows)
+    end
+    equal(A.Crafting.builds,1); equal(A.Crafting.publications,1); truth(w.catalogCalls<=12)
+end)
+test("new recipe IDs and newly learned recipes refresh a stable catalog", function()
+    local w,A=craftingWorld(); w.recipes[2].info.learned=false; A.Crafting.Tick()
+    equal(#A.Crafting.rows,2); w.recipes[2].info.learned=true; w:event("NEW_RECIPE_LEARNED",2)
+    A.Crafting.Tick(); equal(#A.Crafting.rows,3); equal(A.Crafting.builds,2)
+    w.recipes[4]=craftRecipe(4,200); w.recipeIDs={1,2,3,4}; w:event("TRADE_SKILL_LIST_UPDATE"); A.Crafting.Tick()
+    equal(#A.Crafting.rows,4); equal(A.Crafting.builds,3)
+end)
+test("loading a material name updates labels without repricing or reordering recipes", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local rows=A.Crafting.rows
+    w.items[100]={name="Loaded material"}; w:event("GET_ITEM_INFO_RECEIVED",100,true)
+    equal(A.Crafting.selected.materials[1].name,"Loaded material")
+    equal(A.Crafting.rows,rows); equal(A.Crafting.builds,1); equal(rows[1].materials[1].name,"Loaded material")
+end)
+test("the profit page retains the source timestamp until new valuations publish", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local old=A.Crafting.publishedSnapshot
+    w.recipeIDs={}
+    for i=1,45 do w.recipeIDs[i]=i; w.recipes[i]=craftRecipe(i,200) end
+    newScan(w,{row(100,1,200),row(101,1,200),row(200,1,900)}); w:drain(); A.Crafting.Tick()
+    equal(A.Crafting.publishedSnapshot,old); A.Crafting.Tick(); A.Crafting.Tick()
+    equal(A.Crafting.publishedSnapshot,A.DB.Snapshot()); equal(A.Crafting.rows[1].cost,600)
+end)
+test("a profession change does not show the previous profession's recipe list", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); w.professionID=171; w.recipeIDs={}
+    for i=1,45 do w.recipeIDs[i]=i; w.recipes[i]=craftRecipe(i,200) end
+    A.Crafting.Tick(); equal(#A.Crafting.rows,0); equal(A.Crafting.ready,false)
+    A.Crafting.Tick(); A.Crafting.Tick(); equal(#A.Crafting.rows,45)
+end)
+test("service quotes use the requested concise ea format", function()
+    local w,A=craftingWorld()
+    equal(A.Crafting.QuoteText({recipeID=1,name="Enchant Chest - Lesser Absorption",quote=11663,service=true}),
+        "Enchant Chest - Lesser Absorption - 1g 16s 63c ea")
+end)
+test("native recipe hyperlinks are preserved verbatim in quotes", function()
+    local w,A=craftingWorld(); local native="|cffffd000|Henchant:7426|h[Enchant Chest - Lesser Absorption]|h|r"
+    C_TradeSkillUI.GetRecipeLink=function(id) equal(id,1); return native end
+    equal(A.Crafting.QuoteText({recipeID=1,name="Fallback",quote=11663,service=true}),native .. " - 1g 16s 63c ea")
+end)
+test("missing restricted malformed or failing recipe links use a plain name", function()
+    local w,A=craftingWorld(); local value={recipeID=1,name="Recipe",quote=400,quantityMin=1,quantityMax=1}
+    for _,linkValue in ipairs({false,secret,"not a recipe link","|Henchant:1|hbroken"}) do
+        C_TradeSkillUI.GetRecipeLink=function() return linkValue end
+        equal(A.Crafting.QuoteText(value),"Recipe - 4s 00c ea")
+    end
+    C_TradeSkillUI.GetRecipeLink=function() error("not ready") end
+    equal(A.Crafting.QuoteText(value),"Recipe - 4s 00c ea")
+end)
+test("fixed multi-item output quotes charge per item and round only the displayed total", function()
+    local w,A=craftingWorld(); w.recipes[1].schematic.quantityMin=3; w.recipes[1].schematic.quantityMax=3
+    A.DB.data.settings.quoteMarkup=20
+    equal(A.Crafting.QuoteText(A.Crafting.Analyze(1,w.form)),"Recipe 1 - 1s 60c ea")
+    A.DB.data.settings.quoteMarkup=0
+    equal(A.Crafting.QuoteText(A.Crafting.Analyze(1,w.form)),"Recipe 1 - 1s 33c ea")
+end)
+test("variable or unknown output keeps an unambiguous per-craft quote", function()
+    local w,A=craftingWorld(); equal(A.Crafting.QuoteText(A.Crafting.Analyze(3)),"Recipe 3 - 4s 00c per craft")
+    equal(A.Crafting.QuoteText({recipeID=1,name="Recipe",quote=400}),"Recipe - 4s 00c per craft")
+    equal(A.Crafting.QuoteText({recipeID=1,name="Recipe"}),nil)
+end)
+test("Insert in chat opens a native linked draft without sending it", function()
+    local w,A=craftingWorld(); local native="|Henchant:1|h[Recipe 1]|h"
+    C_TradeSkillUI.GetRecipeLink=function() return native end
+    ChatFrameUtil={OpenChat=function(text) w.draft=text; w.drafts=(w.drafts or 0)+1 end}
+    A.Crafting.Tick(); equal(A.CraftingUI.insertQuote.enabled,true); A.CraftingUI.insertQuote.scripts.OnClick()
+    equal(w.draft,native .. " - 4s 00c ea"); equal(w.drafts,1); equal(w.requests,1)
+    w.combat=true; A.CraftingUI.InsertQuote(); equal(w.drafts,1)
+    w.combat=false; ProfessionsFrame:Hide(); A.CraftingUI.InsertQuote(); equal(w.drafts,1)
+end)
+test("the legacy native chat opener remains supported when available", function()
+    local w,A=craftingWorld(); ChatFrame_OpenChat=function(text) w.draft=text end
+    A.Crafting.Tick(); A.CraftingUI.InsertQuote(); equal(w.draft,"Recipe 1 - 4s 00c ea")
+end)
+test("a recipe or markup change cannot leave a focused old quote in the UI", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local box=A.CraftingUI.quoteBox
+    box:SetFocus(); box:SetText("Old quote"); w.selectedID=2; A.Crafting.Tick()
+    equal(box:HasFocus(),false); equal(box.text,"Recipe 2 - 4s 00c ea")
+    box:SetFocus(); A.DB.data.settings.quoteMarkup=20; A.Crafting.Tick()
+    equal(box:HasFocus(),false); equal(box.text,"Recipe 2 - 4s 80c ea")
+end)
+test("missing material prices disable the chat draft button", function()
+    local w,A=craftingWorld(); ChatFrameUtil={OpenChat=function() error("no quote should be inserted") end}
+    A.DB.Snapshot().prices[100]=nil; A.Crafting.Tick(); equal(A.CraftingUI.insertQuote.enabled,false)
+    equal(A.CraftingUI.quoteText,nil); A.CraftingUI.InsertQuote()
+end)
+test("diagnostics distinguish copied progress and stable catalog publications", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
+    truth(string.find(text,"Test revision: 2",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
+end)
+
+test("copying checks the retained row before a lost partial buffer returns", function()
+    local w,A,old=initial(); local rows={}
+    for i=1,251 do rows[i]=row(200,1,100) end
+    A.COPY_BATCH_SIZE=100; newScan(w,rows); A.Scanner.Tick(); A.Scanner.Pause()
+    w.overrideCount=0; equal(A.Scanner.Resume(),false); w.overrideCount=nil; rows[1]=row(200,1,999)
+    A.Scanner.CopyTick(); equal(A.Scanner.state,"FAILED"); equal(A.DB.Snapshot(),old)
+end)
+test("a changed signed suffix is rejected before resuming an incomplete copy", function()
+    local w,A=fresh(); local rows={}
+    for i=1,251 do rows[i]=row(100,1,100,10) end
+    A.COPY_BATCH_SIZE=100; w:start(rows); A.Scanner.Tick(); A.Scanner.Pause(); rows[1].link=link(100,20)
+    equal(A.Scanner.Resume(),false); equal(A.Scanner.state,"FAILED"); equal(A.DB.Snapshot(),nil)
+end)
+test("a new market clears the previous profitability list while rebuilding", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); w.recipeIDs={}
+    for i=1,45 do w.recipeIDs[i]=i; w.recipes[i]=craftRecipe(i,200) end
+    w.region=2; A.Crafting.Tick(); equal(#A.Crafting.rows,0); equal(A.Crafting.publishedSnapshot,nil)
+    A.Crafting.Tick(); A.Crafting.Tick(); equal(#A.Crafting.Ranked("profit"),0)
+end)
+
+test("a synchronous item-name event cannot recurse or restart the catalog", function()
+    local w,A=craftingWorld(); A.Crafting.Tick(); local getter=C_Item.GetItemInfo
+    w.items[100]={name="Loaded material"}; local reads=0
+    C_Item.GetItemInfo=function(id)
+        reads=reads+1; truth(reads<3,"item-name getter recursed")
+        w:event("GET_ITEM_INFO_RECEIVED",id,true); return getter(id)
+    end
+    w:event("GET_ITEM_INFO_RECEIVED",100,true)
+    equal(reads,1); equal(A.Crafting.selected.materials[1].name,"Loaded material"); equal(A.Crafting.builds,1)
+end)
+test("a competing request during item loading safely abandons the native copy", function()
+    local w,A,old=initial(); newScan(w,{row(200,1,100,0,false)})
+    C_Item.RequestLoadItemDataByID=function() C_AuctionHouse.ReplicateItems() end
+    A.Scanner.CopyTick(); equal(A.Scanner.state,"FAILED"); equal(A.Scanner.work,nil); equal(A.DB.Snapshot(),old)
 end)
 
 print(string.format("RESULT: %d/%d behavioral tests passed (Lua %s). Live-client validation pending.", testCount, testCount, _VERSION))

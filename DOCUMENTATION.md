@@ -1,6 +1,6 @@
 # Using MS Market Value
 
-`1.1.0-beta / 2026-10-11-beta001` · Test revision **1**
+`1.1.0-beta / 2026-10-11-beta001` · Test revision **2**
 
 ## Crafting costs and profit
 
@@ -19,7 +19,7 @@ Material quantities come from the native recipe schematic. Prices come from the 
 
 For example, materials costing 4g and an output listed at 5g give a 1g gross profit and **+25%** return. A 3g output gives **-1g** and **-25%**. These values are before auction fees and listing costs.
 
-Recipes producing a range of quantities show the corresponding cost and profit ranges. **Profitable recipes** ranks by the minimum output. Choose **Profit / craft** or **Return %**, then click a row to select that recipe through the native profession UI. The list includes only positive, fully priced estimates in the open profession. If the full native catalog is unavailable, it uses and labels the current profession filters without changing them.
+Recipes producing a range of quantities show the corresponding cost and profit ranges. **Profitable recipes** ranks by the minimum output. Choose **Profit / craft** or **Return %**, then click a row to select that recipe through the native profession UI. The list includes only positive, fully priced estimates in the open profession. It keeps the last complete list visible during a refresh and replaces it once; unrelated item-data events do not restart it. If the full native catalog is unavailable, it uses and labels the current profession filters without changing them.
 
 The adapter uses native recipe data across professions, including Cooking. Direct enchants and other services without an auctionable result show their material cost and quote; there is no invented output sale price. Select alternative reagents completely before pricing them. The selected recipe includes readable optional reagent allocations. The catalog uses fixed required materials with no optional extras. Quality-dependent outputs need selection before they can be valued. Currency costs, variable reagent quantities, salvage and recrafting are left unavailable in this test revision.
 
@@ -27,7 +27,11 @@ A missing material price makes full cost, profit and quote unavailable. The mate
 
 ## Craft quotes
 
-Enter a whole-number **Markup** from 0 to 1000 percent and click **Apply** or press Enter. The default is zero. The quote covers one craft, including its full material cost. Click the quote field, select the text and press Ctrl+C. Paste it wherever you normally give quotes.
+Enter a whole-number **Markup** from 0 to 1000 percent and click **Apply** or press Enter. The default is zero. Quotes use full material cost plus markup.
+
+A direct enchant reads `Enchant Chest - Lesser Absorption - 1g 16s 63c ea`. The recipe name uses the same native link as shift-clicking the profession book, when available. Click **Insert in chat** to open a draft with the link intact; choose the channel and send it yourself. The quote field also supports Ctrl+C.
+
+For a fixed multi-item output, **ea** divides the craft quote by the number produced. A variable or unknown output uses **per craft**, since it has no single per-item price. Missing native links fall back to the recipe name.
 
 The addon does not send the quote or craft anything automatically. Customer-supplied materials and a separate labor fee are not modeled in this revision; adjust those in your agreement with the customer.
 
@@ -38,16 +42,20 @@ At an open auctioneer, select **MS Market Value** and click **Scan entire AH**. 
 | State | Meaning |
 |---|---|
 | WAITING | The server response has not arrived |
-| PROCESSING | Reading auction rows |
-| RESOLVING | Waiting for missing item data |
+| PROCESSING | Copying auction rows locally and reading prices |
+| RESOLVING | Waiting for missing auction price fields |
 | PAUSED | Progress retained; use Resume scan |
 | COMPLETE | All rows accounted for and saved prices replaced |
 | CANCELLED | Incomplete work explicitly discarded |
 | FAILED | Invalid data, a changed market/buffer, or a competing request stopped the scan |
 
-**Pause scan**, `/msmv pause`, and the existing `/msmv stop` command retain progress. Combat, auction closure and data timeouts also pause. Reopen an auctioneer outside combat and use **Resume scan** or `/msmv resume`. Resume continues the existing request, including a response received while paused. It does not issue another request or wait for the new-request cooldown.
+**Pause scan**, `/msmv pause`, and `/msmv stop` retain progress. Pause stops pricing and saving; unread rows continue copying while the AH is open. Combat, auction closure and data timeouts also pause.
 
-The existing buffer must remain available. Another full-scanning addon, a changed market, or a replaced buffer prevents resume. Use `/msmv discard` to abandon incomplete work deliberately. Reloading or quitting ends the session's unfinished scan. These actions keep completed prices and retain the persistent **15-minute minimum interval** between new requests. The server may impose additional limits.
+Keep the AH open until **Local copy** says **complete**. Then it can be closed and reopened safely. Outside combat at an auctioneer, **Resume scan** or `/msmv resume` uses that local copy without another request or a changed cooldown. A response received while paused stays staged until Resume.
+
+If the native buffer disappears before copying finishes, progress remains PAUSED. Retry if the original buffer returns. If it does not, **Restart scan** becomes available after the cooldown; clicking it starts a fresh snapshot without mixing partial data. `/msmv restart` offers the same operation. The original **15-minute minimum interval** and server limits still apply.
+
+A changed market, incompatible buffer, restricted data or a competing request during an incomplete copy prevents unsafe merging. A complete local copy is independent of later native buffer changes. `/msmv discard` abandons unfinished work. Reloading or quitting also ends it; completed prices and settings remain.
 
 Only a fully processed response replaces prices. An explicit completed empty response clears that market's listings. Missing or partial responses do not. Bid-only and sold rows do not supply buyout prices.
 
@@ -71,8 +79,8 @@ Use a normal logout, exit or `/reload` to let WoW write completed prices and set
 
 ## Reporting a problem
 
-Open `/msmv diagnostics` and copy the text. Include the recipe name/ID, profession, selected reagent choices, scan age, exact Lua error, and a screenshot if the layout is wrong. Diagnostics identify **Test revision: 1** and the scan's resume phase.
+Open `/msmv diagnostics` and copy the text. Include the recipe name/ID, profession, selected reagent choices, scan age, exact Lua error, and a screenshot if the layout is wrong. Diagnostics identify **Test revision: 2** and show local-copy progress, resume phase, recipe-link availability, and catalog build/publication counts.
 
-For a pause problem, capture diagnostics before pausing and after resuming. A changed request count on Resume is a regression. For crafting, compare native quantities and individual material/output AH prices with the displayed totals.
+For a pause problem, capture diagnostics before pausing and after resuming. Resuming a complete local copy must leave the request count unchanged. A fresh restart after a lost incomplete buffer adds one request. For crafting, compare native quantities and individual material/output AH prices with the displayed totals.
 
-Price history is the next feature in this beta. It is not collected by test revision 1.
+Price history is the next feature in this beta. It is not collected by test revision 2.

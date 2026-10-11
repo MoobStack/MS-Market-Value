@@ -1,12 +1,12 @@
-# Test revision 1: live checks
+# Test revision 2: live checks
 
-Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 1**, on the Forever client. Local fixtures do not establish native UI fit or server buffer retention.
+Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 2**, on the Forever client. Local fixtures do not establish native UI fit, link rendering or server timing.
 
 ## Install and baseline
 
 - [ ] Close WoW, replace the addon with the Clean ZIP, preserve WTF, and restart.
 - [ ] Enable script errors with `/console scriptErrors 1`.
-- [ ] Verify **Test revision: 1** in `/msmv diagnostics`, with Interface 16001 and the expected market key.
+- [ ] Verify **Test revision: 2** in `/msmv diagnostics`, with Interface 16001 and the expected market key.
 - [ ] Confirm the previous completed prices, tooltip settings and DE exclusions remain.
 - [ ] Open an auctioneer: Buy remains selected, one MS tab appears, and the scan/settings controls fit at your UI scale.
 
@@ -17,11 +17,16 @@ Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 1**, on the Forever clie
 - [ ] Check a profitable recipe and a losing recipe. Confirm `profit = sale - materials` and `% = profit / materials × 100`, before fees.
 - [ ] Check a multi-item output. Cost is per craft; sale uses the number produced; cost per item divides by output count.
 - [ ] If output quantity varies, check both endpoints. The ranking uses minimum output.
-- [ ] Open **Profitable recipes**, switch Profit / craft and Return %, page through results, and select a row. It selects the native recipe and does not craft anything.
+- [ ] Leave **Profitable recipes** open for a minute while item data loads. Rows/page count stay stable; catalog build/publication counts stop increasing for unchanged data.
+- [ ] Switch Profit / craft and Return %, page through results, and select a row. It selects the native recipe and does not craft anything.
+- [ ] Complete a new price scan while the profession stays open. The previous list remains visible until a complete refresh replaces it; the displayed scan age follows the published list.
 - [ ] Confirm missing material prices prevent a full cost, profit and quote. Missing output price still allows a complete material quote.
 - [ ] Change optional or alternative reagents where supported. The selected recipe follows public allocations; incomplete choices remain unavailable.
 - [ ] Test Cooking and a direct Enchanting service. A service has material cost/quote without a fabricated auction profit.
-- [ ] Apply 0%, then 25% markup. Confirm the quote equals material cost × 1.25, can be copied, and the setting persists after a normal save/reload.
+- [ ] Apply 0%, then 25% markup. A one-output/service quote equals material cost × 1.25 and ends in **ea**. Fixed multi-item outputs divide by quantity; variable yields say **per craft**.
+- [ ] For Enchant Chest - Lesser Absorption, compare the quote link with shift-clicking the native recipe. **Insert in chat** opens a draft with the same clickable recipe link and no extra markup wording. It sends nothing until you choose a channel and press Enter.
+- [ ] Change recipes/markup with the quote focused. The previous quote is replaced correctly. Missing material prices disable Insert in chat.
+- [ ] Verify quote markup persists after a normal save/reload.
 - [ ] Close/reopen the crafting window with its MS button and `/msmv craft`; close the profession and confirm the addon window closes.
 - [ ] Check long recipe/material names, window dragging, Escape, UI scales and readability. Report overlap with a screenshot.
 
@@ -37,7 +42,9 @@ Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 1**, on the Forever clie
 - [ ] Start one permitted scan and capture diagnostics. Click Pause while it is processing; the previous completed timestamp/prices remain usable.
 - [ ] Click Resume during the full-scan cooldown. It continues staged work and does **not** increase the session request count.
 - [ ] Pause while waiting for a response if possible. A response received while paused stays staged until Resume.
-- [ ] Close/reopen the auctioneer during processing and resume. Record whether Forever retains the buffer; an unavailable buffer must fail clearly and keep previous prices.
+- [ ] Wait for **Local copy: complete**, pause pricing, close/reopen the auctioneer and click Resume during cooldown. It finishes the same local scan with no new request, even if the client cleared its buffer.
+- [ ] Pause before copying finishes while keeping the AH open. Copy progress continues; staged pricing and completed prices remain unchanged. Close/reopen after copy completion, then resume.
+- [ ] If the AH closes before copying finishes and loses unread rows, Resume stays PAUSED with progress retained. Retry if the original buffer returns. Otherwise, after cooldown, Restart starts one fresh request without mixing partial prices. Capture diagnostics for this case.
 - [ ] If combat interrupts a scan, confirm PAUSED, then resume outside combat at an auctioneer.
 - [ ] If native item data is delayed, resume after a timeout. Accepted rows must not be counted twice.
 - [ ] Confirm COMPLETE accounts for the full response, updates the saved timestamp once, and leaves the original request cooldown intact.
@@ -51,4 +58,4 @@ Test `1.1.0-beta / 2026-10-11-beta001`, **Test revision 1**, on the Forever clie
 - [ ] Compare several current AH listings, including enchanting materials and a signed-suffix item, with saved unit prices.
 - [ ] Keep different rulesets/factions isolated and verify a same-market reporting-host change reuses the cache.
 
-Send `/msmv diagnostics`, the profession and recipe name/ID, exact Lua errors, and the failed checklist item. For resume, include before/after request counts and staged-row progress. Price history is not part of this revision's checks.
+Send `/msmv diagnostics`, the profession and recipe name/ID, exact Lua errors, and the failed checklist item. For resume, include before/after request counts, local-copy completion and staged-row progress. For a changing recipe list, include catalog build/publication counts while the same profession remains open. Price history is not part of this revision's checks.

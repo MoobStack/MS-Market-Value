@@ -1,6 +1,6 @@
 local _, A = ...
 local U, D, V = A.Util, A.DB, A.Valuation
-local C = { rows = {}, cursor = 1, generation = 0, dirty = true }
+local C = { rows = {}, cursor = 1, generation = 0, dirty = true, builds = 0, publications = 0, names = {}, pendingNames = {} }
 A.Crafting = C
 
 local MAX_ID, MAX_QUANTITY, MAX_RECIPES = 2147483647, 1000000, 20000
@@ -60,6 +60,50 @@ function C.Quote(cost, markup)
     if not U.Number(cost, 0, 9007199254740991) or not U.Number(markup, 0, 1000, true) then return nil end
     local quote = cost * (1 + markup / 100)
     return U.Number(quote, 0, 9007199254740991) and quote or nil
+end
+
+function C.MaterialName(id)
+    if C.names[id] then return C.names[id] end
+    -- Native item callbacks can arrive during the getter. Clear the pending
+    -- marker first so a successful-name event cannot recursively request it.
+    C.names[id], C.pendingNames[id] = A.DEProfile.materials[id] or ("Item " .. id), nil
+    local name = C_Item and Call(C_Item.GetItemInfo, id)
+    if U.String(name) then
+        C.names[id], C.pendingNames[id] = name, nil
+    else
+        C.pendingNames[id] = true
+    end
+    return C.names[id]
+end
+
+function C.OnItemInfo(id)
+    if not C.pendingNames[id] then return end
+    C.names[id] = nil
+    local name = C.MaterialName(id)
+    local function Rename(row)
+        for _, material in ipairs(row and row.materials or {}) do
+            if material.id == id then material.name = name end
+        end
+    end
+    Rename(C.selected)
+    for _, row in ipairs(C.rows) do Rename(row) end
+    for _, row in ipairs(C.buildRows or {}) do Rename(row) end
+end
+
+function C.RecipeLink(id)
+    if not U.Number(id, 1, MAX_ID, true) then return nil end
+    local value = C_TradeSkillUI and Call(C_TradeSkillUI.GetRecipeLink, id)
+    if U.String(value) and #value <= 1024 and string.match(value, "|H[%a]+:[^|]+|h%[[^|]+%]|h") then return value end
+end
+
+function C.QuoteText(row)
+    if not row or not U.Number(row.quote, 0, 9007199254740991) then return nil end
+    local name = C.RecipeLink(row.recipeID) or row.name
+    if row.service then return name .. " - " .. U.Money(row.quote) .. " ea" end
+    if row.quantityMin and row.quantityMin == row.quantityMax then
+        return name .. " - " .. U.Money(row.quote / row.quantityMin) .. " ea"
+    end
+    return name .. " - " .. U.Money(row.quote) .. " per craft"
 end
 
 function C.Analyze(recipeID, form, snapshot)
@@ -139,7 +183,7 @@ function C.Analyze(recipeID, form, snapshot)
         local quantity = quantities[id]
         if not U.Number(quantity, 1, MAX_QUANTITY, true) then return Unavailable("Invalid material quantity.") end
         local price, mode = D.Price(id, nil, snapshot)
-        local material = { id = id, quantity = quantity, name = V.MaterialName(id), mode = mode }
+        local material = { id = id, quantity = quantity, name = C.MaterialName(id), mode = mode }
         if price then
             material.unitPrice, material.total = price.low, price.low * quantity
             result.subtotal = result.subtotal + material.total
@@ -201,24 +245,42 @@ function C.Invalidate()
     C.generation = C.generation + 1
 end
 
-function C.BeginCatalog()
-    C.rows, C.ids, C.cursor, C.ready, C.skipped = {}, {}, 1, false, 0
-    C.dirty, C.rankedCache, C.catalogScope = false, {}, "full"
-    C.snapshot = D.Snapshot()
+function C.RequestCatalogCheck()
+    C.checkRequested = true
+end
+
+local function RecipeIDs()
     local ids = C.Supported() and Call(C_TradeSkillUI.GetAllRecipeIDs)
+    local scope = "full"
     if not U.Table(ids) and C.Supported() then
-        ids = Call(C_TradeSkillUI.GetFilteredRecipeIDs)
-        C.catalogScope = "filtered"
+        ids, scope = Call(C_TradeSkillUI.GetFilteredRecipeIDs), "filtered"
     end
-    if not U.Table(ids) then C.reason = "The full recipe catalog API is unavailable."; C.ready = true; return end
-    local seen = {}
+    if not U.Table(ids) then return nil, scope, "The full recipe catalog API is unavailable." end
+    local result, seen = {}, {}
     for index, id in ipairs(ids) do
         if index > MAX_RECIPES or not U.Number(id, 1, MAX_ID, true) then
-            C.reason = "The recipe catalog is restricted or oversized."; C.ids = {}; C.ready = true; return
+            return nil, scope, "The recipe catalog is restricted or oversized."
         end
-        if not seen[id] then C.ids[#C.ids + 1] = id; seen[id] = true end
+        if not seen[id] then result[#result + 1] = id; seen[id] = true end
     end
-    C.reason = nil
+    table.sort(result)
+    return result, scope
+end
+
+local function Publish()
+    C.rows, C.skipped, C.publishedSnapshot = C.buildRows, C.buildSkipped, C.snapshot
+    C.buildRows, C.buildSkipped, C.ready, C.rankedCache = nil, nil, true, {}
+    C.publications = C.publications + 1
+end
+
+function C.BeginCatalog()
+    C.buildRows, C.cursor, C.ready, C.buildSkipped = {}, 1, false, 0
+    C.dirty, C.checkRequested = false, false
+    C.snapshot = D.Snapshot()
+    local ids, scope, reason = RecipeIDs()
+    C.ids, C.catalogScope, C.reason = ids or {}, scope, reason
+    C.builds = C.builds + 1
+    if reason or #C.ids == 0 then Publish() end
 end
 
 function C.Ranked(mode)
@@ -252,22 +314,40 @@ function C.Tick()
     end
     if not C.wasOpen then C.Invalidate() end
     C.wasOpen = true
+    local marketKey = U.MarketKey()
+    if marketKey ~= C.marketKey then
+        C.marketKey, C.rows, C.skipped, C.rankedCache, C.publishedSnapshot = marketKey, {}, 0, {}, nil
+        C.Invalidate()
+    end
     local profession = C.Supported() and Call(C_TradeSkillUI.GetBaseProfessionInfo)
     local professionID = U.Table(profession) and profession.professionID
     if not U.Number(professionID, 1, MAX_ID, true) then professionID = nil end
-    if professionID ~= C.professionID then C.professionID = professionID; C.Invalidate() end
+    if professionID ~= C.professionID then
+        C.professionID, C.rows, C.skipped, C.rankedCache, C.publishedSnapshot = professionID, {}, 0, {}, nil
+        C.Invalidate()
+    end
     if C.snapshot ~= D.Snapshot() then C.Invalidate() end
+    -- List events also report harmless item/filter updates. A changed ID set
+    -- warrants a fresh valuation; another copy of the same event does not.
+    if C.checkRequested and C.ready and U.Mono() >= (C.nextCatalogCheck or 0) then
+        C.checkRequested, C.nextCatalogCheck = false, U.Mono() + 1
+        local ids, scope, reason = RecipeIDs()
+        local changed = reason ~= C.reason or scope ~= C.catalogScope or (ids and #ids ~= #C.ids)
+        if not changed and ids then for index, id in ipairs(ids) do if id ~= C.ids[index] then changed = true; break end end end
+        if changed then C.Invalidate() end
+    end
     if C.dirty then C.BeginCatalog() end
     if C.ids and not C.ready then
         local start = debugprofilestop and debugprofilestop() or 0
         for _ = 1, 20 do
             local id = C.ids[C.cursor]
-            if not id then C.ready = true; break end
+            if not id then Publish(); break end
             local row = C.Analyze(id, nil, C.snapshot)
-            if row then C.rows[#C.rows + 1] = row; if not row.profitMin then C.skipped = C.skipped + 1 end end
+            if row then C.buildRows[#C.buildRows + 1] = row; if not row.profitMin then C.buildSkipped = C.buildSkipped + 1 end end
             C.cursor = C.cursor + 1
             if debugprofilestop and debugprofilestop() - start >= A.FRAME_BUDGET_MS then break end
         end
+        if not C.ready and C.cursor > #C.ids then Publish() end
     end
     local selected = Call(form.GetRecipeInfo, form)
     C.selected = U.Table(selected) and C.Analyze(selected.recipeID, form) or nil
