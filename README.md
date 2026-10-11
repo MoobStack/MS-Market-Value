@@ -37,6 +37,4 @@ Crafting uses the latest scan's lowest unit buyouts and values owned materials a
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for calculations and controls, [CHANGELOG.md](CHANGELOG.md) for changes, [UPGRADE.md](UPGRADE.md) for backup/rollback, and [GIT-WORKFLOW.md](GIT-WORKFLOW.md) for source recovery and publication. [ARCHITECTURE.md](ARCHITECTURE.md), [COMPATIBILITY.md](COMPATIBILITY.md) and [VALIDATION.md](VALIDATION.md) cover implementation and testing.
 
-**239/239 local Lua 5.1 tests pass.** The user reports revision 4 functioning properly; supplied diagnostics confirm saved prices, a complete craft valuation and one history day. See [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) for that evidence and remaining coverage.
-
 MoobStack is an independent community publisher, unaffiliated with Blizzard Entertainment or any server project. World of Warcraft and related marks belong to their owners.
