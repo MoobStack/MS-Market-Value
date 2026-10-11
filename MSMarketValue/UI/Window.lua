@@ -63,7 +63,6 @@ function UI.DiagnosticsText()
     local market = U.MarketInfo()
     local lines = {
         A.TITLE .. " " .. A.VERSION .. " / " .. A.BUILD,
-        "Test revision: " .. tostring(A.TEST_REVISION),
         "Client: " .. tostring(version) .. " / " .. tostring(build) .. " / Interface " .. tostring(interface),
         "API available: " .. tostring(S.Supported()),
         "Tooltip callback installed: " .. tostring(A.Tooltips.installed or false),
@@ -101,6 +100,7 @@ function UI.DiagnosticsText()
         "Auction House tab: " .. (UI.tabInstalled and "installed" or (UI.tabReason or "waiting for the auctioneer")),
         "Disenchant profile: " .. A.DEProfile.id .. " (Forever unverified)",
     }
+    if A.TEST_REVISION then table.insert(lines, 2, "Test revision: " .. tostring(A.TEST_REVISION)) end
     local history = A.History.Status()
     lines[#lines + 1] = "Historic pricing: " .. (history.reason or (tostring(history.days) .. " UTC days for this market; retention=" .. tostring(history.retention) .. " days"))
     if history.firstDay then

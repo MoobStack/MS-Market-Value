@@ -1,62 +1,42 @@
 # MS Market Value
 
-Auction prices, crafting costs and profit, price history, vendor values, and disenchant estimates for WoW Forever. Item tooltips show each-item and actual stack prices, including during combat.
+Auction prices, crafting costs and profit, price history, vendor values and disenchant estimates for WoW Forever.
 
-| Detail | Current test package |
-|---|---|
-| Publisher | MoobStack |
-| Version | `1.1.0-beta` |
-| Build | `2026-10-11-beta001` |
-| Test revision | **4** |
-| Annotated tag | `v1.1.0-beta-test4` |
-| Target | WoW Forever 1.60.1 / Interface 16001 |
-| Saved data | Schema 1; existing completed scans and settings retained |
+**Version 1.1.0** · Build `2026-10-11-release001` · Tag `v1.1.0`
 
-## What is ready to test
+For Forever 1.60.1 / Interface 16001. Published by MoobStack.
 
-- **Crafting analysis:** material cost, sale value, gross profit or loss, and percentage return on material cost for a selected learned recipe.
-- **Recipe list:** sort by profit or return. Show profitable recipes, or include losses, break-even recipes and unavailable estimates. A complete refresh replaces the list once.
-- **Craft quotes:** `Recipe - price ea`, with the native recipe link when available. Copy the quote or insert a chat draft. Services receive material quotes without an auction sale estimate.
-- **Price history:** keep 1–30 UTC calendar days, using each day's latest completed scan. Tooltips show the average and the number of days with a price.
-- **Crafting controls:** a Show profits / Hide profits button beside the profession close button and an optional automatic opening setting. Auto-open defaults to off.
-- **Combat tooltips and scan recovery:** saved public prices stay visible in combat. Completed local auction copies resume after closing/reopening without another server request.
+## Features
+
+- Full Auction House scans with saved prices, pause/resume and recovery after closing the AH once its rows have been copied.
+- Item tooltips show vendor, historic average, recent AH and applicable disenchant values, including during combat. Actual stacks show Each / Stack totals.
+- Crafting shows material cost, sale value, profit or loss and percentage return. Sort recipes by profit or return, with an option to include unprofitable and unpriced recipes.
+- Craft quotes use the native recipe link when available. Copy a quote or insert a chat draft; sending stays under your control.
+- Keep 1–30 days of daily prices, using each UTC day's latest completed scan. Auto-open for crafting profits is optional and off by default.
 
 ## Install and use
 
-Close WoW and replace `Interface/AddOns/MSMarketValue` with the **Clean ZIP**'s addon folder. Keep WTF/SavedVariables, then restart the Forever client. Diagnostics should identify **Test revision: 4**.
+Close WoW and replace `Interface/AddOns/MSMarketValue` with the **Clean ZIP**'s addon folder. Keep WTF/SavedVariables to retain prices, history and settings. Existing users do not need a new scan just to upgrade.
 
-At an auctioneer, select **MS Market Value** and start one full scan. Only a completed scan replaces saved prices. Keep the AH open until **Local copy** is complete; incomplete work ends on reload/logout. The 15-minute request interval still applies.
+At an auctioneer, select **MS Market Value → Scan entire AH**. Keep the AH open until **Local copy** is complete. You can then pause, close/reopen and resume without another request. Incomplete work ends on reload/logout; new full requests have a 15-minute minimum interval.
 
-Open a profession, select a learned recipe, and click **Show profits** beside its close button. `/msmv craft` also opens the window with auto-open disabled. **Recipe list → Show all recipes** includes unprofitable and unpriced entries. Use **Profitable only** to switch back. In `/msmv`, choose **Crafting & history** to set auto-open and days retained; the default history length is 30 days.
+Open a profession and click **Show profits** beside its close button. **Recipe list → Show all recipes** includes losses and unavailable estimates. In `/msmv → Crafting & history`, set auto-open and history length. History defaults to 30 days.
 
 | Command | Action |
 |---|---|
-| `/msmv` | Auction tab or settings window |
-| `/msmv scan` | Start a scan, or resume paused work |
-| `/msmv pause` or `/msmv stop` | Pause and retain incomplete work |
+| `/msmv` | Open the AH tab or settings |
+| `/msmv scan` | Start a scan or resume paused work |
+| `/msmv pause` or `/msmv stop` | Pause incomplete work |
 | `/msmv resume` | Resume at an open auctioneer, outside combat |
-| `/msmv restart` | Request a fresh scan when the cooldown allows |
-| `/msmv discard` | Discard incomplete work; keep completed prices |
-| `/msmv craft` | Open crafting analysis for the open profession |
-| `/msmv status` | Scan state and saved-price age |
-| `/msmv diagnostics` | Copyable client, scan, history and crafting details |
+| `/msmv restart` | Start fresh when the cooldown allows |
+| `/msmv discard` | Discard incomplete work; keep saved prices |
+| `/msmv craft` | Open analysis for the open profession |
+| `/msmv status` or `/msmv diagnostics` | Show status or copy a problem report |
 
-## Price meaning
+Crafting uses the latest scan's lowest unit buyouts and values owned materials at market price. Profit is **before fees**; asking prices do not guarantee sales. Missing prices or unsupported recipes stay unavailable. History averages the days with a price equally; one day is enough. Disenchant outcomes use an **unverified Classic reference** for Forever.
 
-Crafting uses the latest scan's lowest unit buyouts, including the market cost of owned materials. Profit is **before auction fees**. Missing prices and unsupported recipe shapes remain unavailable; select a row for details. Asking prices do not guarantee sales.
+See [DOCUMENTATION.md](DOCUMENTATION.md) for calculations and controls, [CHANGELOG.md](CHANGELOG.md) for changes, [UPGRADE.md](UPGRADE.md) for backup/rollback, and [GIT-WORKFLOW.md](GIT-WORKFLOW.md) for source recovery and publication. [ARCHITECTURE.md](ARCHITECTURE.md), [COMPATIBILITY.md](COMPATIBILITY.md) and [VALIDATION.md](VALIDATION.md) cover implementation and testing.
 
-History averages the available daily unit lows equally. One day is enough; missing days or listings are skipped. Upgrade imports the last existing complete scan if it is within retention. Earlier scans cannot be reconstructed. Shortening retention deletes older history, without removing current prices.
+**239/239 local Lua 5.1 tests pass.** The user reports revision 4 functioning properly; supplied diagnostics confirm saved prices, a complete craft valuation and one history day. See [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) for that evidence and remaining coverage.
 
-Disenchant outcomes remain a labeled Classic reference; Forever-specific loot rules are unverified.
-
-## Documentation
-
-- [DOCUMENTATION.md](DOCUMENTATION.md): controls, calculations, history and scanning.
-- [CHANGELOG.md](CHANGELOG.md): current and earlier changes.
-- [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md), [VALIDATION.md](VALIDATION.md): local evidence and native checks.
-- [UPGRADE.md](UPGRADE.md), [GIT-WORKFLOW.md](GIT-WORKFLOW.md): installation, backup and recovery.
-- [ARCHITECTURE.md](ARCHITECTURE.md), [COMPATIBILITY.md](COMPATIBILITY.md), [docs/RESEARCH.md](docs/RESEARCH.md): implementation and source contracts.
-
-**238/238 local Lua 5.1 tests pass.** Revision 4 fixes the missing native toggle reported in revision 3. The user reports successful revision 2 resumes. Button visibility, daily history and native saving still need live checks. This package has not been published to GitHub.
-
-MoobStack is an independent community addon publisher, unaffiliated with Blizzard Entertainment or any server project. World of Warcraft and related marks belong to their owners.
+MoobStack is an independent community publisher, unaffiliated with Blizzard Entertainment or any server project. World of Warcraft and related marks belong to their owners.

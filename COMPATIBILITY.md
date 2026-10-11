@@ -2,7 +2,7 @@
 
 ## Target
 
-This test targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The earlier completed scan report was from build 70205 on PvP/Horde. The Test revision 1 report came from build 70338, exposed buffer loss on reopen and recipe-list churn, and retained 98,455 saved rows. The user reports successful revision 2 resumes under multiple conditions. The user reports a missing profession toggle in revision 3. Revision 4 corrects header layering; history, button appearance and native saving still need checks.
+Version 1.1.0 targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The user reports the final beta functioning properly on build 70338, PvP/Horde. Supplied diagnostics show saved prices, a complete recipe valuation and one history day; broader coverage is listed in [VALIDATION.md](VALIDATION.md).
 
 All three TOCs—standard, `_Camelot` and `_Forever`—describe the same addon and load order. Initialization checks the Interface number, saved schema, restricted-value API and auction functions. Different clients or Interface versions need an API review.
 
@@ -20,7 +20,7 @@ Detected market keys combine region, Forever ruleset and faction. Native positiv
 
 The generic adapter reads native learned recipes and consumed material schematics rather than maintaining a profession whitelist. It follows the visible native crafting form and includes validated selected optional reagents. A full recipe catalog is preferred; a filtered fallback is explicitly labeled and leaves native filters alone.
 
-Fixed item-reagent crafts support cost, output quantity, sale value, gross profit and return. Non-auctionable services support material quotes. Unknown material prices, incomplete variant choices, currency costs, variable reagent quantities, salvage and recrafting cannot supply a full estimate in this revision. Quality-dependent output requires selection.
+Fixed item-reagent crafts support cost, output quantity, sale value, gross profit and return. Non-auctionable services support material quotes. Unknown material prices, incomplete variant choices, currency costs, variable reagent quantities, salvage and recrafting cannot supply a full estimate in this version. Quality-dependent output requires selection.
 
 The native GetRecipeLink is used where available, matching profession-book shift-clicks. ChatFrameUtil.OpenChat opens a draft; a legacy opener is supported if present. A missing link keeps the plain recipe name. Every profession's live recipe shapes and hyperlink rendering remain part of testing.
 

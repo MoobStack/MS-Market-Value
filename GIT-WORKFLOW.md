@@ -1,83 +1,61 @@
-# Git workflow and recovery
+# Git, recovery and publication
 
-The development checkout is on `develop/1.1.0`, with testing metadata `1.1.0-beta / 2026-10-11-beta001`, Test revision 4, and annotated tag `v1.1.0-beta-test4`. `main` and `v1.0.0` retain the stable baseline. The configured origin is `https://github.com/MoobStack/MS-Market-Value.git`; a configured URL does not mean these changes were pushed.
+Release **1.1.0 / 2026-10-11-release001** is prepared on local `main`, with annotated tag `v1.1.0`. `release/1.1.0` points to the same commit; `develop/1.1.0` retains the final beta. Earlier commits and tags remain intact, including `v1.0.0` and all four 1.1.0 test revisions.
 
-## Packages
+Origin is `https://github.com/MoobStack/MS-Market-Value.git`. Before publication, the public remote was still at the 1.0.0 baseline. A configured origin or local tag does not mean the release has been published.
 
-| File | Use |
+## Packages and recovery
+
+| File | Contents |
 |---|---|
-| Clean ZIP | Install `MSMarketValue/` in the game |
-| Source ZIP | Tracked source, tests and all documentation; no `.git` |
-| Git Repository ZIP | Source plus complete `.git`, branches, commits, tags and origin |
-| Git bundle | Portable complete history and refs |
-| Documentation ZIP | User guide, changelog, test checklist, release and recovery notes |
-| SHA256 manifest | Integrity hashes for delivered files |
-| Validation JSON | Test and archive-restore results for the exact tagged commit |
+| Clean ZIP | Installable `MSMarketValue/` only |
+| Source ZIP | All tracked code, tests and documentation |
+| Git Repository ZIP | Source plus complete `.git`, branches and tags |
+| Bundle | Portable Git history and refs |
+| Documentation ZIP | All Markdown docs, release notes and metadata |
+| SHA256 / Validation JSON | Package hashes and exact-commit checks |
+| Complete Package ZIP | All of the above |
 
-Player SavedVariables are not included. Keep a separate account-data backup. Existing release tags remain immutable.
-
-## Inspect and validate
-
-Extract the Repository ZIP outside AddOns and open a terminal in `MS-Market-Value`:
+The Repository ZIP already includes `.git`; extract outside AddOns and do not initialize over it. Or restore the bundle:
 
 ```bash
-git status --short
-git branch --show-current
-git log --oneline --decorate -5
-git tag --list
-git show --stat v1.1.0-beta-test4
-git fsck --full
-python3 tools/validate.py --lua lua5.1 --luac luac5.1
-```
-
-Development requires Git, Python 3.10+ and Lua/luac 5.1. The game needs none of them. CI checks the source and fixtures on main/development pushes and pull requests; it does not publish releases. Local validation is not a remote CI result or a native WoW check.
-
-Existing commits use the project's local `MoobStack <development@moobstack.invalid>` placeholder. Configure your preferred verified Git identity for future commits; preserve existing history.
-
-## Next test revision
-
-Continue on `develop/1.1.0`. Keep `A.VERSION`, all TOC versions, and build.json.version at `1.1.0-beta`. Keep all build identifiers at `2026-10-11-beta001`.
-
-1. Implement one feature or a concrete fix and update focused behavioral fixtures.
-2. Advance `A.TEST_REVISION`, all three `X-Test-Revision` values, and build.json.testRevision together.
-3. Set build.json.gitTag to the new immutable `v1.1.0-beta-testN`. Update archiveDate to the package date; buildNumber remains 001.
-4. Update the changelog, user docs, release notes and validation/live-check status.
-5. Validate, review the staged diff and commit. Create a new annotated tag on that exact commit.
-
-For the next package, use `v1.1.0-beta-test5`; never move existing test tags to a different commit. Crafting and daily history are implemented for testing; focus subsequent revisions on native feedback and concrete fixes.
-
-```bash
-python3 tools/validate.py --lua lua5.1 --luac luac5.1
-git diff --check
-git add .
-git diff --cached
-git commit -m "Describe the implemented change"
-git tag -a v1.1.0-beta-test5 -m "MS Market Value 1.1.0 beta, test revision 5"
-python3 tools/package.py
-```
-
-The example tag applies only after metadata has advanced to revision 5. Packaging requires a clean checkout at the annotated tag named in build.json. It checks Git objects, ZIP CRC, bundle integrity and runtime/source/tag byte parity, then writes files to ignored `dist/`.
-
-## Recovery
-
-The Repository ZIP already includes `.git`; do not initialize a new repository over it. Alternatively, restore the bundle:
-
-```bash
-git clone MoobStack-MSMarketValue-v1.1.0-beta-test4.bundle MS-Market-Value-restored
+git clone MoobStack-MSMarketValue-v1.1.0.bundle MS-Market-Value-restored
 cd MS-Market-Value-restored
-git switch develop/1.1.0
-git fsck --full
-git show --stat v1.1.0-beta-test4
+git switch main
 git remote set-url origin https://github.com/MoobStack/MS-Market-Value.git
+git fsck --full
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-The bundle clone initially uses the bundle path as origin. To inspect the stable baseline, use `git switch --detach v1.0.0`; return with `git switch develop/1.1.0`. Earlier beta tags remain available. For a game rollback, use the matching Clean ZIP with WoW closed; see [UPGRADE.md](UPGRADE.md).
+`git switch --detach v1.0.0` inspects the previous release; return with `git switch main`. The game needs no development tools. Keep player SavedVariables separately; code packages exclude them.
 
-## Publication
+## Publish
 
-This package is local testing work, not an official 1.1.0 release. If test packages are shared through GitHub, publish them as **prereleases** using their exact test tags. Verify the intended repository and remote history before pushing; resolve divergence explicitly and do not force-push.
+Use a GitHub connection or authenticated Git/GitHub CLI with write access to **MoobStack/MS-Market-Value**. Verify the repository, remote ancestry and new tag before writing. If the remote has diverged or `v1.1.0` already points elsewhere, resolve that explicitly; do not force-push or move tags.
 
-The final release follows implementation and live verification of crafting, history and both fixes. Update Bootstrap, all TOCs and build.json to stable `1.1.0`, use a release build ID and `releaseChannel: stable`, update validator gates and rewrite public notes for the finished release. Merge through the project's normal review workflow, tag the final commit as `v1.1.0`, and package that clean commit. Do not repurpose any existing tag.
+From the verified release checkout, with the eight supplied assets placed in `dist/`:
 
-Keep source, fixtures and docs in Git; keep dist, WTF, credentials, private diagnostics and temporary research out. Original project code has no selected permissive license; retain [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and bundled library terms.
+```bash
+(
+  set -e
+  git fetch origin --no-tags
+  git merge-base --is-ancestor origin/main main
+  git push --atomic origin main refs/tags/v1.1.0
+  gh release create v1.1.0 \
+    dist/MoobStack-MSMarketValue-v1.1.0-* dist/MoobStack-MSMarketValue-v1.1.0.bundle \
+    --repo MoobStack/MS-Market-Value --verify-tag --latest \
+    --title "MS Market Value 1.1.0" --notes-file GITHUB-RELEASE.md
+  gh release view v1.1.0 --repo MoobStack/MS-Market-Value \
+    --json url,tagName,isDraft,isPrerelease,assets
+)
+```
+
+Run each step only after the preceding one succeeds. Push the explicit new tag, not all local tags: existing remote tag objects may differ while retaining the same release commit. Keep the release stable, with draft/prerelease disabled. Check the published commit, assets, notes and CI result. Do not overwrite an existing release or asset to hide a mismatch. The [GitHub CLI manual](https://cli.github.com/manual/gh_release_create) describes these flags.
+
+The normal packager creates Clean/Source/Repository ZIPs, the bundle and a manifest. The supplied delivery adds documentation, exact-commit restore results and the Complete Package. Keep those supplied assets together when publishing.
+
+## Further development
+
+Start a new branch from `main` and choose the next version for its scope. Update Bootstrap, all TOCs, build.json, the changelog, docs and validator together. Stable packages have no test-revision field; testing uses a new beta version/build and immutable test tags. Never reuse `v1.1.0` or any earlier tag.
+
+Existing commits use the local `MoobStack <development@moobstack.invalid>` placeholder. Configure a verified identity for new work. CI validates pushes/PRs; it does not publish releases. Keep source, tests and docs in Git; exclude dist, credentials and player data. Preserve [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and bundled licenses.

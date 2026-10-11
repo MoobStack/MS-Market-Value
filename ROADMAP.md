@@ -1,20 +1,11 @@
-# Roadmap to 1.1.0
+# Future work
 
-Testing stays on `1.1.0-beta / 2026-10-11-beta001`. Immutable test tags distinguish revisions. Official `1.1.0` follows live verification of crafting, history and the scan/tooltip fixes.
+Version 1.1.0 includes crafting analysis and quotes, both recipe-list filters, daily history with 1–30 day retention, combat prices and scan recovery. The four beta revisions and their notes remain in Git.
 
-## Implemented for testing
+Possible follow-ups:
 
-- Revision 1: recipe cost, gross profit/loss, return percentage, recipe ranking and markup quotes; combat prices and pause/resume.
-- Revision 2: local auction-copy recovery, stable recipe publication, concise native-linked quotes and recovery diagnostics.
-- Revision 3: daily history, 1–30 day retention, tooltip averages/sample days, crafting toggle/auto-open preference and an all-recipes filter.
-- Revision 4: fix the missing profession toggle by accounting for the native title and border; add visibility diagnostics and page-hide handling.
+- Optional net profit after auction fees, once Forever's fee rules are confirmed.
+- A material shopping list for a chosen craft count, plus quotes for customer-supplied materials and labor.
+- A small history trend view with dates and sample counts.
 
-The user reports successful revision 2 resumes under multiple test conditions. The missing revision 3 toggle has a local fix in revision 4. Daily rollover, retention, native saving and revised UI checks remain. Every profession needs representative recipes, including services, missing prices and variable output. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
-
-## Useful follow-ups
-
-- Optional auction-cut-aware net profit, with gross profit still clearly identified. Confirm Forever's fee rules before assuming a percentage; deposits and relisting need separate treatment.
-- A material shopping list for a chosen craft count, with owned/missing quantities and a draft quote for customer-supplied materials plus a labor fee.
-- A small price trend view with dates and sample counts. Daily asking-price history does not establish sale volume or liquidity.
-
-These are proposals, not implemented features or release requirements. Forever-specific disenchant probabilities remain a separate evidence task. Buying, posting and crafting automation are not planned for 1.1.0.
+These are proposals. Daily asking prices do not establish sale volume. Forever-specific disenchant outcomes and broader profession/ruleset coverage remain testing work; see [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md). Buying, posting and crafting automation are outside the current scope.

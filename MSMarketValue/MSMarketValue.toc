@@ -2,13 +2,12 @@
 ## Title: MS Market Value
 ## Notes: Auction prices and history, crafting costs and profit, vendor sell prices, and disenchant estimates.
 ## Author: MoobStack
-## Version: 1.1.0-beta
+## Version: 1.1.0
 ## Category: Auction & Economy
 ## IconTexture: Interface\Icons\INV_Misc_Coin_02
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
-## X-Build: 2026-10-11-beta001
-## X-Test-Revision: 4
+## X-Build: 2026-10-11-release001
 
 Bootstrap.lua
 Libs\LibStub\LibStub.lua

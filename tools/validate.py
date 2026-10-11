@@ -26,6 +26,8 @@ def run(lua: str, luac: str | None = None) -> None:
         assert channel == "stable", "Unknown release channel"
         assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", meta["version"]), "Use a stable semantic version"
         assert meta["gitTag"] == "v" + meta["version"], "Stable releases use an immutable version tag"
+        assert re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}-release[0-9]{3}", meta["build"]), "Use a stable release build"
+        assert "testRevision" not in meta, "Stable metadata must not retain a test revision"
     assert f'## Interface: {meta["interface"]}\n' in text
     assert f'## Version: {meta["version"]}\n' in text
     assert f'## X-Build: {meta["build"]}\n' in text
@@ -35,6 +37,8 @@ def run(lua: str, luac: str | None = None) -> None:
     if channel == "beta":
         assert f'A.TEST_REVISION = {meta["testRevision"]}' in bootstrap
         assert f'## X-Test-Revision: {meta["testRevision"]}\n' in text
+    else:
+        assert "A.TEST_REVISION" not in bootstrap and "## X-Test-Revision:" not in text
     assert f'A.INTERFACE = {meta["interface"]}' in bootstrap
     assert "## SavedVariables: MSMarketValueDB\n" in text
     assert "## LoadSavedVariablesFirst: 1\n" in text

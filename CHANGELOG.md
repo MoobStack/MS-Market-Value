@@ -1,6 +1,19 @@
 # Changelog
 
-The current 1.1.0 work uses one testing version and build. Test revision numbers and immutable tags distinguish packages. Earlier releases and their evidence remain below.
+Release history and the four 1.1.0 beta revisions are retained below.
+
+## 1.1.0 — 2026-10-11
+
+Build `2026-10-11-release001`; annotated tag `v1.1.0`.
+
+- Add selected-recipe crafting costs, sale value, gross profit/loss, return percentage and markup quotes with native recipe links when available.
+- Add stable recipe rankings by profit or return, with profitable-only and all-recipes views. Services can receive material quotes without an invented sale estimate.
+- Add daily price history with 1–30 day retention and tooltip averages/sample counts. Each UTC day's latest completed scan replaces its entry; partial scans never enter history.
+- Add a profession Show profits / Hide profits toggle and optional auto-open. Keep tooltip prices visible in combat.
+- Improve scan pause/resume, copied-buffer recovery and recipe-list stability. Preserve existing prices, history, settings and all earlier Git tags.
+- Promote the final beta to stable metadata and shorten the release, user and recovery docs.
+
+**239/239 local Lua 5.1 tests pass.** The user reports revision 4 functioning properly. Supplied diagnostics show 96,590 saved auction rows, 3,179 priced items, a complete craft valuation and one history day. See [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) for the evidence and remaining coverage. DE outcomes remain a Classic reference.
 
 ## 1.1.0-beta — Test revision 4 — 2026-10-11
 

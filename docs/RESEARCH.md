@@ -107,6 +107,12 @@ The user reports that Tailoring has no visible toggle in revision 3 and auto-ope
 
 Revision 4 derives the toggle's level and strata from the actual native header and page rather than assuming an offset from CraftingPage. It belongs to CraftingPage, anchors beside the close button, and hides the analysis window when that page hides. The header fixture now includes the native border/title levels; the added regression fails against unchanged revision 3 source and passes with the fix. Diagnostics report visible state and actual levels. Source and local fixtures do not prove in-game appearance; Tailoring and another profession remain live checks.
 
+## Version 1.1.0 release
+
+The user supplied revision 4 diagnostics from build 70338 and reports proper operation. The stable release retains that runtime, changes release identity and removes the beta diagnostic label. [Release evidence](RELEASE-1.1.0.md) records the supplied scan, crafting and one-day history results. Broader native coverage remains explicit.
+
+The [GitHub CLI release manual](https://cli.github.com/manual/gh_release_create) was rechecked on 2026-10-11 for exact-tag verification, supplied notes/assets and stable/latest publication. The public remote still matched the 1.0.0 baseline before release preparation. Remote publication requires write access and separate verification; it is not established by local tagging or packaging.
+
 ## Evidence boundaries
 
 The local source/API review supports the implementation choice. The successful user scan report establishes completion for the supplied PvP replication buffer. Neither that report nor source review proves that every ruleset returns all intended auctions, that the client writes SavedVariables successfully, that the native UI lays out correctly, or that the DE model matches actual loot.

@@ -1,6 +1,6 @@
 # Architecture
 
-`1.1.0-beta / 2026-10-11-beta001` · Test revision 4 · Saved-data schema 1
+`1.1.0 / 2026-10-11-release001` · Saved-data schema 1
 
 ## Runtime
 
@@ -62,8 +62,8 @@ Average caching is limited to 4,096 queried item/variant/market keys and invalid
 
 ## Saved data and builds
 
-Schema 1 retains `markets`, settings, exclusions, window position and `cooldownUntil`. The beta adds `quoteMarkup` (0–1000, default 0), `historyDays` (1–30, default 30), `showHistory` (true), `craftAutoOpen` (false), and `showAllRecipes` (false) settings. Completed price records keep unit minimum, listed units and auction count; personal auction rows and sellers are not saved. Existing schema-1 snapshots remain usable.
+Schema 1 retains `markets`, settings, exclusions, window position and `cooldownUntil`. Version 1.1.0 adds `quoteMarkup` (0–1000, default 0), `historyDays` (1–30, default 30), `showHistory` (true), `craftAutoOpen` (false), and `showAllRecipes` (false) settings. Completed price records keep unit minimum, listed units and auction count; personal auction rows and sellers are not saved. Existing schema-1 snapshots remain usable.
 
 Known Forever markets use region/ruleset/faction keys; host suffixes do not split a detected ruleset. Unknown aliases remain isolated and old caches are not promoted automatically. History has its own optional schema-1 root: `history = { schema = 1, markets = { [marketKey] = { [UTCday] = { startedAt, prices, variants } } } }`. Prices/variants contain only numeric unit lows. Initialization validates/prunes saved history, and first upgrade imports the latest existing complete snapshot per market once if it is in retention. An unsupported history root is preserved and leaves current pricing active.
 
-The testing version and build remain fixed. `TEST_REVISION` and the matching build.json/TOC fields advance for each immutable test tag. Packaging requires a clean tagged checkout and verifies runtime/source/tag parity. Lua 5.1 fixtures exercise behavior; live UI, buffer retention and client disk persistence require native checks.
+Stable metadata has no test-revision field. The `v1.1.0` tag identifies this release; prior beta tags remain immutable. Packaging requires a clean tagged checkout and verifies runtime/source/tag parity. Lua 5.1 fixtures exercise behavior; live UI, buffer retention and client disk persistence require native checks.

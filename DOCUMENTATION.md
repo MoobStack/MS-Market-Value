@@ -1,6 +1,6 @@
 # Using MS Market Value
 
-`1.1.0-beta / 2026-10-11-beta001` · Test revision **4**
+`1.1.0 / 2026-10-11-release001`
 
 ## Crafting
 
@@ -65,4 +65,4 @@ If rows disappear before copying finishes, progress stays paused. Retry if the o
 
 `MSMarketValueDB` keeps current snapshots, compact daily history, settings, exclusions, window position and cooldown. Use normal logout, exit or `/reload` to let WoW save it. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` with WoW closed. Code archives do not include personal data.
 
-Copy `/msmv diagnostics` when reporting a problem. It identifies **Test revision: 4**, history dates/retention, crafting preferences, toggle visibility/header levels, scan progress, and catalog build/publication counts. Include the profession/recipe, exact error and a screenshot for layout issues. For resume, capture before/after diagnostics; a complete local resume must keep the request count unchanged. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
+Copy `/msmv diagnostics` when reporting a problem. It identifies the release version/build, history dates/retention, crafting preferences, toggle visibility/header levels, scan progress, and catalog build/publication counts. Include the profession/recipe, exact error and a screenshot for layout issues. For resume, capture before/after diagnostics; a complete local resume must keep the request count unchanged. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
