@@ -1,11 +1,9 @@
-# Future work
+# Next steps
 
-Version 1.1.0 includes crafting analysis and quotes, both recipe-list filters, daily history with 1–30 day retention, combat prices and scan recovery. The four beta revisions and their notes remain in Git.
+The current testing line is **1.2.0-beta / 2026-10-20-beta001**. Advance test revisions while retaining that version/build until publication.
 
-Possible follow-ups:
+- Verify vendor purchase costs, discounts and persistence on Forever.
+- Check the opportunities tab's fit and useful signals against live saved history.
+- Tune filters and presentation from those results before the official 1.2.0 release.
 
-- Optional net profit after auction fees, once Forever's fee rules are confirmed.
-- A material shopping list for a chosen craft count, plus quotes for customer-supplied materials and labor.
-- A small history trend view with dates and sample counts.
-
-These are proposals. Daily asking prices do not establish sale volume. Forever-specific disenchant outcomes and broader profession/ruleset coverage remain testing work; see [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md). Buying, posting and crafting automation are outside the current scope.
+Future work may add richer price charts and more market context if reliable source data becomes available. Asking-price history alone cannot provide sale rates.

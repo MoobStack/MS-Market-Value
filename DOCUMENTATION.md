@@ -1,16 +1,16 @@
 # Using MS Market Value
 
-`1.1.0 / 2026-10-11-release001`
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 1
 
 ## Crafting
 
 Open a profession, select a learned recipe, and click **Show profits** beside the profession close button. It remains available with auto-open disabled, including before a recipe is selected. The same button becomes **Hide profits**. `/msmv craft` also opens the window. Closing it keeps it closed during that profession session.
 
-**Selected recipe** follows recipe and reagent changes. Owned materials use their market value; required tools are not purchased afresh for each craft.
+**Selected recipe** follows recipe and reagent changes. Vendor materials use the player’s observed purchase cost; other owned materials use their market value; required tools are not purchased afresh for each craft.
 
 | Value | Calculation |
 |---|---|
-| Materials / craft | Required quantities × latest unit material buyouts |
+| Materials / craft | Required quantities × vendor purchase cost or latest AH unit buyout |
 | Cost / item | Material cost divided by output quantity |
 | Sale / craft | Unit output buyout × output quantity |
 | Gross profit / craft | Sale value minus material cost |
@@ -24,6 +24,12 @@ Materials costing 4g and an output listed at 5g give **+1g / +25%**. A 3g output
 Variable outputs show quantity and value ranges; ranking uses minimum yield. The list keeps its last complete results during a refresh. A filtered native-catalog fallback is labeled and leaves the profession's filters alone.
 
 The selected recipe uses readable optional/alternative allocations. The catalog uses fixed required reagents with no optional extras. Missing material prices prevent full cost, profit and quote; missing output prices still allow a material quote. Services such as direct enchants have quotes without invented auction profits. Unresolved choices, currencies, variable material quantities, salvage and recrafting remain unavailable. Quality-dependent outputs need selection.
+
+## Vendor materials and market opportunities
+
+Visit a supplies vendor once to learn your actual purchase prices, including current discounts and bundle quantities. Normal unlimited-stock, gold-only items use those costs in recipes, rankings and quotes. Material rows say **vendor** or **visit supplier**. Prices are per character and market, expire after seven days, and need refreshing after a detected reputation-tier change. Unseen known supplies remain unavailable rather than using marked-up AH prices. [Vendor costs](docs/VENDOR-COSTS.md) covers the details.
+
+At an auctioneer, **MS Opportunities** appears immediately before **MS Market Value**. Resale, Rising, Falling and All signals use completed scans already stored by the addon. The default requires three earlier priced days per item. Same-day scans do not add days. Results exclude stale scans and keep matching suffix series separate. [Market opportunities](docs/MARKET-OPPORTUNITIES.md) explains the filters and calculations.
 
 ## Quotes
 
@@ -65,4 +71,4 @@ If rows disappear before copying finishes, progress stays paused. Retry if the o
 
 `MSMarketValueDB` keeps current snapshots, compact daily history, settings, exclusions, window position and cooldown. Use normal logout, exit or `/reload` to let WoW save it. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` with WoW closed. Code archives do not include personal data.
 
-Copy `/msmv diagnostics` when reporting a problem. It identifies the release version/build, history dates/retention, crafting preferences, toggle visibility/header levels, scan progress, and catalog build/publication counts. Include the profession/recipe, exact error and a screenshot for layout issues. For resume, capture before/after diagnostics; a complete local resume must keep the request count unchanged. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
+Copy `/msmv diagnostics` when reporting a problem. It identifies the version/build and test revision, vendor observations, market analysis counts, history dates/retention, crafting preferences, toggle visibility/header levels, scan progress, and catalog build/publication counts. Include the profession/recipe, exact error and a screenshot for layout issues. For resume, capture before/after diagnostics; a complete local resume must keep the request count unchanged. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).

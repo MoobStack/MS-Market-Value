@@ -1,10 +1,10 @@
-# Git, recovery and publication
+# Git, recovery and testing
 
-Release **1.1.0 / 2026-10-11-release001** is prepared on local `main`, with annotated tag `v1.1.0`. `release/1.1.0` points to the same commit; `develop/1.1.0` retains the final beta. Earlier commits and tags remain intact, including `v1.0.0` and all four 1.1.0 test revisions.
+The current work is on **develop/1.2.0**, tagged `v1.2.0-beta-test1`. Local `main` and `v1.1.0` retain release commit `d959424db004e24542322bd9bd7278a290f9df77`. Earlier branches, commits and all nine prior tag objects remain intact.
 
-Origin is `https://github.com/MoobStack/MS-Market-Value.git`. Before publication, the public remote was still at the 1.0.0 baseline. A configured origin or local tag does not mean the release has been published.
+Hold **1.2.0-beta / 2026-10-20-beta001** throughout testing. Increment `testRevision` and create a new annotated `v1.2.0-beta-testN` tag for each delivery. Do not move old tags. Final publication will use stable version 1.2.0 and a new release build/tag.
 
-## Packages and recovery
+## Packages
 
 | File | Contents |
 |---|---|
@@ -16,46 +16,29 @@ Origin is `https://github.com/MoobStack/MS-Market-Value.git`. Before publication
 | SHA256 / Validation JSON | Package hashes and exact-commit checks |
 | Complete Package ZIP | All of the above |
 
-The Repository ZIP already includes `.git`; extract outside AddOns and do not initialize over it. Or restore the bundle:
+All documentation is also tracked inside the full repository. Extract that package outside AddOns; do not initialize over its existing `.git`. To restore a bundle:
 
 ```bash
-git clone MoobStack-MSMarketValue-v1.1.0.bundle MS-Market-Value-restored
+git clone MoobStack-MSMarketValue-v1.2.0-beta-test1.bundle MS-Market-Value-restored
 cd MS-Market-Value-restored
-git switch main
+git switch develop/1.2.0
 git remote set-url origin https://github.com/MoobStack/MS-Market-Value.git
 git fsck --full
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-`git switch --detach v1.0.0` inspects the previous release; return with `git switch main`. The game needs no development tools. Keep player SavedVariables separately; code packages exclude them.
+Inspect the previous release with `git switch --detach v1.1.0`, then return to `develop/1.2.0`. Player SavedVariables are separate and excluded from code archives.
 
-## Publish
-
-Use a GitHub connection or authenticated Git/GitHub CLI with write access to **MoobStack/MS-Market-Value**. Verify the repository, remote ancestry and new tag before writing. If the remote has diverged or `v1.1.0` already points elsewhere, resolve that explicitly; do not force-push or move tags.
-
-From the verified release checkout, with the eight supplied assets placed in `dist/`:
+## Build and publish later
 
 ```bash
-(
-  set -e
-  git fetch origin --no-tags
-  git merge-base --is-ancestor origin/main main
-  git push --atomic origin main refs/tags/v1.1.0
-  gh release create v1.1.0 \
-    dist/MoobStack-MSMarketValue-v1.1.0-* dist/MoobStack-MSMarketValue-v1.1.0.bundle \
-    --repo MoobStack/MS-Market-Value --verify-tag --latest \
-    --title "MS Market Value 1.1.0" --notes-file GITHUB-RELEASE.md
-  gh release view v1.1.0 --repo MoobStack/MS-Market-Value \
-    --json url,tagName,isDraft,isPrerelease,assets
-)
+python3 tools/validate.py --lua lua5.1 --luac luac5.1
+git diff --check
+python3 tools/package.py
 ```
 
-Run each step only after the preceding one succeeds. Push the explicit new tag, not all local tags: existing remote tag objects may differ while retaining the same release commit. Keep the release stable, with draft/prerelease disabled. Check the published commit, assets, notes and CI result. Do not overwrite an existing release or asset to hide a mismatch. The [GitHub CLI manual](https://cli.github.com/manual/gh_release_create) describes these flags.
+Packaging requires a clean checkout at the annotated tag in build.json. The normal packager creates Clean/Source/Repository ZIPs, the bundle and a manifest. The supplied Complete Package adds documentation and independent restore results.
 
-The normal packager creates Clean/Source/Repository ZIPs, the bundle and a manifest. The supplied delivery adds documentation, exact-commit restore results and the Complete Package. Keep those supplied assets together when publishing.
+Origin remains `https://github.com/MoobStack/MS-Market-Value.git`. No remote was changed or publication performed for this test. The recovered archive's `origin/main` is historical metadata, not current remote evidence. Fetch and verify remote ancestry/tag identity before any future push. Push only the intended branch/new tag; never force-push or bulk-push old tags. CI validates pushes/PRs and does not publish releases.
 
-## Further development
-
-Start a new branch from `main` and choose the next version for its scope. Update Bootstrap, all TOCs, build.json, the changelog, docs and validator together. Stable packages have no test-revision field; testing uses a new beta version/build and immutable test tags. Never reuse `v1.1.0` or any earlier tag.
-
-Existing commits use the local `MoobStack <development@moobstack.invalid>` placeholder. Configure a verified identity for new work. CI validates pushes/PRs; it does not publish releases. Keep source, tests and docs in Git; exclude dist, credentials and player data. Preserve [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and bundled licenses.
+Existing commits use `MoobStack <development@moobstack.invalid>` as a local placeholder. Configure a verified identity for new work. Keep generated packages, credentials and player data out of Git. Retain bundled licenses and [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).

@@ -1,34 +1,32 @@
 # Validation
 
-**1.1.0 / 2026-10-11-release001** · Annotated tag `v1.1.0`
+**1.2.0-beta / 2026-10-20-beta001** · Test revision **1** · Tag `v1.2.0-beta-test1`
 
 | Check | Result |
 |---|---|
-| Lua 5.1 behavior | **239/239 passed** |
-| Runtime syntax | All 14 Lua files passed |
-| Release identity | Stable version/build; three identical TOCs; no test-revision metadata |
-| Bundled libraries | Pinned bytes and notices retained |
-| Runtime operations | No dynamic evaluation, auction transactions, automatic crafts or chat sends |
-| Live feedback | User reports revision 4 functioning properly and approves 1.1.0 |
-| Supplied diagnostics | Complete 96,590-row snapshot; 3,179 priced items; recipe 2964 valued; one history day |
-| Remote publication | Requires a verified GitHub write connection; local tests do not establish remote CI |
+| Lua 5.1 behavior | **291/291 passed** |
+| Runtime syntax | All 17 Lua files passed |
+| Identity | Fixed beta version/build; three identical TOCs; test revision 1 |
+| Dependencies | Pinned LibStub/LibAHTab bytes and notices retained |
+| Operations | No automatic auction request from market analysis; no purchases, postings, crafts or chat sends |
+| Prior release | 1.1.0 runtime/data baseline preserved in Git |
+| New native features | Vendor prices and opportunities UI need in-game confirmation |
 
-## Coverage
+The 52 added cases cover merchant discounts and bundle sizes, per-player/market prices, stale or unknown vendor costs, discount changes, quote/ranking integration, conservative resale math, fees/targets, missing days, outliers, suffix isolation, stale scans, bounded ranking, caching, interruption and both AH tabs. Existing scan, combat tooltip, crafting, history, recovery and upgrade checks remain.
 
-Fixtures cover scan arithmetic, atomic snapshots, copied-buffer recovery, interruptions/cooldowns, restricted data, market/suffix isolation, stack prices, combat tooltips and native tab coordination. Crafting includes quantities, profits/losses, services, quotes, stable catalog publication, manual opening and both list filters. History covers daily replacement, UTC boundaries, retention, missing listings, migration, saved-table round trips, variants and bounded averages.
+## Performance check
 
-The release adds a beta-to-stable upgrade check: completed prices, daily history, preferences, exclusions and cooldown survive without a new scan. The header regression also remains: it failed against revision 3's button under the native border/title and passes with the revision 4 fix.
-
-The user previously reported successful revision 2 resumes under multiple conditions. Revision 4 diagnostics come from Forever 1.60.1 / 70338 / Interface 16001 on PvP/Horde, region 110. They show a ready tooltip callback, one catalog build/publication, a native recipe link and one retained UTC day. The user reports proper operation. The toggle and crafting window were hidden at capture, so the text does not independently demonstrate their appearance.
-
-This evidence does not cover every profession, ruleset, daily rollover, long retention or a dedicated reload/restart history test. Frame doubles do not render client art or establish taint behavior. The DE model remains a Classic reference. Details are in [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md); ongoing checks are in [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
-
-## Reproduce
+A synthetic Lua 5.1 workload with **5,000 items across 15 days** completed analysis in **203 update steps**, using **383.68 ms** total CPU with a **5.31 ms** maximum step in this environment. It retained the best 200 matches and made zero auction requests. The runtime budget is approximately four milliseconds per frame; a completed operation or garbage collection can exceed the target slightly. This is not a game-client FPS measurement.
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
-git diff --check
-python3 tools/package.py
+MSMV_BENCHMARK=1 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-Packaging requires a clean checkout at the annotated build tag. The delivered Validation JSON records exact commit/tag identities, restored Source/Git ZIP and bundle checks, runtime/documentation parity, retained tags and package hashes. Personal SavedVariables are excluded. Publication steps are in [GIT-WORKFLOW.md](GIT-WORKFLOW.md).
+The delivery report records the exact commit/tag, independent archive restores, retained tags, byte comparisons and hashes. Packaging requires a clean checkout at the annotated test tag. The supplied ZIPs contain no player SavedVariables.
+
+## Native testing
+
+The accepted 1.1.0 diagnostics came from Forever 1.60.1 / 70338 / Interface 16001 on PvP/Horde, with saved prices, a craft valuation and one retained history day. They do not validate the new 1.2.0 changes. See [docs/RELEASE-1.1.0.md](docs/RELEASE-1.1.0.md) for prior evidence.
+
+Check a supplier and recipe, the two AH tabs, one eligible item and reload persistence. Frame doubles do not render native artwork or establish taint behavior. Historic asking prices do not establish demand or completed sales; the configured AH cut needs the user's chosen rate. DE outcomes remain an unverified Classic reference. The short [live checklist](LIVE-TEST-CHECKLIST.md) covers those checks.

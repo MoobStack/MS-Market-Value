@@ -2,7 +2,7 @@
 
 ## Target
 
-Version 1.1.0 targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The user reports the final beta functioning properly on build 70338, PvP/Horde. Supplied diagnostics show saved prices, a complete recipe valuation and one history day; broader coverage is listed in [VALIDATION.md](VALIDATION.md).
+Version 1.2.0-beta targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The preceding 1.1.0 release was accepted on build 70338, PvP/Horde. Vendor observations and the opportunities tab are new and need native verification; see [VALIDATION.md](VALIDATION.md).
 
 All three TOCs—standard, `_Camelot` and `_Forever`—describe the same addon and load order. Initialization checks the Interface number, saved schema, restricted-value API and auction functions. Different clients or Interface versions need an API review.
 
@@ -32,10 +32,16 @@ AH and crafting controls use Blizzard templates. LibAHTab coordinates addon tabs
 
 ## Prices and DE estimates
 
-AH lows are asking prices before fees. Missing buyouts are not zero values or guaranteed sale prices. Suffix-specific prices retain a labeled item-wide fallback. Recipe ranking uses minimum output yield; quotes use full market material cost, including owned materials. The optional all-recipes view retains unavailable learned entries, without assigning zero prices.
+AH lows are asking prices before fees. Missing buyouts are not zero values or guaranteed sale prices. Suffix-specific prices retain a labeled item-wide fallback. Recipe ranking uses minimum output yield; quotes use vendor purchase observations for known vendor materials and market replacement cost for other materials, including owned materials. The optional all-recipes view retains unavailable learned entries, without assigning zero prices.
 
 DE values use the named Classic reference model. Forever loot probabilities, new materials, exceptional eligibility and skill requirements remain unverified. The addon does not perform auction transactions, crafting or disenchanting actions.
 
 ## Persistence
 
 Schema-1 completed prices and preferences carry forward from 1.0.0. WoW writes account SavedVariables on its normal save lifecycle; verify reload/relog/restart behavior in the actual client. Future schemas and invalid roots are preserved and refused. Daily history retains 1–30 UTC calendar days, using the latest completed scan per request day. The existing current snapshot stays separate. Upgrade can import its latest valid snapshot once, but cannot reconstruct earlier days. Matching suffix series and market keys stay isolated; missing listings are skipped in averages. Unknown history sub-schemas remain untouched while current prices continue.
+
+## Version 1.2.0 additions
+
+Merchant pricing probes `C_MerchantFrame.GetItemInfo`, with the legacy `GetMerchantItemInfo` tuple as a fallback. Item ID/link and merchant count are read only; stackCount is the purchase bundle quantity. Only purchasable, unlimited, gold-only items qualify. No fixed Classic buy prices or guessed buy/sell multiplier is used. Costs require a readable player GUID and remain scoped to that character, faction and market. Missing/expired vendor prices require a supplier visit. Reputation-tier changes use readable `C_Reputation` data; revisit the supplier after any other discount change.
+
+The second AH pane uses the same unchanged LibAHTab registry and is registered before settings. Its computations need no new auction API, but do require earlier saved days for matching items. Stale/current/future dates and random suffixes are checked independently. The AH cut is a configurable estimate, default 5%; it is not a detected server rate. Deposits, demand, sale completion and available quantity at the displayed low are not inferred. Native frame fit and API behavior remain testing items.

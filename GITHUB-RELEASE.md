@@ -1,15 +1,12 @@
-# MS Market Value 1.1.0
+# MS Market Value 1.2.0 beta
 
-Crafting analysis and daily price history join the Auction House scanner and item tooltips.
+Build `2026-10-20-beta001` · Test revision **1**
 
-- See material cost, sale value, profit or loss and percentage return for the selected recipe. Sort recipes by profit or return, with an option to show unprofitable and unpriced recipes.
-- Copy craft quotes with markup and a native recipe link when available, or insert a chat draft.
-- Keep 1–30 days of prices, using each UTC day's latest completed scan. Tooltips show the historic average and sample-day count alongside vendor, recent AH and disenchant values.
-- Open or close profits from the profession's Show profits / Hide profits button. Auto-open is optional and off by default.
-- Keep saved tooltip prices visible in combat. Pause and resume scans; a complete local copy survives closing and reopening the AH without another request.
+- Crafting uses your observed vendor purchase cost for normal vendor materials, including discounts and purchase bundles. Costs feed recipes, rankings and quotes; AH markups no longer replace a known vendor price.
+- **MS Opportunities** appears before the existing AH tab. Find resale candidates, rising/falling prices and target buy prices from saved daily history.
+- Set minimum return, net profit, AH cut, lookback and significant movement. Results use a conservative historical baseline, separate item variants and skip stale scans.
+- Analysis is local, bounded and cached. The complete list updates together; it makes no auction requests or purchases.
 
-Close WoW and replace the addon folder using the Clean ZIP. Keep WTF/SavedVariables to retain prices, history and settings. No new scan is required just to upgrade.
+Close WoW, install the Clean ZIP's addon folder and keep SavedVariables. Visit a supplies vendor to learn the prices offered to your character. Known supplies without a usable observation say **visit supplier**. The market tool defaults to three earlier priced days per item; same-day scans do not add days.
 
-For WoW Forever 1.60.1 / Interface 16001. Build `2026-10-11-release001`; tag `v1.1.0`. **239/239 local Lua 5.1 tests pass**, and the user reports the final beta functioning properly. Full source, tests, documentation and prior Git history are included in the repository package.
-
-Prices are asking prices; profit is before fees. Missing prices and unsupported recipes stay unavailable. Disenchant outcomes remain an unverified Classic reference for Forever.
+For Forever 1.60.1 / Interface 16001. **291/291 local Lua 5.1 tests pass**; the new features need in-game confirmation. The full Git repository includes all docs, tests and earlier history. Asking prices do not guarantee sales; estimated net excludes deposits and unsold stock.

@@ -182,15 +182,18 @@ function C.Analyze(recipeID, form, snapshot)
     for _, id in ipairs(order) do
         local quantity = quantities[id]
         if not U.Number(quantity, 1, MAX_QUANTITY, true) then return Unavailable("Invalid material quantity.") end
-        local price, mode = D.Price(id, nil, snapshot)
+        local unit, mode = A.Vendor.Price(id)
+        local price
+        if not unit and mode ~= "vendor-unseen" then price, mode = D.Price(id, nil, snapshot) end
+        unit = unit or (price and price.low)
         local material = { id = id, quantity = quantity, name = C.MaterialName(id), mode = mode }
-        if price then
-            material.unitPrice, material.total = price.low, price.low * quantity
+        if unit then
+            material.unitPrice, material.total = unit, unit * quantity
             result.subtotal = result.subtotal + material.total
         else result.missing[#result.missing + 1] = id end
         result.materials[#result.materials + 1] = material
     end
-    if #result.missing > 0 then return Unavailable("Material prices missing: " .. #result.missing .. ". Complete an AH scan or check listings.") end
+    if #result.missing > 0 then return Unavailable("Material prices missing: " .. #result.missing .. ". Visit a supplies vendor for vendor materials; scan the AH for other materials.") end
     if not U.Number(result.subtotal, 0, 9007199254740991) then return Unavailable("Material cost is out of range.") end
     result.cost = result.subtotal
     result.quote = C.Quote(result.cost, D.Settings().quoteMarkup)

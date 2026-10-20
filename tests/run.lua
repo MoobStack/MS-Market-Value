@@ -107,6 +107,17 @@ local function fresh(saved)
     UIParent:Show()
     _G.LibStub, _G.AuctionHouseFrame, _G.AuctionHouseFrameDisplayMode = nil, nil, nil
     _G.ProfessionsFrame, _G.C_TradeSkillUI = nil, nil
+    world.guid, world.vendorItems, world.factions = "Player-1-fixture", {}, {{factionID=76,reaction=5}}
+    _G.UnitGUID = function() return world.guid end
+    _G.C_Reputation = {
+        GetNumFactions = function() return #world.factions end,
+        GetFactionDataByIndex = function(index) return world.factions[index] end,
+    }
+    _G.GetMerchantNumItems = function() return #world.vendorItems end
+    _G.GetMerchantItemID = function(index) return world.vendorItems[index].id end
+    _G.GetMerchantItemLink = function(index) return link(world.vendorItems[index].id) end
+    _G.C_MerchantFrame = { GetItemInfo = function(index) return world.vendorItems[index] end }
+    _G.GetMerchantItemInfo = nil
     _G.ChatFrameUtil, _G.ChatFrame_OpenChat = nil, nil
     _G.WOW_PROJECT_MAINLINE, _G.WOW_PROJECT_CAMELOT = 1, 14
     _G.WOW_PROJECT_ID = WOW_PROJECT_CAMELOT
@@ -677,7 +688,7 @@ test("a portal change during a fallback scan preserves the original snapshot", f
     newScan(w, {row(200, 1, 100)}); w.portal = "eu"; w:drain()
     equal(A.Scanner.state, "FAILED"); w.portal = "us"; equal(A.DB.Snapshot(), old)
 end)
-test("opening the AH adds one tab and keeps the native Buy pane selected", function()
+test("opening the AH adds two tabs and keeps the native Buy pane selected", function()
     local w, A = fresh(); w:load(); local ah = w:openAH()
     truth(A.UI.tabInstalled); truth(A.UI.tabButton)
     equal(ah.numTabs, 3); equal(#ah.Tabs, 3)
@@ -703,7 +714,7 @@ test("shared tab library coordinates another addon without changing Blizzard tab
     truth(A.UI.panel:IsShown()); equal(other:IsShown(), false)
     lib:SetSelected("OtherAddonFixture"); truth(other:IsShown()); equal(A.UI.panel:IsShown(), false)
     A.UI.tabButton.scripts.OnClick(); truth(A.UI.panel:IsShown()); equal(other:IsShown(), false)
-    equal(ah.numTabs, 3); equal(#ah.Tabs, 3); equal(#lib.internalState.Tabs, 2)
+    equal(ah.numTabs, 3); equal(#ah.Tabs, 3); equal(#lib.internalState.Tabs, 3)
 end)
 test("delayed AH frame loading installs the tab after the SHOW event", function()
     local w, A = fresh(); w:load(); w:event("AUCTION_HOUSE_SHOW")
@@ -728,7 +739,7 @@ test("reopening the auction house reuses the same tab and defaults to Buy", func
     A.UI.tabButton.scripts.OnClick(); local button = A.UI.tabButton
     ah:Hide(); w:event("AUCTION_HOUSE_CLOSED"); equal(A.UI.panel:IsShown(), false)
     w:openAH(); equal(A.UI.tabButton, button); equal(A.UI.panel:IsShown(), false)
-    equal(#LibStub("LibAHTab-1-0").internalState.Tabs, 1)
+    equal(#LibStub("LibAHTab-1-0").internalState.Tabs, 2)
 end)
 test("slash menu moves controls between the AH tab and manual window", function()
     local w, A = fresh(); w:load(); local ah = w:openAH()
@@ -1071,7 +1082,7 @@ test("beta upgrade retains the completed beta003 market, settings, exclusions an
     snapshot.version, snapshot.build = saved.version, saved.build
     saved.settings.staleHours=72; saved.excludedItems[300]=true
     local w2,A2 = fresh(saved); w2.realm="ClassicBetaPvP2"; w2.region=90; w2:load()
-    equal(A2.VERSION,"1.1.0"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
+    equal(A2.VERSION,"1.2.0-beta"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
     equal(A2.DB.data.settings.staleHours,72); equal(A2.DB.data.excludedItems[300],true)
     equal(A2.Scanner.RemainingCooldown(),900); equal(w2.requests,0)
 end)
@@ -1346,11 +1357,11 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
     A.Crafting.Tick(); truth(A.Crafting.reason); equal(A.Crafting.selected.cost,400); equal(A.DB.Price(100).low,100)
     C_TradeSkillUI.GetRecipeSchematic=nil; equal(A.Crafting.Supported(),false); equal(A.Crafting.Analyze(1),nil)
 end)
-test("release diagnostics identify the stable build and crafting support", function()
+test("testing diagnostics identify the fixed beta build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.1.0 / 2026-10-11-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil)
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
-    equal(A.VERSION,"1.1.0"); equal(A.BUILD,"2026-10-11-release001")
+    equal(A.VERSION,"1.2.0-beta"); equal(A.BUILD,"2026-10-20-beta001")
 end)
 test("filtered native catalog fallback is labeled and leaves the user's filters intact", function()
     local w,A=craftingWorld(); C_TradeSkillUI.GetAllRecipeIDs=nil
@@ -1610,7 +1621,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.1.0 / 2026-10-11-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -2127,21 +2138,21 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.1.0 / 2026-10-11-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
 
-test("the 1.1.0 beta-to-release upgrade keeps prices history preferences and cooldown without scanning", function()
+test("the 1.1.0-to-1.2.0 upgrade keeps prices history preferences and cooldown without scanning", function()
     local w,A=craftingWorld()
     local saved,snapshot=A.DB.data,A.DB.Snapshot()
-    saved.version,saved.build="1.1.0-beta","2026-10-11-beta001"
+    saved.version,saved.build="1.1.0","2026-10-11-release001"
     snapshot.version,snapshot.build=saved.version,saved.build
     saved.settings.historyDays=17; saved.settings.craftAutoOpen=false; saved.settings.showAllRecipes=true
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.1.0"); equal(A2.BUILD,"2026-10-11-release001"); equal(A2.TEST_REVISION,nil)
+    equal(A2.VERSION,"1.2.0-beta"); equal(A2.BUILD,"2026-10-20-beta001"); equal(A2.TEST_REVISION,1)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)
@@ -2150,5 +2161,9 @@ test("the 1.1.0 beta-to-release upgrade keeps prices history preferences and coo
     equal(A2.DB.Settings().showAge,false); equal(A2.DB.data.excludedItems[300],true)
     equal(A2.Scanner.RemainingCooldown(),900); equal(w2.requests,0)
 end)
+
+assert(loadfile("tests/market.lua"))(fresh, row, link, test, equal, near, truth, craftingWorld, secret)
+
+if os.getenv("MSMV_BENCHMARK") == "1" then assert(loadfile("tests/market-performance.lua"))(fresh, row, truth, equal) end
 
 print(string.format("RESULT: %d/%d behavioral tests passed (Lua %s). Native evidence and remaining checks: VALIDATION.md.", testCount, testCount, _VERSION))

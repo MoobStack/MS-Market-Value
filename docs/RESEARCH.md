@@ -120,3 +120,19 @@ The local source/API review supports the implementation choice. The successful u
 No Auctionator scanner, art or proprietary database was copied. Its general full-scan-and-tooltip behavior was the user's feature reference. Build002 bundles the independently published LibAHTab and LibStub shared libraries from the pinned primary source above, preserving their terms. The rest of the runtime is original project code; game artwork/fonts are referenced from client resources. `tools/vendor.json` records original and normalized bundled hashes.
 
 MoobStack identity and packaging conventions were taken from the user's existing addon-development handoff, including prefix/naming, documentation, clean/source/Git ZIPs, bundles and checksum manifests. The earlier OctoWoW target was intentionally not carried over to this new Forever project.
+
+
+## Version 1.2.0 beta: merchant cost and market comparisons
+
+Reviewed on 2026-10-20 against the previously accepted client mirror commit `943764493e6b16d63ded3ab304150d1f05e58b57` (Forever 1.60.1 / 70338). These are API/implementation sources, not fresh native test results.
+
+| Primary client source | Contract used |
+|---|---|
+| [Merchant API and types](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_APIDocumentationGenerated/MerchantFrameDocumentation.lua) | C_MerchantFrame.GetItemInfo: price, stackCount, numAvailable, isPurchasable, hasExtendedCost; merchant events |
+| [Vanilla merchant frame](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_UIPanels_Game/Vanilla/MerchantFrame.lua) | Legacy info tuple, merchant item ID/link/count, and unit cost calculated as price / stackCount |
+| [Reputation API](https://github.com/Gethe/wow-ui-source/blob/943764493e6b16d63ded3ab304150d1f05e58b57/Interface/AddOns/Blizzard_APIDocumentationGenerated/ReputationInfoDocumentation.lua) | Readable faction IDs and reaction tiers for discount-context invalidation |
+| [TSM's vendor-price guidance](https://support.tradeskillmaster.com/en_US/addon/why-do-my-vendor-items-have-wrong-or-missing-material-prices) | Independent precedent for learning the player's vendor purchase price by visiting the reagent supplier |
+
+No third-party runtime or price database was imported. The common-supply set identifies items, not their costs. Observations remain character/faction/market scoped and are distinct from the sell price in item tooltips. Limited stock and extended costs do not supply a normal replacement cost.
+
+Lower-quartile resale targets, fee/return filters, prior-day exclusion, median movement and bounded ranking are addon policies. They do not establish the market's sale rate, liquidity, server fee or future price direction. Existing daily lows support those comparisons without another auction request. Local fixtures and the synthetic performance run do not validate native UI fit or real-server behavior.

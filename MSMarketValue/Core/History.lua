@@ -23,7 +23,10 @@ end
 
 local function Price(value) return U.Number(value, 0, MAX_PRICE) and value > 0 end
 
-local function ResetCache() H.cache, H.cacheEntries = {}, 0 end
+local function ResetCache(dataChanged)
+    H.cache, H.cacheEntries = {}, 0
+    if dataChanged then H.revision = (H.revision or 0) + 1 end
+end
 
 local function CopyPrices(source, keyCheck, records)
     local result, count = {}, 0
@@ -53,7 +56,7 @@ function H.Prune()
         if next(days) == nil then H.data.markets[key] = nil end
     end
     H.prunedDay, H.prunedRetention = today, retention
-    ResetCache()
+    ResetCache(true)
     A.refreshTooltips = true
 end
 
@@ -63,7 +66,7 @@ end
 
 function H.Initialize()
     H.data, H.reason = nil, nil
-    ResetCache()
+    ResetCache(true)
     local saved = D.data.history
     local migrate = saved == nil
     if saved ~= nil and (not U.Table(saved) or not U.Accessible(saved.schema) or saved.schema ~= 1 or not U.Table(saved.markets)) then
@@ -107,7 +110,7 @@ function H.Record(snapshot)
     days[day] = { startedAt = snapshot.startedAt,
         prices = CopyPrices(snapshot.prices, ItemKey, true), variants = CopyPrices(snapshot.variants, VariantKey, true) }
     H.data.markets[snapshot.marketKey] = days
-    ResetCache()
+    ResetCache(true)
     A.refreshTooltips = true
     return true
 end
@@ -159,7 +162,7 @@ function H.Average(itemID, link)
     end
     local result = variant and Average("variants", variant, "variant") or nil
     result = result or Average("prices", itemID, "item-wide")
-    if H.cacheEntries >= MAX_CACHE then ResetCache() end
+    if H.cacheEntries >= MAX_CACHE then ResetCache(false) end
     H.cache[cacheKey], H.cacheEntries = result or false, H.cacheEntries + 1
     return result
 end

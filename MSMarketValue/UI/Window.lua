@@ -101,6 +101,11 @@ function UI.DiagnosticsText()
         "Disenchant profile: " .. A.DEProfile.id .. " (Forever unverified)",
     }
     if A.TEST_REVISION then table.insert(lines, 2, "Test revision: " .. tostring(A.TEST_REVISION)) end
+    local vendorCount, vendorReason = A.Vendor.Status()
+    lines[#lines + 1] = "Vendor purchase prices: " .. vendorCount .. " for this player" .. (vendorReason and ("; " .. vendorReason) or "")
+    lines[#lines + 1] = "Opportunities tab: " .. (A.MarketUI.tabButton and "installed" or "waiting for the auctioneer")
+    lines[#lines + 1] = "Market analysis: " .. (A.Market.job and "checking" or (A.Market.ready and "ready" or "not opened")) .. "; builds=" .. A.Market.builds .. "; publications=" .. A.Market.publications .. "; matches=" .. (A.Market.eligible or 0)
+    if A.Market.reason then lines[#lines + 1] = "Market analysis detail: " .. A.Market.reason end
     local history = A.History.Status()
     lines[#lines + 1] = "Historic pricing: " .. (history.reason or (tostring(history.days) .. " UTC days for this market; retention=" .. tostring(history.retention) .. " days"))
     if history.firstDay then
@@ -358,6 +363,17 @@ function UI.InstallAuctionTab()
         panel:Hide()
         UI.panel = panel
     end
+    local opportunities = A.MarketUI.Create(ah)
+    if not lib:DoesIDExist("MSMarketOpportunities") then
+        local added = pcall(lib.CreateTab, lib, "MSMarketOpportunities", opportunities, "MS Opportunities", "MS Market Value - Opportunities")
+        if not added then UI.tabReason = "could not register the opportunities tab"; return false end
+    end
+    local marketButton = lib:GetButton("MSMarketOpportunities")
+    marketButton:SetScript("OnClick", function()
+        if U.Combat() or not A.auctionOpen then return end
+        lib:SetSelected("MSMarketOpportunities")
+    end)
+    A.MarketUI.tabButton = marketButton
     local ok, errorReason = pcall(lib.CreateTab, lib, "MSMarketValue", UI.panel, A.TITLE, A.TITLE)
     if not ok then
         UI.tabFailed = true

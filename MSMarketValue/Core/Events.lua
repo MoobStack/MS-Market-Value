@@ -25,7 +25,7 @@ local function Initialize()
         "AUCTION_HOUSE_SHOW", "AUCTION_HOUSE_CLOSED", "REPLICATE_ITEM_LIST_UPDATE",
         "GET_ITEM_INFO_RECEIVED", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED", "PLAYER_LOGOUT",
         "TRADE_SKILL_SHOW", "TRADE_SKILL_CLOSE", "TRADE_SKILL_LIST_UPDATE", "TRADE_SKILL_DATA_SOURCE_CHANGED",
-        "NEW_RECIPE_LEARNED",
+        "NEW_RECIPE_LEARNED", "MERCHANT_SHOW", "MERCHANT_UPDATE", "MERCHANT_CLOSED", "UPDATE_FACTION",
     }) do frame:RegisterEvent(event) end
     S.InstallObserver()
 end
@@ -57,7 +57,17 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
         A.auctionOpen = false
         S.Stop("The auction house closed.")
         if A.UI.panel then A.UI.panel:Hide() end
+        if A.MarketUI.panel then A.MarketUI.panel:Hide() end
         U.Notify()
+    elseif event == "MERCHANT_SHOW" then
+        A.Vendor.open, A.Vendor.pending = true, true
+        A.Vendor.Capture()
+    elseif event == "MERCHANT_UPDATE" then
+        A.Vendor.pending = true
+    elseif event == "MERCHANT_CLOSED" then
+        A.Vendor.open, A.Vendor.pending = false, false
+    elseif event == "UPDATE_FACTION" then
+        A.Vendor.OnReputation()
     elseif event == "REPLICATE_ITEM_LIST_UPDATE" then
         S.OnResponse()
         if S.state == "COMPLETE" then A.refreshTooltips = true end
@@ -72,11 +82,13 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
         if U.Number(arg1, 1, 2147483647, true) and U.Accessible(arg2) and arg2 == true then
             A.refreshTooltips = true
             A.Crafting.OnItemInfo(arg1)
+            A.Market.OnItemInfo(arg1)
         end
     elseif event == "PLAYER_REGEN_DISABLED" then
         S.Stop("Combat started.")
         if A.UI.frame then A.UI.frame:Hide() end
         if A.UI.panel then A.UI.panel:Hide() end
+        if A.MarketUI.panel then A.MarketUI.panel:Hide() end
         U.Notify()
         if A.UI.diagnostics then A.UI.diagnostics:Hide() end
         if A.CraftingUI.frame then A.CraftingUI.frame:Hide() end
@@ -94,6 +106,7 @@ local scanElapsed, uiElapsed = 0, 0
 frame:SetScript("OnUpdate", function(_, elapsed)
     scanElapsed, uiElapsed = scanElapsed + elapsed, uiElapsed + elapsed
     S.CopyTick()
+    if A.MarketUI.panel and A.MarketUI.panel:IsVisible() then A.Market.Tick() end
     if scanElapsed >= 0.05 then
         scanElapsed = 0
         local wasActive = S.active
@@ -104,6 +117,11 @@ frame:SetScript("OnUpdate", function(_, elapsed)
         uiElapsed = 0
         A.History.Maintain()
         A.Crafting.Tick()
+        if A.Vendor.pending and A.Vendor.open then A.Vendor.Capture() end
+        if A.MarketUI.panel and A.MarketUI.panel:IsVisible() and not U.Combat() then
+            A.Market.Ensure(A.MarketUI.view, A.MarketUI.sort)
+            A.MarketUI.Refresh()
+        end
         if A.auctionOpen and not A.UI.tabInstalled and not U.Combat() then A.UI.InstallAuctionTab() end
         if (A.UI.frame and A.UI.frame:IsShown()) or (A.UI.panel and A.UI.panel:IsShown()) then A.UI.Refresh() end
         if A.refreshTooltips and not U.Combat() then
@@ -133,6 +151,8 @@ SlashCmdList.MSMARKETVALUE = function(message)
     elseif command == "restart" then
         local ok, reason = S.Restart()
         if not ok then U.Print(reason) end
+    elseif command == "market" then
+        A.MarketUI.Show()
     elseif command == "craft" then
         A.CraftingUI.Show()
     elseif command == "status" then
@@ -142,6 +162,6 @@ SlashCmdList.MSMARKETVALUE = function(message)
     elseif command == "diagnostics" then
         A.UI.ShowDiagnostics()
     else
-        U.Print("/msmv | scan | pause | resume | restart | discard | craft | status | diagnostics")
+        U.Print("/msmv | scan | pause | resume | restart | discard | craft | market | status | diagnostics")
     end
 end

@@ -8,9 +8,13 @@ D.defaults = {
     showMaterials = true, showAge = true, showHistory = true,
     craftAutoOpen = false, showAllRecipes = false,
     staleHours = 24, quoteMarkup = 0, historyDays = 30,
+    marketLookback = 14, marketMinDays = 3, marketMinReturn = 20,
+    marketMinProfit = 100, marketFee = 5, marketMove = 15,
 }
 
-local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, historyDays = { 1, 30 } }
+local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, historyDays = { 1, 30 },
+    marketLookback = { 1, 30 }, marketMinDays = { 2, 29 }, marketMinReturn = { 0, 1000 },
+    marketMinProfit = { 0, 100000000 }, marketFee = { 0, 30 }, marketMove = { 1, 1000 } }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB
@@ -40,6 +44,7 @@ function D.Initialize()
     _G.MSMarketValueDB = db
     D.data = db
     A.History.Initialize()
+    A.Vendor.Initialize()
     return true
 end
 

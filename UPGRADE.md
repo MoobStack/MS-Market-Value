@@ -1,24 +1,17 @@
 # Upgrade and rollback
 
-**1.1.0 / 2026-10-11-release001** uses the same `MSMarketValue` folder, `MSMarketValueDB` SavedVariable and schema 1.
-
-## Install
+**1.2.0-beta / 2026-10-20-beta001**, Test revision **1**. The addon folder, SavedVariable and root schema remain `MSMarketValue`, `MSMarketValueDB` and schema 1.
 
 1. Finish any scan and close WoW normally. Incomplete work is session-only.
-2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`; keep the prior Clean ZIP.
-3. Replace `Interface/AddOns/MSMarketValue` with the new Clean ZIP's addon folder. Keep WTF/SavedVariables.
-4. Restart Forever. `/msmv diagnostics` should begin `MS Market Value 1.1.0 / 2026-10-11-release001`.
+2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`.
+3. Replace `Interface/AddOns/MSMarketValue` using the Clean ZIP. Keep WTF/SavedVariables.
+4. Restart. Diagnostics should identify the version/build above and Test revision 1.
+5. Open a supplies vendor to learn your discounted material purchase prices. Then check a recipe with a vendor reagent.
 
-Do not mix runtime files or install the outer source repository as an addon.
+Completed prices, daily history, preferences, markup, exclusions, positions and cooldown carry forward from 1.1.0. No AH scan is required solely to upgrade. Vendor purchase observations and market filters are new optional data; current-price and history formats stay unchanged.
 
-Completed prices, history, preferences, markup, exclusions, positions and cooldown carry forward. No new scan is required solely to upgrade. Old realm-keyed caches remain isolated from detected ruleset markets.
+Open **MS Opportunities** before the existing AH tab. Default resale filters need three earlier priced days per item, plus a fresh current scan. Same-day scans do not add earlier days. History settings still allow 1–30 calendar days; shortening retention removes older entries immediately.
 
-New users get 30 history days, visible averages, profitable-only recipes and manual crafting-window opening. Click **Show profits** beside the profession close button, or use `/msmv craft`. Change auto-open and history length in **/msmv → Crafting & history**.
+Keep code packages outside AddOns and install only their `MSMarketValue` folder. Do not mix files from different revisions. The Complete Package contains the Clean ZIP, full Git repository, source, docs, bundle and verification files.
 
-If upgrading from 1.0.0 or early 1.1.0 betas, history imports the latest complete saved scan once if it falls within retention. Earlier days cannot be reconstructed. Reducing retention removes older history, while leaving current prices intact.
-
-## Rollback and recovery
-
-With WoW closed, restore the previous Clean ZIP and, if needed, your SavedVariables backup. Older schema-1 versions may ignore history and newer preferences. Unsupported future root schemas are preserved and refused; an unsupported history sub-schema leaves current pricing usable.
-
-The Git Repository ZIP includes all source, documentation and `.git` history. The bundle offers another Git recovery path; see [GIT-WORKFLOW.md](GIT-WORKFLOW.md). Code archives never include personal SavedVariables.
+With WoW closed, roll back using the prior Clean ZIP and your SavedVariables backup if needed. Older schema-1 versions may ignore the newer vendor/filter fields. Unsupported future sub-schemas are preserved. Code archives exclude player data. See [GIT-WORKFLOW.md](GIT-WORKFLOW.md) for repository recovery.

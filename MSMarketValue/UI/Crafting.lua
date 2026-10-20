@@ -218,7 +218,7 @@ function UI.Refresh()
             if not label then label = Label(UI.materialChild, "", 0, -(index - 1) * 25, 477); UI.materialRows[index] = label end
             local material = row and row.materials[index]
             if material then
-                label:SetText(material.quantity .. " x " .. material.name .. "  |  " .. (material.total and U.Money(material.total) or "Price missing")); label:Show()
+                label:SetText(material.quantity .. " x " .. material.name .. "  |  " .. (material.total and U.Money(material.total) or "Price missing") .. (material.mode == "vendor" and "  (vendor)" or (material.mode == "vendor-unseen" and "  (visit supplier)" or ""))); label:Show()
             else label:Hide() end
         end
         UI.materialChild:SetHeight(math.max(115, count * 25))

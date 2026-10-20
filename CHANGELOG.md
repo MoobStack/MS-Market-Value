@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0-beta — 2026-10-20-beta001 — Test revision 1
+
+- Use observed player vendor purchase costs for normal vendor crafting materials. Handle discounts/bundles and keep costs separate from vendor sell values.
+- Add **MS Opportunities** before the existing AH tab: resale, rising/falling and combined signals, profit/return targets and configurable AH cut.
+- Compare earlier daily prices conservatively, keep suffix series separate and suppress stale scans. Cache bounded, complete rankings without new auction requests.
+- Keep 1.1.0 prices, history and preferences. Update the guides and add vendor/market checks; **291/291 local tests pass**. Native testing of the new features is pending.
+
+
 Release history and the four 1.1.0 beta revisions are retained below.
 
 ## 1.1.0 — 2026-10-11
