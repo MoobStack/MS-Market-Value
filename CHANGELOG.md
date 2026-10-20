@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0-beta — 2026-10-20-beta001 — Test revision 6
+
+- Add Ledger and Watchlists shortcuts to `/msmv`, with a route back to settings outside the AH.
+- Separate period reports from transactions. Organize income, spending, cash flow, AH/vendor sales and purchases, commissions, and recorded-cost/estimated craft profit/loss.
+- Replace the cycling type filter with six visible choices. Click report activity totals to drill into transactions; keep dates consistent and make CSV scope clear.
+- Move entry/editing into its own window and tracking/retention into Ledger settings. Preserve existing data and transaction observers.
+- Validate manual tips instead of silently treating invalid text as zero. **465/465 local tests pass**; native layout checks remain pending.
+
 ## 1.2.0-beta — 2026-10-20-beta001 — Test revision 5
 
 - Add Buy-page watch buttons that open editable targets and preserve existing values.

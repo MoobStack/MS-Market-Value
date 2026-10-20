@@ -243,7 +243,7 @@ test("date report caches are stable between updates and refresh at the UTC day b
 end)
 test("ledger UI supports commission filters dates and filtered CSV without new auctions",function()
     local w,A=world();A.EconomyUI.Show("ledger");local E=A.EconomyUI
-    E.filterButton.scripts.OnClick();equal(E.filterKind,"sale");E.filterButton.scripts.OnClick();equal(E.filterKind,"buy");E.filterButton.scripts.OnClick();equal(E.filterKind,"commission")
+    E.filterButtons.sale.scripts.OnClick();equal(E.filterKind,"sale");E.filterButtons.buy.scripts.OnClick();equal(E.filterKind,"buy");E.filterButtons.commission.scripts.OnClick();equal(E.filterKind,"commission")
     E.dateFirst:SetText("2026-02-30");equal(E.ApplyDates(),false)
     E.dateFirst:SetText("2026-01-01");E.dateLast:SetText("2026-12-31");truth(E.ApplyDates());equal(E.period,"custom")
     E.CopyCSV();truth(E.csvFrame:IsShown());equal(w.requests,0)

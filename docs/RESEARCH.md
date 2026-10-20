@@ -192,3 +192,10 @@ The same pinned **1.60.1 / 70450** commit was reviewed for these paths:
 Revision 5 adds secure post-observers, not replacement transaction functions. Captured prices become ledger amounts only after purchase success, a completed invoice, or matching merchant item/money changes. Merchant settlement timing and mail expiry tolerance are addon reconciliation policies and require native qualification. No original transaction timestamp or durable invoice ID was found in these mail contracts. Simultaneous identical invoices are counted; indistinguishable replacements remain a documented limit. No wallet-only or disappearing-listing inference is used.
 
 The supplied screenshots show the revision-4 craft quote and ledger draft. They support the direct-commission layout change, not acceptance of the new observers. All new automatic paths remain live-test items.
+
+
+## Version 1.2.0, test revision 6: ledger layout
+
+The supplied revision-5 ledger screenshot shows a 27s 23c commission with a 22s 69c material estimate and a 27s 36c manual AH sale without cost. The report should show 54s 59c income/cash flow, 4s 54c estimated craft profit, and no recorded-cost profit. That example is now a regression fixture.
+
+This revision reorganizes navigation and reports using the existing native templates; transaction observers, pricing sources and saved schemas are unchanged. Headless layout checks cover panel bounds and visibility, not native font rendering, artwork, layering or taint. The new screen still needs a live check.

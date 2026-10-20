@@ -1,6 +1,6 @@
 # Using MS Market Value
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 5
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 6
 
 ## Crafting
 
@@ -43,7 +43,11 @@ Own-material commissions save the current material cost as an estimate; customer
 
 ## Watchlists and ledger
 
-Open **Watchlists** or **Ledger** from Opportunities, or use `/msmv watch` and `/msmv ledger`. The native Buy item header has a **Watch item** button that fills editable targets and preserves an existing watch’s settings. Ledger tracking is on by default for confirmed AH purchases, completed mailbox invoices and verified gold-only vendor trades. Filters cover transaction type, Today, 7 days, 30 days, all retained records or custom UTC dates. Reports and CSV follow the same filters. See [money tools](docs/ECONOMY-TOOLS.md) for target rules, cost handling, retention and CSV.
+Open `/msmv` anywhere and click **Ledger** or **Watchlists**. The direct commands `/msmv ledger` and `/msmv watch` also work outside the AH. Both tools have a **Settings** button to return. The native Buy item header has a **Watch item** button that fills editable targets and preserves an existing watch’s settings.
+
+The ledger opens on **Period report**. Income, spending and cash flow appear first, followed by AH sales/purchases, vendor sales/purchases and commissions. Recorded-cost profit/loss and estimated craft profit/loss have separate cards; sales needing a cost are counted rather than given a profit. Click an activity total to see its transactions.
+
+**Transactions** has six visible filters: All, AH purchases, AH sales, vendor purchases, vendor sales and commissions. The date controls apply across both views: Today, 7 days, 30 days, All retained or inclusive custom UTC dates. The period report always includes all types. CSV copies all period records from the report, or just the selected type from Transactions. **New entry** and row edits open a separate window. **Ledger settings** holds AH/vendor tracking and 1–365 day retention. See [money tools](docs/ECONOMY-TOOLS.md) for calculations and tracking limits.
 
 ## Price history
 

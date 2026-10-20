@@ -252,7 +252,7 @@ test("money-tool slash commands open without an auctioneer or extra requests",fu
     w.combat=true;w:event("PLAYER_REGEN_DISABLED");equal(A.EconomyUI.frame:IsShown(),false)
 end)
 test("ledger UI keeps a blank cost unknown and updates an existing row",function()
-    local w,A=fresh();w:load();A.EconomyUI.Show("ledger");local E=A.EconomyUI;local v=E.ledgerInputs
+    local w,A=fresh();w:load();A.EconomyUI.Show("ledger");local E=A.EconomyUI;E.SetLedgerView("transactions");local v=E.ledgerInputs
     v.name:SetText("Test sale");v.quantity:SetText("2");v.amount:SetText("1");v.fee:SetText("0.05");truth(E.RecordLedger())
     equal(E.ledgerRows[1].labels[6].text,"Needed");equal(A.Ledger.Summary().unknown,1)
     E.LoadLedger(A.Ledger.Records()[1]);v.cost:SetText("0.4");truth(E.RecordLedger());equal(#A.Ledger.Records(),1);equal(A.Ledger.Summary().profit,5500)
@@ -270,7 +270,7 @@ test("watchlist UI saves gold and return thresholds without scanning",function()
 end)
 test("economy diagnostics report pricing watches and ledger cost gaps",function()
     local w,A=watchWorld();truth(A.Watchlist.Save(100,600,0,0));truth(A.Ledger.Record(transaction()));local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 5",1,true));truth(string.find(text,"Watchlists: 1",1,true));truth(string.find(text,"sales_needing_cost=1",1,true))
+    truth(string.find(text,"Test revision: 6",1,true));truth(string.find(text,"Watchlists: 1",1,true));truth(string.find(text,"sales_needing_cost=1",1,true))
 end)
 
 test("invoice identity survives ledger pruning and deliberate entry deletion",function()

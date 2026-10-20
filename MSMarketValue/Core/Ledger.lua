@@ -140,16 +140,17 @@ end
 function L.Summary(filter)
     local rows = L.View(filter)
     if L.summary and L.summary.rows == rows then return L.summary end
-    local result = { rows = rows, sales = 0, spend = 0, profit = 0, estimatedProfit=0, estimated=0, unknown = 0, refunds = 0, tips=0, byKind={} }
+    local result = { rows = rows, sales = 0, spend = 0, profit = 0, estimatedProfit=0, estimated=0, known=0, unknown = 0, refunds = 0, tips=0, byKind={}, counts={} }
     for _, row in ipairs(rows) do
         local net, profit = L.Amounts(row)
         result.byKind[row.kind]=(result.byKind[row.kind] or 0)+net
+        result.counts[row.kind]=(result.counts[row.kind] or 0)+1
         if L.Income(row.kind) then
             result.sales = result.sales + net; result.refunds = result.refunds + row.refund
             result.tips=result.tips+(row.tip or 0)
             if profit ~= nil then
                 if row.estimatedCost then result.estimatedProfit=result.estimatedProfit+profit;result.estimated=result.estimated+1
-                else result.profit = result.profit + profit end
+                else result.profit = result.profit + profit;result.known=result.known+1 end
             else result.unknown = result.unknown + 1 end
         else result.spend = result.spend - net end
     end

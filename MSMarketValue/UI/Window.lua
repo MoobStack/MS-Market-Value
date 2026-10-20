@@ -205,7 +205,9 @@ function UI.Create()
     UI.content = frame
     local scan = Inset(frame, 12, -8, 744, 196)
     Label(scan, "Price snapshot", 14, -13, 365, "GameFontNormal")
-    Label(scan, A.VERSION .. "  |  " .. A.BUILD, 395, -14, 335)
+    Label(scan, A.VERSION, 270, -14, 200)
+    UI.ledgerShortcut = Button(scan,"Ledger",496,-8,110,function()A.EconomyUI.Show("ledger")end)
+    UI.watchShortcut = Button(scan,"Watchlists",616,-8,112,function()A.EconomyUI.Show("watch")end)
     UI.marketText = Label(scan, "", 14, -34, 716)
     UI.snapshotText = Label(scan, "", 14, -55, 716)
     UI.statusText = Label(scan, "", 14, -89, 716)
@@ -412,8 +414,29 @@ function UI.OnAuctionShow()
     if UI.InstallAuctionTab() then UI.Dock() end
 end
 
+function UI.ShowStandalone()
+    UI.Create()
+    UI.content:Hide()
+    UI.content:SetParent(UI.frame)
+    UI.content:SetFrameStrata(UI.frame:GetFrameStrata())
+    UI.content:SetFrameLevel(UI.frame:GetFrameLevel() + 1)
+    UI.content:ClearAllPoints()
+    UI.content:SetPoint("TOPLEFT", UI.frame, "TOPLEFT", 16, -38)
+    UI.content:Show()
+    UI.frame:Show()
+end
+
+function UI.OpenSettings()
+    if U.Combat()then return U.Print("Open MS Market Value outside combat.")end
+    if A.EconomyUI.frame then A.EconomyUI.frame:Hide()end
+    if A.auctionOpen and UI.InstallAuctionTab()then
+        UI.Dock();UI.tabLibrary:SetSelected("MSMarketValue")
+    else UI.ShowStandalone()end
+end
+
 function UI.Toggle()
     if U.Combat() then return U.Print("Open MS Market Value outside combat.") end
+    if A.EconomyUI.frame then A.EconomyUI.frame:Hide()end
     if A.auctionOpen and UI.InstallAuctionTab() then
         UI.Dock()
         if UI.panel:IsShown() and AuctionHouseFrameDisplayMode and AuctionHouseFrameDisplayMode.Buy then
@@ -425,12 +448,5 @@ function UI.Toggle()
     end
     UI.Create()
     local wasShown = UI.frame:IsShown()
-    UI.content:Hide()
-    UI.content:SetParent(UI.frame)
-    UI.content:SetFrameStrata(UI.frame:GetFrameStrata())
-    UI.content:SetFrameLevel(UI.frame:GetFrameLevel() + 1)
-    UI.content:ClearAllPoints()
-    UI.content:SetPoint("TOPLEFT", UI.frame, "TOPLEFT", 16, -38)
-    UI.content:Show()
-    if wasShown then UI.frame:Hide() else UI.frame:Show() end
+    if wasShown then UI.frame:Hide()else UI.ShowStandalone()end
 end

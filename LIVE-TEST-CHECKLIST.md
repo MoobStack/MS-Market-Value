@@ -1,6 +1,6 @@
 # 1.2.0 beta checks
 
-Build `2026-10-20-beta001`, Test revision **5**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
+Build `2026-10-20-beta001`, Test revision **6**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
 
 ## Vendor costs
 
@@ -59,9 +59,12 @@ For a layout issue, include a screenshot. For vendor math, include item/recipe, 
 
 - Buy a reagent bundle, sell a known stack, sell several items quickly, and buy one back. Compare bag quantities and exact wallet changes with individual Vendor buy/sale entries.
 - Try a failed purchase, repair, bag move and unrelated wallet change. They must not become vendor trades. Unsupported/currency/refund cases may require manual entry and should not invent values.
-- Filter AH sales, AH buys, commissions, vendor sales and vendor buys separately. Test Today, 7 days, 30 days and a one-day custom UTC range. Reports and CSV should use the same rows.
-- Compare income, spending and cash flow separately from known P/L and estimated craft P/L. A sale without cost should say Needed, with no assigned profit.
-- Check type/date columns and separate commission controls at normal UI scale, including long names and larger gold amounts.
-- Disable AH/vendor tracking independently, then re-enable. Reload/relog and check preferences, watches, cost bases, entries and duplicate protection.
+- Away from the AH, open `/msmv` and click **Ledger**. Check `/msmv ledger`, Settings, Watchlists and the return route. Repeat after closing the AH.
+- On **Period report**, compare income, spending, cash flow and all five activity sources with the recorded rows. Click an activity to open its transactions.
+- On **Transactions**, use all six visible filters. Test Today, 7 days, 30 days and a one-day custom UTC range. Dates should carry across views; report totals must still include all types.
+- Compare recorded-cost P/L and estimated craft P/L separately. A sale without cost should say Needed, with no assigned profit; no costed entries should show `--` on the relevant card.
+- Copy CSV from both views: the report exports all period rows, Transactions only the chosen type/period. Compare the rows and totals.
+- At normal UI scale, check large gold amounts, long names, all eight table rows, New entry and row editing. Enter an invalid tip and confirm the draft stays open with an error.
+- In **Ledger settings**, disable AH/vendor tracking independently, then re-enable. Check retention and access to legacy expenses. Reload/relog and check preferences, watches, cost bases, entries and duplicate protection.
 
 Back up SavedVariables before shortening retention. For a tracking problem, include diagnostics, transaction type, quantity/total, native confirmation/mail details, and whether another mailbox/AH addon was active.

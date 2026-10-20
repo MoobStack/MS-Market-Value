@@ -1,6 +1,6 @@
 # Watchlists and personal ledger
 
-Use `/msmv watch` and `/msmv ledger`, or open either tool from **MS Opportunities**. Both windows hide in combat; observed transactions can still be saved.
+Open `/msmv` anywhere and click **Ledger** or **Watchlists**. Direct commands `/msmv ledger` and `/msmv watch` and the links from **MS Opportunities** remain available. Both tools have a **Settings** button to return. Windows hide in combat; observed transactions can still be saved.
 
 ## Watchlists
 
@@ -14,7 +14,7 @@ Buy targets need a fresh scan. Profit/return also need enough earlier priced day
 
 ## Automatic transactions
 
-Tracking is on by default. The ledger checkboxes can disable AH or vendor tracking separately.
+Tracking is on by default. The checkboxes under **Ledger settings** can disable AH or vendor tracking separately.
 
 | Type | When it is recorded |
 |---|---|
@@ -41,25 +41,29 @@ The separate box below **Craft quote** accepts:
 
 Own-material cost comes from the selected recipe and is marked **Est.** Customer-material services have zero own material cost. Missing costs stay unknown. Select the entry and enter **Actual cost** to replace an estimate. A blank actual-cost field preserves an existing craft estimate while editing other details.
 
-## Filters and reports
+## Period report and transactions
 
-The ledger is separate for each character and market. Select **All transactions**, AH sales, AH purchases, commissions, vendor sales, vendor purchases or legacy expenses. Choose **Today**, **Last 7 days**, **Last 30 days**, **All retained** or **Custom dates**. Custom dates use `YYYY-MM-DD` in UTC, including both full days; click **Apply dates**.
+The ledger is separate for each character and market. Choose **Today**, **7 days**, **30 days**, **All retained** or **Custom**. Custom dates use `YYYY-MM-DD` in UTC, including both full days; click **Apply dates**. Dates carry across the views.
 
-Rows show UTC date/time, type, item, quantity, net, cost, profit and source. Hover for the full name, exact amounts, tip, deposit detail and cost basis. Every report and CSV export follows the current type/date filters.
+**Period report** always covers all transaction types in that period. The top cards show income, spending and cash flow. Below them, income sources show AH sales, vendor sales and commissions; spending sources show AH purchases, vendor purchases and legacy expenses. Click a source total to open those transactions.
 
-- **Income:** sale/commission/vendor-sale amount plus tip, less fees.
-- **Spending:** purchase and legacy-expense amounts plus fees.
-- **Cash flow:** income minus spending. It is neither profit nor a wallet balance.
-- **Known P/L:** income entries with a recorded cost, excluding estimated costs.
-- **Est. craft P/L:** commission income minus its saved material estimate.
-- **Cost needed:** income with no usable cost. Blank is unknown; entering 0 deliberately records zero cost.
+| Report value | Meaning |
+|---|---|
+| Income | AH/vendor sales and commissions, including tips, less fees |
+| Spending | AH/vendor purchases and legacy expenses, including fees |
+| Cash flow | Income minus spending; not a wallet balance |
+| Recorded-cost profit / loss | Income minus recorded cost, for income entries with an actual cost |
+| Estimated craft profit / loss | Commission income minus its saved material estimate |
+| Cost coverage | Counts of income entries with recorded cost, estimated cost or cost still needed |
 
-Purchase records are not automatically allocated to sold inventory. Sales with unknown costs do not acquire a profit just because another purchase exists. Fees/costs cover the whole lot; the tip is separate. Changing a row's quantity does not recalculate its total or actual cost.
+A profit card shows `--` when it has no costed entries. Blank cost is unknown; entering 0 deliberately records zero cost. Purchase records are not automatically allocated to sold inventory, so unknown-cost sales stay outside profit/loss. Estimates remain separate from recorded-cost profit. Fees/costs cover the whole lot; tips are separate. Changing quantity does not recalculate totals or actual cost.
+
+**Transactions** has six visible filters: **All**, **AH purchases**, **AH sales**, **Vendor purchases**, **Vendor sales** and **Commissions**. Rows show UTC date/time, type, item, quantity, net, cost, profit and source. Hover for full names, exact amounts, deposit detail and cost basis; click a row to edit it. The report keeps its all-type totals when a transaction filter changes.
 
 ## Edits, retention and CSV
 
-Select a row to edit it, then **Record entry**. **New manual entry** provides AH sale/buy, commission and vendor sale/buy types. Old Expense records remain under **Legacy expense**. **Use open invoice** remains available for review, with duplicate checks. **Delete entry** has a session-only **Undo delete** within retention.
+Select a row to edit it in a separate window, then **Record entry**. **New entry** provides AH sale/buy, commission and vendor sale/buy types. Old Expense records remain under **Legacy expenses**, accessible from the period report or Ledger settings. **Use open invoice** remains available for review, with duplicate checks. **Delete entry** has a session-only **Undo delete** within retention.
 
-Keep 1–365 UTC calendar days, default 90. Shortening retention removes older records immediately. The 10,000-entry cap refuses new records instead of discarding retained data. Export/remove old entries if full. Confirmed live transactions waiting for space keep their original timestamps in a saved queue of up to 100; free ledger space to resume recording. Queued records still follow the chosen retention period. Receipt/invoice indexes are separately bounded at 20,000; purchase receipts expire after 31 days, and invoice identities expire with the mail.
+In **Ledger settings**, keep 1–365 UTC calendar days, default 90. Shortening retention removes older records immediately. The 10,000-entry cap refuses new records instead of discarding retained data. Export/remove old entries if full. Confirmed live transactions waiting for space keep their original timestamps in a saved queue of up to 100; free ledger space to resume recording. Queued records still follow the chosen retention period. Receipt/invoice indexes are separately bounded at 20,000; purchase receipts expire after 31 days, and invoice identities expire with the mail.
 
-**Copy CSV** opens a selectable field. Press Ctrl+C to copy it. Amounts are whole copper; unknown cost/profit is blank, and the cost-basis column distinguishes estimates from recorded costs. Code packages never include your SavedVariables.
+**Copy period CSV** includes all transactions in the selected period. From Transactions, **Copy filtered CSV** includes only the chosen type and period. Both open a selectable field. Press Ctrl+C to copy it. Amounts are whole copper; unknown cost/profit is blank, and the cost-basis column distinguishes estimates from recorded costs. Code packages never include your SavedVariables.

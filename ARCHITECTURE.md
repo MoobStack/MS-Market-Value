@@ -1,6 +1,6 @@
 # Architecture
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 5 · Saved-data schema 1
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 6 · Saved-data schema 1
 
 ## Runtime
 
@@ -90,7 +90,9 @@ Vendor observation takes a bag/wallet baseline at merchant open. Merchant action
 
 Commissions record immediately from a clicked craft sale: unit price × quantity plus one total tip. Fixed output uses per-item quote/cost; variable output uses per-craft values. Customer-material services have zero own material cost. Other material costs are saved estimates, separately reported until actual cost replaces them. Missing cost differs from zero. Income, spending, cash flow, known P/L and estimated craft P/L are separate; returned deposits are excluded.
 
-UTC/type filtering, summaries and CSV share the same view. Record ordering uses a linear reverse for normal append order, with a sorted fallback for undo or out-of-order confirmations. Views/summaries cache by source and criteria. The auto-receipt key index uses constant-time lookup. Date ranges stay stable within the day. A full ledger keeps at most 100 confirmed live records in a validated saved queue, retries after space is freed and preserves their observation timestamps across reloads. Retention still applies; retained entries are never silently evicted.
+The standalone `/msmv` settings window and AH settings tab both link to the same portable ledger. The ledger separates Period report, Transactions and Ledger settings; manual entry/editing uses a child portrait window. Report summaries always use all types for the selected UTC period. Transactions use one of six direct type filters, with legacy expenses reachable from the report/settings. CSV follows the active view: all period rows for reports, filtered rows for Transactions. Scope changes clear editor context, and combat hides both windows.
+
+UTC/type filtering, summaries and CSV reuse the same cached row views. Record ordering uses a linear reverse for normal append order, with a sorted fallback for undo or out-of-order confirmations. Views/summaries cache by source and criteria. The auto-receipt key index uses constant-time lookup. Date ranges stay stable within the day. A full ledger keeps at most 100 confirmed live records in a validated saved queue, retries after space is freed and preserves their observation timestamps across reloads. Retention still applies; retained entries are never silently evicted.
 
 ## Daily history
 
