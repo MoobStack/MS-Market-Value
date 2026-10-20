@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0-beta — 2026-10-20-beta001 — Test revision 2
+
+- Fix Resale ignoring **Price move %**. It now requires the chosen price drop plus both profit targets; 0 disables the drop check.
+- Enter **Min profit (g)** in decimal gold: 0.25 is 25 silver. Existing targets keep their value. Typed changes survive focus changes and refreshes.
+- Left-click an opportunity to open its native live listings. Right-click keeps its details on this page. Item variants and commodities use the appropriate native search.
+- Polish filter groups, table alignment, row highlights and details using native UI styling. Reuse analysis when applying unchanged filters.
+- Update the guides and checks. **318/318 local Lua 5.1 tests pass**; revised native behavior awaits testing.
+
 ## 1.2.0-beta — 2026-10-20-beta001 — Test revision 1
 
 - Use observed player vendor purchase costs for normal vendor crafting materials. Handle discounts/bundles and keep costs separate from vendor sell values.

@@ -14,7 +14,7 @@ D.defaults = {
 
 local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, historyDays = { 1, 30 },
     marketLookback = { 1, 30 }, marketMinDays = { 2, 29 }, marketMinReturn = { 0, 1000 },
-    marketMinProfit = { 0, 100000000 }, marketFee = { 0, 30 }, marketMove = { 1, 1000 } }
+    marketMinProfit = { 0, 100000000 }, marketFee = { 0, 30 }, marketMove = { 0, 1000 } }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB

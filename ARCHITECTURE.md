@@ -1,6 +1,6 @@
 # Architecture
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 1 · Saved-data schema 1
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 2 · Saved-data schema 1
 
 ## Runtime
 
@@ -56,13 +56,17 @@ Market analysis runs only while its AH pane is visible, outside combat. It uses 
 
 Each frame handles at most 500 entries with an approximately four-millisecond budget. A sorted bounded list retains at most 200 results. Analysis caps are 50,000 current price entries and 500,000 variant-index visits; a partial current scan is labeled, while an incomplete variant index produces no results and asks for a shorter lookback. Price lookup samples at most 30 days per entry. Source changes cancel unpublished work. Completed rows replace the list atomically; no auction request, purchase, posting or automatic craft is performed.
 
-The lower quartile of earlier daily lows supplies a conservative resale baseline. Proceeds round down after the configured AH cut; purchase unit cost rounds up. Return uses net gain divided by purchase cost. Significant movement compares the latest low with the historical median. With five earlier observations, a separate recent-versus-older three-point median provides context. Asking-price data cannot establish liquidity or a sale rate.
+The lower quartile of earlier daily lows supplies a conservative resale baseline. Proceeds round down after the configured AH cut; purchase unit cost rounds up. Return uses net gain divided by purchase cost. Significant movement compares the latest low with the historical median. Resale requires a drop meeting that threshold in addition to both net-profit targets; zero disables its drop check. Rising/falling retain direction and exclude unchanged prices. With five earlier observations, a separate recent-versus-older three-point median provides context. Asking-price data cannot establish liquidity or a sale rate.
 
 ## Tooltips and UI
 
 `TooltipDataProcessor` decorates only registered public item tooltips. Item IDs and quantity contexts are checked before use. GUID/location or matching bag/equipment context can supply an actual stack count; unknown contexts show each-only values. Values multiply before display rounding.
 
 Decoration reads saved prices during combat. Unreadable item data is not inspected. Native getter-backed primary tooltip rebuilds remain outside combat; comparison rebuilds remain owned by Blizzard. A reentrancy guard and recorded line count prevent recursive refresh and duplicate blocks.
+
+The opportunities pane groups profit and history filters in a native inset, with an aligned table, alternating row backgrounds, hover/selection highlights and a separate details area. Minimum profit is displayed as decimal gold and parsed into whole copper without floating rounding; its saved value is unchanged. Draft input survives refresh/focus changes, Escape restores the focused field, and unchanged Apply reuses analysis.
+
+Only a row left-click can open live listings. Readable native item keys preserve suffixes and equipment level. The native frame selects the appropriate item/commodity pane and performs its own QueryItem; unavailable exact-key support falls back to the native name search. There are no scheduled lookups or purchase calls. Guards cover combat, closed/forbidden frames, stale/replaced results, unapplied inputs, incomplete local scan copying, throttling and rapid repeated clicks. Native filters remain in effect.
 
 Scan/settings controls use native inset and portrait templates. Their controls move between the AH tab and manual window. The separate draggable crafting portrait has Selected recipe and Recipe list views, a Show all recipes / Profitable only filter, scrollable materials, and a copyable native-linked quote with a user-clicked chat-draft button. Fixed-yield quotes divide by output count for ea; unknown/variable yields remain per craft. ChatFrameUtil.OpenChat is preferred, with the legacy opener as fallback. No chat send is called. The named title-bar toggle belongs to CraftingPage and anchors beside the native close button. It follows the highest actual level and strata of the page, border, portrait, title and close button; following the page alone left it below the native header. Hiding the page immediately hides both addon controls. Diagnostics report toggle visibility, strata and level, native header levels, and crafting-window state. Auto-open defaults to off and applies on a new profession session; manual closure stays respected during that session. Combat hides addon controls while price decoration remains available.
 

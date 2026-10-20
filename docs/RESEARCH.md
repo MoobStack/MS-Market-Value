@@ -136,3 +136,18 @@ Reviewed on 2026-10-20 against the previously accepted client mirror commit `943
 No third-party runtime or price database was imported. The common-supply set identifies items, not their costs. Observations remain character/faction/market scoped and are distinct from the sell price in item tooltips. Limited stock and extended costs do not supply a normal replacement cost.
 
 Lower-quartile resale targets, fee/return filters, prior-day exclusion, median movement and bounded ranking are addon policies. They do not establish the market's sale rate, liquidity, server fee or future price direction. Existing daily lows support those comparisons without another auction request. Local fixtures and the synthetic performance run do not validate native UI fit or real-server behavior.
+
+
+## Version 1.2.0, test revision 2: build 70450
+
+The current Forever mirror was checked at commit `172a387e3ab85b26e6640d3058d5ec1e6ccd4c63`, labeled **1.60.1 (70450)**, matching the supplied diagnostics.
+
+| Primary client source | Contract used |
+|---|---|
+| [Auction API](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_APIDocumentationGenerated/AuctionHouseDocumentation.lua) | MakeItemKey, GetItemKeyInfo, item level/suffix, commodity/equipment flags and readiness |
+| [Native auction frame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_AuctionHouseUI/Shared/Blizzard_AuctionHouseFrame.lua) | SelectBrowseResult changes the native item/commodity pane; QueryItem runs its native lookup; SetDisplayMode coordinates Buy tabs |
+| [Native search bar](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_AuctionHouseUI/Shared/Blizzard_AuctionHouseSearchBar.lua) | SetSearchText and StartSearch provide the name-search fallback; existing native filters apply |
+
+The screenshots show two Resale rows despite Price move = 500%. Revision 1 applied movement only to trend views; revision 2 also requires its configured drop for Resale. Zero disables the resale movement check. These filter rules are addon policy.
+
+Only a player left-click invokes the native lookup. Analysis does not call the auction server. Native purchase controls remain under the player's control. Source review and local fixtures support the adapter; actual listings and UI appearance still need a client test. No third-party runtime code was added.

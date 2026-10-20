@@ -27,10 +27,14 @@ function M.Evaluate(current, samples, settings)
     local profit = proceeds - buy
     local row = { current = current, buy = buy, baseline = baseline, median = median,
         low = values[1], high = values[#values], days = #values, profit = profit,
-        roi = profit / buy * 100, movement = (current / median - 1) * 100,
+        roi = profit / buy * 100, movement = (current - median) / median * 100,
         maxBuy = math.max(0, math.floor(math.min(proceeds / (1 + settings.marketMinReturn / 100), proceeds - settings.marketMinProfit))) }
-    row.deal = profit >= settings.marketMinProfit and profit > 0 and row.roi >= settings.marketMinReturn
-    row.rising, row.falling = row.movement >= settings.marketMove, row.movement <= -settings.marketMove
+    -- Compare prices directly so an exact percentage boundary is inclusive.
+    local drop = current < median and current <= median * (100 - settings.marketMove) / 100
+    local rise = current > median and current >= median * (100 + settings.marketMove) / 100
+    row.deal = profit >= settings.marketMinProfit and profit > 0 and row.roi >= settings.marketMinReturn and
+        (settings.marketMove == 0 or drop)
+    row.rising, row.falling = rise, drop
     if #chronological >= 5 then
         local recent = { chronological[#chronological - 1], chronological[#chronological], current }
         local older = { chronological[#chronological - 4], chronological[#chronological - 3], chronological[#chronological - 2] }

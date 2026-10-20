@@ -53,7 +53,19 @@ local function widget(name)
     function w:SetWidth(width) self.width = width end
     function w:SetHeight(height) self.height = height end
     function w:CreateFontString() return widget() end
-    function w:SetText(text) self.text = text end
+    function w:SetText(text)
+        self.text = text
+        if self.scripts.OnTextChanged then self.scripts.OnTextChanged(self, false) end
+    end
+    function w:SetNumeric(value) self.numeric = value end
+    function w:SetMaxLetters(value) self.maxLetters = value end
+    function w:SetWordWrap(value) self.wordWrap = value end
+    function w:CreateTexture() return widget() end
+    function w:SetAllPoints(parent) self.allPoints = parent end
+    function w:SetColorTexture(...) self.rgba = {...} end
+    function w:RegisterForClicks(...) self.clicks = {...} end
+    function w:SetOwner(owner, anchor) self.owner, self.anchor = owner, anchor end
+    function w:SetHyperlink(value) self.link = value end
     function w:SetTextColor(...) self.color = { ... } end
     function w:GetText() return self.text end
     function w:SetChecked(value) self.checked = value end
@@ -77,7 +89,7 @@ local function widget(name)
         if self.processor then self.processor(self, self.data) end
     end
     function w:SetFrameLevel(value) self.level = value end
-    for _, method in ipairs({ "SetHitRectInsets", "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetJustifyH", "SetFontObject", "SetMultiLine", "SetAutoFocus", "SetMaxLetters", "SetNumeric", "SetStatusBarTexture", "SetStatusBarColor", "SetMinMaxValues" }) do
+    for _, method in ipairs({ "SetHitRectInsets", "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetJustifyH", "SetFontObject", "SetMultiLine", "SetAutoFocus", "SetStatusBarTexture", "SetStatusBarColor", "SetMinMaxValues" }) do
         w[method] = function() end
     end
     return w
@@ -105,7 +117,7 @@ local function fresh(saved)
     _G.SlashCmdList, _G.UISpecialFrames = {}, {}
     _G.UIParent = widget("UIParent")
     UIParent:Show()
-    _G.LibStub, _G.AuctionHouseFrame, _G.AuctionHouseFrameDisplayMode = nil, nil, nil
+    _G.LibStub, _G.AuctionHouseFrame, _G.AuctionHouseFrameDisplayMode, _G.AuctionHouseSearchContext = nil, nil, nil, nil
     _G.ProfessionsFrame, _G.C_TradeSkillUI = nil, nil
     world.guid, world.vendorItems, world.factions = "Player-1-fixture", {}, {{factionID=76,reaction=5}}
     _G.UnitGUID = function() return world.guid end
@@ -215,6 +227,36 @@ local function fresh(saved)
         end
         ah:SetScript("OnShow", function(self) self:SetDisplayMode(AuctionHouseFrameDisplayMode.Buy) end)
         _G.AuctionHouseFrame = ah
+        return ah
+    end
+    function world:nativeSearch()
+        local ah = AuctionHouseFrame or self:makeAH()
+        self.itemSearches, self.browseSearches = 0, 0
+        _G.AuctionHouseSearchContext = { BuyItems = 1, BuyCommodities = 2 }
+        AuctionHouseFrameDisplayMode.ItemBuy = { "ItemBuyFrame" }
+        AuctionHouseFrameDisplayMode.CommoditiesBuy = { "CommoditiesBuyFrame" }
+        ah.ItemBuyFrame, ah.CommoditiesBuyFrame = widget(), widget()
+        C_AuctionHouse.MakeItemKey = function(id, level, suffix, species)
+            return { itemID = id, itemLevel = level or 0, itemSuffix = suffix or 0, battlePetSpeciesID = species or 0 }
+        end
+        C_AuctionHouse.GetItemKeyInfo = function(key)
+            local item = self.items[key.itemID]
+            if not item then return nil end
+            return { itemName = item.name or "Fixture Item", isCommodity = item.commodity or false, isEquipment = item.equipment or false }
+        end
+        ah.SearchBar = widget()
+        function ah.SearchBar:SetSearchText(text) self.searchText = text end
+        function ah.SearchBar:StartSearch() world.browseSearches = world.browseSearches + 1 end
+        function ah:SetSearchText(text) self.SearchBar:SetSearchText(text) end
+        function ah:SelectBrowseResult(result)
+            self.selectedBrowse = result
+            local info = C_AuctionHouse.GetItemKeyInfo(result.itemKey)
+            self:SetDisplayMode(info.isCommodity and AuctionHouseFrameDisplayMode.CommoditiesBuy or AuctionHouseFrameDisplayMode.ItemBuy)
+        end
+        function ah:QueryItem(context, key)
+            world.itemSearches = world.itemSearches + 1
+            world.searchedContext, world.searchedKey = context, key
+        end
         return ah
     end
     function world:event(event, arg1, arg2)
@@ -1359,7 +1401,7 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("testing diagnostics identify the fixed beta build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true))
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 2",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
     equal(A.VERSION,"1.2.0-beta"); equal(A.BUILD,"2026-10-20-beta001")
 end)
@@ -1621,7 +1663,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 2",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -2138,7 +2180,7 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true)); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 2",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
@@ -2152,7 +2194,7 @@ test("the 1.1.0-to-1.2.0 upgrade keeps prices history preferences and cooldown w
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.2.0-beta"); equal(A2.BUILD,"2026-10-20-beta001"); equal(A2.TEST_REVISION,1)
+    equal(A2.VERSION,"1.2.0-beta"); equal(A2.BUILD,"2026-10-20-beta001"); equal(A2.TEST_REVISION,2)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)

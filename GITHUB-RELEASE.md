@@ -1,12 +1,12 @@
 # MS Market Value 1.2.0 beta
 
-Build `2026-10-20-beta001` · Test revision **1**
+Build `2026-10-20-beta001` · Test revision **2**
 
-- Crafting uses your observed vendor purchase cost for normal vendor materials, including discounts and purchase bundles. Costs feed recipes, rankings and quotes; AH markups no longer replace a known vendor price.
-- **MS Opportunities** appears before the existing AH tab. Find resale candidates, rising/falling prices and target buy prices from saved daily history.
-- Set minimum return, net profit, AH cut, lookback and significant movement. Results use a conservative historical baseline, separate item variants and skip stale scans.
-- Analysis is local, bounded and cached. The complete list updates together; it makes no auction requests or purchases.
+- Fix **Price move %** in Resale: the price drop must meet the threshold as well as both profit targets. Set it to 0 to disable that check.
+- **Min profit (g)** now accepts decimal gold, including `0.25` for 25s. Existing saved targets keep their value.
+- Left-click an item to open its live listings in the native Buy UI. Right-click for target-price details; hover for its tooltip.
+- Tidy the filter groups, table, row highlights and details. Input edits survive focus changes, and unchanged Apply reuses the result.
 
-Close WoW, install the Clean ZIP's addon folder and keep SavedVariables. Visit a supplies vendor to learn the prices offered to your character. Known supplies without a usable observation say **visit supplier**. The market tool defaults to three earlier priced days per item; same-day scans do not add days.
+Close WoW, replace the addon folder from the Clean ZIP and keep SavedVariables. The version and build are unchanged; diagnostics identify **Test revision: 2**.
 
-For Forever 1.60.1 / Interface 16001. **291/291 local Lua 5.1 tests pass**; the new features need in-game confirmation. The full Git repository includes all docs, tests and earlier history. Asking prices do not guarantee sales; estimated net excludes deposits and unsold stock.
+**318/318 local Lua 5.1 tests pass.** Check the revised filters, item/commodity navigation and layout in Forever. All docs, tests and prior tags are included in the full Git repository. This remains a test build for 1.2.0.

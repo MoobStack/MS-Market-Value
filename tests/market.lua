@@ -173,7 +173,7 @@ test("minimum gain and return thresholds both govern resale filtering", function
 end)
 test("fee changes can remove a thin spread rather than advertising a gross gain", function()
     local w,A=simple({1000,1000,1000,900}); A.DB.data.settings.marketMinProfit=0
-    A.DB.data.settings.marketMinReturn=0; drain(A); equal(A.Market.rows[1].profit,50)
+    A.DB.data.settings.marketMinReturn=0; A.DB.data.settings.marketMove=0; drain(A); equal(A.Market.rows[1].profit,50)
     A.DB.data.settings.marketFee=15; drain(A); equal(#A.Market.rows,0)
 end)
 test("target buy prices meet both user thresholds after conservative copper rounding", function()
@@ -296,9 +296,9 @@ test("opportunities hide on combat and auction closure without duplicate tabs", 
 end)
 test("market controls apply all validated targets together and display selected details", function()
     local w,A=simple({1000,1000,1000,500}); w:openAH(); A.MarketUI.Show(); drain(A); A.MarketUI.Refresh()
-    A.MarketUI.inputs.marketMinReturn:SetText("80"); A.MarketUI.inputs.marketMinProfit:SetText("2")
+    A.MarketUI.inputs.marketMinReturn:SetText("80"); A.MarketUI.inputs.marketMinProfit:SetText("0.02")
     truth(A.MarketUI.Apply()); equal(A.DB.Settings().marketMinProfit,200)
-    drain(A); A.MarketUI.Refresh(); A.MarketUI.rows[1].scripts.OnClick(A.MarketUI.rows[1])
+    drain(A); A.MarketUI.Refresh(); A.MarketUI.rows[1].scripts.OnClick(A.MarketUI.rows[1], "RightButton")
     truth(string.find(A.MarketUI.detail.text,"buy at",1,true))
     A.MarketUI.views.rising.scripts.OnClick(); equal(A.MarketUI.sortButton.text,"Sort: movement")
 end)
@@ -321,7 +321,7 @@ end)
 test("diagnostics identify beta revision vendor coverage and the market analysis", function()
     local w,A=fresh(); w:load(); merchant(w,{supply(2320,20)})
     local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 1",1,true)); truth(string.find(text,"Vendor purchase prices: 1",1,true))
+    truth(string.find(text,"Test revision: 2",1,true)); truth(string.find(text,"Vendor purchase prices: 1",1,true))
     truth(string.find(text,"Market analysis:",1,true))
 end)
 
@@ -349,4 +349,195 @@ test("tooltip average-cache eviction does not restart unchanged market analysis"
     A.History.cache={}; A.History.cacheEntries=4096
     A.History.Average(999); equal(A.History.revision,revision)
     A.Market.Ensure(); equal(A.Market.builds,1); equal(A.Market.job,nil)
+end)
+
+-- Revision 2: movement thresholds, gold entry and explicit native lookups.
+test("resale applies price movement even when return and profit targets pass", function()
+    local w,A=simple({120000,120000,120000,19600})
+    A.DB.data.settings.marketMinReturn=200; A.DB.data.settings.marketMinProfit=50000
+    A.DB.data.settings.marketMove=500; drain(A); equal(#A.Market.rows,0)
+    A.DB.data.settings.marketMove=80; drain(A); equal(#A.Market.rows,1)
+    A.DB.data.settings.marketMove=90; drain(A); equal(#A.Market.rows,0)
+end)
+test("exact movement thresholds include the boundary and reject smaller changes", function()
+    local w,A=simple({1000,1000,1000,800}); local s=A.DB.Settings()
+    s.marketMove=20; s.marketMinReturn=0
+    truth(A.Market.Evaluate(800,{1000,1000,1000},s).deal)
+    equal(A.Market.Evaluate(800.001,{1000,1000,1000},s).deal,false)
+    truth(A.Market.Evaluate(1200,{1000,1000,1000},s).rising)
+    equal(A.Market.Evaluate(1199.999,{1000,1000,1000},s).rising,false)
+end)
+test("zero disables the resale movement requirement without treating flat prices as trends", function()
+    local w,A=simple({1000,1000,1000,900}); local s=A.DB.Settings()
+    s.marketMinReturn=0; s.marketMinProfit=0; s.marketMove=0
+    drain(A); equal(#A.Market.rows,1)
+    local flat=A.Market.Evaluate(1000,{1000,1000,1000},s)
+    equal(flat.rising,false); equal(flat.falling,false)
+end)
+test("all signals respects movement while keeping directional alerts independent of resale profit", function()
+    local w,A=simple({1000,1000,1000,500}); A.DB.data.settings.marketMove=60
+    drain(A,"all"); equal(#A.Market.rows,0)
+    A.DB.data.settings.marketMove=50; drain(A,"all"); equal(#A.Market.rows,1)
+    local w2,A2=simple({1000,1000,1000,2000}); A2.DB.data.settings.marketMinReturn=1000
+    drain(A2,"all"); equal(#A2.Market.rows,1); equal(A2.Market.rows[1].deal,false)
+end)
+test("gold decimal parsing converts silver and copper exactly", function()
+    local w,A=fresh()
+    local cases={{"0.25",2500},{".25",2500},{"2",20000},{"2.",20000},{"0.0001",1},
+        {"1234.5678",12345678},{"10000",100000000},{" 0.0100 ",100},{"0",0}}
+    for _,case in ipairs(cases) do equal(A.MarketUI.ParseGold(case[1]),case[2]) end
+end)
+test("gold entry rejects malformed fractional overprecision and out of bounds values", function()
+    local w,A=fresh()
+    for _,text in ipairs({"",".","1e2","-1","+1","nan","1,25","1.00001","10000.0001","1.2.3"}) do
+        equal(A.MarketUI.ParseGold(text),nil,text)
+    end
+    equal(A.MarketUI.ParseGold(secret),nil)
+end)
+test("all copper settings round trip through the gold display at representative boundaries", function()
+    local w,A=fresh()
+    for _,copper in ipairs({0,1,9,10,99,100,999,2500,9999,10000,50000,12345678,100000000}) do
+        equal(A.MarketUI.ParseGold(A.MarketUI.GoldText(copper)),copper)
+    end
+end)
+test("saved silver-era profit targets retain their copper value and display as gold", function()
+    local w,A=fresh(); w:load(); A.DB.data.settings.marketMinProfit=50000; A.DB.data.settings.marketMove=0
+    local w2,A2=fresh(A.DB.data); w2:load(); w2:openAH(); A2.MarketUI.Show()
+    equal(A2.MarketUI.inputs.marketMinProfit:GetText(),"5"); equal(A2.DB.Settings().marketMinProfit,50000)
+    equal(A2.DB.Settings().marketMove,0); equal(A2.MarketUI.inputs.marketMinProfit.numeric,false)
+end)
+test("typed filters survive focus changes and periodic refreshes until applied", function()
+    local w,A=simple({1000,1000,1000,500}); w:openAH(); A.MarketUI.Show(); drain(A); A.MarketUI.Refresh()
+    local box=A.MarketUI.inputs.marketMinProfit
+    box:SetText("0.25"); box.scripts.OnTextChanged(box,true); box:ClearFocus()
+    for _=1,5 do A.eventFrame.scripts.OnUpdate(A.eventFrame,.25) end
+    equal(box:GetText(),"0.25"); equal(A.DB.Settings().marketMinProfit,100)
+    truth(string.find(A.MarketUI.status.text,"Changes not applied",1,true))
+    truth(A.MarketUI.Apply()); equal(A.DB.Settings().marketMinProfit,2500)
+end)
+test("escape restores only the focused unapplied field", function()
+    local w,A=fresh(); w:load(); w:openAH(); A.MarketUI.Show()
+    local gold,fee=A.MarketUI.inputs.marketMinProfit,A.MarketUI.inputs.marketFee
+    gold:SetText(".25"); gold.scripts.OnTextChanged(gold,true)
+    fee:SetText("7"); fee.scripts.OnTextChanged(fee,true)
+    gold.scripts.OnEscapePressed(gold)
+    equal(gold:GetText(),"0.01"); equal(fee:GetText(),"7"); truth(A.MarketUI.dirty.marketFee)
+end)
+test("invalid gold does not apply any settings or restart analysis", function()
+    local w,A=simple({1000,1000,1000,500}); w:openAH(); A.MarketUI.Show(); drain(A); A.MarketUI.Refresh()
+    local builds=A.Market.builds
+    A.MarketUI.inputs.marketFee:SetText("7"); A.MarketUI.inputs.marketMinProfit:SetText("1.00001")
+    equal(A.MarketUI.Apply(),false); equal(A.DB.Settings().marketFee,5); equal(A.Market.builds,builds)
+end)
+test("applying unchanged filters reuses the completed analysis", function()
+    local w,A=simple({1000,1000,1000,500}); w:openAH(); A.MarketUI.Show(); drain(A); A.MarketUI.Refresh()
+    local builds=A.Market.builds
+    truth(A.MarketUI.Apply()); equal(A.Market.builds,builds); equal(A.Market.job,nil)
+end)
+
+local function liveWorld(series, item)
+    local w,A
+    if series then w,A=marketWorld(series) else w,A=simple({1000,1000,1000,500}) end
+    w.items[100]=item or {name="Pattern: Test Robe"}
+    w:openAH(); local ah=w:nativeSearch(); A.MarketUI.Show(); drain(A); A.MarketUI.Refresh()
+    return w,A,ah
+end
+local function click(A,mouse)
+    local button=A.MarketUI.rows[1]; button.scripts.OnClick(button,mouse or "LeftButton")
+end
+
+test("a left click opens one exact native item lookup without a full scan", function()
+    local w,A,ah=liveWorld(); local cooldown=A.Scanner.RemainingCooldown()
+    click(A)
+    equal(w.itemSearches,1); equal(w.browseSearches,0); equal(w.requests,0)
+    equal(w.searchedKey.itemID,100); equal(w.searchedKey.itemLevel,0); equal(w.searchedKey.itemSuffix,0)
+    equal(w.searchedContext,AuctionHouseSearchContext.BuyItems)
+    equal(ah.displayMode,AuctionHouseFrameDisplayMode.ItemBuy); equal(ah.SearchBar.searchText,"Pattern: Test Robe")
+    equal(A.MarketUI.panel:IsShown(),false); equal(A.Scanner.RemainingCooldown(),cooldown)
+end)
+test("equipment live lookups preserve the signed random suffix and item level", function()
+    local series={}
+    for day=1,4 do series[day]={{id=100,quantity=1,buyout=day==4 and 500 or 1000,link=link(100,-7)}} end
+    local w,A,ah=liveWorld(series,{name="Test Robe of the Owl",equipment=true,level=42})
+    click(A); equal(w.itemSearches,1); equal(w.searchedKey.itemSuffix,-7); equal(w.searchedKey.itemLevel,42)
+end)
+test("commodities open their native listings and use the commodity search context", function()
+    local w,A,ah=liveWorld(nil,{name="Test Cloth",commodity=true})
+    click(A); equal(w.itemSearches,1); equal(w.searchedContext,AuctionHouseSearchContext.BuyCommodities)
+    equal(ah.displayMode,AuctionHouseFrameDisplayMode.CommoditiesBuy)
+end)
+test("right click and hover show details without issuing any item search", function()
+    local w,A=liveWorld(); local button=A.MarketUI.rows[1]
+    button.scripts.OnEnter(button); truth(button.highlight:IsShown()); truth(GameTooltip:IsShown())
+    click(A,"RightButton"); truth(string.find(A.MarketUI.detail.text,"buy at",1,true))
+    button.scripts.OnLeave(button); equal(GameTooltip:IsShown(),false)
+    equal(w.itemSearches,0); equal(w.browseSearches,0); truth(A.MarketUI.panel:IsShown())
+end)
+test("analysis refresh sorting and rechecking never launch live searches", function()
+    local w,A=liveWorld()
+    for _=1,10 do A.eventFrame.scripts.OnUpdate(A.eventFrame,.25); A.MarketUI.Refresh() end
+    A.MarketUI.sortButton.scripts.OnClick(); drain(A,A.MarketUI.view,A.MarketUI.sort); A.MarketUI.Refresh()
+    A.MarketUI.recheck.scripts.OnClick(); drain(A,A.MarketUI.view,A.MarketUI.sort)
+    equal(w.itemSearches,0); equal(w.browseSearches,0); equal(w.requests,0)
+end)
+test("throttled lookups wait for another player click without queuing a search", function()
+    local w,A=liveWorld(); w.ready=false; click(A); equal(w.itemSearches,0)
+    w.ready=true; w:advance(1); A.eventFrame.scripts.OnUpdate(A.eventFrame,.25); equal(w.itemSearches,0)
+    click(A); equal(w.itemSearches,1)
+end)
+test("a repeated click cannot immediately duplicate the item lookup", function()
+    local w,A=liveWorld(); local item=A.Market.rows[1]
+    truth(A.MarketUI.OpenListings(item)); equal(A.MarketUI.OpenListings(item),false); equal(w.itemSearches,1)
+    w:advance(1); truth(A.MarketUI.OpenListings(item)); equal(w.itemSearches,2)
+end)
+test("combat and a closed or forbidden auction frame block item lookups", function()
+    local w,A,ah=liveWorld(); local item=A.Market.rows[1]
+    w.combat=true; equal(A.MarketUI.OpenListings(item),false)
+    w.combat=false; A.auctionOpen=false; equal(A.MarketUI.OpenListings(item),false)
+    A.auctionOpen=true; ah.forbidden=true; equal(A.MarketUI.OpenListings(item),false)
+    ah.forbidden=false; ah:Hide(); equal(A.MarketUI.OpenListings(item),false)
+    equal(w.itemSearches,0); equal(w.browseSearches,0)
+end)
+test("pending analysis unapplied filters and nonpublished rows cannot open stale listings", function()
+    local w,A=liveWorld(); local item=A.Market.rows[1]
+    A.Market.Ensure("deals","return",true); equal(A.MarketUI.OpenListings(item),false)
+    drain(A); A.MarketUI.Refresh(); item=A.Market.rows[1]
+    A.MarketUI.dirty.marketFee=true; equal(A.MarketUI.OpenListings(item),false)
+    A.MarketUI.dirty={}; equal(A.MarketUI.OpenListings({id=100}),false)
+    equal(w.itemSearches,0)
+end)
+test("a stale scan changed market or replaced snapshot requires current published results", function()
+    local w,A=liveWorld(); local item=A.Market.rows[1]
+    w.wall=w.wall+86401; equal(A.MarketUI.OpenListings(item),false)
+    w.wall=w.wall-86401; w.region=2; equal(A.MarketUI.OpenListings(item),false)
+    w.region=1
+    local snap=A.DB.NewSnapshot(A.Util.MarketKey(),0,w.wall); truth(A.DB.Commit(snap))
+    equal(A.MarketUI.OpenListings(item),false); equal(w.itemSearches,0)
+end)
+test("missing exact item APIs fall back to the native Buy name search on click", function()
+    local w,A,ah=liveWorld(); C_AuctionHouse.MakeItemKey=nil; click(A)
+    equal(w.itemSearches,0); equal(w.browseSearches,1)
+    equal(ah.displayMode,AuctionHouseFrameDisplayMode.Buy); equal(ah.SearchBar.searchText,"Pattern: Test Robe")
+end)
+test("uncached items do not search using invented item names or guessed keys", function()
+    local w,A=liveWorld(); w.items[100]=nil; click(A)
+    equal(w.itemSearches,0); equal(w.browseSearches,0); truth(A.MarketUI.message)
+end)
+test("restricted item keys are not forwarded into native search calls", function()
+    local w,A=liveWorld(); C_AuctionHouse.MakeItemKey=function() return secret end
+    click(A); equal(w.itemSearches,0); equal(w.browseSearches,1)
+end)
+test("native search errors are handled once without an automatic retry", function()
+    local w,A,ah=liveWorld(); ah.QueryItem=function() w.itemSearches=w.itemSearches+1; error("native unavailable") end
+    click(A); equal(w.itemSearches,1); equal(w.browseSearches,0); truth(A.MarketUI.message)
+    w:advance(1); A.eventFrame.scripts.OnUpdate(A.eventFrame,.25); equal(w.itemSearches,1)
+end)
+
+test("live lookups wait until an incomplete full scan has its complete local copy", function()
+    local w,A=liveWorld(); local item=A.Market.rows[1]
+    A.Scanner.active=true; A.Scanner.localReady=false
+    equal(A.MarketUI.OpenListings(item),false); equal(w.itemSearches,0)
+    A.Scanner.active=false; A.Scanner.paused=true
+    equal(A.MarketUI.OpenListings(item),false); equal(w.itemSearches,0)
+    A.Scanner.localReady=true; truth(A.MarketUI.OpenListings(item)); equal(w.itemSearches,1)
 end)

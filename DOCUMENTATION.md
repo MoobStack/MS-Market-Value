@@ -1,6 +1,6 @@
 # Using MS Market Value
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 1
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 2
 
 ## Crafting
 
@@ -29,7 +29,7 @@ The selected recipe uses readable optional/alternative allocations. The catalog 
 
 Visit a supplies vendor once to learn your actual purchase prices, including current discounts and bundle quantities. Normal unlimited-stock, gold-only items use those costs in recipes, rankings and quotes. Material rows say **vendor** or **visit supplier**. Prices are per character and market, expire after seven days, and need refreshing after a detected reputation-tier change. Unseen known supplies remain unavailable rather than using marked-up AH prices. [Vendor costs](docs/VENDOR-COSTS.md) covers the details.
 
-At an auctioneer, **MS Opportunities** appears immediately before **MS Market Value**. Resale, Rising, Falling and All signals use completed scans already stored by the addon. The default requires three earlier priced days per item. Same-day scans do not add days. Results exclude stale scans and keep matching suffix series separate. [Market opportunities](docs/MARKET-OPPORTUNITIES.md) explains the filters and calculations.
+At an auctioneer, **MS Opportunities** appears immediately before **MS Market Value**. Resale, Rising, Falling and All signals use completed scans already stored by the addon. The default requires three earlier priced days per item. Same-day scans do not add days. Resale applies the minimum price drop as well as both profit targets. Enter minimum profit in gold: `0.25` is 25s; up to four decimal places are accepted. A price move of `0` disables the resale drop filter. Left-click a row to open its native live listings; right-click for details. Results exclude stale scans and keep matching suffix series separate. [Market opportunities](docs/MARKET-OPPORTUNITIES.md) explains the filters and calculations.
 
 ## Quotes
 
