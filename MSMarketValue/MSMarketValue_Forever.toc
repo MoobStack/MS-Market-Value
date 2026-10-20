@@ -1,6 +1,6 @@
 ## Interface: 16001
 ## Title: MS Market Value
-## Notes: Auction prices and history, market opportunities, crafting costs with vendor prices and profit, and disenchant estimates.
+## Notes: Auction prices and history, net crafting profit, service quotes, watchlists, a personal ledger, and disenchant estimates.
 ## Author: MoobStack
 ## Version: 1.2.0-beta
 ## Category: Auction & Economy
@@ -8,7 +8,7 @@
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
 ## X-Build: 2026-10-20-beta001
-## X-Test-Revision: 3
+## X-Test-Revision: 4
 
 Bootstrap.lua
 Libs\LibStub\LibStub.lua
@@ -21,9 +21,12 @@ Data\Disenchant.lua
 Core\Valuation.lua
 Crafting\Analysis.lua
 Market\Analysis.lua
+Core\Watchlist.lua
+Core\Ledger.lua
 Auction\Scanner.lua
 Integrations\Tooltips.lua
 UI\Window.lua
 UI\Crafting.lua
 UI\Market.lua
+UI\Economy.lua
 Core\Events.lua

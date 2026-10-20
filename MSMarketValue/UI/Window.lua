@@ -106,6 +106,12 @@ function UI.DiagnosticsText()
     lines[#lines + 1] = "Opportunities tab: " .. (A.MarketUI.tabButton and "installed" or "waiting for the auctioneer")
     lines[#lines + 1] = "Market analysis: " .. (A.Market.job and "checking" or (A.Market.ready and "ready" or "not opened")) .. "; builds=" .. A.Market.builds .. "; publications=" .. A.Market.publications .. "; matches=" .. (A.Market.eligible or 0)
     if A.Market.reason then lines[#lines + 1] = "Market analysis detail: " .. A.Market.reason end
+    lines[#lines + 1] = "Craft pricing: AH cut=" .. D.Settings().marketFee .. "%; labor=" .. U.Money(D.Settings().serviceLabor) .. "; minimum=" .. U.Money(D.Settings().serviceMinimum) .. "; customer_materials=" .. tostring(D.Settings().serviceCustomerMaterials)
+    lines[#lines + 1] = "Watchlists: " .. #A.Watchlist.Entries() .. " this market; " .. (A.Watchlist.job and "checking" or "ready") .. "; publications=" .. A.Watchlist.publications
+    if A.Watchlist.reason then lines[#lines + 1] = "Watchlist detail: " .. A.Watchlist.reason end
+    local ledger = A.Ledger.Summary()
+    lines[#lines + 1] = "Ledger: " .. #ledger.rows .. " this character/market; retention=" .. D.Settings().ledgerDays .. " days; sales_needing_cost=" .. ledger.unknown
+    if A.Ledger.reason then lines[#lines + 1] = "Ledger detail: " .. A.Ledger.reason end
     local history = A.History.Status()
     lines[#lines + 1] = "Historic pricing: " .. (history.reason or (tostring(history.days) .. " UTC days for this market; retention=" .. tostring(history.retention) .. " days"))
     if history.firstDay then

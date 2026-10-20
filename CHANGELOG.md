@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0-beta — 2026-10-20-beta001 — Test revision 4
+
+- Show numeric service quotes in each recipe row. Add labor fees, minimum charges and customer-material quotes under Pricing.
+- Rank and display net crafting profit/return after the configured AH cut, with break-even prices. Reuse valuations when pricing changes.
+- Add saved watchlists with buy/return/profit targets, prior-day context, local alerts and native listing links.
+- Add a personal ledger for manual purchases, sales and expenses; reviewed open AH invoice imports; known-cost profit; edit/delete/undo; retention and copyable CSV.
+- Bound and cache the new work, preserve existing saved data and update the guides. **388/388 local tests pass**; the new native controls and invoice path need live checks.
+
 ## 1.2.0-beta — 2026-10-20-beta001 — Test revision 3
 
 - Polish crafting with quieter table rows, hover details, clear sorting and aligned material quantities, sources and totals.

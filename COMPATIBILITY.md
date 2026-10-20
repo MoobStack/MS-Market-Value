@@ -20,7 +20,7 @@ Detected market keys combine region, Forever ruleset and faction. Native positiv
 
 The generic adapter reads native learned recipes and consumed material schematics rather than maintaining a profession whitelist. It follows the visible native crafting form and includes validated selected optional reagents. A full recipe catalog is preferred; a filtered fallback is explicitly labeled and leaves native filters alone.
 
-Fixed item-reagent crafts support cost, output quantity, sale value, gross profit and return. Non-auctionable services support material quotes. Unknown material prices, incomplete variant choices, currency costs, variable reagent quantities, salvage and recrafting cannot supply a full estimate in this version. Quality-dependent output requires selection.
+Fixed item-reagent crafts support cost, output quantity, sale value, gross and fee-adjusted net profit/return, and break-even prices. Non-auctionable services support material quotes. Unknown material prices, incomplete variant choices, currency costs, variable reagent quantities, salvage and recrafting cannot supply a full estimate in this version. Quality-dependent output requires selection.
 
 The native GetRecipeLink is used where available, matching profession-book shift-clicks. ChatFrameUtil.OpenChat opens a draft; a legacy opener is supported if present. A missing link keeps the plain recipe name. Every profession's live recipe shapes and hyperlink rendering remain part of testing.
 
@@ -34,7 +34,7 @@ AH and crafting controls use Blizzard templates. LibAHTab coordinates addon tabs
 
 AH lows are asking prices before fees. Missing buyouts are not zero values or guaranteed sale prices. Suffix-specific prices retain a labeled item-wide fallback. Recipe ranking uses minimum output yield; quotes use vendor purchase observations for known vendor materials and market replacement cost for other materials, including owned materials. The optional all-recipes view retains unavailable learned entries, without assigning zero prices.
 
-DE values use the named Classic reference model. Forever loot probabilities, new materials, exceptional eligibility and skill requirements remain unverified. The addon does not perform auction transactions, crafting or disenchanting actions.
+DE values use the named Classic reference model. Forever loot probabilities, new materials, exceptional eligibility and skill requirements remain unverified. The addon does not perform auction transactions, crafting, disenchanting or mailbox collection actions.
 
 ## Persistence
 
@@ -45,3 +45,10 @@ Schema-1 completed prices and preferences carry forward from 1.0.0. WoW writes a
 Merchant pricing probes `C_MerchantFrame.GetItemInfo`, with the legacy `GetMerchantItemInfo` tuple as a fallback. Item ID/link and merchant count are read only; stackCount is the purchase bundle quantity. Only purchasable, unlimited, gold-only items qualify. No fixed Classic buy prices or guessed buy/sell multiplier is used. Costs require a readable player GUID and remain scoped to that character, faction and market. Missing/expired vendor prices require a supplier visit. Reputation-tier changes use readable `C_Reputation` data; revisit the supplier after any other discount change.
 
 The second AH pane uses the same unchanged LibAHTab registry and is registered before settings. Its computations need no new auction API, but do require earlier saved days for matching items. Stale/current/future dates and random suffixes are checked independently. The AH cut is a configurable estimate, default 5%; it is not a detected server rate. Deposits, demand, sale completion and available quantity at the displayed low are not inferred. Native frame fit and API behavior remain testing items. Revision 2 checks native MakeItemKey/GetItemKeyInfo and uses the frame's SelectBrowseResult/QueryItem for a player-clicked lookup. If exact-key support is unavailable, it can run the native Buy name search with readable item data. Existing native filters can narrow those results. These lookups are separate from full replication scans and do not bypass their cooldown.
+
+
+## Revision 4 money tools
+
+Crafting uses the configured AH cut, not a detected server rate. Quote labor/minimum/customer-material settings apply to services; normal item quotes still recover market/vendor materials plus markup. Missing service materials can be bypassed only for a customer-material charge, while the material cost itself stays unknown.
+
+Watchlists check saved prices/history without network queries. Their native listing opener retains the existing combat, throttle, freshness and incomplete-copy guards. Ledger imports require a visible native open invoice and readable GetInboxInvoiceInfo/GetInboxHeaderInfo values. The matching build-70450 MailFrame uses buyer/seller totals and deposit/cut fields; it does not expose a durable mail ID. Import therefore remains a user-reviewed preview with conservative duplicate detection. Pending or incomplete data requires manual entry. Native typography, invoice values and listing behavior need a client check.

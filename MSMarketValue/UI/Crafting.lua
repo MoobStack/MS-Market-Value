@@ -51,11 +51,18 @@ local function Range(a, b, formatter)
     return formatter(a) .. " - " .. formatter(b)
 end
 
-local function Return(value) return string.format("%+.1f%%", value) end
+local function Return(value)
+    local rounded = math.floor(math.abs(value) * 10 + 0.5) / 10
+    return (value < 0 and "-" or "+") .. string.format("%.1f%%", rounded)
+end
 
 function UI.RecipeState(row)
-    if row.service then return "service", "Service - material quote" end
-    if row.profitMin ~= nil then return "priced", row.profitMin > 0 and "Profitable" or (row.profitMin < 0 and "Loss at scan price" or "Break even before fees") end
+    if row.service then
+        if C.DisplayQuote(row) == nil then return "missing", "Service - material prices needed" end
+        return "service", D.Settings().serviceCustomerMaterials and "Service - customer materials" or "Service - quote"
+    end
+    C.Net(row)
+    if row.netProfitMin ~= nil then return "priced", row.netProfitMin > 0 and "Profitable after AH cut" or (row.netProfitMin < 0 and "Loss after AH cut" or "Break even after AH cut") end
     if #(row.missing or {}) > 0 then return "missing", "Material prices missing: " .. #row.missing end
     if row.outputID and row.cost ~= nil then return "missing", "No output buyout in the scan" end
     if row.quote ~= nil then return "quote", "Material quote only" end
@@ -91,8 +98,10 @@ end
 
 function UI.CatalogSummary()
     local cache = UI.summary
-    if cache and cache.source == C.rows and cache.count == #C.rows then return cache end
-    cache = { source = C.rows, count = #C.rows, priced = 0, services = 0, quotes = 0, missing = 0 }
+    local s = D.Settings()
+    local signature = table.concat({s.serviceLabor,s.serviceMinimum,s.quoteMarkup,tostring(s.serviceCustomerMaterials),s.marketFee},"|")
+    if cache and cache.source == C.rows and cache.count == #C.rows and cache.signature == signature then return cache end
+    cache = { source = C.rows, count = #C.rows, signature = signature, priced = 0, services = 0, quotes = 0, missing = 0 }
     for _, row in ipairs(C.rows) do
         local state = UI.RecipeState(row)
         local key = state == "priced" and "priced" or (state == "service" and "services" or (state == "quote" and "quotes" or "missing"))
@@ -111,11 +120,13 @@ local function RecipeTooltip(button)
     local _, state = UI.RecipeState(row)
     GameTooltip:AddLine(state, 0.83, 0.86, 0.89, true)
     if row.cost ~= nil then GameTooltip:AddDoubleLine("Materials / craft", U.Money(row.cost)) end
-    if row.service and row.cost ~= nil then
+    if row.service and C.DisplayQuote(row) ~= nil then
         -- Catalog quotes follow the current markup without repricing recipes.
-        GameTooltip:AddDoubleLine("Quote / service", U.Money(C.Quote(row.cost, D.Settings().quoteMarkup)))
-    elseif row.profitMin ~= nil then
+        GameTooltip:AddDoubleLine("Quote / service", U.Money(C.DisplayQuote(row)))
+    elseif row.netProfitMin ~= nil then
+        GameTooltip:AddDoubleLine("Net profit / craft", Range(row.netProfitMin, row.netProfitMax, UI.SignedMoney))
         GameTooltip:AddDoubleLine("Gross profit / craft", Range(row.profitMin, row.profitMax, UI.SignedMoney))
+        GameTooltip:AddDoubleLine("Break-even / item", Range(row.breakEvenUnitMin, row.breakEvenUnitMax, U.Money))
     end
     if row.reason and not row.service then GameTooltip:AddLine(row.reason, 0.83, 0.86, 0.89, true) end
     GameTooltip:AddLine("Click to select this recipe.", 0.65, 0.65, 0.65)
@@ -127,8 +138,76 @@ function UI.ApplyMarkup()
     local value = tonumber(UI.markup:GetText())
     if not U.Number(value, 0, 1000, true) then U.Print("Choose a markup from 0 to 1000 percent."); return false end
     D.data.settings.quoteMarkup = value; UI.markup:ClearFocus()
-    if C.selected and C.selected.cost then C.selected.quote = C.Quote(C.selected.cost, value) end
+    if C.selected then C.selected.quote = C.DisplayQuote(C.selected) end
     UI.Refresh(); return true
+end
+
+function UI.ResetPricing()
+    if not UI.priceInputs then return end
+    for key, box in pairs(UI.priceInputs) do
+        local value = D.Settings()[key]
+        box:SetText((key == "serviceLabor" or key == "serviceMinimum") and U.GoldText(value) or tostring(value))
+        box:ClearFocus()
+    end
+    UI.customerMaterials:SetChecked(D.Settings().serviceCustomerMaterials)
+    UI.priceDirty = false; UI.priceStatus:SetText("Changes apply to quotes and rankings without a new scan.")
+end
+
+function UI.ApplyPricing()
+    if U.Combat() or not D.data then return false end
+    local values = {}
+    for key, box in pairs(UI.priceInputs) do
+        if key == "serviceLabor" or key == "serviceMinimum" then values[key] = U.ParseGold(box:GetText())
+        else values[key] = tonumber(box:GetText()) end
+        local limit = key == "marketFee" and 30 or (key == "quoteMarkup" and 1000 or 100000000)
+        if not U.Number(values[key],0,limit,true) then UI.priceStatus:SetText("Check AH cut (0-30%), markup (0-1000%) and gold amounts (up to 10000g)."); return false end
+    end
+    for key,value in pairs(values) do D.data.settings[key] = value end
+    D.data.settings.serviceCustomerMaterials = UI.customerMaterials:GetChecked() == true
+    UI.markup:ClearFocus(); UI.markup:SetText(tostring(values.quoteMarkup))
+    UI.ResetPricing(); UI.priceStatus:SetText("Pricing saved. AH cut also applies to Opportunities and watchlist estimates.")
+    if D.Settings().serviceCustomerMaterials and values.serviceLabor == 0 and values.serviceMinimum == 0 then
+        UI.priceStatus:SetText("Pricing saved. Customer-material quotes are 0c until labor or a minimum charge is set.")
+    end
+    if C.selected then C.selected.quote = C.DisplayQuote(C.selected); C.Net(C.selected) end
+    A.Watchlist.Ensure()
+    if A.MarketUI.panel and A.MarketUI.panel:IsVisible() then A.Market.Ensure(A.MarketUI.view,A.MarketUI.sort) end
+    UI.Refresh(); return true
+end
+
+function UI.CreatePricing(frame)
+    local panel = CreateFrame("Frame",nil,frame)
+    panel:SetPoint("TOPLEFT",frame,"TOPLEFT",0,-95); panel:SetSize(560,510); UI.pricing = panel
+    local fees = Inset(panel,0,95)
+    Label(fees,"Auction profit",14,-12,480,"GameFontNormal")
+    Label(fees,"AH cut %",14,-42,220)
+    Label(fees,"Net profit excludes deposits and expired listings.",14,-68,507)
+    UI.priceInputs = {}
+    local function Input(parent,key,x,y,money)
+        local box = CreateFrame("EditBox",nil,parent,"InputBoxTemplate")
+        box:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y); box:SetSize(92,24); box:SetAutoFocus(false)
+        box:SetNumeric(not money); box:SetMaxLetters(12)
+        box:SetScript("OnTextChanged",function(_,user) if user then UI.priceDirty = true end end)
+        box:SetScript("OnEnterPressed",UI.ApplyPricing)
+        box:SetScript("OnEscapePressed",function(self) self:ClearFocus(); UI.ResetPricing() end)
+        UI.priceInputs[key] = box
+    end
+    Input(fees,"marketFee",290,-36,false)
+    local services = Inset(panel,-107,270)
+    Label(services,"Quotes and service charges",14,-12,507,"GameFontNormal")
+    Label(services,"Material markup % (also used for item quotes)",14,-54,265); Input(services,"quoteMarkup",290,-48,false)
+    Label(services,"Labor per service (g)",14,-96,265); Input(services,"serviceLabor",290,-90,true)
+    Label(services,"Minimum service quote (g)",14,-138,265); Input(services,"serviceMinimum",290,-132,true)
+    UI.customerMaterials = CreateFrame("CheckButton",nil,services,"UICheckButtonTemplate")
+    UI.customerMaterials:SetPoint("TOPLEFT",services,"TOPLEFT",10,-175); UI.customerMaterials:SetSize(26,26)
+    UI.customerMaterials:SetScript("OnClick",function() UI.priceDirty = true end)
+    Label(services,"Customer supplies materials",43,-181,460)
+    local help = Label(services,"Your materials: cost + markup + labor, subject to the minimum.\nCustomer materials: labor or the minimum charge, whichever is higher.",14,-218,507)
+    help:SetHeight(38); help:SetWordWrap(true)
+    Button(panel,"Apply pricing",16,-394,163,UI.ApplyPricing)
+    Button(panel,"Reset fields",191,-394,145,UI.ResetPricing)
+    UI.priceStatus = Label(panel,"",18,-436,524); UI.priceStatus:SetHeight(48); UI.priceStatus:SetWordWrap(true)
+    UI.ResetPricing(); panel:Hide()
 end
 
 function UI.Create()
@@ -154,6 +233,10 @@ function UI.Create()
     UI.age = Label(frame, "", 72, -38, 470)
     UI.recipeTab = Button(frame, "Selected recipe", 16, -61, 156, function() UI.mode = "recipe"; UI.Refresh() end)
     UI.profitTab = Button(frame, "Recipe list", 181, -61, 174, function() UI.mode = "profit"; UI.Refresh() end)
+    UI.pricingTab = Button(frame, "Pricing", 368, -61, 176, function()
+        if not UI.priceDirty then UI.ResetPricing() end
+        UI.mode = "pricing"; UI.Refresh()
+    end)
     UI.showAllButton = Button(frame, "Show all recipes", 368, -61, 176, function()
         if U.Combat() or not D.data then return end
         D.data.settings.showAllRecipes = not D.Settings().showAllRecipes; UI.page = 1; UI.Refresh()
@@ -166,7 +249,7 @@ function UI.Create()
     UI.recipeName:SetHeight(30); UI.recipeName:SetWordWrap(true)
     UI.yield = Label(summary, "", 14, -43, 507)
     UI.values, UI.valueLabels = {}, {}
-    local labels = { "Materials / craft", "Cost / item", "Sale / craft", "Gross profit / craft", "Return on cost" }
+    local labels = { "Materials / craft", "Cost / item", "Sale after AH cut", "Net profit / craft", "Net return on cost" }
     for index, name in ipairs(labels) do
         local y = -69 - (index - 1) * 23
         UI.valueLabels[index] = Label(summary, name, 14, y, 190)
@@ -191,7 +274,8 @@ function UI.Create()
     quote:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
     quote:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     UI.quoteBox = quote
-    Label(quotes, "Materials + markup. Ctrl+C to copy.", 14, -73, 350)
+    Label(quotes, "Ctrl+C to copy quote.", 14, -73, 215)
+    UI.recordSale = Button(quotes, "Record sale", 243, -67, 130, function() A.EconomyUI.DraftSale(C.selected) end)
     UI.insertQuote = Button(quotes, "Insert in chat", 383, -67, 137, UI.InsertQuote)
     local materials = Inset(details, -310, 164)
     Label(materials, "Materials", 14, -10, 507, "GameFontNormal")
@@ -222,7 +306,7 @@ function UI.Create()
     local header = CreateFrame("Frame", nil, list)
     header:SetPoint("TOPLEFT", list, "TOPLEFT", 4, -4); header:SetSize(528, 22); Fill(header, 0.22, 0.18, 0.09, 0.45)
     Label(header, "Recipe", 10, -3, 275, "GameFontNormalSmall")
-    Label(header, "Gross / craft", 285, -3, 129, "GameFontNormalSmall"):SetJustifyH("RIGHT")
+    Label(header, "Net / Quote", 285, -3, 129, "GameFontNormalSmall"):SetJustifyH("RIGHT")
     Label(header, "Return", 420, -3, 94, "GameFontNormalSmall"):SetJustifyH("RIGHT")
     UI.catalogRows = {}
     for index = 1, 8 do
@@ -250,7 +334,8 @@ function UI.Create()
     UI.catalogStatus = Label(status, "", 12, -9, 512)
     UI.catalogNote = Label(status, "", 12, -29, 512); UI.catalogNote:SetHeight(28); UI.catalogNote:SetWordWrap(true)
     UI.empty = Label(list, "", 22, -124, 492); UI.empty:SetHeight(68); UI.empty:SetWordWrap(true)
-    Label(frame, "Craft profit is before AH fees. Quotes are materials + markup.\nScan prices are asking prices; a sale is not guaranteed.", 18, -616, 524):SetHeight(28)
+    UI.CreatePricing(frame)
+    Label(frame, "Net craft profit includes the AH cut; deposits are excluded.\nService quotes follow your materials and labor settings.", 18, -616, 524):SetHeight(28)
     frame:Hide()
 end
 
@@ -291,18 +376,24 @@ function UI.Refresh()
     UI.recipeTab:SetText((UI.mode == "recipe" and "|cffffd100" or "|cffffffff") .. "Selected recipe|r")
     UI.profitTab:SetText((UI.mode == "profit" and "|cffffd100" or "|cffffffff") .. "Recipe list|r")
     UI.applyMarkup:SetEnabled(not U.Combat())
+    if UI.mode == "pricing" then
+        UI.details:Hide(); UI.catalog:Hide(); UI.pricing:Show(); UI.showAllButton:Hide(); UI.pricingTab:Show()
+        UI.pricingTab:SetText("|cffffd100Pricing|r"); return
+    end
+    UI.pricing:Hide(); UI.pricingTab:SetText("Pricing")
     if UI.mode == "recipe" then
-        UI.details:Show(); UI.catalog:Hide(); UI.showAllButton:Hide()
+        UI.details:Show(); UI.catalog:Hide(); UI.showAllButton:Hide(); UI.pricingTab:Show()
         local row = C.selected
+        if row then C.Net(row) end
         local service = row and row.service
         UI.recipeName:SetText(row and row.name or "Select a learned recipe")
-        UI.yield:SetText(service and "Service - quote per application" or (row and row.quantityMin and ("Output per craft: " .. (row.quantityMin == row.quantityMax and tostring(row.quantityMin) or (row.quantityMin .. "-" .. row.quantityMax))) or ""))
+        UI.yield:SetText(service and "Service - quote per application" or (row and row.quantityMin and ("Output per craft: " .. (row.quantityMin == row.quantityMax and tostring(row.quantityMin) or (row.quantityMin .. "-" .. row.quantityMax)) .. (row.breakEvenUnitMax and ("  |  Break-even: " .. Range(row.breakEvenUnitMin,row.breakEvenUnitMax,U.Money) .. " ea") or "")) or ""))
         local values = {
             row and row.cost and U.Money(row.cost) or "Unavailable",
-            service and row.quote and U.Money(row.quote) or (row and Range(row.unitCostMin, row.unitCostMax, U.Money) or "Unavailable"),
-            row and Range(row.saleMin, row.saleMax, U.Money) or "Unavailable",
-            row and Range(row.profitMin, row.profitMax, UI.SignedMoney) or "Unavailable",
-            row and row.cost == 0 and "No material cost" or (row and Range(row.returnMin, row.returnMax, Return) or "Unavailable"),
+            service and C.DisplayQuote(row) and U.Money(C.DisplayQuote(row)) or (row and Range(row.unitCostMin, row.unitCostMax, U.Money) or "Unavailable"),
+            row and Range(row.netSaleMin, row.netSaleMax, U.Money) or "Unavailable",
+            row and Range(row.netProfitMin, row.netProfitMax, UI.SignedMoney) or "Unavailable",
+            row and row.cost == 0 and "No material cost" or (row and Range(row.netReturnMin, row.netReturnMax, Return) or "Unavailable"),
         }
         UI.valueLabels[1]:SetText(service and "Materials / service" or "Materials / craft")
         UI.valueLabels[2]:SetText(service and "Quote / service" or "Cost / item")
@@ -310,26 +401,27 @@ function UI.Refresh()
             UI.values[index]:SetText(value)
             if service and index > 2 then UI.values[index]:Hide(); UI.valueLabels[index]:Hide()
             else UI.values[index]:Show(); UI.valueLabels[index]:Show() end
-            local profit = row and row.profitMin
+            local profit = row and row.netProfitMin
             if index >= 4 and profit then
                 UI.values[index]:SetTextColor(profit >= 0 and 0.35 or 1, profit >= 0 and 0.87 or 0.38, 0.38)
             else UI.values[index]:SetTextColor(0.83, 0.86, 0.89) end
         end
-        UI.serviceHelp:SetText(service and "This recipe applies a service rather than creating an auction item.\nUse the material quote and markup below to set your price." or "")
+        UI.serviceHelp:SetText(service and "This recipe applies a service rather than creating an auction item.\nSet material recovery, labor and a minimum charge under Pricing." or "")
         if service then UI.serviceHelp:Show() else UI.serviceHelp:Hide() end
         local quoteText = C.QuoteText(row)
         if UI.quoteText ~= quoteText or UI.quoteRecipeID ~= (row and row.recipeID) then UI.quoteBox:ClearFocus() end
         UI.quoteRecipeID, UI.quoteText = row and row.recipeID, quoteText
+        UI.recordSale:SetEnabled(row ~= nil and not U.Combat())
         UI.insertQuote:SetEnabled(quoteText ~= nil and ChatOpener() ~= nil and not U.Combat())
         if not UI.quoteBox:HasFocus() then UI.quoteBox:SetText(quoteText or "Quote unavailable until all material prices are known") end
         UI.RefreshMaterials(row)
-        UI.reason:SetText(service and (quoteText and "Service quote ready. Auction profit does not apply." or "Service quote unavailable. Check material cost and markup.") or
+        UI.reason:SetText(service and (quoteText and (D.Settings().serviceCustomerMaterials and "Customer supplies materials. Quote is your service charge." or "Service quote ready. Auction profit does not apply.") or "Service quote unavailable. Check material cost and markup.") or
             (row and row.reason or (row and row.estimated and "Variable output: profit shows the minimum and maximum yield." or "")))
     else
-        UI.details:Hide(); UI.catalog:Show(); UI.showAllButton:Show()
+        UI.details:Hide(); UI.catalog:Show(); UI.showAllButton:Show(); UI.pricingTab:Hide()
         local showAll = D.Settings().showAllRecipes
         UI.showAllButton:SetText(showAll and "Profitable only" or "Show all recipes")
-        UI.sortProfit:SetText(UI.sort == "profit" and "|cffffd100Profit / craft|r" or "Profit / craft")
+        UI.sortProfit:SetText(UI.sort == "profit" and "|cffffd100Net / craft|r" or "Net / craft")
         UI.sortReturn:SetText(UI.sort == "return" and "|cffffd100Return %|r" or "Return %")
         local rows = UI.CatalogView()
         local pages = math.max(1, math.ceil(#rows / 8)); UI.page = math.max(1, math.min(UI.page, pages))
@@ -338,10 +430,12 @@ function UI.Refresh()
             if row then
                 local _, state = UI.RecipeState(row)
                 button.name:SetText(row.name); button.note:SetText(state)
-                button.profit:SetText(row.service and "Quote only" or (row.profitMin and UI.SignedMoney(row.profitMin) or "Unavailable"))
-                button.percent:SetText(row.service and "Service" or (row.returnMin and Return(row.returnMin) or (row.cost == 0 and "No cost" or "Unavailable")))
+                local quote = C.DisplayQuote(row)
+                button.profit:SetText(row.service and (quote and U.Money(quote) or "Unavailable") or (row.netProfitMin and UI.SignedMoney(row.netProfitMin) or "Unavailable"))
+                button.percent:SetText(row.service and "Service" or (row.netReturnMin and Return(row.netReturnMin) or (row.cost == 0 and "No cost" or "Unavailable")))
                 local r, g, b = 0.61, 0.66, 0.70
-                if row.profitMin then r, g, b = row.profitMin >= 0 and 0.35 or 1, row.profitMin >= 0 and 0.87 or 0.38, 0.38 end
+                if row.netProfitMin then r, g, b = row.netProfitMin >= 0 and 0.35 or 1, row.netProfitMin >= 0 and 0.87 or 0.38, 0.38
+                elseif row.service then r,g,b = 1,0.82,0.25 end
                 button.profit:SetTextColor(r, g, b); button.percent:SetTextColor(r, g, b); button:Show()
             else button:Hide() end
         end
@@ -351,7 +445,7 @@ function UI.Refresh()
         UI.catalogStatus:SetText(C.reason or (C.ready and string.format("%d priced | %d services | %d quote-only | %d need data", summary.priced, summary.services, summary.quotes, summary.missing) or
             ("Checking recipes: " .. math.min(C.cursor - 1, #(C.ids or {})) .. " / " .. #(C.ids or {}) .. (#C.rows > 0 and ". Showing the last complete list." or ""))))
         UI.catalogNote:SetText((C.catalogScope == "filtered" and "Uses the profession's current filters. " or "Learned recipes in this profession. ") ..
-            (showAll and "Services have quotes, not auction profit. Click a recipe for details." or "Positive gross profit only; services appear under Show all recipes."))
+            (showAll and "Service rows show the numeric quote. Click a recipe for details." or "Positive net profit only; services appear under Show all recipes."))
         UI.empty:SetText(UI.search ~= "" and "No matching recipes in this view. Clear the search or try Show all recipes." or
             (#C.rows == 0 and "No learned recipes in the current catalog. Check the profession's filters." or "No profitable recipes with current prices. Try Show all recipes to view services and missing-price details."))
         if #rows == 0 and C.ready and not C.reason then UI.empty:Show() else UI.empty:Hide() end

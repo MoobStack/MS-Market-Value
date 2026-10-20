@@ -160,3 +160,18 @@ The supplied revision 2 report matches Forever build 70450. Recipe 13529 is a se
 Service counts are derived from the existing adapter's service flag after material cost is known. Missing costs stay unavailable. Search operates only on the published ranking and leaves native profession filters alone. Native layout, font fit and hover behavior remain live checks.
 
 For future money-making features, [TSM's price-source documentation](https://support.tradeskillmaster.com/custom-strings/which-price-sources-can-i-use-and-what-do-they-mean) distinguishes listed market prices from accounting purchases/sales. Its [value-source documentation](https://support.tradeskillmaster.com/en_US/custom-strings/which-value-sources-can-i-use-and-what-do-they-mean) describes personal sale-rate records separately. Those support the roadmap's data boundary; they do not establish compatible Forever transaction APIs or import TSM data into this addon.
+
+
+## Version 1.2.0, test revision 4: transaction boundaries
+
+Reviewed against the same matching Forever **1.60.1 / 70450** commit `172a387e3ab85b26e6640d3058d5ec1e6ccd4c63`.
+
+| Primary client source | Use |
+|---|---|
+| [Native MailFrame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_MailFrame/MailFrame.lua) | GetInboxInvoiceInfo buyer/seller totals, quantity, deposit and consignment; pending notices are separate; native received-money arithmetic is bid + deposit - consignment |
+| [Mail API events](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_APIDocumentationGenerated/MailInfoDocumentation.lua) | Mail UI lifecycle; no documented stable invoice identifier |
+| [Auction API](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_APIDocumentationGenerated/AuctionHouseDocumentation.lua) | Purchase notifications give item/auction IDs and sometimes quantities, not a complete ledger total |
+
+The ledger previews the currently open completed invoice on a user click. It does not infer sales from listings or prices, read mail bodies, collect attachments, send money or automate purchases. Signature/expiry duplicate checks are deliberately conservative; close identical transactions remain a review case. Returned deposits are excluded from profit. This is implementation/source evidence, not a claim of a successful native invoice import.
+
+Net crafting estimates use the user's AH cut, not a detected server rate. Break-even prices, watch targets and service charges are addon policies. No new third-party runtime code or external price feed was added.

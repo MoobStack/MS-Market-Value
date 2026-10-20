@@ -1,18 +1,20 @@
 # Upgrade and rollback
 
-**1.2.0-beta / 2026-10-20-beta001**, Test revision **3**. The addon folder, SavedVariable and root schema remain `MSMarketValue`, `MSMarketValueDB` and schema 1.
+**1.2.0-beta / 2026-10-20-beta001**, Test revision **4**. The addon folder, SavedVariable and root schema remain `MSMarketValue`, `MSMarketValueDB` and schema 1.
 
 1. Finish any scan and close WoW normally. Incomplete work is session-only.
 2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`.
 3. Replace `Interface/AddOns/MSMarketValue` using the Clean ZIP. Keep WTF/SavedVariables.
-4. Restart. Diagnostics should identify the version/build above and Test revision 3.
+4. Restart. Diagnostics should identify the version/build above and Test revision 4.
 5. Open a supplies vendor to learn your discounted material purchase prices. Then check a recipe with a vendor reagent.
 
 Completed prices, daily history, preferences, markup, exclusions, positions and cooldown carry forward from 1.1.0. No AH scan is required solely to upgrade. Vendor purchase observations and market filters are new optional data; current-price and history formats stay unchanged.
 
 Open **MS Opportunities** before the existing AH tab. Default resale filters need three earlier priced days per item, plus a fresh current scan. Same-day scans do not add earlier days. History settings still allow 1–30 calendar days; shortening retention removes older entries immediately.
 
-Revision 3 adds crafting recipe search and clearer service quotes. Search is local to the open profession; existing all-recipes, auto-open and markup preferences are kept.
+Revision 4 adds net crafting profit, labor/minimum service charges, watchlists and a personal ledger. Service labor/minimum default to 0; customer materials defaults off. Existing quotes therefore keep their material-based behavior. AH cut defaults to the existing configured value (normally 5%).
+
+Watchlists and ledger use optional schema-1 sub-roots. Existing prices, history and preferences carry forward. Older builds ignore the new data. Search remains local to the open profession. Ledger retention defaults to 90 days and is separate from price history.
 
 Existing profit targets keep their value and display in gold (500 silver becomes 5 gold). Resale now applies the saved price-move threshold too; use 0 to disable that check. No price-history reset is needed.
 

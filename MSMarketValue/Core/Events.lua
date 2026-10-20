@@ -93,6 +93,8 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
         if A.UI.diagnostics then A.UI.diagnostics:Hide() end
         if A.CraftingUI.frame then A.CraftingUI.frame:Hide() end
         if A.CraftingUI.opener then A.CraftingUI.opener:Hide() end
+        if A.EconomyUI.frame then A.EconomyUI.frame:Hide() end
+        if A.EconomyUI.csvFrame then A.EconomyUI.csvFrame:Hide() end
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.refreshTooltips = true
         if A.auctionOpen then A.UI.OnAuctionShow() end
@@ -106,6 +108,7 @@ local scanElapsed, uiElapsed = 0, 0
 frame:SetScript("OnUpdate", function(_, elapsed)
     scanElapsed, uiElapsed = scanElapsed + elapsed, uiElapsed + elapsed
     S.CopyTick()
+    A.Watchlist.Tick()
     if A.MarketUI.panel and A.MarketUI.panel:IsVisible() then A.Market.Tick() end
     if scanElapsed >= 0.05 then
         scanElapsed = 0
@@ -116,6 +119,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     if uiElapsed >= 0.25 then
         uiElapsed = 0
         A.History.Maintain()
+        A.Watchlist.Ensure()
         A.Crafting.Tick()
         if A.Vendor.pending and A.Vendor.open then A.Vendor.Capture() end
         if A.MarketUI.panel and A.MarketUI.panel:IsVisible() and not U.Combat() then
@@ -123,6 +127,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
             A.MarketUI.Refresh()
         end
         if A.auctionOpen and not A.UI.tabInstalled and not U.Combat() then A.UI.InstallAuctionTab() end
+        if A.EconomyUI.frame and A.EconomyUI.frame:IsShown() and not U.Combat() then A.EconomyUI.Refresh() end
         if (A.UI.frame and A.UI.frame:IsShown()) or (A.UI.panel and A.UI.panel:IsShown()) then A.UI.Refresh() end
         if A.refreshTooltips and not U.Combat() then
             A.refreshTooltips = false
@@ -153,6 +158,10 @@ SlashCmdList.MSMARKETVALUE = function(message)
         if not ok then U.Print(reason) end
     elseif command == "market" then
         A.MarketUI.Show()
+    elseif command == "watch" then
+        A.EconomyUI.Show("watch")
+    elseif command == "ledger" then
+        A.EconomyUI.Show("ledger")
     elseif command == "craft" then
         A.CraftingUI.Show()
     elseif command == "status" then
@@ -162,6 +171,6 @@ SlashCmdList.MSMARKETVALUE = function(message)
     elseif command == "diagnostics" then
         A.UI.ShowDiagnostics()
     else
-        U.Print("/msmv | scan | pause | resume | restart | discard | craft | market | status | diagnostics")
+        U.Print("/msmv | scan | pause | resume | restart | discard | craft | market | watch | ledger | status | diagnostics")
     end
 end

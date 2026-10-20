@@ -48,6 +48,30 @@ function U.Money(copper)
     return string.format("%dc", bronze)
 end
 
+function U.ParseGold(text, maximum)
+    if not U.String(text) then return nil end
+    text = string.match(text, "^%s*(.-)%s*$")
+    if #text == 0 or #text > 24 or not string.match(text, "^%d*%.?%d*$") then return nil end
+    local whole, fraction = string.match(text, "^(%d*)%.(%d*)$")
+    if not whole then whole, fraction = text, "" end
+    if whole == "" and fraction == "" or #fraction > 4 then return nil end
+    local copper = (tonumber(whole) or 0) * 10000 + (tonumber(fraction .. string.rep("0", 4 - #fraction)) or 0)
+    if U.Number(copper, 0, maximum or 100000000, true) then return copper end
+end
+
+function U.GoldText(copper)
+    if not U.Number(copper, 0, 1000000000000, true) then return "" end
+    local fraction = string.gsub(string.format("%04d", copper % 10000), "0+$", "")
+    return string.format("%.0f", math.floor(copper / 10000)) .. (#fraction > 0 and ("." .. fraction) or "")
+end
+
+function U.PlayerKey()
+    local ok, guid = false, nil
+    if type(UnitGUID) == "function" then ok, guid = pcall(UnitGUID, "player") end
+    local market = U.MarketKey()
+    if ok and U.String(guid) and #guid <= 128 and market then return market .. "|" .. guid end
+end
+
 function U.Age(timestamp)
     if not U.Number(timestamp, 0) then return "unknown age" end
     local seconds = math.max(0, U.Now() - timestamp)

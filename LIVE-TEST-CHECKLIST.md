@@ -1,6 +1,6 @@
 # 1.2.0 beta checks
 
-Build `2026-10-20-beta001`, Test revision **3**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
+Build `2026-10-20-beta001`, Test revision **4**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
 
 ## Vendor costs
 
@@ -24,7 +24,7 @@ Build `2026-10-20-beta001`, Test revision **3**. Keep SavedVariables when replac
 
 ## Crafting layout
 
-- Open a normal item recipe and a direct enchant. Item recipes should keep their gross profit/return; services should show material cost and quote, with no auction-only fields.
+- Open a normal item recipe and a direct enchant. Item recipes should show net profit/return and a break-even price; services should show material cost and a numeric quote, with no auction-only fields.
 - Check **Recipe list** at normal UI scale. Search a partial name, change sorting and toggle Show all recipes. Searching should not raise catalog build counts. Switch professions and confirm the search clears.
 - Hover a long recipe name for full details, then click it to select the native recipe. Quote-only services should not count as missing price data.
 - Check material quantities, AH/vendor sources and line totals. Visit a supplies vendor first if diagnostics still show zero purchase prices.
@@ -36,3 +36,14 @@ Build `2026-10-20-beta001`, Test revision **3**. Keep SavedVariables when replac
 - Keep a history day across normal logout/relog/restart. Check UTC rollover when available.
 
 For a layout issue, include a screenshot. For vendor math, include item/recipe, required quantity and vendor price/bundle size. For a market signal, include the item, filters and diagnostics. No need to reset saved prices or settings.
+
+
+## Revision 4 pricing and money tools
+
+- In crafting **Pricing**, set AH cut, markup, labor and minimum charge. Check one item recipe's net profit/break-even and one service's quote against those settings.
+- Toggle customer materials. A service should charge labor/minimum only, even if material costs are unavailable; normal item quotes should still include materials.
+- On Opportunities, right-click an item and choose **Watch selected**. Save targets, check history coverage/scan age and verify an intentional target hit. Reopening should not repeat its local notice for the same scan.
+- Use `/msmv watch` away from the AH, then at an auctioneer test View listings for both an any-suffix item and an exact item link.
+- Use `/msmv ledger` to enter a sale with unknown cost, then edit its cost. Check net proceeds, known profit, spending and recorded flow separately. Delete/undo and copy CSV.
+- Open a completed AH invoice, preview it, then record it. Check total, quantity, fees and returned deposit against native mail. A second import should be blocked. Pending sale notices should be rejected. No money/items should be collected by the addon.
+- Reload and confirm pricing preferences, watch targets, alert deduplication and ledger entries remain. Back up SavedVariables before testing shorter ledger retention.

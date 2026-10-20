@@ -62,6 +62,44 @@ function C.Quote(cost, markup)
     return U.Number(quote, 0, 9007199254740991) and quote or nil
 end
 
+function C.ServiceQuote(cost, settings)
+    settings = settings or D.Settings()
+    if not U.Table(settings) or not U.Number(settings.serviceLabor,0,100000000,true) or
+       not U.Number(settings.serviceMinimum,0,100000000,true) or not U.Number(settings.quoteMarkup,0,1000,true) or
+       not U.Accessible(settings.serviceCustomerMaterials) or type(settings.serviceCustomerMaterials) ~= "boolean" then return nil end
+    local recovery = settings.serviceCustomerMaterials and 0 or C.Quote(cost, settings.quoteMarkup)
+    if recovery == nil then return nil end
+    local quote = math.ceil(math.max(settings.serviceMinimum, recovery + settings.serviceLabor))
+    return U.Number(quote, 0, 9007199254740991) and quote or nil
+end
+
+function C.DisplayQuote(row)
+    if not row then return nil end
+    if row.service and (row.cost ~= nil or D.Settings().serviceCustomerMaterials or U.Table(row.materials)) then return C.ServiceQuote(row.cost) end
+    if row.cost ~= nil then return C.Quote(row.cost, D.Settings().quoteMarkup) end
+    return row.quote
+end
+
+function C.Net(row)
+    local fee = D.Settings().marketFee
+    if not U.Number(fee,0,30,true) then return row end
+    if row.netFee == fee then return row end
+    row.netFee = fee
+    if not U.Number(row.cost, 0, 9007199254740991) or not U.Number(row.saleMin, 0, 9007199254740991) or
+       not U.Number(row.saleMax, row.saleMin, 9007199254740991) then return row end
+    row.netSaleMin, row.netSaleMax = math.floor(row.saleMin * (100 - fee) / 100), math.floor(row.saleMax * (100 - fee) / 100)
+    row.netProfitMin, row.netProfitMax = row.netSaleMin - row.cost, row.netSaleMax - row.cost
+    if row.cost > 0 then row.netReturnMin, row.netReturnMax = row.netProfitMin * 100 / row.cost, row.netProfitMax * 100 / row.cost end
+    local function BreakEven(quantity)
+        if not U.Number(quantity, 1, MAX_QUANTITY, true) then return nil end
+        local price = math.ceil(row.cost / quantity / ((100 - fee) / 100))
+        if math.floor(price * quantity * (100 - fee) / 100) < row.cost then price = price + 1 end
+        return price
+    end
+    row.breakEvenUnitMin, row.breakEvenUnitMax = BreakEven(row.quantityMax), BreakEven(row.quantityMin)
+    return row
+end
+
 function C.MaterialName(id)
     if C.names[id] then return C.names[id] end
     -- Native item callbacks can arrive during the getter. Clear the pending
@@ -97,13 +135,14 @@ function C.RecipeLink(id)
 end
 
 function C.QuoteText(row)
-    if not row or not U.Number(row.quote, 0, 9007199254740991) then return nil end
+    local quote = C.DisplayQuote(row)
+    if not row or not U.Number(quote, 0, 9007199254740991) then return nil end
     local name = C.RecipeLink(row.recipeID) or row.name
-    if row.service then return name .. " - " .. U.Money(row.quote) .. " ea" end
+    if row.service then return name .. " - " .. U.Money(quote) .. " ea" end
     if row.quantityMin and row.quantityMin == row.quantityMax then
-        return name .. " - " .. U.Money(row.quote / row.quantityMin) .. " ea"
+        return name .. " - " .. U.Money(quote / row.quantityMin) .. " ea"
     end
-    return name .. " - " .. U.Money(row.quote) .. " per craft"
+    return name .. " - " .. U.Money(quote) .. " per craft"
 end
 
 function C.Analyze(recipeID, form, snapshot)
@@ -193,10 +232,12 @@ function C.Analyze(recipeID, form, snapshot)
         else result.missing[#result.missing + 1] = id end
         result.materials[#result.materials + 1] = material
     end
-    if #result.missing > 0 then return Unavailable("Material prices missing: " .. #result.missing .. ". Visit a supplies vendor for vendor materials; scan the AH for other materials.") end
+    local materialReason = #result.missing > 0 and ("Material prices missing: " .. #result.missing .. ". Visit a supplies vendor for vendor materials; scan the AH for other materials.") or nil
     if not U.Number(result.subtotal, 0, 9007199254740991) then return Unavailable("Material cost is out of range.") end
-    result.cost = result.subtotal
-    result.quote = C.Quote(result.cost, D.Settings().quoteMarkup)
+    if not materialReason then
+        result.cost = result.subtotal
+        result.quote = C.Quote(result.cost, D.Settings().quoteMarkup)
+    end
     local minimum, maximum = schematic.quantityMin, schematic.quantityMax
     if not U.Number(minimum, 1, MAX_QUANTITY, true) or not U.Number(maximum, minimum, MAX_QUANTITY, true) then
         return Unavailable("Output quantity is unavailable; material quote only.")
@@ -222,11 +263,14 @@ function C.Analyze(recipeID, form, snapshot)
     if not U.Number(outputID, 1, MAX_ID, true) then outputID = schematic.outputItemID end
     if not U.Number(outputID, 1, MAX_ID, true) then
         result.service = true
-        return Unavailable("Service recipe: material quote only.")
+        result.quote = C.ServiceQuote(result.cost)
+        if D.Settings().serviceCustomerMaterials and result.quote then return Unavailable("Customer-material service quote ready.") end
+        return Unavailable(materialReason or "Service recipe: materials and service charge.")
     end
     if not U.String(outputLink) or U.ItemID(outputLink) ~= outputID then outputLink = nil end
     result.outputID = outputID
     result.outputLink = outputLink
+    if materialReason then return Unavailable(materialReason) end
     result.unitCostMin, result.unitCostMax = result.cost / maximum, result.cost / minimum
     local price = D.Price(outputID, outputLink, snapshot)
     if not price then return Unavailable("Output has no buyout price in the latest scan; material quote only.") end
@@ -240,7 +284,7 @@ function C.Analyze(recipeID, form, snapshot)
         result.returnMin, result.returnMax = result.profitMin / result.cost * 100, result.profitMax / result.cost * 100
     end
     result.estimated = minimum ~= maximum
-    return result
+    return C.Net(result)
 end
 
 function C.Invalidate()
@@ -291,14 +335,15 @@ function C.Ranked(mode, showAll)
     showAll = showAll == true
     local cacheKey = mode .. (showAll and "-all" or "-profitable")
     local cache = C.rankedCache and C.rankedCache[cacheKey]
-    if cache and cache.rows == C.rows and cache.count == #C.rows then return cache.result end
+    if cache and cache.rows == C.rows and cache.count == #C.rows and cache.fee == D.Settings().marketFee then return cache.result end
     local result = {}
     for _, row in ipairs(C.rows) do
-        if showAll or (row.profitMin and row.profitMin > 0 and (mode ~= "return" or row.returnMin)) then result[#result + 1] = row end
+        C.Net(row)
+        if showAll or (row.netProfitMin and row.netProfitMin > 0 and (mode ~= "return" or row.netReturnMin)) then result[#result + 1] = row end
     end
     table.sort(result, function(a, b)
         local av, bv
-        if mode == "return" then av, bv = a.returnMin, b.returnMin else av, bv = a.profitMin, b.profitMin end
+        if mode == "return" then av, bv = a.netReturnMin, b.netReturnMin else av, bv = a.netProfitMin, b.netProfitMin end
         if av == nil and bv ~= nil then return false end
         if bv == nil and av ~= nil then return true end
         if av == bv then
@@ -308,7 +353,7 @@ function C.Ranked(mode, showAll)
         return av > bv
     end)
     C.rankedCache = C.rankedCache or {}
-    C.rankedCache[cacheKey] = { rows = C.rows, count = #C.rows, result = result }
+    C.rankedCache[cacheKey] = { rows = C.rows, count = #C.rows, fee = D.Settings().marketFee, result = result }
     return result
 end
 

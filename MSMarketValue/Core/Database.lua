@@ -10,11 +10,14 @@ D.defaults = {
     staleHours = 24, quoteMarkup = 0, historyDays = 30,
     marketLookback = 14, marketMinDays = 3, marketMinReturn = 20,
     marketMinProfit = 100, marketFee = 5, marketMove = 15,
+    serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
+    watchAlerts = true, ledgerDays = 90,
 }
 
 local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, historyDays = { 1, 30 },
     marketLookback = { 1, 30 }, marketMinDays = { 2, 29 }, marketMinReturn = { 0, 1000 },
-    marketMinProfit = { 0, 100000000 }, marketFee = { 0, 30 }, marketMove = { 0, 1000 } }
+    marketMinProfit = { 0, 100000000 }, marketFee = { 0, 30 }, marketMove = { 0, 1000 },
+    serviceLabor = { 0, 100000000 }, serviceMinimum = { 0, 100000000 }, ledgerDays = { 1, 365 } }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB
@@ -45,6 +48,8 @@ function D.Initialize()
     D.data = db
     A.History.Initialize()
     A.Vendor.Initialize()
+    A.Watchlist.Initialize()
+    A.Ledger.Initialize()
     return true
 end
 

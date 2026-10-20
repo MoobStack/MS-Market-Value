@@ -23,23 +23,7 @@ local function Fill(parent, layer, r, g, b, alpha)
     return texture
 end
 
--- Keep saved prices in copper. Parse gold decimals without floating-point
--- rounding or accepting exponent notation in a currency box.
-function UI.ParseGold(text)
-    if not U.String(text) then return nil end
-    text = string.match(text, "^%s*(.-)%s*$")
-    if #text == 0 or #text > 12 or not string.match(text, "^%d*%.?%d*$") then return nil end
-    local whole, fraction = string.match(text, "^(%d*)%.(%d*)$")
-    if not whole then whole, fraction = text, "" end
-    if whole == "" and fraction == "" or #fraction > 4 then return nil end
-    local copper = (tonumber(whole) or 0) * 10000 + (tonumber(fraction .. string.rep("0", 4 - #fraction)) or 0)
-    if U.Number(copper, 0, 100000000, true) then return copper end
-end
-
-function UI.GoldText(copper)
-    local fraction = string.gsub(string.format("%04d", copper % 10000), "0+$", "")
-    return tostring(math.floor(copper / 10000)) .. (#fraction > 0 and ("." .. fraction) or "")
-end
+UI.ParseGold, UI.GoldText = U.ParseGold, U.GoldText
 
 local fields = {
     { "marketMinReturn", "Min return %", 10, -26, 0, 1000 },
@@ -112,9 +96,9 @@ end
 
 -- Only a row's left-click handler calls this. Analysis and refreshes never
 -- request live listings. The native AH owns searches and purchase controls.
-function UI.OpenListings(row)
+function UI.OpenListings(row, source)
     if U.Combat() then return Message("Open live listings outside combat.") end
-    if next(UI.dirty) then return Message("Apply your filter changes before opening live listings.") end
+    if source ~= "watch" and next(UI.dirty) then return Message("Apply your filter changes before opening live listings.") end
     local ah, modes = AuctionHouseFrame, AuctionHouseFrameDisplayMode
     if not A.auctionOpen or not U.Table(ah) or not ah.IsShown or not ah:IsShown() or
        (ah.IsForbidden and ah:IsForbidden()) then return Message("Open the auction house to view live listings.") end
@@ -122,12 +106,13 @@ function UI.OpenListings(row)
         return Message("Wait for the scan's local copy to finish before opening live listings.")
     end
     local snapshot = D.Snapshot()
-    if M.job or M.snapshot ~= snapshot or M.key ~= U.MarketKey() or not snapshot or
+    local results = source == "watch" and A.Watchlist or M
+    if results.job or results.snapshot ~= snapshot or results.key ~= U.MarketKey() or not snapshot or
        not U.Number(snapshot.startedAt, 0, U.Now()) or D.IsStale(snapshot) then
         return Message("Wait for current results, then choose the item again.")
     end
     local found = false
-    for _, candidate in ipairs(M.rows) do if candidate == row then found = true; break end end
+    for _, candidate in ipairs(results.rows) do if candidate == row then found = true; break end end
     if not found then return Message("Choose an item from the current results.") end
     if C_AuctionHouse and type(C_AuctionHouse.IsThrottledMessageSystemReady) == "function" then
         local ok, ready = pcall(C_AuctionHouse.IsThrottledMessageSystemReady)
@@ -138,6 +123,7 @@ function UI.OpenListings(row)
         return Message("The native Buy page is unavailable on this client.")
     end
     local key, info = NativeKey(row)
+    if source == "watch" and row.suffix == nil and info and not info.isCommodity then key = nil end
     local contexts = AuctionHouseSearchContext
     local context = info and U.Table(contexts) and (info.isCommodity and contexts.BuyCommodities or contexts.BuyItems)
     if key and U.Accessible(context) and context and type(ah.SelectBrowseResult) == "function" and type(ah.QueryItem) == "function" then
@@ -153,12 +139,13 @@ function UI.OpenListings(row)
     end
     -- Changed native APIs can still offer the ordinary name search.
     local item, bar = A.Valuation.ItemInfo(row.link), ah.SearchBar
-    if not item or not U.Table(bar) or type(bar.SetSearchText) ~= "function" or type(bar.StartSearch) ~= "function" then
+    local name = info and info.itemName or (item and item.name)
+    if not U.String(name) or name == "" or not U.Table(bar) or type(bar.SetSearchText) ~= "function" or type(bar.StartSearch) ~= "function" then
         return Message("Item search is not ready. Wait for item details, or use the native Buy search.")
     end
     UI.lastSearch, UI.message = U.Mono(), nil
     local ok = pcall(function()
-        ah:SetDisplayMode(modes.Buy); bar:SetSearchText(item.name); bar:StartSearch()
+        ah:SetDisplayMode(modes.Buy); bar:SetSearchText(name); bar:StartSearch()
     end)
     if not ok then return Message("Could not start the native Buy search. Try searching there directly.") end
     return true
@@ -176,6 +163,8 @@ function UI.Create(parent)
     UI.panel = panel
     Label(panel, "Market opportunities", 14, -10, 400):SetFontObject("GameFontNormal")
     UI.age = Label(panel, "", 14, -31, 746)
+    Button(panel, "Watchlists", 510, -7, 120, function() A.EconomyUI.Show("watch") end)
+    Button(panel, "Ledger", 640, -7, 120, function() A.EconomyUI.Show("ledger") end)
     UI.views = {}
     local names = { { "deals", "Resale" }, { "rising", "Rising" }, { "falling", "Falling" }, { "all", "All signals" } }
     for index, data in ipairs(names) do
@@ -251,7 +240,8 @@ function UI.Create(parent)
     details:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -380); details:SetSize(746, 40)
     UI.detail = Label(details, "", 10, -6, 726); UI.detail:SetHeight(29); UI.detail:SetWordWrap(true)
     UI.previous = Button(panel, "Previous", 14, -424, 100, function() UI.page = math.max(1, UI.page - 1); UI.hovered = nil; UI.Refresh() end)
-    UI.pageText = Label(panel, "", 127, -429, 500)
+    UI.pageText = Label(panel, "", 127, -429, 270)
+    UI.watchSelected = Button(panel, "Watch selected", 420, -424, 145, function() A.EconomyUI.WatchDraft(UI.selected) end)
     UI.next = Button(panel, "Next", 660, -424, 100, function() UI.page = UI.page + 1; UI.hovered = nil; UI.Refresh() end)
     UI.status = Label(panel, "", 14, -451, 746)
     panel:SetScript("OnShow", function() M.Ensure(UI.view, UI.sort); UI.Refresh() end)
@@ -309,6 +299,7 @@ function UI.Refresh()
     end
     UI.RefreshDetails()
     UI.previous:SetEnabled(UI.page > 1); UI.next:SetEnabled(UI.page < pages)
+    UI.watchSelected:SetEnabled(UI.selected ~= nil and not combat and not M.job)
     UI.pageText:SetText(string.format("%d matches | Page %d / %d%s", M.eligible or 0, UI.page, pages, (M.eligible or 0) > 200 and " | Best 200 shown" or ""))
     UI.status:SetText(UI.message or (next(UI.dirty) and "Changes not applied. Click Apply filters or press Enter; Esc restores the focused field.") or
         (M.job and ((M.job.phase == "variants" and ("Checking history variants: " .. (M.job.prepared or 0)) or ("Checking saved prices: " .. M.job.examined)) .. ". Previous results remain until ready.") or M.reason) or

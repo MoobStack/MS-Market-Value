@@ -1,33 +1,38 @@
 # Validation
 
-**1.2.0-beta / 2026-10-20-beta001** · Test revision **3** · Tag `v1.2.0-beta-test3`
+**1.2.0-beta / 2026-10-20-beta001** · Test revision **4** · Tag `v1.2.0-beta-test4`
 
 | Check | Result |
 |---|---|
-| Lua 5.1 behavior | **333/333 passed** |
-| Runtime syntax | All 17 Lua files passed |
-| Identity | Fixed beta version/build; three identical TOCs; test revision 3 |
+| Lua 5.1 behavior | **388/388 passed** |
+| Runtime syntax | All 20 Lua files passed |
+| Identity | Fixed beta version/build; three identical TOCs; test revision 4 |
 | Dependencies | Pinned LibStub/LibAHTab bytes and notices retained |
-| Crafting controls | Search/sort reuse published valuations; no new auction requests |
-| Prior history | Stable 1.1.0 and all eleven prior tag objects retained |
-| Native revision 3 | Crafting layout and hover behavior await in-game confirmation |
+| Requests/actions | Watch checks use saved data; no automatic auction, crafting or mailbox action |
+| Prior history | Stable 1.1.0 and all twelve prior tag objects retained |
+| Native revision 4 | Pricing, watchlist UI and invoice import await in-game checks |
 
-The 15 new cases cover service quotes and item-profit restoration, service versus missing-data counts, literal name search, cached sorting, profession changes, atomic published summaries, material source/quantity/totals, vendor-unseen costs and current markup in service tooltips. Existing scan, combat tooltip, vendor, crafting, history and Opportunities checks remain. The 500% price-move regression from revision 2 is retained.
+The 55 added cases cover net/break-even math, fee-aware ranking caches, service labor/minimum/customer materials, numeric row quotes, watch target combinations/history/suffixes/scopes, alerts and throttled native listings. Ledger checks cover unknown versus zero cost, fees/refunds/flow, edits/undo/retention, schema isolation, limits, reviewed invoices, duplicate identities across reload/deletion/pruning, CSV and restricted values. Existing scan/tooltip/crafting/history behavior and the 500% movement regression remain covered.
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
+MSMV_BENCHMARK=1 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
-
-The delivery report records exact commit/tag identity, independent archive restores, retained tags, byte comparisons and hashes. Packaging requires a clean annotated-tag checkout. Code packages exclude player SavedVariables.
 
 ## Performance
 
-Search and summary caches are invalidated by published source/query/profession changes. Empty search reuses the existing ranking directly. Repeated search/sort refresh fixtures make zero recipe schematic calls and leave catalog builds unchanged. The selected-recipe adapter still follows native selection/reagents on its existing 0.25-second tick.
+The synthetic 5,000-item / 15-day market analysis completed in 215 steps, using 478.15 ms total CPU and a 5.63 ms maximum step. The approximate four-millisecond per-job target can be exceeded by a completed operation or garbage collection.
 
-Market analysis is unchanged in this revision. Revision 2's synthetic 5,000-item / 15-day test completed in 210 steps, using 450.25 ms total CPU and a 5.18 ms maximum step. It retained 200 results and made zero auction requests. Those are local measurements of that earlier revision, not game-client FPS or a crafting-layout benchmark.
+For 200 watches over 15 days, checking completed in **11 steps / 5.60 ms total**, with a **0.62 ms** maximum step. A first view plus 100 cached record/summary refreshes for 2,000 ledger entries took **9.02 ms total**. CSV output was 162,107 bytes. Both workloads made **zero auction requests**. These are local Lua measurements, not native FPS or server tests.
 
-## Native evidence
+Pricing changes recompute net values/quotes from published material/sale values rather than rebuilding native schematics. Rank/search/summary caches have bounded identities. Watch jobs cancel on data/target/fee changes and pause in combat. Ledger UI reuses sorted records and totals until its revision/profile changes; invoice reads occur only on explicit import.
 
-The supplied revision 2 diagnostics came from **Forever 1.60.1 / 70450 / Interface 16001**, PvP/Horde. They show **26,852 auction rows / 2,483 priced items**, four history days and an installed Opportunities tab with six matches. Selected recipe 13529 is a service with a native recipe link. The screenshots show its material quote and the all-learned recipe list. A hidden crafting frame in diagnostics does not itself indicate a missing toggle.
+## Native evidence and limits
 
-Vendor observations remain **0**. The supplied report does not qualify vendor costing or confirm a successful item-list lookup. Revision 3's layout, typography, hover behavior and UI-scale fit need a client check. Frame doubles do not render Blizzard artwork, establish taint behavior or prove disk persistence. Follow the [live checklist](LIVE-TEST-CHECKLIST.md). DE outcomes remain an unverified Classic reference.
+The latest supplied screenshot is revision 3's crafting list on Forever build 70450. It shows working service rows and identifies the need for numeric quotes. Prior revision 2 diagnostics show 26,852 rows / 2,483 priced items, four history days, service recipe 13529 and zero vendor observations. They do not verify revision 4's new features.
+
+The matching build-70450 mail source establishes the buyer/seller invoice fields used for preview/import. It supplies no durable mail ID; conservative signature/expiry matching can flag separate identical invoices. Imported records use recording time. Purchase-success notifications lack the complete transaction totals needed to infer a cost, so this build uses manual entries and reviewed invoices. No counterparty, subject or body is retained.
+
+Check the [live checklist](LIVE-TEST-CHECKLIST.md), including native quantities/fees/refunds, customer-material quotes, watch notices, listing links and save/reload behavior. Actual vendor prices still need a supplier visit. DE outcomes remain an unverified Classic reference. Frame fixtures do not establish native font fit, taint behavior or disk persistence.
+
+The delivery report records exact commit/tag identity, independent source/repository/bundle restores, retained tags, byte parity and package hashes. Packages exclude player SavedVariables.

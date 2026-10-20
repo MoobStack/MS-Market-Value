@@ -132,6 +132,7 @@ local function fresh(saved)
     _G.C_MerchantFrame = { GetItemInfo = function(index) return world.vendorItems[index] end }
     _G.GetMerchantItemInfo = nil
     _G.ChatFrameUtil, _G.ChatFrame_OpenChat = nil, nil
+    _G.InboxFrame, _G.OpenMailFrame, _G.GetInboxInvoiceInfo, _G.GetInboxHeaderInfo, _G.GetInboxItem = nil, nil, nil, nil, nil
     _G.WOW_PROJECT_MAINLINE, _G.WOW_PROJECT_CAMELOT = 1, 14
     _G.WOW_PROJECT_ID = WOW_PROJECT_CAMELOT
     _G.strmatch = string.match
@@ -1353,9 +1354,9 @@ end)
 test("profit and return sorting use separate metrics with deterministic ties", function()
     local w,A=craftingWorld()
     A.Crafting.rows={
-        {recipeID=1,name="A",profitMin=1000,returnMin=10},
-        {recipeID=2,name="B",profitMin=500,returnMin=100},
-        {recipeID=3,name="C",profitMin=500,returnMin=100},
+        {recipeID=1,name="A",cost=10000,saleMin=11000,saleMax=11000,profitMin=1000,returnMin=10},
+        {recipeID=2,name="B",cost=500,saleMin=1000,saleMax=1000,profitMin=500,returnMin=100},
+        {recipeID=3,name="C",cost=500,saleMin=1000,saleMax=1000,profitMin=500,returnMin=100},
     }
     equal(A.Crafting.Ranked("profit")[1].recipeID,1)
     local rows=A.Crafting.Ranked("return"); equal(rows[1].recipeID,2); equal(rows[2].recipeID,3)
@@ -1378,10 +1379,10 @@ end)
 test("native crafting panel displays values and quote markup and preserves close behavior", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
     truth(A.CraftingUI.frame:IsShown()); equal(A.CraftingUI.values[1].text,"4s 00c")
-    equal(A.CraftingUI.values[4].text,"+5s 00c"); equal(A.CraftingUI.values[5].text,"+125.0%")
+    equal(A.CraftingUI.values[4].text,"+4s 55c"); equal(A.CraftingUI.values[5].text,"+113.8%")
     A.CraftingUI.frame.CloseButton.scripts.OnClick(); A.Crafting.Tick(); equal(A.CraftingUI.frame:IsShown(),false)
     A.CraftingUI.opener.scripts.OnClick(); truth(A.CraftingUI.frame:IsShown())
-    w.selectedID=2; A.Crafting.Tick(); equal(A.CraftingUI.values[4].text,"-1s 00c"); equal(A.CraftingUI.values[5].text,"-25.0%")
+    w.selectedID=2; A.Crafting.Tick(); equal(A.CraftingUI.values[4].text,"-1s 15c"); equal(A.CraftingUI.values[5].text,"-28.8%")
 end)
 test("profit recipe buttons select through the native API without crafting", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); A.CraftingUI.mode="profit"; A.CraftingUI.Refresh()
@@ -1402,7 +1403,7 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("testing diagnostics identify the fixed beta build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 3",1,true))
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 4",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
     equal(A.VERSION,"1.2.0-beta"); equal(A.BUILD,"2026-10-20-beta001")
 end)
@@ -1664,7 +1665,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 3",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 4",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -2117,17 +2118,17 @@ end)
 test("all-recipes ranking includes losses break-even and unknown values last", function()
     local w,A=craftingWorld()
     w.recipes[4]=craftRecipe(4,999); w.recipes[5]=craftRecipe(5,200); w.recipes[5].schematic.reagentSlotSchematics[1].quantityRequired=7
-    w.recipeIDs={1,2,3,4,5}; A.Crafting.Tick()
+    w.recipeIDs={1,2,3,4,5}; A.DB.Snapshot().prices[200].low=948; A.DB.Snapshot().variants["200:0"].low=948; A.Crafting.Tick()
     local all=A.Crafting.Ranked("profit",true); equal(#all,5)
-    equal(all[1].recipeID,3); equal(all[2].recipeID,1); equal(all[3].profitMin,0)
+    equal(all[1].recipeID,3); equal(all[2].recipeID,1); equal(all[3].netProfitMin,0)
     equal(all[4].recipeID,2); equal(all[4].profitMin,-100); equal(all[5].recipeID,4); equal(all[5].profitMin,nil)
     equal(#A.Crafting.Ranked("profit"),2)
 end)
 test("all-recipes return sorting places undefined percentages after known losses", function()
     local _,A=craftingWorld(); A.Crafting.rows={
-        {recipeID=1,name="A",profitMin=900,returnMin=nil,cost=0},
-        {recipeID=2,name="B",profitMin=-100,returnMin=-25,cost=400},
-        {recipeID=3,name="C",profitMin=500,returnMin=125,cost=400},
+        {recipeID=1,name="A",saleMin=900,saleMax=900,profitMin=900,returnMin=nil,cost=0},
+        {recipeID=2,name="B",saleMin=300,saleMax=300,profitMin=-100,returnMin=-25,cost=400},
+        {recipeID=3,name="C",saleMin=900,saleMax=900,profitMin=500,returnMin=125,cost=400},
         {recipeID=4,name="D",profitMin=nil,returnMin=nil},
     }
     local all=A.Crafting.Ranked("return",true)
@@ -2153,7 +2154,7 @@ test("show-all button updates row counts pages and red negative values without a
     A.CraftingUI.showAllButton.scripts.OnClick(); equal(A.DB.Settings().showAllRecipes,true)
     equal(A.CraftingUI.page,1); equal(A.Crafting.rows,published); equal(A.Crafting.builds,builds)
     equal(A.CraftingUI.showAllButton.text,"Profitable only")
-    equal(A.CraftingUI.catalogRows[3].profit.text,"-1s 00c"); equal(A.CraftingUI.catalogRows[3].percent.text,"-25.0%")
+    equal(A.CraftingUI.catalogRows[3].profit.text,"-1s 15c"); equal(A.CraftingUI.catalogRows[3].percent.text,"-28.8%")
     equal(A.CraftingUI.catalogRows[3].profit.color[1],1); truth(string.find(A.CraftingUI.pageText.text,"3 recipes",1,true))
     A.CraftingUI.showAllButton.scripts.OnClick(); equal(A.DB.Settings().showAllRecipes,false)
     equal(A.CraftingUI.showAllButton.text,"Show all recipes"); equal(A.CraftingUI.catalogRows[3]:IsShown(),false)
@@ -2181,7 +2182,7 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 3",1,true)); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 4",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
@@ -2195,7 +2196,7 @@ test("the 1.1.0-to-1.2.0 upgrade keeps prices history preferences and cooldown w
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.2.0-beta"); equal(A2.BUILD,"2026-10-20-beta001"); equal(A2.TEST_REVISION,3)
+    equal(A2.VERSION,"1.2.0-beta"); equal(A2.BUILD,"2026-10-20-beta001"); equal(A2.TEST_REVISION,4)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)
@@ -2207,7 +2208,11 @@ end)
 
 assert(loadfile("tests/market.lua"))(fresh, row, link, test, equal, near, truth, craftingWorld, secret)
 assert(loadfile("tests/crafting-ui.lua"))(fresh, craftingWorld, craftRecipe, test, equal, truth, secret)
+assert(loadfile("tests/economy.lua"))(fresh, craftingWorld, craftRecipe, row, link, test, equal, near, truth, secret)
 
-if os.getenv("MSMV_BENCHMARK") == "1" then assert(loadfile("tests/market-performance.lua"))(fresh, row, truth, equal) end
+if os.getenv("MSMV_BENCHMARK") == "1" then
+    assert(loadfile("tests/market-performance.lua"))(fresh, row, truth, equal)
+    assert(loadfile("tests/economy-performance.lua"))(fresh, row, truth, equal)
+end
 
 print(string.format("RESULT: %d/%d behavioral tests passed (Lua %s). Native evidence and remaining checks: VALIDATION.md.", testCount, testCount, _VERSION))

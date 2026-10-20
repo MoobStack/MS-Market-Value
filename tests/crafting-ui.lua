@@ -22,7 +22,7 @@ test("service view shows material cost and quote instead of inapplicable auction
 end)
 test("switching from a service restores item sale profit and return fields", function()
     local w,A=serviceWorld(); w.selectedID=1; A.Crafting.Tick(); local UI=A.CraftingUI
-    equal(UI.valueLabels[2].text,"Cost / item"); equal(UI.values[4].text,"+5s 00c")
+    equal(UI.valueLabels[2].text,"Cost / item"); equal(UI.values[4].text,"+4s 55c")
     for index=3,5 do truth(UI.values[index]:IsShown()); truth(UI.valueLabels[index]:IsShown()) end
     equal(UI.serviceHelp:IsShown(),false)
 end)
@@ -35,10 +35,10 @@ test("catalog totals distinguish quoted services from missing price data", funct
     truth(string.find(A.CraftingUI.catalogStatus.text,"1 services",1,true))
     local text=A.UI.DiagnosticsText(); truth(string.find(text,"services=1; quote_only=0; needs_data=1",1,true))
 end)
-test("all-recipes service rows visibly say quote only and still select the native recipe", function()
+test("all-recipes service rows show numeric quotes and still select the native recipe", function()
     local w,A=serviceWorld(); list(A,true); A.CraftingUI.SetSearch("ENCHANT chest")
     local button=A.CraftingUI.catalogRows[1]
-    equal(button.recipeID,4); equal(button.profit.text,"Quote only"); equal(button.percent.text,"Service")
+    equal(button.recipeID,4); equal(button.profit.text,"4s 00c"); equal(button.percent.text,"Service")
     button.scripts.OnClick(button); equal(w.selectedID,4); equal(A.CraftingUI.mode,"recipe")
     equal(w.openRecipeCalls,1); equal(w.requests,1)
 end)
@@ -123,5 +123,5 @@ test("a service-only profession has a useful profitable-view empty message", fun
     equal(#A.CraftingUI.CatalogView(),0); truth(A.CraftingUI.empty:IsShown())
     truth(string.find(A.CraftingUI.empty.text,"services",1,true)); equal(A.CraftingUI.CatalogSummary().missing,0)
     A.CraftingUI.showAllButton.scripts.OnClick(); equal(A.CraftingUI.empty:IsShown(),false)
-    equal(A.CraftingUI.catalogRows[1].profit.text,"Quote only")
+    equal(A.CraftingUI.catalogRows[1].profit.text,"4s 00c")
 end)

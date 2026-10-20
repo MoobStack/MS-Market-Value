@@ -1,6 +1,6 @@
 # Using MS Market Value
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 3
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 4
 
 ## Crafting
 
@@ -12,20 +12,20 @@ Open a profession, select a learned recipe, and click **Show profits** beside th
 |---|---|
 | Materials / craft | Required quantities × vendor purchase cost or latest AH unit buyout |
 | Cost / item | Material cost divided by output quantity |
-| Sale / craft | Unit output buyout × output quantity |
-| Gross profit / craft | Sale value minus material cost |
-| Return on cost | Gross profit divided by material cost × 100 |
-| Quote | Material cost × (1 + markup percentage / 100) |
+| Sale after AH cut | Unit output buyout × output quantity, less the configured AH cut; rounded down |
+| Net profit / craft | Sale after AH cut minus material cost |
+| Net return on cost | Net profit divided by material cost × 100 |
+| Item quote | Material cost × (1 + markup percentage / 100), divided by fixed output count |
 
-Materials costing 4g and an output listed at 5g give **+1g / +25%**. A 3g output gives **-1g / -25%**. Profit is before auction fees and listing costs. An asking price does not guarantee a sale.
+With 4g of materials, a 5g output and a 5% AH cut, net profit is **75s / 18.75%**. Break-even is **4g 21s 06c** per item for a one-item craft. Deposits, expired listings and unsold stock are excluded. An asking price does not guarantee a sale.
 
 The crafting window uses aligned material columns: **Reagent**, **Qty**, **Source** and **Total**. Sources distinguish AH lows, vendor purchase costs and supplies that need a vendor visit. Hover a material for its tooltip.
 
-**Recipe list** starts with positive, fully priced recipes. Click **Show all recipes** to include losses, break-even recipes and unavailable estimates; click **Profitable only** to switch back. The choice is saved. Known values sort first, then unavailable values by recipe name. **Return %** cannot rank a zero-material-cost recipe by percentage. Search by recipe name, then click a row to select it and read its details. Hover for the full name and valuation reason. Search matches plain text without changing native profession filters; it clears when changing professions. It reuses the published valuations.
+**Recipe list** starts with fully priced recipes having positive net profit. Click **Show all recipes** to include losses, break-even recipes and unavailable estimates; click **Profitable only** to switch back. The choice is saved. Known values sort first, then unavailable values by recipe name. **Return %** cannot rank a zero-material-cost recipe by percentage. Search by recipe name, then click a row to select it and read its details. Hover for the full name and valuation reason. Search matches plain text without changing native profession filters; it clears when changing professions. It reuses the published valuations.
 
 Variable outputs show quantity and value ranges; ranking uses minimum yield. The list keeps its last complete results during a refresh. A filtered native-catalog fallback is labeled and leaves the profession's filters alone.
 
-The selected recipe uses readable optional/alternative allocations. The catalog uses fixed required reagents with no optional extras. Missing material prices prevent full cost, profit and quote; missing output prices still allow a material quote. Services such as direct enchants show **Materials / service** and **Quote / service**, with the auction-only fields hidden. In the list they show **Quote only / Service**. The status counts services separately from recipes needing price data. Unresolved choices, currencies, variable material quantities, salvage and recrafting remain unavailable. Quality-dependent outputs need selection.
+The selected recipe uses readable optional/alternative allocations. The catalog uses fixed required reagents with no optional extras. Missing material prices prevent full cost, profit and quote; missing output prices still allow a material quote. Services such as direct enchants show **Materials / service** and **Quote / service**, with the auction-only fields hidden. In the list, **Net / Quote** shows a service's numeric quote; its return column says **Service**. The status counts usable service quotes separately from recipes needing price data. Customer-material quotes can remain available when material prices are missing. Unresolved choices, currencies, variable material quantities, salvage and recrafting remain unavailable. Quality-dependent outputs need selection.
 
 ## Vendor materials and market opportunities
 
@@ -35,9 +35,13 @@ At an auctioneer, **MS Opportunities** appears immediately before **MS Market Va
 
 ## Quotes
 
-Set whole-number **Markup** from 0 to 1000 percent and click **Apply** or press Enter. The default is zero. A service quote reads `Enchant Chest - Lesser Absorption - 1g 16s 63c ea`.
+Set whole-number **Markup** from 0 to 1000 percent and click **Apply** or press Enter. The default is zero. Under **Pricing**, service quotes also support **Labor per service (g)**, **Minimum service quote (g)** and **Customer supplies materials**. These settings apply to services across professions. Your materials use `max(minimum, materials × (1 + markup / 100) + labor)`. Customer-material service quotes use `max(minimum, labor)`. Service quotes round up to a whole copper; ordinary item quotes keep their existing output handling. A service quote reads `Enchant Chest - Lesser Absorption - 1g 16s 63c ea`.
 
-The recipe name uses the native profession-book link when available. **Insert in chat** opens a draft; choose the channel and send it yourself. Ctrl+C copies the field. Fixed multi-item outputs quote per item; variable or unknown output uses **per craft**. Customer-supplied materials and separate labor fees are not modeled.
+The recipe name uses the native profession-book link when available. **Insert in chat** opens a draft; choose the channel and send it yourself. Ctrl+C copies the field. Fixed multi-item outputs quote per item; variable or unknown output uses **per craft**. Use **Record sale** to open a ledger draft from a quote. Confirm the actual payment and actual cost before recording it; a quote is not a completed sale.
+
+## Watchlists and ledger
+
+Open **Watchlists** or **Ledger** from Opportunities, or use `/msmv watch` and `/msmv ledger`. Watchlists use saved prices; ledger entries use actual reported transactions or a reviewed open AH invoice. See [money tools](docs/ECONOMY-TOOLS.md) for target rules, cost handling, retention and CSV.
 
 ## Price history
 
