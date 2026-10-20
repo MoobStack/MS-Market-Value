@@ -2,7 +2,7 @@
 
 ## Target
 
-Version 1.2.0-beta targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The preceding 1.1.0 release was accepted on build 70338, PvP/Horde. Test revision 1 diagnostics from build 70450 show a complete scan, four history days and an installed opportunities tab. Vendor observations, the revised controls and live navigation still need native verification; see [VALIDATION.md](VALIDATION.md).
+Version 1.2.0-beta targets **WoW Forever 1.60.1, Interface 16001**, using modern auction, profession, item and tooltip APIs. The preceding 1.1.0 release was accepted on build 70338, PvP/Horde. Test revision 2 diagnostics from build 70450 show a complete 26,852-row scan, four history days, an installed opportunities tab and a selected service recipe with a native recipe link. Vendor observations remain zero. The revised crafting layout and live item navigation still need native verification; see [VALIDATION.md](VALIDATION.md).
 
 All three TOCs—standard, `_Camelot` and `_Forever`—describe the same addon and load order. Initialization checks the Interface number, saved schema, restricted-value API and auction functions. Different clients or Interface versions need an API review.
 

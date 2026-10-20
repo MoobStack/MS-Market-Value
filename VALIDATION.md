@@ -1,32 +1,33 @@
 # Validation
 
-**1.2.0-beta / 2026-10-20-beta001** · Test revision **2** · Tag `v1.2.0-beta-test2`
+**1.2.0-beta / 2026-10-20-beta001** · Test revision **3** · Tag `v1.2.0-beta-test3`
 
 | Check | Result |
 |---|---|
-| Lua 5.1 behavior | **318/318 passed** |
+| Lua 5.1 behavior | **333/333 passed** |
 | Runtime syntax | All 17 Lua files passed |
-| Identity | Fixed beta version/build; three identical TOCs; test revision 2 |
+| Identity | Fixed beta version/build; three identical TOCs; test revision 3 |
 | Dependencies | Pinned LibStub/LibAHTab bytes and notices retained |
-| Requests | Analysis and refreshes make none; live item lookup requires a row left-click |
-| Prior history | Stable 1.1.0 and all ten prior tag objects retained |
-| Native revision 2 | Filters, layout and live navigation await in-game confirmation |
+| Crafting controls | Search/sort reuse published valuations; no new auction requests |
+| Prior history | Stable 1.1.0 and all eleven prior tag objects retained |
+| Native revision 3 | Crafting layout and hover behavior await in-game confirmation |
 
-The 27 new cases cover the reported 500% resale regression, exact movement boundaries, disabled movement checks, decimal gold/copper conversion, saved target values, input focus/refresh behavior, cached Apply, item/commodity/suffix navigation and fallback searches. They also check combat, closed frames, stale or changed data, pending analysis, throttling, duplicate clicks and incomplete scan copies. The 500% case also fails against revision 1's analysis, confirming it catches the reported bug. Existing scanning, vendor, crafting, history and tooltip checks remain.
-
-## Performance
-
-A synthetic Lua 5.1 workload with **5,000 items across 15 days** completed in **210 update steps**, using **450.25 ms** total CPU with a **5.18 ms** maximum step here. It retained the best 200 results and made zero auction requests. The frame budget is approximately four milliseconds; a completed operation or garbage collection can exceed that target. This is not a game-client FPS measurement.
+The 15 new cases cover service quotes and item-profit restoration, service versus missing-data counts, literal name search, cached sorting, profession changes, atomic published summaries, material source/quantity/totals, vendor-unseen costs and current markup in service tooltips. Existing scan, combat tooltip, vendor, crafting, history and Opportunities checks remain. The 500% price-move regression from revision 2 is retained.
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
-MSMV_BENCHMARK=1 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-The delivery report records the exact commit/tag, independent archive restores, retained tags, byte comparisons and hashes. Packaging requires a clean checkout at the annotated test tag. Packages exclude player SavedVariables.
+The delivery report records exact commit/tag identity, independent archive restores, retained tags, byte comparisons and hashes. Packaging requires a clean annotated-tag checkout. Code packages exclude player SavedVariables.
+
+## Performance
+
+Search and summary caches are invalidated by published source/query/profession changes. Empty search reuses the existing ranking directly. Repeated search/sort refresh fixtures make zero recipe schematic calls and leave catalog builds unchanged. The selected-recipe adapter still follows native selection/reagents on its existing 0.25-second tick.
+
+Market analysis is unchanged in this revision. Revision 2's synthetic 5,000-item / 15-day test completed in 210 steps, using 450.25 ms total CPU and a 5.18 ms maximum step. It retained 200 results and made zero auction requests. Those are local measurements of that earlier revision, not game-client FPS or a crafting-layout benchmark.
 
 ## Native evidence
 
-The supplied revision 1 diagnostics came from **Forever 1.60.1 / 70450 / Interface 16001**, PvP/Horde. They show a complete local scan with **26,669 rows / 2,451 priced items**, four saved UTC days and an installed opportunities tab. The screenshots expose Resale listing items despite a 500% movement threshold. They do not establish vendor costing: zero purchase prices were recorded and no profession was open.
+The supplied revision 2 diagnostics came from **Forever 1.60.1 / 70450 / Interface 16001**, PvP/Horde. They show **26,852 auction rows / 2,483 priced items**, four history days and an installed Opportunities tab with six matches. Selected recipe 13529 is a service with a native recipe link. The screenshots show its material quote and the all-learned recipe list. A hidden crafting frame in diagnostics does not itself indicate a missing toggle.
 
-Revision 2's native lookup contracts were reviewed against the matching build-70450 source. Local frame doubles do not render Blizzard artwork or establish server timing, taint behavior or disk persistence. Use the [live checklist](LIVE-TEST-CHECKLIST.md) to confirm movement filtering, decimal input, item and commodity listings, and layout at normal UI scale. Vendor prices still need a supplier/recipe check. Asking prices do not establish demand or completed sales; DE outcomes remain an unverified Classic reference.
+Vendor observations remain **0**. The supplied report does not qualify vendor costing or confirm a successful item-list lookup. Revision 3's layout, typography, hover behavior and UI-scale fit need a client check. Frame doubles do not render Blizzard artwork, establish taint behavior or prove disk persistence. Follow the [live checklist](LIVE-TEST-CHECKLIST.md). DE outcomes remain an unverified Classic reference.

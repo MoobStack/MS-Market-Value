@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0-beta — 2026-10-20-beta001 — Test revision 3
+
+- Polish crafting with quieter table rows, hover details, clear sorting and aligned material quantities, sources and totals.
+- Add cached, local recipe-name search without rebuilding valuations or changing native filters.
+- Show services as quote-only rather than unavailable auction profits. Separate service counts from genuinely missing prices.
+- Preserve current pricing, saved preferences and Opportunities behavior. Update the docs and roadmap; **333/333 local tests pass**. Native layout verification is pending.
+
 ## 1.2.0-beta — 2026-10-20-beta001 — Test revision 2
 
 - Fix Resale ignoring **Price move %**. It now requires the chosen price drop plus both profit targets; 0 disables the drop check.

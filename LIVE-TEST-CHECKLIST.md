@@ -1,6 +1,6 @@
 # 1.2.0 beta checks
 
-Build `2026-10-20-beta001`, Test revision **2**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
+Build `2026-10-20-beta001`, Test revision **3**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
 
 ## Vendor costs
 
@@ -21,6 +21,14 @@ Build `2026-10-20-beta001`, Test revision **2**. Keep SavedVariables when replac
 - Left-click a normal item, equipment variant and commodity. Confirm the native Buy listings match, then return to Opportunities. Right-click/hover should show details without switching tabs. Native filters still apply.
 - Try a click while the AH is busy: it should ask for another click later. It must not queue a lookup or interfere with a full scan before its local copy completes.
 - Reopen the unchanged page and inspect build/publication counts. It should reuse completed results. Close the AH and enter combat to confirm the pane hides.
+
+## Crafting layout
+
+- Open a normal item recipe and a direct enchant. Item recipes should keep their gross profit/return; services should show material cost and quote, with no auction-only fields.
+- Check **Recipe list** at normal UI scale. Search a partial name, change sorting and toggle Show all recipes. Searching should not raise catalog build counts. Switch professions and confirm the search clears.
+- Hover a long recipe name for full details, then click it to select the native recipe. Quote-only services should not count as missing price data.
+- Check material quantities, AH/vendor sources and line totals. Visit a supplies vendor first if diagnostics still show zero purchase prices.
+- Change markup and confirm the linked quote updates. Copying and Insert in chat should retain their existing behavior.
 
 ## Existing behavior
 

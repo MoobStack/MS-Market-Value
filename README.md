@@ -2,7 +2,7 @@
 
 Auction prices, market opportunities, crafting costs and profit, price history and disenchant estimates for WoW Forever.
 
-**Version 1.2.0-beta** · Build `2026-10-20-beta001` · Test revision **2**
+**Version 1.2.0-beta** · Build `2026-10-20-beta001` · Test revision **3**
 
 For Forever 1.60.1 / Interface 16001. By MoobStack. The version and build stay fixed throughout 1.2.0 testing; test revisions identify changes.
 
@@ -12,7 +12,7 @@ For Forever 1.60.1 / Interface 16001. By MoobStack. The version and build stay f
 - Item tooltips show vendor, historic average, recent AH and applicable disenchant values, including during combat. Actual stacks show Each / Stack totals.
 - **MS Opportunities**, before the MS Market Value AH tab, finds resale candidates and significant price moves from saved history. Filter by price drop, return and net profit in gold. Click an item to open its native live listings.
 - Crafting uses your observed vendor purchase cost for normal vendor materials and AH prices for other materials.
-- Crafting shows material cost, sale value, profit or loss and percentage return. Sort recipes by profit or return, with an option to include unprofitable and unpriced recipes.
+- Crafting shows material cost, sale value, gross profit/loss and return. Search learned recipes, sort by profit or return, and include losses or quote-only services. Material rows show quantity, source and total.
 - Craft quotes use the native recipe link when available. Copy a quote or insert a chat draft; sending stays under your control.
 - Keep 1–30 days of daily prices, using each UTC day's latest completed scan. Auto-open for crafting profits is optional and off by default.
 
@@ -40,6 +40,6 @@ Visit a supplies vendor to learn your discounted purchase prices. Known vendor m
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for calculations and controls, [CHANGELOG.md](CHANGELOG.md) for changes, [UPGRADE.md](UPGRADE.md) for backup/rollback, and [GIT-WORKFLOW.md](GIT-WORKFLOW.md) for source recovery and publication. [ARCHITECTURE.md](ARCHITECTURE.md), [COMPATIBILITY.md](COMPATIBILITY.md) and [VALIDATION.md](VALIDATION.md) cover implementation and testing.
 
-**318/318 local Lua 5.1 tests pass.** The revised filters, layout and live item navigation need in-game confirmation. See [docs/MARKET-OPPORTUNITIES.md](docs/MARKET-OPPORTUNITIES.md), [docs/VENDOR-COSTS.md](docs/VENDOR-COSTS.md) and [VALIDATION.md](VALIDATION.md) for controls, calculations and checks.
+**333/333 local Lua 5.1 tests pass.** The revised crafting layout needs an in-game check; live item navigation and vendor observations remain qualification items. See [docs/MARKET-OPPORTUNITIES.md](docs/MARKET-OPPORTUNITIES.md), [docs/VENDOR-COSTS.md](docs/VENDOR-COSTS.md) and [VALIDATION.md](VALIDATION.md) for controls, calculations and checks.
 
 MoobStack is an independent community publisher, unaffiliated with Blizzard Entertainment or any server project. World of Warcraft and related marks belong to their owners.

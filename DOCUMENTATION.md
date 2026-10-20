@@ -1,6 +1,6 @@
 # Using MS Market Value
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 2
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 3
 
 ## Crafting
 
@@ -19,11 +19,13 @@ Open a profession, select a learned recipe, and click **Show profits** beside th
 
 Materials costing 4g and an output listed at 5g give **+1g / +25%**. A 3g output gives **-1g / -25%**. Profit is before auction fees and listing costs. An asking price does not guarantee a sale.
 
-**Recipe list** starts with positive, fully priced recipes. Click **Show all recipes** to include losses, break-even recipes and unavailable estimates; click **Profitable only** to switch back. The choice is saved. Known values sort first, then unavailable values by recipe name. **Return %** cannot rank a zero-material-cost recipe by percentage. Click a row to select it and read its details.
+The crafting window uses aligned material columns: **Reagent**, **Qty**, **Source** and **Total**. Sources distinguish AH lows, vendor purchase costs and supplies that need a vendor visit. Hover a material for its tooltip.
+
+**Recipe list** starts with positive, fully priced recipes. Click **Show all recipes** to include losses, break-even recipes and unavailable estimates; click **Profitable only** to switch back. The choice is saved. Known values sort first, then unavailable values by recipe name. **Return %** cannot rank a zero-material-cost recipe by percentage. Search by recipe name, then click a row to select it and read its details. Hover for the full name and valuation reason. Search matches plain text without changing native profession filters; it clears when changing professions. It reuses the published valuations.
 
 Variable outputs show quantity and value ranges; ranking uses minimum yield. The list keeps its last complete results during a refresh. A filtered native-catalog fallback is labeled and leaves the profession's filters alone.
 
-The selected recipe uses readable optional/alternative allocations. The catalog uses fixed required reagents with no optional extras. Missing material prices prevent full cost, profit and quote; missing output prices still allow a material quote. Services such as direct enchants have quotes without invented auction profits. Unresolved choices, currencies, variable material quantities, salvage and recrafting remain unavailable. Quality-dependent outputs need selection.
+The selected recipe uses readable optional/alternative allocations. The catalog uses fixed required reagents with no optional extras. Missing material prices prevent full cost, profit and quote; missing output prices still allow a material quote. Services such as direct enchants show **Materials / service** and **Quote / service**, with the auction-only fields hidden. In the list they show **Quote only / Service**. The status counts services separately from recipes needing price data. Unresolved choices, currencies, variable material quantities, salvage and recrafting remain unavailable. Quality-dependent outputs need selection.
 
 ## Vendor materials and market opportunities
 

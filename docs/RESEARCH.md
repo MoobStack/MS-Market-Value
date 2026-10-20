@@ -151,3 +151,12 @@ The current Forever mirror was checked at commit `172a387e3ab85b26e6640d3058d5ec
 The screenshots show two Resale rows despite Price move = 500%. Revision 1 applied movement only to trend views; revision 2 also requires its configured drop for Resale. Zero disables the resale movement check. These filter rules are addon policy.
 
 Only a player left-click invokes the native lookup. Analysis does not call the auction server. Native purchase controls remain under the player's control. Source review and local fixtures support the adapter; actual listings and UI appearance still need a client test. No third-party runtime code was added.
+
+
+## Version 1.2.0, test revision 3: crafting presentation
+
+The supplied revision 2 report matches Forever build 70450. Recipe 13529 is a service: its material quote is valid even though an auction sale/profit is inapplicable. The screenshots show repeated Unavailable fields and red recipe-row buttons; revision 3 changes presentation and local navigation, not valuation formulas or native pricing APIs.
+
+Service counts are derived from the existing adapter's service flag after material cost is known. Missing costs stay unavailable. Search operates only on the published ranking and leaves native profession filters alone. Native layout, font fit and hover behavior remain live checks.
+
+For future money-making features, [TSM's price-source documentation](https://support.tradeskillmaster.com/custom-strings/which-price-sources-can-i-use-and-what-do-they-mean) distinguishes listed market prices from accounting purchases/sales. Its [value-source documentation](https://support.tradeskillmaster.com/en_US/custom-strings/which-value-sources-can-i-use-and-what-do-they-mean) describes personal sale-rate records separately. Those support the roadmap's data boundary; they do not establish compatible Forever transaction APIs or import TSM data into this addon.
