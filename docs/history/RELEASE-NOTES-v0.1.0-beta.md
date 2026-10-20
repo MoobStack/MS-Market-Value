@@ -14,6 +14,6 @@ Schema stays 1. Old snapshots, settings, exclusions and cooldowns remain stored.
 
 **Local checks:** 78/78 Lua 5.1 tests pass, including 15 additional cases and the corrected repeated-event case. Syntax, TOCs, metadata and bundled-library hashes pass. **Native status:** user reports establish the old build's request/tab/failures; build003 scan coverage, first-hover behavior, visual fit/taint/coexistence and disk saving need a client retest. **DE status:** Forever probabilities and item exceptions remain unverified.
 
-Replace the addon folder using the Clean ZIP with WoW closed and preserve WTF/SavedVariables. Restart, select **MS Market Value** at an auctioneer, and scan once when cooldown permits. Copy `/msmv diagnostics` if it fails. See [UPGRADE.md](UPGRADE.md), [docs/BUILD003-INVESTIGATION.md](docs/BUILD003-INVESTIGATION.md) and [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
+Replace the addon folder using the Clean ZIP with WoW closed and preserve WTF/SavedVariables. Restart, select **MS Market Value** at an auctioneer, and scan once when cooldown permits. Copy `/msmv diagnostics` if it fails. See [UPGRADE.md](../../UPGRADE.md), [docs/BUILD003-INVESTIGATION.md](BUILD003-INVESTIGATION.md) and [LIVE-TEST-CHECKLIST.md](../../LIVE-TEST-CHECKLIST.md).
 
 All revisions before the first finalized release remain **0.1.0-beta**. Build003 adds a new immutable tag and retains build001/build002. Complete Git/source/bundle/checksum assets accompany the installable ZIP. No GitHub publication is claimed.

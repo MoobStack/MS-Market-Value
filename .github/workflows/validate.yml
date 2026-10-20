@@ -1,7 +1,7 @@
 name: Validate addon
 on:
   push:
-    branches: [main, develop/1.1.0]
+    branches: [main, 'develop/**', 'release/**']
   pull_request:
   workflow_dispatch:
 permissions:

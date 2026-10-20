@@ -47,4 +47,4 @@ Generic chat/catalog/auction item links show each-only values unless native data
 
 Stable identity is `1.0.0 / 2026-10-04-release001`, annotated tag `v1.0.0`. Schema 1, scan implementation and market namespace remain unchanged. Build003 snapshots/settings/exclusions/cooldowns are reused without rescanning. Beta commits and annotated tag objects remain immutable.
 
-All 90 local checks pass, including 12 new stack/block/restriction/upgrade cases. Native follow-up is in [LIVE-TEST-CHECKLIST.md](../LIVE-TEST-CHECKLIST.md); primary API links are in [RESEARCH.md](RESEARCH.md). The stable designation does not promote the Classic reference DE data to verified Forever loot.
+All 90 local checks pass, including 12 new stack/block/restriction/upgrade cases. Native follow-up is in [LIVE-TEST-CHECKLIST.md](../../LIVE-TEST-CHECKLIST.md); primary API links are in [RESEARCH.md](../RESEARCH.md). The stable designation does not promote the Classic reference DE data to verified Forever loot.

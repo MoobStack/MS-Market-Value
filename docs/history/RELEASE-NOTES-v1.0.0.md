@@ -20,4 +20,4 @@ All **90/90** local Lua 5.1 checks pass. The user's build003 PvP/Horde report co
 
 DE loot remains a labeled **Classic reference estimate**, unverified for Forever-specific probabilities and exceptional eligibility. It does not claim profession capability or guarantee loot/sale proceeds.
 
-All three beta commits/tags remain unchanged. Stable publication uses `v1.0.0` without the GitHub prerelease flag. Source and recovery instructions are in [GIT-WORKFLOW.md](GIT-WORKFLOW.md); complete changes are in [CHANGELOG.md](CHANGELOG.md).
+All three beta commits/tags remain unchanged. Stable publication uses `v1.0.0` without the GitHub prerelease flag. Source and recovery instructions are in [GIT-WORKFLOW.md](../../GIT-WORKFLOW.md); complete changes are in [CHANGELOG.md](../../CHANGELOG.md).

@@ -1,18 +1,18 @@
 # Validation
 
-**1.2.0-beta / 2026-10-20-beta001** · Test revision **8** · Tag `v1.2.0-beta-test8`
+Release **1.2.0 / 2026-10-20-release001** · Tag `v1.2.0`
 
 | Check | Result |
 |---|---|
-| Lua 5.1 behavior | **582/582 passed** |
-| Runtime syntax | All 22 Lua files passed |
-| Identity | Fixed beta version/build; three identical TOCs; test revision 8 |
-| Dependencies | Pinned LibStub/LibAHTab bytes and notices retained |
-| Actions | No automated auction, crafting, merchant, mail, repair, training, flight or trade actions |
-| History | Stable 1.1.0 and all sixteen prior tag objects retained |
-| Native revision 8 | Loot/spending event ordering, category menus and layout need live checks |
+| Lua 5.1 behavior | **584/584 passed** |
+| Runtime syntax/load order | All 22 Lua files; three identical TOCs |
+| Stable identity | No beta/test-revision label; version/build/tag agree |
+| Upgrade | 1.1.0 and beta saved data, preferences, history, ledger and pending records retained |
+| Dependencies/actions | Pinned library bytes retained; no automated transaction/crafting/mail actions |
+| Archives | Source/repository/bundle restore checks, byte parity, hashes and Git integrity |
+| History | All 17 earlier annotated tag objects retained |
 
-The 78 new cases cover daily loot and local midnight, reloads, character/market scope, retention, queue merging, localized/guild loot formats, restricted values, repair funding, vendor/repair overlaps, failed services, mail totals, expense categories, filtered CSV and independent settings. All 504 previous cases remain. Local calendar fixtures include 23-hour spring and 25-hour fall DST days.
+The release keeps revision 8’s runtime behavior. Two added checks cover beta-to-stable saved-data and pending-transaction retention. Existing cases cover scans, tooltip quantities/combat, crafting, history, vendor pricing, resale math, watchlists, ledger accounting, trade confirmation, loot/expenses, local/DST dates and UI filter regressions.
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
@@ -20,30 +20,12 @@ TZ=America/New_York python3 tools/validate.py --lua lua5.1 --luac luac5.1
 MSMV_BENCHMARK=1 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-## Performance
+Optional workloads exercise 5,000 items over 15 history days, 200 watches, 500 invoices and 10,000 ledger rows, with zero auction requests. Processing is bounded and reports reuse cached views. CPU measurements vary by host; approximate frame budgets are not guaranteed FPS limits.
 
-Synthetic Lua CPU measurements from this revision, not client FPS or server results:
+## Native evidence
 
-| Workload | Result |
-|---|---|
-| 5,000 items / 15 history days | 206 steps; 399.67 ms total; 6.87 ms maximum step |
-| 200 watches / 15 history days | 11 steps; 7.78 ms total; 0.74 ms maximum step |
-| 2,000 ledger rows, first view + 100 cached refreshes | 13.42 ms total |
-| 500 completed invoices | 100 read/commit steps; 79.79 ms total; 3.68 ms maximum step |
-| 10,000 ledger rows, first filtered view + 100 cached refreshes | 17.39 ms total; 5,250 matching sales |
+Earlier diagnostics show successful full scans, retained history, recipe valuations and vendor observations on Forever 1.60.1 / 70450 / Interface 16001. The user reports correct trade tips and improved filter response. The latest screenshots show a 15c daily loot row, a 14s 54c repair expense, all ten filters and a readable report: 1g 47s 06c income minus 1g 16s 38c spending equals +30s 68c cash flow.
 
-All workloads made zero auction requests. The 10,000-row CSV, including local/UTC times and category, was 1,165,430 bytes. These measurements vary with the host. Single operations and garbage collection can exceed the approximate four-millisecond processing target.
+This supports those observed paths and layout. It does not establish every recipe, guild repair, training/respec/flight/mail sequence, locale, ruleset, addon combination or disk-save round trip. Unavailable or ambiguous transaction data can still need manual review; see [Compatibility](COMPATIBILITY.md) and the [live checklist](LIVE-TEST-CHECKLIST.md). Forever DE outcomes remain unverified.
 
-Loot updates one indexed daily row without per-award receipt growth. Expense capture is event-driven; matching uses bounded pending lists. Idle tracking reads no bags, item metadata, trainer catalog or taxi map. Filtered row views and summaries remain cached.
-
-## Native evidence and limits
-
-The user reports that revision 7 logs trade tips correctly and filter buttons respond better. That supports those changes; it does not qualify this revision’s new loot and spending observer. Earlier diagnostics identify Forever 1.60.1 / 70450 / Interface 16001, successful scans and saved vendor observations.
-
-Expense classification requires readable action context and a matching wallet deduction, or matching vendor item values plus a native repair-cost decrease. Unrecognized outgoing wallet changes use Unclassified. Generic handling excludes auction escrow and player trades to avoid duplicates; expired deposits are not inferred. Failed actions with no deduction create no expense. Delayed, combined or unavailable native values may require manual review. Loot uses dedicated native messages, not wallet-income guesses.
-
-AH backfills remain dated when first recorded; invoices have no original transaction date or durable identity. Identical replacements can remain ambiguous. Vendor trades require matching item/money changes. Purchase costs are not automatically allocated to sales. Incoming trade cost remains unknown; a pure tip can use 0. Bank deposits and mailed gold are wallet outflows, not necessarily business losses. Profit cards remain limited to costed income entries; cash flow includes all recorded spending.
-
-Follow the [live checklist](LIVE-TEST-CHECKLIST.md), especially loot shares/reload, personal/guild repairs, training, respecs, flights, mail success/failure, Other category selection and layout. Fixture frames do not prove native fonts, layering, taint or disk persistence. Forever DE outcomes remain unverified.
-
-The delivery report checks commit/tag identity, independent source/repository/bundle restores, retained refs, byte parity and archive hashes. Packages exclude player SavedVariables.
+The supplied Validation JSON records the exact commit/tag, retained refs, independent archive checks and package hashes. Player SavedVariables and screenshots are excluded from code packages. Remote CI/publication was not run.

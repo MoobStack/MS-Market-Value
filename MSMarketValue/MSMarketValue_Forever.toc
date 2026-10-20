@@ -2,13 +2,12 @@
 ## Title: MS Market Value
 ## Notes: Auction prices and history, net crafting profit, service quotes, watchlists, a personal ledger, and disenchant estimates.
 ## Author: MoobStack
-## Version: 1.2.0-beta
+## Version: 1.2.0
 ## Category: Auction & Economy
 ## IconTexture: Interface\Icons\INV_Misc_Coin_02
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
-## X-Build: 2026-10-20-beta001
-## X-Test-Revision: 8
+## X-Build: 2026-10-20-release001
 
 Bootstrap.lua
 Libs\LibStub\LibStub.lua

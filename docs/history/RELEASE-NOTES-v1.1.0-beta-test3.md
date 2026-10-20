@@ -10,6 +10,6 @@ The profession title-bar button now toggles Show profits / Hide profits and sits
 
 The user reports successful revision 2 scan resumes under multiple conditions. This revision preserves that scanner, linked quotes, combat prices and existing settings. **227/227 local Lua 5.1 tests pass**; new UI fit, daily rollover and native saving still need checks. DE loot remains an unverified Classic reference.
 
-Close WoW, install the Clean ZIP and keep WTF/SavedVariables. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md). The Documentation ZIP has the updated guide and changelog; Source/Repository ZIPs and the bundle retain all code and Git history.
+Close WoW, install the Clean ZIP and keep WTF/SavedVariables. Follow [LIVE-TEST-CHECKLIST.md](../../LIVE-TEST-CHECKLIST.md). The Documentation ZIP has the updated guide and changelog; Source/Repository ZIPs and the bundle retain all code and Git history.
 
 This remains a testing prerelease. The beta version and build are unchanged; official 1.1.0 publication follows live verification. No remote publication is claimed.

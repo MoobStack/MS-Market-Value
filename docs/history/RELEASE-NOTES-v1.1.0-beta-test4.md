@@ -8,6 +8,6 @@ Diagnostics now include toggle visibility, its level/strata, native header level
 
 **238/238 local Lua 5.1 tests pass**, including the header regression that fails against revision 3. The button still needs a native visual check. Daily history, retention, both recipe filters, linked quotes and the scanner are retained; the user reports successful revision 2 resumes. Native history rollover/saving and Forever DE outcomes remain unverified.
 
-Close WoW, replace the addon folder using the Clean ZIP and keep WTF/SavedVariables. Confirm **Test revision: 4**. Use [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md) for the live checks. The Documentation ZIP contains the updated guide and changelog; the Complete Package also includes source and Git recovery files.
+Close WoW, replace the addon folder using the Clean ZIP and keep WTF/SavedVariables. Confirm **Test revision: 4**. Use [LIVE-TEST-CHECKLIST.md](../../LIVE-TEST-CHECKLIST.md) for the live checks. The Documentation ZIP contains the updated guide and changelog; the Complete Package also includes source and Git recovery files.
 
 The beta version/build are unchanged. This is a testing package, not the official 1.1.0 release; it has not been pushed or published to GitHub.

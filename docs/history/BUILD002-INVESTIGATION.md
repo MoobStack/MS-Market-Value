@@ -22,9 +22,9 @@ LibAHTab minor 5 and LibStub minor 2 are bundled from pinned upstream sources. T
 
 All **63/63** local Lua 5.1 behavioral tests pass. Added cases prove the tested fallback scan sends one request and commits prices, preserve matching old keys, isolate named portals, retain old data on a market change and consume no request/cooldown when identity is unavailable. The actual bundled library is exercised against native-frame doubles and another addon-tab fixture.
 
-No Forever client was operated during this fix. The supplied startup report is live user evidence for build001; it is not a build002 scan, visual layout, native taint, Auctionator coexistence or SavedVariables disk pass. Use [LIVE-TEST-CHECKLIST.md](../LIVE-TEST-CHECKLIST.md) for retests. DE material probabilities and special eligibility remain Classic reference estimates unverified for Forever.
+No Forever client was operated during this fix. The supplied startup report is live user evidence for build001; it is not a build002 scan, visual layout, native taint, Auctionator coexistence or SavedVariables disk pass. Use [LIVE-TEST-CHECKLIST.md](../../LIVE-TEST-CHECKLIST.md) for retests. DE material probabilities and special eligibility remain Classic reference estimates unverified for Forever.
 
-Primary review is recorded in [RESEARCH.md](RESEARCH.md); provenance is in [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md). Both builds retain **0.1.0-beta**, immutable build tags and schema 1.
+Primary review is recorded in [RESEARCH.md](../RESEARCH.md); provenance is in [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md). Both builds retain **0.1.0-beta**, immutable build tags and schema 1.
 
 ## Later evidence
 

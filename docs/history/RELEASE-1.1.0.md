@@ -19,6 +19,6 @@ The user reports Test revision 4 functioning properly and requests the official 
 
 Earlier feedback reports successful revision 2 resumes under multiple conditions. Local release validation passes **239/239 Lua 5.1 cases**, including beta-to-stable data retention, daily history and native header layering.
 
-The report confirms saved prices, a craft valuation and a retained daily entry in this session. It does not establish every recipe/ruleset, multi-day rollover, 30-day retention in the game, a dedicated history disk round-trip or verified Forever disenchant loot. Those remain in [LIVE-TEST-CHECKLIST.md](../LIVE-TEST-CHECKLIST.md).
+The report confirms saved prices, a craft valuation and a retained daily entry in this session. It does not establish every recipe/ruleset, multi-day rollover, 30-day retention in the game, a dedicated history disk round-trip or verified Forever disenchant loot. Those remain in [LIVE-TEST-CHECKLIST.md](../../LIVE-TEST-CHECKLIST.md).
 
-Release identity is **1.1.0 / 2026-10-11-release001**, tag `v1.1.0`, schema 1. Existing prices, history and settings are retained. Packaging and remote-publication checks are separate; see [VALIDATION.md](../VALIDATION.md) and [GIT-WORKFLOW.md](../GIT-WORKFLOW.md).
+Release identity is **1.1.0 / 2026-10-11-release001**, tag `v1.1.0`, schema 1. Existing prices, history and settings are retained. Packaging and remote-publication checks are separate; see [VALIDATION.md](../../VALIDATION.md) and [GIT-WORKFLOW.md](../../GIT-WORKFLOW.md).

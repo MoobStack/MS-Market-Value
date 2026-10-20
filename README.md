@@ -1,54 +1,48 @@
 # MS Market Value
 
-Auction prices, market opportunities, crafting costs and profit, price history and disenchant estimates for WoW Forever.
+Auction prices, crafting profits and a personal gold ledger for **WoW Forever**.
 
-**Version 1.2.0-beta** · Build `2026-10-20-beta001` · Test revision **8**
+**Version 1.2.0** · Client 1.60.1 · Interface 16001 · By MoobStack
 
-For Forever 1.60.1 / Interface 16001. By MoobStack. The version and build stay fixed throughout 1.2.0 testing; test revisions identify changes.
+## Install
 
-## Features
+Close WoW and extract the **Clean ZIP** into `Interface/AddOns`, so the addon is at `Interface/AddOns/MSMarketValue`. Keep your WTF/SavedVariables folder when updating. Libraries are included; no separate download is needed.
 
-- Full Auction House scans with saved prices, pause/resume and recovery after closing the AH once its rows have been copied.
-- Item tooltips show vendor, historic average, recent AH and applicable disenchant values, including during combat. Actual stacks show Each / Stack totals.
-- **MS Opportunities**, before the MS Market Value AH tab, finds resale candidates and significant price moves from saved history. Filter by price drop, return and net profit in gold. Click an item to open its native live listings.
-- Crafting uses your observed vendor purchase cost for normal vendor materials and AH prices for other materials.
-- Crafting shows material cost, net profit after the chosen AH cut, net return and break-even prices. Search and rank recipes; service rows show numeric quotes.
-- Service pricing supports material markup, labor, minimum charges and customer-supplied materials.
-- Add or edit watchlist targets with **Watch item** on the Buy page. Saved scans provide buy-price/profit alerts and links back to listings.
-- A personal ledger opens anywhere from `/msmv`. Confirmed player-trade gold is recorded as tips received or given. Daily loot totals and categorized expenses cover repairs, training, respecs, postage, flights and other spending. See period totals for income, spending, cash flow and costed profit. Filter transactions by type and local date, or copy CSV.
-- Craft quotes use the native recipe link when available. Copy a quote or insert a chat draft; sending stays under your control.
-- Keep 1–30 days of daily prices, using each UTC day's latest completed scan. Auto-open for crafting profits is optional and off by default.
+Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the addon adds **MS Opportunities** and **MS Market Value** tabs.
 
-## Install and use
+## What it does
 
-Close WoW and replace `Interface/AddOns/MSMarketValue` with the **Clean ZIP**'s addon folder. Keep WTF/SavedVariables to retain prices, history and settings. Existing users do not need a new scan just to upgrade.
-
-At an auctioneer, select **MS Market Value → Scan entire AH**. Keep the AH open until **Local copy** is complete. You can then pause, close/reopen and resume without another request. Incomplete work ends on reload/logout; new full requests have a 15-minute minimum interval.
-
-Open a profession and click **Show profits** beside its close button. **Recipe list → Show all recipes** includes losses and unavailable estimates. In `/msmv → Crafting & history`, set auto-open and history length. History defaults to 30 days.
-
-| Command | Action |
+| Tool | Features |
 |---|---|
-| `/msmv` | Open the AH tab or settings, with Ledger and Watchlists shortcuts |
-| `/msmv scan` | Start a scan or resume paused work |
-| `/msmv pause` or `/msmv stop` | Pause incomplete work |
-| `/msmv resume` | Resume at an open auctioneer, outside combat |
-| `/msmv restart` | Start fresh when the cooldown allows |
-| `/msmv discard` | Discard incomplete work; keep saved prices |
-| `/msmv craft` | Open analysis for the open profession |
-| `/msmv market` | Open market opportunities at an auctioneer |
-| `/msmv watch` | Open saved watchlists |
-| `/msmv ledger` | Open the personal ledger anywhere outside combat |
-| `/msmv status` or `/msmv diagnostics` | Show status or copy a problem report |
+| **Auction scans** | Save the full AH’s prices. Pause and resume within the same session, including after closing the AH once its local copy is complete. |
+| **Item tooltips** | Vendor sell price, historic average, recent AH low and applicable disenchant estimates. Prices remain available in combat; known stack quantities show each and stack totals. |
+| **Price history** | Keep 1–30 days of prices, using each UTC day’s latest completed scan. Averages use the days with available prices. |
+| **Crafting profits** | Material costs, net profit after the chosen AH cut, return on cost and break-even prices. Search and rank learned recipes; include unprofitable recipes when needed. Normal vendor materials use your observed purchase price. |
+| **Craft quotes** | Numeric item/service quotes with markup, labor, minimum charges and customer-supplied materials. Native recipe links where available. Copy a quote, open a chat draft or record a completed commission with price, tip and quantity. |
+| **Market opportunities** | Find resale candidates, rising prices and falling prices from saved scans. Filter by price movement, return and minimum profit in decimal gold. Click an item to open its live Buy listings. |
+| **Watchlists** | Add items from the Buy page or Opportunities. Edit buy-price, return and profit targets; receive local alerts after saved scans. |
+| **Personal ledger** | Record AH purchases and mailbox sales, vendor trades, commissions, trade gold, daily loot and expenses such as repairs, training, respecs, postage and flights. |
+| **Reports and filters** | Income, spending, cash flow and separate recorded/estimated profit totals. Filter by local dates and transaction type, combine Other expense categories, edit entries and copy filtered CSV. |
 
-Visit a supplies vendor to learn your discounted purchase prices. Known vendor materials without a current observation say **visit supplier**; inflated AH listings are not used instead. Other materials use the latest scan's lowest unit buyouts, including owned materials. Crafting profit includes the configured AH cut; deposits and expired listings are excluded. Asking prices do not guarantee sales. Missing prices or unsupported recipes stay unavailable. History averages the days with a price equally; one day is enough. Disenchant outcomes use an **unverified Classic reference** for Forever.
+## Getting started
 
-In the crafting window, open **Pricing** to set fees and service charges. Below the quote, **Record sale** adds a commission using unit price, total tip and quantity; blank price uses the quote. AH sales are added when completed invoices load in the mailbox; native purchase events have a mailbox fallback. Open **Ledger** from `/msmv` for **Period report**, **Transactions** and **Ledger settings**. Click any activity total to see those transactions. **Watchlists** and **Ledger** also open from Opportunities; [money tools](docs/ECONOMY-TOOLS.md) covers their controls.
+1. At an auctioneer, choose **MS Market Value → Scan entire AH**. Keep the AH open until **Local copy** is complete. New full scans have a 15-minute minimum interval; unfinished scans end on reload/logout.
+2. Visit a supplies vendor to learn your discounted material prices. Open a profession and click **Show profits**, or use `/msmv craft`. Automatic opening is optional.
+3. Check **MS Opportunities** after collecting history. Its default needs three earlier priced days per item. Use **Watch item** on the Buy page to save a target.
+4. Open `/msmv ledger` anywhere outside combat. Choose a period, review totals or filter Transactions. **Other** has category checkboxes. Tracking options and 1–365-day ledger retention are in **Ledger settings**.
 
-Ledger dates and daily loot totals use your computer’s local time. In **Transactions**, choose **Other** and tick the expense categories you want. Unrecognized wallet deductions appear as **Unclassified**, ready to rename or categorize. The editor’s **Type** dropdown can reclassify trade payments as commissions; avoid recording the same payment twice. Incoming trade cost stays unknown until entered; use 0 for a pure tip.
+## Reading the numbers
 
-See [DOCUMENTATION.md](DOCUMENTATION.md) for calculations and controls, [CHANGELOG.md](CHANGELOG.md) for changes, [UPGRADE.md](UPGRADE.md) for backup/rollback, and [GIT-WORKFLOW.md](GIT-WORKFLOW.md) for source recovery and publication. [ARCHITECTURE.md](ARCHITECTURE.md), [COMPATIBILITY.md](COMPATIBILITY.md) and [VALIDATION.md](VALIDATION.md) cover implementation and testing.
+AH prices are asking prices, not guaranteed sales. Crafting and resale estimates include the configured AH cut, default 5%, but exclude deposits and unsold stock. Known vendor supplies need a current vendor observation; inflated AH listings are not substituted.
 
-**582/582 local Lua 5.1 tests pass.** Loot and expense event ordering, category menus and the revised layout still need live Forever checks. See [docs/MARKET-OPPORTUNITIES.md](docs/MARKET-OPPORTUNITIES.md), [docs/VENDOR-COSTS.md](docs/VENDOR-COSTS.md) and [VALIDATION.md](VALIDATION.md) for controls, calculations and checks.
+The ledger records observed activity. AH sales appear when completed invoices load in the mailbox. Trade gold starts as tips; reclassify craft payments instead of recording them twice. Unknown costs remain unknown. Cash flow includes recorded spending; profit cards cover income entries with known costs. Unrecognized deductions appear as **Unclassified**.
 
-MoobStack is an independent community publisher, unaffiliated with Blizzard Entertainment or any server project. World of Warcraft and related marks belong to their owners.
+Disenchant values use an **unverified Classic reference** for Forever. No buying, selling, crafting, mail collection or chat sending is automated.
+
+## Help
+
+Use `/msmv diagnostics` when reporting a problem. Include the client build, what happened and any error text.
+
+[User guide](DOCUMENTATION.md) · [What changed in 1.2.0](CHANGELOG.md) · [Money tools](docs/ECONOMY-TOOLS.md) · [Upgrade](UPGRADE.md) · [Compatibility](COMPATIBILITY.md) · [Validation](VALIDATION.md) · [Source and recovery](GIT-WORKFLOW.md)
+
+MoobStack is an independent community publisher, unaffiliated with Blizzard Entertainment. World of Warcraft and related marks belong to their owners.
