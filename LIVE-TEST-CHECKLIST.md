@@ -1,6 +1,6 @@
 # 1.2.0 beta checks
 
-Build `2026-10-20-beta001`, Test revision **7**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
+Build `2026-10-20-beta001`, Test revision **8**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
 
 ## Vendor costs
 
@@ -61,13 +61,13 @@ For a layout issue, include a screenshot. For vendor math, include item/recipe, 
 - Try a failed purchase, repair, bag move and unrelated wallet change. They must not become vendor trades. Unsupported/currency/refund cases may require manual entry and should not invent values.
 - Away from the AH, open `/msmv` and click **Ledger**. Check `/msmv ledger`, Settings, Watchlists and the return route. Repeat after closing the AH.
 - On **Period report**, compare income, spending, cash flow and all activity sources with the recorded rows. Click an activity to open its transactions.
-- On **Transactions**, use all eight visible filters. Test Today, 7 days, 30 days and a one-day custom local range. Dates should carry across views; report totals must still include all types.
+- On **Transactions**, use all ten visible filters. Test Today, 7 days, 30 days and a one-day custom local range. Dates should carry across views; report totals must still include all types.
 - Compare recorded-cost P/L and estimated craft P/L separately. A sale without cost should say Needed, with no assigned profit; no costed entries should show `--` on the relevant card.
 - Copy CSV from both views: the report exports all period rows, Transactions only the chosen type/period. Compare the rows and totals.
 - Click type filters normally and hold/release a click across a refresh; each click should apply immediately. Open the Type dropdown, select a distant option and check that draft amounts remain.
 - Compare a new entry’s displayed time with the computer clock. Today and custom dates should use local midnights; CSV should include both local and UTC time.
 - At normal UI scale, check large gold amounts, long names, all eight table rows, New entry and row editing. Enter an invalid tip and confirm the draft stays open with an error.
-- In **Ledger settings**, disable AH/vendor/trade-tip tracking independently, then re-enable. Check retention and access to legacy expenses. Reload/relog and check preferences, watches, cost bases, entries and duplicate protection.
+- In **Ledger settings**, disable AH/vendor/trade-tip/loot/other-spending tracking independently, then re-enable. Check retention and Other and legacy-expense access. Reload/relog and check preferences, watches, cost bases, entries and duplicate protection.
 
 Back up SavedVariables before shortening retention. For a tracking problem, include diagnostics, transaction type, quantity/total, native confirmation/mail details, and whether another mailbox/AH addon was active.
 
@@ -79,3 +79,13 @@ Back up SavedVariables before shortening retention. For a tracking problem, incl
 - Open/close several trades, including an item-only trade. No empty or duplicate tip entries should appear. Try a trade during latency or with another trade addon and capture diagnostics on a miss.
 - Reclassify a craft payment through Type → Commission and enter its cost. Save the same entry; do not also Record sale. A pure tip can use 0 cost.
 - Disable trade tracking, complete a trade and confirm no tip entry appears. Re-enable it, reload and confirm entries/settings remain.
+
+## Daily loot and other expenses — revision 8
+
+- Loot several amounts, including group shares. Check one local daily total, exact copper and no guild-bank contribution. Reload, loot again and confirm the same row increases. Check a local midnight rollover when practical.
+- Pay for repair all and individual repairs. Guild-funded repairs must not be personal spending. Test a vendor purchase/sale followed immediately by repairs; totals should include both once.
+- Buy training, reset talents and take a flight. Check names, actual cost and local timestamp. Cancel or fail an action; it should add no expense without a deduction.
+- Send an item and then mail with gold. Check postage separately from attached gold, including a failed send and a quick mailbox close.
+- Check an unsupported outgoing payment: it should remain Unclassified where wallet data is readable. Rename it and choose its category.
+- Under Other, clear categories and tick Repairs plus Flights. Filters must apply immediately, stay open for multiple choices and survive periodic refresh. Another filter must ignore this mask; All must include every type. Check category-filtered CSV.
+- Inspect the report, two filter rows and category dropdown at normal UI scale. Disable/re-enable loot and Other independently; recheck totals and saved settings after reload.

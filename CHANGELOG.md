@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0-beta — 2026-10-20-beta001 — Test revision 8
+
+- Total looted money by local day, including reloads and queued awards.
+- Record repairs, training, respecs, postage, flights, mailed gold and other expenses. Keep unrecognized deductions as Unclassified.
+- Add Loot / Other filters, multiple expense-category checkboxes, category editing and CSV detail.
+- Include loot and Other in the report; add independent tracking settings. Preserve old expenses and existing data.
+- **582/582 local tests pass.** Native loot/spending and menu checks remain pending.
+
 ## 1.2.0-beta — 2026-10-20-beta001 — Test revision 7
 
 - Track completed trade gold as tips received/given, with report totals, filters and an independent setting. Require final offers and native success; reject cancellations and incomplete context.

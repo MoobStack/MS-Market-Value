@@ -270,7 +270,7 @@ test("watchlist UI saves gold and return thresholds without scanning",function()
 end)
 test("economy diagnostics report pricing watches and ledger cost gaps",function()
     local w,A=watchWorld();truth(A.Watchlist.Save(100,600,0,0));truth(A.Ledger.Record(transaction()));local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 7",1,true));truth(string.find(text,"Watchlists: 1",1,true));truth(string.find(text,"sales_needing_cost=1",1,true))
+    truth(string.find(text,"Test revision: 8",1,true));truth(string.find(text,"Watchlists: 1",1,true));truth(string.find(text,"sales_needing_cost=1",1,true))
 end)
 
 test("invoice identity survives ledger pruning and deliberate entry deletion",function()

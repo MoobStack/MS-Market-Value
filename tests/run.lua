@@ -132,7 +132,7 @@ local function fresh(saved)
     _G.C_MerchantFrame = { GetItemInfo = function(index) return world.vendorItems[index] end }
     _G.GetMerchantItemInfo = nil
     _G.ChatFrameUtil, _G.ChatFrame_OpenChat = nil, nil
-    for _,key in ipairs({"BuyMerchantItem","BuybackItem","SellCursorItem","PickupMerchantItem","GetMoney","GetInboxNumItems","GetNumBuybackItems","GetBuybackItemInfo","GetBuybackItemLink","NUM_BAG_SLOTS","TakeInboxMoney","TakeInboxItem","DeleteInboxItem"})do _G[key]=nil end
+    for _,key in ipairs({"GetRepairAllCost","InRepairMode","RepairAllItems","GetNumTrainerServices","GetTrainerServiceCost","GetTrainerServiceInfo","BuyTrainerService","ConfirmTalentWipeDialog_Show","ConfirmTalentWipe","NumTaxiNodes","TaxiNodeCost","TaxiNodeName","TakeTaxiNode","GetSendMailPrice","SetSendMailMoney","SendMail","PurchaseSlot","BuyGuildBankTab","DepositGuildBankMoney","GuildRegistrar_PurchaseCharter","GossipConfirmDialog_Show","C_GossipInfo","C_StableInfo","YOU_LOOT_MONEY","LOOT_MONEY_SPLIT","YOU_LOOT_MONEY_GUILD","LOOT_MONEY_SPLIT_GUILD","GOLD_AMOUNT","SILVER_AMOUNT","COPPER_AMOUNT","BuyMerchantItem","BuybackItem","SellCursorItem","PickupMerchantItem","GetMoney","GetInboxNumItems","GetNumBuybackItems","GetBuybackItemInfo","GetBuybackItemLink","NUM_BAG_SLOTS","TakeInboxMoney","TakeInboxItem","DeleteInboxItem"})do _G[key]=nil end
     _G.GetPlayerTradeMoney, _G.GetTargetTradeMoney, _G.GetGameMessageInfo = nil, nil, nil
     _G.TradeFrame, _G.AcceptTrade, _G.CancelTrade, _G.CloseTrade = nil, nil, nil, nil
     _G.ERR_TRADE_COMPLETE, _G.ERR_TRADE_CANCELLED = "Trade complete.", "Trade cancelled."
@@ -167,7 +167,13 @@ local function fresh(saved)
             function w:SetupMenu(generator)self.generator=generator;self:GenerateMenu()end
             function w:GenerateMenu()
                 self.menuBuilds=(self.menuBuilds or 0)+1
-                local root={items={}};function root:SetTag(tag)self.tag=tag end
+                local root={items={}};function root:CreateCheckbox(text,selected,callback,data)
+                    local option={text=text,selected=selected,callback=callback,data=data,checkbox=true};self.items[#self.items+1]=option;return option
+                end
+                function root:CreateButton(text,callback,data)
+                    local option={text=text,callback=callback,data=data};self.items[#self.items+1]=option;return option
+                end
+                function root:SetTag(tag)self.tag=tag end
                 function root:CreateRadio(text,selected,callback,data)
                     local option={text=text,selected=selected,callback=callback,data=data};self.items[#self.items+1]=option;return option
                 end
@@ -175,14 +181,15 @@ local function fresh(saved)
             end
             function w:Update()
                 local text=self.defaultText
-                for _,option in ipairs(self.menuDescription and self.menuDescription.items or{})do if option.selected(option.data)then text=option.text;break end end
-                self:SetText(text);self.Text:SetText(text)
+                for _,option in ipairs(self.menuDescription and self.menuDescription.items or{})do if option.selected and option.selected(option.data)then text=option.text;break end end
+                self:SetText(self.overrideText or text);self.Text:SetText(self.overrideText or text)
             end
+            function w:OverrideText(text)self.overrideText=text;self:Update()end
             function w:OpenMenu()self:GenerateMenu();self.menuOpen=true end
             function w:CloseMenu()self.menuOpen=false end
             function w:IsMenuOpen()return self.menuOpen==true end
             function w:Pick(kind)
-                for _,option in ipairs(self.menuDescription.items)do if option.data==kind then option.callback(kind);self:CloseMenu();self:Update();return true end end
+                for _,option in ipairs(self.menuDescription.items)do if option.data==kind then option.callback(kind);if not option.checkbox then self:CloseMenu()end;self:Update();return true end end
                 return false
             end
         end
@@ -1432,7 +1439,7 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("testing diagnostics identify the fixed beta build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 7",1,true))
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 8",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
     equal(A.VERSION,"1.2.0-beta"); equal(A.BUILD,"2026-10-20-beta001")
 end)
@@ -1694,7 +1701,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 7",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 8",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -2211,7 +2218,7 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 7",1,true)); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.2.0-beta / 2026-10-20-beta001",1,true)); truth(string.find(text,"Test revision: 8",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
@@ -2225,7 +2232,7 @@ test("the 1.1.0-to-1.2.0 upgrade keeps prices history preferences and cooldown w
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.2.0-beta"); equal(A2.BUILD,"2026-10-20-beta001"); equal(A2.TEST_REVISION,7)
+    equal(A2.VERSION,"1.2.0-beta"); equal(A2.BUILD,"2026-10-20-beta001"); equal(A2.TEST_REVISION,8)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)
@@ -2242,6 +2249,7 @@ assert(loadfile("tests/transactions.lua"))(fresh, craftingWorld, craftRecipe, li
 assert(loadfile("tests/ledger-ui.lua"))(fresh, test, equal, truth)
 assert(loadfile("tests/trade-ledger.lua"))(fresh, test, equal, truth, secret)
 assert(loadfile("tests/ledger-revision7.lua"))(fresh, test, equal, truth)
+assert(loadfile("tests/cash-ledger.lua"))(fresh, link, test, equal, truth, secret)
 
 if os.getenv("MSMV_BENCHMARK") == "1" then
     assert(loadfile("tests/market-performance.lua"))(fresh, row, truth, equal)

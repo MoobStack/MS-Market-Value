@@ -99,7 +99,7 @@ test("ledger settings retain independent tracking controls and retention",functi
 end)
 test("legacy expense rows remain reachable from the period report",function()
     local w,A,E=initial();entry(A,"expense",100);E.Refresh();E.activityRows.expense.scripts.OnClick()
-    equal(E.filterKind,"expense");equal(E.ledgerRows[1].row.kind,"expense");equal(E.filterTitle.text,"Transactions: Legacy expenses")
+    equal(E.filterKind,"expense");equal(E.ledgerRows[1].row.kind,"expense");equal(E.filterTitle.text,"Transactions: Other spending")
 end)
 test("reports reuse cached data and do not request auctions or item metadata",function()
     local w,A,E=initial();entry(A,"sale",1000,200);E.Refresh();local sums=A.Ledger.Summary(E.PeriodFilter())
@@ -113,7 +113,7 @@ test("combat hides both ledger and transaction editor and blocks navigation",fun
     A.UI.OpenSettings();equal(A.UI.frame,nil)
 end)
 test("the compact ledger pages keep report and transaction regions separate",function()
-    local w,A,E=initial();equal(E.frame.height,690);truth(E.reportPanel:IsShown());equal(E.transactionsPanel:IsShown(),false)
+    local w,A,E=initial();equal(E.frame.height,720);truth(E.reportPanel:IsShown());equal(E.transactionsPanel:IsShown(),false)
     E.transactionsTab.scripts.OnClick();truth(E.transactionsPanel:IsShown());equal(E.reportPanel:IsShown(),false)
     equal(#E.ledgerRows,8);equal(E.editorFrame:IsShown(),false)
     for key,card in pairs(E.reportCards)do

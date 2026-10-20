@@ -2,7 +2,7 @@ local _, A = ...
 local U,D,W,L = A.Util,A.DB,A.Watchlist,A.Ledger
 local E = { mode = "watch", watchPage = 1, ledgerPage = 1, kind = "sale", messages = {} }
 A.EconomyUI = E
-local kinds, titles = {"sale","buy","commission","vendor_sale","vendor_buy","tip_received","tip_given"}, {sale="AH sale",buy="AH buy",commission="Commission",vendor_sale="Vendor sale",vendor_buy="Vendor buy",tip_received="Tip received",tip_given="Tip given",expense="Legacy expense"}
+local kinds, titles = {"sale","buy","commission","vendor_sale","vendor_buy","tip_received","tip_given","expense"}, {sale="AH sale",buy="AH buy",commission="Commission",vendor_sale="Vendor sale",vendor_buy="Vendor buy",tip_received="Tip received",tip_given="Tip given",expense="Other spending",loot="Loot"}
 local function Label(parent,text,x,y,width,right)
     local f=parent:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
     f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);f:SetSize(width,16);f:SetWordWrap(false)
@@ -125,13 +125,14 @@ end
 
 function E.SyncKind()
     if E.kindDropdown then E.kindDropdown:GenerateMenu()end
+    if E.categoryDropdown then E.categoryDropdown:GenerateMenu()end
 end
 function E.SetKind(kind)
     if U.Combat()or not titles[kind]then return end
     E.kind=kind;E.kindDropdown:Update();E.Refresh()
 end
 function E.NewManual()
-    E.entryID,E.invoiceDraft,E.ledgerItemID,E.originalRow=nil,nil,nil,nil;E.kind="sale"
+    E.entryID,E.invoiceDraft,E.ledgerItemID,E.originalRow=nil,nil,nil,nil;E.kind="sale";E.expenseCategory="misc"
     if not E.ledgerInputs then return end
     local v=E.ledgerInputs
     E.SyncKind();v.name:SetText("");v.quantity:SetText("1");v.amount:SetText("");v.fee:SetText("0");v.tip:SetText("0");v.cost:SetText("")
@@ -139,7 +140,7 @@ function E.NewManual()
 end
 function E.LoadLedger(row)
     E.entryID,E.kind,E.ledgerItemID,E.originalRow=row.id,row.kind,row.itemID,row
-    E.invoiceDraft=row.invoiceKey and row or nil
+    E.invoiceDraft=row.invoiceKey and row or nil;E.expenseCategory=L.Category(row)or"misc"
     local v=E.ledgerInputs;E.SyncKind();v.name:SetText(row.name);v.quantity:SetText(tostring(row.quantity))
     v.amount:SetText(U.GoldText(row.amount));v.fee:SetText(U.GoldText(row.fee));v.tip:SetText(U.GoldText(row.tip or 0));v.cost:SetText(row.cost~=nil and not row.estimatedCost and U.GoldText(row.cost)or"")
     E.ledgerView="transactions";E.editorFrame:Show()
@@ -159,7 +160,8 @@ function E.RecordLedger()
     local tip=0
     if L.Income(E.kind)then tip=U.ParseGold(v.tip:GetText(),1000000000000)end
     local input={kind=E.kind,name=v.name:GetText(),quantity=tonumber(v.quantity:GetText()),amount=U.ParseGold(v.amount:GetText(),1000000000000),
-        fee=U.ParseGold(v.fee:GetText(),1000000000000),tip=tip,itemID=E.ledgerItemID}
+        fee=U.ParseGold(v.fee:GetText(),1000000000000),tip=tip,itemID=E.ledgerItemID,category=E.kind=="expense"and E.expenseCategory or nil,
+        lootDay=E.kind=="loot"and E.originalRow and E.originalRow.lootDay or nil}
     local cost=v.cost:GetText()
     if cost=="" and E.originalRow and E.originalRow.estimatedCost then input.cost=E.originalRow.cost;input.estimatedCost=true end
     if cost~="" then input.cost=U.ParseGold(cost,1000000000000);if input.cost==nil then return Message("Enter a valid cost, or leave cost blank if unknown.")end end
@@ -201,6 +203,7 @@ function E.PeriodFilter()
 end
 function E.CurrentFilter()
     local range=E.PeriodFilter();range.kind=E.ledgerView=="transactions"and(E.filterKind or"all")or"all"
+    if range.kind=="expense"then range.categories=E.otherCategories end
     return range
 end
 function E.ApplyDates()
@@ -211,7 +214,7 @@ function E.ApplyDates()
 end
 
 local periods={{"today","Today",78},{"7d","7 days",78},{"30d","30 days",86},{"all","All retained",108},{"custom","Custom",86}}
-local filters={{"all","All",62},{"buy","AH purchases",124},{"sale","AH sales",96},{"vendor_buy","Vendor purchases",150},{"vendor_sale","Vendor sales",124},{"commission","Commissions",142},{"tip_received","Tips received",160},{"tip_given","Tips given",160}}
+local filters={{"all","All",62},{"buy","AH purchases",124},{"sale","AH sales",96},{"vendor_buy","Vendor purchases",150},{"vendor_sale","Vendor sales",124},{"commission","Commissions",142},{"tip_received","Tips received",128},{"tip_given","Tips given",116},{"loot","Loot",84},{"expense","Other",84}}
 local LEDGER_ROWS=8
 local function Count(n)return n..(n==1 and " entry"or" entries")end
 local function Accent(label,value)
@@ -225,8 +228,23 @@ function E.SetLedgerView(view)
 end
 function E.SetFilter(kind)
     if U.Combat()or(kind~="all"and not titles[kind])then return end
-    E.filterKind,E.ledgerPage,E.ledgerView=kind,1,"transactions";E.Refresh()
+    E.filterKind,E.ledgerPage,E.ledgerView=kind,1,"transactions"
+    if kind~="expense"and E.otherDropdown then E.otherDropdown:CloseMenu()end
+    E.Refresh()
 end
+function E.SelectOther(category)
+    if U.Combat()then return end
+    E.otherCategories=E.otherCategories or{}
+    if category=="all"or category=="none"then
+        for _,entry in ipairs(L.expenseCategories)do E.otherCategories[entry[1]]=category=="all"end
+    elseif L.categoryTitles[category]then E.otherCategories[category]=not E.otherCategories[category]end
+    E.ledgerPage=1;E.Refresh()
+end
+function E.OtherTitle()
+    local count=0;for _,entry in ipairs(L.expenseCategories)do if E.otherCategories[entry[1]]then count=count+1 end end
+    return count==#L.expenseCategories and"All other expenses"or(count==0 and"No categories"or(count.." categories selected"))
+end
+
 function E.SetPeriod(period)
     if U.Combat()then return end
     for _,entry in ipairs(periods)do if entry[1]==period then E.period=period;E.ledgerPage=1;E.Refresh();return end end
@@ -268,7 +286,7 @@ function E.CreateLedger(f)
     E.newEntry=Button(ledger,"New entry",610,-198,160,E.OpenEditor)
 
     local report=CreateFrame("Frame",nil,ledger);report:SetAllPoints(ledger);E.reportPanel=report
-    local totals=Inset(report,-232,404)
+    local totals=Inset(report,-232,434)
     E.report={};E.reportCards={}
     for _,entry in ipairs({{"income","Income",14},{"spend","Spending",264},{"flow","Cash flow",514}})do
         local key,title,left=entry[1],entry[2],entry[3]
@@ -287,12 +305,13 @@ function E.CreateLedger(f)
         E.activityRows[key]=row
     end
     Activity("sale","AH sales",14,-136);Activity("vendor_sale","Vendor sales",14,-166);Activity("commission","Commissions",14,-196)
-    Activity("buy","AH purchases",390,-136);Activity("vendor_buy","Vendor purchases",390,-166);Activity("expense","Legacy expenses",390,-196)
+    Activity("buy","AH purchases",390,-136);Activity("vendor_buy","Vendor purchases",390,-166);Activity("expense","Other spending",390,-196)
     Activity("tip_received","Tips received",14,-226);Activity("tip_given","Tips given",390,-226)
-    E.reportCards.profit=Card(totals,"Recorded-cost profit / loss",14,-268,360,92)
-    E.reportCards.estimate=Card(totals,"Estimated craft profit / loss",390,-268,360,92)
+    Activity("loot","Loot",14,-256)
+    E.reportCards.profit=Card(totals,"Recorded-cost profit / loss",14,-298,360,92)
+    E.reportCards.estimate=Card(totals,"Estimated craft profit / loss",390,-298,360,92)
     E.report.profit,E.report.estimate=E.reportCards.profit.value,E.reportCards.estimate.value
-    E.report.unknown=Label(totals,"",14,-376,736)
+    E.report.unknown=Label(totals,"",14,-406,736)
 
     local transactions=CreateFrame("Frame",nil,ledger);transactions:SetAllPoints(ledger);E.transactionsPanel=transactions
     local types=Inset(transactions,-232,100)
@@ -303,13 +322,27 @@ function E.CreateLedger(f)
         local key,title,width=entry[1],entry[2],entry[3]
         E.filterButtons[key]=Button(types,title,x,index>6 and -66 or -33,width,function()E.SetFilter(key)end);x=x+width+8
     end
-    Label(types,"Trade payments can be reclassified in the editor.",354,-73,396)
+    E.otherHelp=Label(types,"Edit a row to change its details.",466,-73,282)
+    E.otherCategories={};for _,entry in ipairs(L.expenseCategories)do E.otherCategories[entry[1]]=true end
+    E.otherDropdown=CreateFrame("DropdownButton",nil,types,"WowStyle1DropdownTemplate")
+    E.otherDropdown:SetPoint("TOPLEFT",types,"TOPLEFT",466,-66);E.otherDropdown:SetSize(282,25);E.otherDropdown:SetDefaultText("All other expenses")
+    E.otherDropdown:SetupMenu(function(_,root)
+        root:SetTag("MENU_MSMARKETVALUE_OTHER_FILTER")
+        root:CreateButton("Select all categories",E.SelectOther,"all")
+        root:CreateButton("Clear categories",E.SelectOther,"none")
+        for _,entry in ipairs(L.expenseCategories)do
+            root:CreateCheckbox(entry[2],function(key)return E.otherCategories[key]==true end,E.SelectOther,entry[1])
+        end
+    end)
+    transactions:SetScript("OnHide",function()E.otherDropdown:CloseMenu()end)
     local entries=Inset(transactions,-342,262)
     local columns={{"Date local",0,84},{"Type",90,88},{"Item / note",184,158},{"Qty",346,28,true},{"Net",386,96,true},{"Cost",494,98,true},{"Profit",606,82,true},{"Source",704,40}}
     E.ledgerRows=TableRows(entries,columns,LEDGER_ROWS,28,E.LoadLedger,function(button,row)
         if not GameTooltip then return end
         GameTooltip:SetOwner(button,"ANCHOR_RIGHT");GameTooltip:ClearLines();GameTooltip:AddLine(row.name,1,.82,0)
         GameTooltip:AddLine(date("%Y-%m-%d %H:%M local",row.time).." - "..row.source)
+        if L.Category(row)then GameTooltip:AddDoubleLine("Category",L.categoryTitles[L.Category(row)])end
+        if row.kind=="loot"then GameTooltip:AddLine("Daily total; time is the first recorded loot award.",.8,.8,.8,true)end
         GameTooltip:AddDoubleLine("Total before tip",U.Money(row.amount));GameTooltip:AddDoubleLine("Tip",U.Money(row.tip or 0))
         GameTooltip:AddDoubleLine("Fees",U.Money(row.fee))
         local net,profit=L.Amounts(row)
@@ -331,28 +364,36 @@ function E.CreateLedger(f)
     E.autoAH=CreateFrame("CheckButton",nil,settings,"UICheckButtonTemplate")
     E.autoAH:SetPoint("TOPLEFT",settings,"TOPLEFT",10,-43);E.autoAH:SetSize(26,26)
     E.autoAH:SetScript("OnClick",function(self)if U.Combat()then return end;D.data.settings.trackAH=self:GetChecked()==true;A.Transactions.RequestMail();E.Refresh()end)
-    Label(settings,"Track AH transactions",43,-50,640)
+    Label(settings,"Track AH transactions",43,-50,320)
     E.autoVendor=CreateFrame("CheckButton",nil,settings,"UICheckButtonTemplate")
     E.autoVendor:SetPoint("TOPLEFT",settings,"TOPLEFT",10,-77);E.autoVendor:SetSize(26,26)
     E.autoVendor:SetScript("OnClick",function(self)if U.Combat()then return end;D.data.settings.trackVendor=self:GetChecked()==true;A.Transactions.ResetVendor();E.Refresh()end)
-    Label(settings,"Track vendor purchases and sales",43,-84,640)
+    Label(settings,"Track vendor purchases and sales",43,-84,320)
     E.autoTrade=CreateFrame("CheckButton",nil,settings,"UICheckButtonTemplate")
     E.autoTrade:SetPoint("TOPLEFT",settings,"TOPLEFT",10,-112);E.autoTrade:SetSize(26,26)
     E.autoTrade:SetScript("OnClick",function(self)if U.Combat()then return end;D.data.settings.trackTrade=self:GetChecked()==true;A.Transactions.ResetTrade();E.Refresh()end)
-    Label(settings,"Track player trade gold as tips",43,-119,700)
-    local help=Label(settings,"AH sales load from completed mailbox invoices. Trade gold starts as a tip; reclassify craft/item payments instead of recording them twice. Dates use your computer's local time.",14,-154,730);help:SetHeight(48);help:SetWordWrap(true)
+    Label(settings,"Track player trade gold as tips",43,-119,320)
+    local function CashOption(key,text,y)
+        local b=CreateFrame("CheckButton",nil,settings,"UICheckButtonTemplate")
+        b:SetPoint("TOPLEFT",settings,"TOPLEFT",390,y);b:SetSize(26,26)
+        b:SetScript("OnClick",function(self)if U.Combat()then return end;D.data.settings[key]=self:GetChecked()==true;if key=="trackOther"then A.Cash.Reset()end;E.Refresh()end)
+        Label(settings,text,423,y-7,320);return b
+    end
+    E.autoLoot=CashOption("trackLoot","Track daily loot income",-43)
+    E.autoOther=CashOption("trackOther","Track other spending",-77)
+    local help=Label(settings,"AH sales load from completed mail invoices. Loot is totaled each local day. Other spending uses confirmed wallet deductions; unrecognized costs appear as Unclassified. Reclassify trade payments instead of recording them twice.",14,-154,730);help:SetHeight(48);help:SetWordWrap(true)
     Label(settings,"Retention",14,-224,730):SetFontObject("GameFontNormal")
     Label(settings,"Keep transactions for",14,-260,164);E.retention=Box(settings,190,-253,57,true);E.retention:SetMaxLetters(3)
     Label(settings,"days (1-365)",267,-260,130);Button(settings,"Apply",410,-253,90,E.ApplyRetention)
     local retentionHelp=Label(settings,"A shorter retention period removes older entries. Copy the records you need before applying it.",14,-297,730);retentionHelp:SetHeight(34);retentionHelp:SetWordWrap(true)
-    Button(settings,"View legacy expenses",14,-349,196,function()E.SetFilter("expense")end)
+    Button(settings,"View other spending",14,-349,196,function()E.SetFilter("expense")end)
     E.queueText=Label(settings,"",230,-356,514)
 
     local editor=CreateFrame("Frame","MSMarketValueTransaction",f,"PortraitFrameTemplate")
     editor:SetSize(790,310);editor:SetPoint("CENTER",f,"CENTER",0,0);editor:SetFrameStrata("DIALOG");editor:SetFrameLevel(f:GetFrameLevel()+20)
     editor:SetClampedToScreen(true);editor:SetTitle("MS Market Value - Transaction")
     if editor.PortraitContainer and editor.PortraitContainer.portrait then editor.PortraitContainer.portrait:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")end
-    editor.CloseButton:SetScript("OnClick",function()editor:Hide()end);editor:SetScript("OnHide",function()E.messages.ledger=nil;if E.kindDropdown then E.kindDropdown:CloseMenu()end end);E.editorFrame=editor;table.insert(UISpecialFrames,"MSMarketValueTransaction")
+    editor.CloseButton:SetScript("OnClick",function()editor:Hide()end);editor:SetScript("OnHide",function()E.messages.ledger=nil;if E.kindDropdown then E.kindDropdown:CloseMenu()end;if E.categoryDropdown then E.categoryDropdown:CloseMenu()end end);E.editorFrame=editor;table.insert(UISpecialFrames,"MSMarketValueTransaction")
     local fields=Inset(editor,-42,188)
     Label(fields,"Type",14,-10,160);Label(fields,"Item / transaction",186,-10,342);Label(fields,"Qty",548,-10,60)
     E.kindDropdown=CreateFrame("DropdownButton",nil,fields,"WowStyle1DropdownTemplate")
@@ -361,14 +402,25 @@ function E.CreateLedger(f)
         root:SetTag("MENU_MSMARKETVALUE_TRANSACTION_TYPE")
         local function Selected(kind)return E.kind==kind end
         for _,kind in ipairs(kinds)do root:CreateRadio(titles[kind],Selected,E.SetKind,kind)end
-        if E.kind=="expense"or(E.originalRow and E.originalRow.kind=="expense")then root:CreateRadio(titles.expense,Selected,E.SetKind,"expense")end
+        if E.originalRow and E.originalRow.kind=="loot"then root:CreateRadio(titles.loot,Selected,E.SetKind,"loot")end
     end)
     E.ledgerInputs={name=Box(fields,191,-31,331),quantity=Box(fields,553,-31,60,true),amount=Box(fields,20,-91,102),fee=Box(fields,143,-91,80),tip=Box(fields,245,-91,80),cost=Box(fields,347,-91,106)}
     E.ledgerInputs.name:SetMaxLetters(256)
     for _,key in ipairs({"amount","fee","tip","cost"})do E.ledgerInputs[key]:SetMaxLetters(24)end
     Label(fields,"Total before tip (g)",14,-70,125);Label(fields,"Fees (g)",137,-70,90);Label(fields,"Total tip (g)",239,-70,90);Label(fields,"Actual cost (g)",341,-70,112)
     Button(fields,"Record entry",650,-31,100,E.RecordLedger)
-    Button(fields,"Use open invoice",473,-91,145,E.ImportInvoice)
+    E.importInvoiceButton=Button(fields,"Use open invoice",473,-91,145,E.ImportInvoice)
+    E.categoryLabel=Label(fields,"Expense category",473,-70,145)
+    E.categoryDropdown=CreateFrame("DropdownButton",nil,fields,"WowStyle1DropdownTemplate")
+    E.categoryDropdown:SetPoint("TOPLEFT",fields,"TOPLEFT",473,-89);E.categoryDropdown:SetSize(145,25);E.categoryDropdown:SetDefaultText("Other spending")
+    E.categoryDropdown:SetupMenu(function(_,root)
+        root:SetTag("MENU_MSMARKETVALUE_EXPENSE_CATEGORY")
+        for _,entry in ipairs(L.expenseCategories)do
+            root:CreateRadio(entry[2],function(key)return E.expenseCategory==key end,function(key)
+                if U.Combat()then return end;E.expenseCategory=key;E.Refresh()
+            end,entry[1])
+        end
+    end)
     Button(fields,"Clear fields",624,-91,126,function()E.NewManual();E.Refresh()end)
     E.deleteEntry=Button(fields,"Delete entry",14,-135,128,function()
         if L.Remove(E.entryID)then E.NewManual();E.messages.ledger="Entry deleted. Undo delete can restore it.";E.Refresh()end
@@ -389,6 +441,8 @@ function E.RefreshLedger()
     Visible(E.reportPanel,E.ledgerView=="report");Visible(E.transactionsPanel,E.ledgerView=="transactions");Visible(E.optionsPanel,E.ledgerView=="options")
     E.csvButton:SetText(E.ledgerView=="transactions"and"Copy filtered CSV"or"Copy period CSV")
     E.ledgerInputs.tip:SetEnabled(L.Income(E.kind))
+    Visible(E.importInvoiceButton,E.kind~="expense");Visible(E.categoryLabel,E.kind=="expense");Visible(E.categoryDropdown,E.kind=="expense")
+    E.categoryDropdown:Update()
     E.deleteEntry:SetEnabled(E.entryID~=nil and not U.Combat());E.undo:SetEnabled(L.lastDeleted~=nil and not U.Combat())
     E.editorStatus:SetText(L.reason or E.messages.ledger or"")
     if E.ledgerView=="report"then
@@ -407,16 +461,18 @@ function E.RefreshLedger()
         E.report.unknown:SetText("Costs: "..sums.known.." recorded | "..sums.estimated.." estimated | "..sums.unknown.." needed")
         E.status:SetText(L.reason or"Period totals include all transaction types. Click an activity total to view its transactions.")
     elseif E.ledgerView=="transactions"then
-        local names={all="All",buy="AH purchases",sale="AH sales",vendor_buy="Vendor purchases",vendor_sale="Vendor sales",commission="Commissions",tip_received="Tips received",tip_given="Tips given",expense="Legacy expenses"}
+        local names={all="All",buy="AH purchases",sale="AH sales",vendor_buy="Vendor purchases",vendor_sale="Vendor sales",commission="Commissions",tip_received="Tips received",tip_given="Tips given",expense="Other spending",loot="Loot"}
         E.filterTitle:SetText("Transactions: "..names[E.filterKind])
+        Visible(E.otherDropdown,E.filterKind=="expense");Visible(E.otherHelp,E.filterKind~="expense")
+        E.otherDropdown:OverrideText(E.OtherTitle())
         for _,entry in ipairs(filters)do E.filterButtons[entry[1]]:SetText((entry[1]==E.filterKind and"|cffffd100"or"")..entry[2]..(entry[1]==E.filterKind and"|r"or""))end
         local rows=L.View(E.CurrentFilter());local pages=math.max(1,math.ceil(#rows/LEDGER_ROWS));E.ledgerPage=math.max(1,math.min(E.ledgerPage,pages))
         for index,b in ipairs(E.ledgerRows)do
             local row=rows[(E.ledgerPage-1)*LEDGER_ROWS+index];b.row=row
             if row then
                 local net,profit=L.Amounts(row)
-                local sourceNames={["AH invoice"]="Invoice",["AH purchase"]="Live AH",["AH mail"]="Mail",["Craft quote"]="Craft",["Player trade"]="Trade",Vendor="Vendor",Manual="Manual"}
-                local values={date("%m-%d %H:%M",row.time),titles[row.kind],row.name,tostring(row.quantity),Signed(net),
+                local sourceNames={["AH invoice"]="Invoice",["AH purchase"]="Live AH",["AH mail"]="Mail",["Craft quote"]="Craft",["Player trade"]="Trade",Vendor="Vendor",Manual="Manual",Loot="Loot",["Game expense"]="Game"}
+                local values={date(row.kind=="loot"and"%m-%d total"or"%m-%d %H:%M",row.time),L.Category(row)and L.categoryTitles[L.Category(row)]or titles[row.kind],row.name,tostring(row.quantity),Signed(net),
                     row.cost~=nil and((row.estimatedCost and"Est. "or"")..U.Money(row.cost))or(L.Income(row.kind)and"Needed"or"--"),
                     profit~=nil and((row.estimatedCost and"Est. "or"")..Signed(profit))or"--",sourceNames[row.source]}
                 for n,value in ipairs(values)do b.labels[n]:SetText(value)end
@@ -429,7 +485,7 @@ function E.RefreshLedger()
         E.ledgerPrevious:SetEnabled(E.ledgerPage>1);E.ledgerNext:SetEnabled(E.ledgerPage<pages)
         E.status:SetText(L.reason or E.messages.ledger or"Select a transaction to edit it. CSV uses this type and period; Period report covers all types.")
     else
-        E.autoAH:SetChecked(D.Settings().trackAH);E.autoVendor:SetChecked(D.Settings().trackVendor);E.autoTrade:SetChecked(D.Settings().trackTrade)
+        E.autoAH:SetChecked(D.Settings().trackAH);E.autoVendor:SetChecked(D.Settings().trackVendor);E.autoTrade:SetChecked(D.Settings().trackTrade);E.autoLoot:SetChecked(D.Settings().trackLoot);E.autoOther:SetChecked(D.Settings().trackOther)
         if not E.retention:HasFocus()then E.retention:SetText(tostring(D.Settings().ledgerDays))end
         E.queueText:SetText(#A.Transactions.queue.." confirmed transactions waiting for ledger space")
         E.status:SetText(L.reason or E.messages.ledger or"Tracking and retention apply to this character's ledger.")
@@ -502,8 +558,8 @@ function E.Refresh()
     end
     E.watchTab:SetText(E.mode=="watch"and"|cffffd100Watchlists|r"or"Watchlists")
     E.ledgerTab:SetText(E.mode=="ledger"and"|cffffd100Ledger|r"or"Ledger")
-    E.frame:SetHeight(E.mode=="watch"and 610 or 690)
-    E.status:ClearAllPoints();E.status:SetPoint("TOPLEFT",E.frame,"TOPLEFT",16,E.mode=="watch"and -573 or -653)
+    E.frame:SetHeight(E.mode=="watch"and 610 or 720)
+    E.status:ClearAllPoints();E.status:SetPoint("TOPLEFT",E.frame,"TOPLEFT",16,E.mode=="watch"and -573 or -683)
     if E.mode=="watch"then
         E.watchPanel:Show();E.ledgerPanel:Hide();E.alerts:SetChecked(D.Settings().watchAlerts)
         local pages=math.max(1,math.ceil(#W.rows/7));E.watchPage=math.max(1,math.min(E.watchPage,pages))

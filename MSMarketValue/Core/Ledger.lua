@@ -3,9 +3,18 @@ local U, D = A.Util, A.DB
 local L = { revision = 0, limit = 10000 }
 A.Ledger = L
 local MAX_MONEY = 1000000000000
-local kinds = { sale = true, buy = true, commission = true, vendor_sale = true, vendor_buy = true, tip_received = true, tip_given = true, expense = true }
-local sources = { Manual=true, ["AH invoice"]=true, ["AH purchase"]=true, ["AH mail"]=true, Vendor=true, ["Craft quote"]=true, ["Player trade"]=true }
-function L.Income(kind) return kind == "sale" or kind == "commission" or kind == "vendor_sale" or kind == "tip_received" end
+local kinds = { sale = true, buy = true, commission = true, vendor_sale = true, vendor_buy = true, tip_received = true, tip_given = true, expense = true, loot = true }
+local sources = { Manual=true, ["AH invoice"]=true, ["AH purchase"]=true, ["AH mail"]=true, Vendor=true, ["Craft quote"]=true, ["Player trade"]=true, Loot=true, ["Game expense"]=true }
+function L.Income(kind) return kind == "sale" or kind == "commission" or kind == "vendor_sale" or kind == "tip_received" or kind == "loot" end
+
+L.expenseCategories = {
+    {"repair","Repairs"}, {"training","Training"}, {"respec","Respecs"}, {"postage","Postage"},
+    {"flight","Flights"}, {"mail_gold","Mailed gold"}, {"services","Other services"}, {"bank","Bank / storage"},
+    {"misc","Other spending"}, {"unclassified","Unclassified"}, {"legacy","Legacy expense"},
+}
+L.categoryTitles = {}
+for _,entry in ipairs(L.expenseCategories)do L.categoryTitles[entry[1]]=entry[2]end
+function L.Category(row)return row.kind=="expense"and(row.category or"legacy")or nil end
 
 function L.Initialize()
     local saved = D.data.ledger
@@ -26,6 +35,9 @@ local function Valid(row)
         U.Number(row.quantity, 1, 1000000, true) and Money(row.amount) and Money(row.fee) and
         (not L.Income(row.kind) or row.fee <= row.amount) and Money(row.refund) and Optional(row.cost, Money) and
         Optional(row.tip, Money) and Optional(row.estimatedCost, function(v) return type(v)=="boolean" end) and
+        Optional(row.category, function(v)return row.kind=="expense"and U.String(v)and L.categoryTitles[v]~=nil end) and
+        Optional(row.lootDay, function(v)return row.kind=="loot"and U.Number(v,0,100000,true)end) and
+        (row.kind~="loot"or U.Number(row.lootDay,0,100000,true)) and
         Optional(row.autoKey, function(v) return U.String(v) and #v<=1024 end) and
         Optional(row.recipeID, function(v) return U.Number(v,1,2147483647,true) end) and
         Optional(row.itemID, function(v) return U.Number(v, 1, 2147483647, true) end) and
@@ -75,7 +87,7 @@ function L.Profile(create)
             if not Valid(row) or ids[row.id] or row.id >= profile.nextID then L.reason = "Invalid ledger records preserved; restore a backup before editing."; return nil end
             ids[row.id] = true
         end
-        L.checkedProfile = profile;L.receiptIndex=nil
+        L.checkedProfile = profile;L.receiptIndex=nil;L.lootIndex=nil
     end
     L.reason = nil
     return profile, key
@@ -84,10 +96,16 @@ end
 function L.Stage(input)
     local profile,key=L.Profile(true)
     if not profile then return nil,L.reason or"Ledger unavailable; confirmed transaction could not be saved."end
-    for _,staged in ipairs(profile.pending)do if staged.input.autoKey==input.autoKey then return profile.pending end end
+    for _,staged in ipairs(profile.pending)do
+        if input.kind=="loot"and staged.input.kind=="loot"and staged.input.lootDay==input.lootDay then
+            if not Money(input.amount)or not Money(staged.input.amount+input.amount)then return nil,"Daily loot total is invalid."end
+            staged.input.amount=staged.input.amount+input.amount;return profile.pending
+        elseif input.kind~="loot"and staged.input.autoKey==input.autoKey then return profile.pending end
+    end
     if #profile.pending>=100 then return nil,"Pending transaction limit reached. Free ledger space before continuing trades."end
     local row={id=profile.nextID,time=input.time,kind=input.kind,name=input.name,quantity=input.quantity,amount=input.amount,
-        fee=input.fee or 0,refund=0,tip=0,itemID=input.itemID,source=input.source,autoKey=input.autoKey}
+        fee=input.fee or 0,refund=0,tip=0,itemID=input.itemID,source=input.source,autoKey=input.autoKey,
+        cost=input.cost,category=input.category,lootDay=input.lootDay}
     if not Valid(row)or not U.String(row.autoKey)then return nil,"Confirmed transaction data could not be queued."end
     profile.pending[#profile.pending+1]={input=row,player=key}
     return profile.pending
@@ -102,7 +120,7 @@ function L.Maintain()
     if L.maintained == stamp then return end
     local entries = {}
     for _, row in ipairs(profile.entries) do if row.time >= cutoff then entries[#entries + 1] = row end end
-    if #entries ~= #profile.entries then profile.entries = entries; L.revision = L.revision + 1 end
+    if #entries ~= #profile.entries then profile.entries = entries; L.lootIndex=nil; L.revision = L.revision + 1 end
     local seen = {}
     for _, stamp in ipairs(profile.seen) do if stamp.expiry + 120 >= U.Now() then seen[#seen + 1] = stamp end end
     profile.seen = seen
@@ -141,11 +159,12 @@ end
 function L.Summary(filter)
     local rows = L.View(filter)
     if L.summary and L.summary.rows == rows then return L.summary end
-    local result = { rows = rows, sales = 0, spend = 0, profit = 0, estimatedProfit=0, estimated=0, known=0, unknown = 0, refunds = 0, tips=0, byKind={}, counts={} }
+    local result = { rows = rows, sales = 0, spend = 0, profit = 0, estimatedProfit=0, estimated=0, known=0, unknown = 0, refunds = 0, tips=0, byKind={}, byCategory={}, counts={} }
     for _, row in ipairs(rows) do
         local net, profit = L.Amounts(row)
         result.byKind[row.kind]=(result.byKind[row.kind] or 0)+net
         result.counts[row.kind]=(result.counts[row.kind] or 0)+1
+        local category=L.Category(row);if category then result.byCategory[category]=(result.byCategory[category]or 0)-net end
         if L.Income(row.kind) then
             result.sales = result.sales + net; result.refunds = result.refunds + row.refund
             result.tips=result.tips+(row.tip or 0)+(row.kind=="tip_received"and row.amount or 0)
@@ -162,7 +181,7 @@ end
 function L.Record(input, editID, automatic)
     if U.Combat() and not automatic then return false, "Edit ledger entries outside combat." end
     if not U.Table(input) then return false, "Transaction data is unavailable." end
-    for _,key in ipairs({"fee","refund","cost","tip","estimatedCost","itemID","invoiceKey","invoiceExpiry","autoKey","recipeID","source"}) do
+    for _,key in ipairs({"fee","refund","cost","tip","estimatedCost","itemID","invoiceKey","invoiceExpiry","autoKey","recipeID","source","category","lootDay"}) do
         if not U.Accessible(input[key]) then return false, "Transaction data is restricted." end
     end
     if not U.Accessible(editID) then return false, "Entry identity is restricted." end
@@ -185,9 +204,16 @@ function L.Record(input, editID, automatic)
         kind = input.kind, name = input.name, quantity = input.quantity, amount = input.amount,
         fee = input.fee or 0, cost = input.cost, refund = input.refund or (old and old.refund) or 0, itemID = input.itemID,
         tip=input.tip or 0, estimatedCost=input.estimatedCost, recipeID=input.recipeID,
+        category=input.kind=="expense"and(input.category or(old and old.category))or nil,
+        lootDay=input.kind=="loot"and(input.lootDay or(old and old.lootDay))or nil,
         autoKey=old and old.autoKey or input.autoKey,
         source = old and old.source or input.source or (input.invoiceKey and "AH invoice" or "Manual"),
         invoiceKey = old and old.invoiceKey or input.invoiceKey, invoiceExpiry = old and old.invoiceExpiry or input.invoiceExpiry }
+    if row.kind=="loot"then
+        for _,previous in ipairs(profile.entries)do
+            if previous.id~=row.id and previous.kind=="loot"and previous.lootDay==row.lootDay then return false,"A loot total already exists for this day."end
+        end
+    end
     if not Valid(row) then return false, "Enter a name, quantity and valid totals. Sale fees cannot exceed the sale amount." end
     if row.invoiceKey then
         if not row.invoiceExpiry then return false, "Invoice identity is incomplete; use a manual entry." end
@@ -217,8 +243,26 @@ function L.Record(input, editID, automatic)
         L.receiptIndex[row.autoKey]=row.id
     end
     if row.time<L.LocalStart(L.LocalDay(U.Now())-D.Settings().ledgerDays+1) then L.maintained=nil end
-    L.revision = L.revision + 1; L.lastDeleted = nil
+    L.revision = L.revision + 1; L.lastDeleted = nil; L.lootIndex=nil
     return true, row.id
+end
+
+-- One mutable row per local calendar day; loot never fills the receipt index.
+function L.AddLoot(amount,stamp,day)
+    if not Money(amount)or amount<=0 or not U.Number(stamp,0,U.Now(),true)or
+       not U.Number(day,0,100000,true)or L.LocalDay(stamp)~=day then return false,"Invalid loot award."end
+    if stamp<L.LocalStart(L.LocalDay(U.Now())-D.Settings().ledgerDays+1)then return true end
+    local profile=L.Profile(true);if not profile then return false,L.reason or"Ledger unavailable."end
+    L.Maintain()
+    if not L.lootIndex then
+        L.lootIndex={};for _,row in ipairs(profile.entries)do if row.kind=="loot"then L.lootIndex[row.lootDay]=row end end
+    end
+    local row=L.lootIndex[day]
+    if row then
+        if not Money(row.amount+amount)then return false,"Daily loot total is too large."end
+        row.amount=row.amount+amount;L.revision=L.revision+1;L.lastDeleted=nil;return true,row.id
+    end
+    return L.Record({kind="loot",name="Money looted",quantity=1,amount=amount,fee=0,cost=0,source="Loot",time=stamp,lootDay=day},nil,true)
 end
 
 function L.Commission(row,price,tip,quantity)
@@ -245,7 +289,7 @@ function L.Remove(id)
     if not profile then return false end
     for index,row in ipairs(profile.entries) do
         if row.id == id then
-            L.lastDeleted = { key = key, row = row }; table.remove(profile.entries,index); L.revision = L.revision + 1; return true
+            L.lootIndex=nil; L.lastDeleted = { key = key, row = row }; table.remove(profile.entries,index); L.revision = L.revision + 1; return true
         end
     end
     return false
@@ -256,7 +300,10 @@ function L.Undo()
     local profile, key = L.Profile(false)
     if not profile or key ~= L.lastDeleted.key or #profile.entries >= L.limit then return false end
     if L.lastDeleted.row.time < L.LocalStart(L.LocalDay(U.Now()) - D.Settings().ledgerDays + 1) then return false end
-    profile.entries[#profile.entries + 1] = L.lastDeleted.row; L.lastDeleted = nil; L.revision = L.revision + 1
+    if L.lastDeleted.row.kind=="loot"then
+        for _,row in ipairs(profile.entries)do if row.kind=="loot"and row.lootDay==L.lastDeleted.row.lootDay then return false end end
+    end
+    L.lootIndex=nil; profile.entries[#profile.entries + 1] = L.lastDeleted.row; L.lastDeleted = nil; L.revision = L.revision + 1
     return true
 end
 
@@ -364,11 +411,16 @@ end
 function L.View(filter)
     local rows=L.Records()
     if not filter or (not filter.kind or filter.kind=="all")and not filter.first and not filter.last then return rows end
-    local key=table.concat({filter.kind or"all",filter.first or 0,filter.last or 9007199254740991},"|")
+    local mask={}
+    if filter.kind=="expense"and filter.categories then
+        for _,entry in ipairs(L.expenseCategories)do if filter.categories[entry[1]]then mask[#mask+1]=entry[1]end end
+    end
+    local key=table.concat({filter.kind or"all",filter.first or 0,filter.last or 9007199254740991,
+        filter.kind=="expense"and filter.categories and table.concat(mask,",")or"*"},"|")
     if L.view and L.view.source==rows and L.view.key==key then return L.view.rows end
     local result={}
     for _,row in ipairs(rows)do
-        if (not filter.kind or filter.kind=="all"or row.kind==filter.kind)and row.time>=(filter.first or 0)and row.time<=(filter.last or 9007199254740991)then result[#result+1]=row end
+        if (not filter.kind or filter.kind=="all"or row.kind==filter.kind)and (filter.kind~="expense"or not filter.categories or filter.categories[L.Category(row)]==true)and row.time>=(filter.first or 0)and row.time<=(filter.last or 9007199254740991)then result[#result+1]=row end
     end
     L.view={source=rows,key=key,rows=result};return result
 end
@@ -379,12 +431,12 @@ function L.CSV(filter)
         if string.match(value,"^%s*[=+@%-]") then value = "'" .. value end
         return '"' .. string.gsub(value,'"','""') .. '"'
     end
-    local lines = {"LocalTime,UTC,Type,Name,Quantity,TotalCopper,FeeCopper,CostCopper,NetCopper,ProfitCopper,ReturnedDepositCopper,Source,TipCopper,CostBasis"}
+    local lines = {"LocalTime,UTC,Type,Name,Quantity,TotalCopper,FeeCopper,CostCopper,NetCopper,ProfitCopper,ReturnedDepositCopper,Source,TipCopper,CostBasis,Category"}
     for _,row in ipairs(L.View(filter)) do
         local net,profit = L.Amounts(row)
         lines[#lines+1] = table.concat({Text(date("%Y-%m-%d %H:%M:%S",row.time)),Text(date("!%Y-%m-%dT%H:%M:%SZ",row.time)),Text(row.kind),Text(row.name),row.quantity,row.amount,row.fee,
             row.cost ~= nil and row.cost or "",net,profit ~= nil and profit or "",row.refund,Text(row.source),row.tip or 0,
-            Text(row.cost==nil and "Unknown"or(row.estimatedCost and"Craft estimate"or"Recorded"))},",")
+            Text(row.cost==nil and "Unknown"or(row.estimatedCost and"Craft estimate"or"Recorded")),Text(L.Category(row))},",")
     end
     return table.concat(lines,"\n")
 end

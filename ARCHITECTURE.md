@@ -1,10 +1,10 @@
 # Architecture
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 7 · Saved-data schema 1
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 8 · Saved-data schema 1
 
 ## Runtime
 
-The three identical TOCs load 21 Lua files. Bootstrap creates the addon namespace, followed by the bundled libraries, utilities/database/vendor/history, DE data and valuation, crafting analysis, market analysis, transaction observation, scanner, tooltips, four UI modules, and event wiring. Original code uses the per-addon namespace; `MSMarketValue` and the TOC's `MSMarketValueDB` are its public globals. Blizzard functions are not replaced.
+The three identical TOCs load 22 Lua files. Bootstrap creates the addon namespace, followed by the bundled libraries, utilities/database/vendor/history, DE data and valuation, crafting analysis, market analysis, transaction and cash observation, scanner, tooltips, four UI modules, and event wiring. Original code uses the per-addon namespace; `MSMarketValue` and the TOC's `MSMarketValueDB` are its public globals. Blizzard functions are not replaced.
 
 | Module | Responsibility |
 |---|---|
@@ -14,6 +14,7 @@ The three identical TOCs load 21 Lua files. Bootstrap creates the addon namespac
 | `Market/Analysis.lua`, `UI/Market.lua` | Bounded history analysis, stable top-200 rankings and the opportunities AH tab |
 | `Core/Watchlist.lua`, `Core/Ledger.lua`, `UI/Economy.lua` | Saved target checks, scoped ledger, filtered reports and money-tools UI |
 | `Core/Transactions.lua` | Secure post-observers, confirmed purchases, mailbox reconciliation and verified vendor trades |
+| `Core/Cash.lua` | Daily loot aggregation, categorized expense intents, wallet claims and vendor/repair reconciliation |
 | `Core/History.lua` | Compact daily unit lows, UTC retention, migration and cached averages |
 | `Core/Valuation.lua`, `Data/Disenchant.lua` | Native metadata and labeled Classic DE estimates |
 | `Crafting/Analysis.lua` | Native schematic/selection adapter, costs, quotes and batched recipe ranking |
@@ -92,9 +93,15 @@ Commissions record immediately from a clicked craft sale: unit price × quantity
 
 Player trades are observed through public trade events and gold getters, with no transaction calls. An acceptance update captures both readable gold offers; only a matching native completed-trade message can commit them. A separate final 1/1 acceptance event is not required. Closure retains a ten-second context for event ordering, while cancellation, failed/revised offers and player-scope changes invalidate it. Incoming/outgoing gold becomes separate tip rows and uses the existing receipt/confirmed-queue path. No counterparties, item transfers or invented material costs are stored.
 
-The standalone `/msmv` settings window and AH settings tab both link to the same portable ledger. The ledger separates Period report, Transactions and Ledger settings; manual entry/editing uses a child portrait window. Report summaries always use all types for the selected local period. Transactions use one of eight direct type filters, with legacy expenses reachable from the report/settings. CSV follows the active view: all period rows for reports, filtered rows for Transactions. Scope changes clear editor context, and combat hides both windows.
+The standalone `/msmv` settings window and AH settings tab both link to the same portable ledger. The ledger separates Period report, Transactions and Ledger settings; manual entry/editing uses a child portrait window. Report summaries always use all types for the selected local period. Transactions have ten direct filters, including Loot and Other. Other uses a canonical category mask in the cached view key; the native checkbox menu stays open while choosing several categories. Other masks apply only to expense views. Period reports always include every type. CSV follows the active view: all period rows for reports, type/category-filtered rows for Transactions. It appends Category while retaining local and UTC timestamps. Scope changes clear editor context, and combat hides both windows.
 
 Local-date/type filtering, summaries and CSV reuse the same cached row views. Calendar boundaries use local date/time conversion for each midnight, so DST days can be 23 or 25 hours; history continues using UTC. CSV includes both local and UTC time. The active report/transaction/settings panel only changes visibility on navigation, preserving mouse presses during periodic refresh. The editor uses Blizzard’s native DropdownButton menu; refresh does not rebuild an open menu. Record ordering uses a linear reverse for normal append order, with a sorted fallback for undo or out-of-order confirmations. Views/summaries cache by source and criteria. The auto-receipt key index uses constant-time lookup. Date ranges stay stable within the day. A full ledger keeps at most 100 confirmed live records in a validated saved queue, retries after space is freed and preserves their observation timestamps across reloads. Retention still applies; retained entries are never silently evicted.
+
+`Cash.lua` reads dedicated CHAT_MSG_MONEY loot messages using native localized self-loot/share formats and whole-coin text or money icons. Guild variants use only the player amount. It does not infer loot from wallet increases or generic receipt messages. AddLoot mutates one indexed local-day row per profile without adding per-award receipts. Pending awards merge by day when the ledger is full. Loot/category fields are additive to schema 1; old expenses map to Legacy expense.
+
+Expense hooks capture repair-cost decreases, trainer/taxi quotes, respec confirmations, mail sending totals and other service intents. A matching outgoing wallet change supplies the actual amount. Intents and wallet deltas are session-only and bounded at 100 and 256; settled records use the existing saved confirmation queue. The 0.25-second tick settles known actions before vendor reconciliation, then retains unmatched non-escrow deductions as Unclassified. Confirmed vendor purchase claims prevent duplicate expenses. Matching bag value and a native repair-cost decrease can explain gross vendor/repair activity in one net wallet update. Guild repair intents are cancelled. No native action is invoked.
+
+Known expense matching allows two seconds for event order; unmatched changes settle after 2.5 seconds, with extra time for vendor reconciliation and mail success. Unmatched auction/trade deltas are excluded because they can represent held money or an independently recorded transfer. These are attribution policies, not a complete accounting API. Restricted or unobservable amounts cannot be reconstructed. Loot and Other tracking preferences are independent and enabled on upgrade.
 
 ## Daily history
 

@@ -215,3 +215,15 @@ The same pinned build was reviewed:
 | [Native menu guide](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_Menu/11_0_0_MenuImplementationGuide.lua) | DropdownButton, SetupMenu and radio selections |
 
 The completion grace period and tip classification are addon policies. Gold purpose and material cost are not supplied by the trade API. Local calendar conversion is tested under UTC and America/New_York; the latter includes 23- and 25-hour days. Native event ordering, restricted offers and menu layering remain live checks.
+
+## Revision 8 — cash and loot observation
+
+Reviewed the same pinned Forever build 1.60.1 / 70450 source used above:
+
+- [MerchantFrame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_UIPanels_Game/Mainline/MerchantFrame.lua): GetRepairAllCost and InRepairMode provide repair context; wallet changes establish personal payment.
+- [Trainer UI](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_TrainerUI/Mainline/Blizzard_TrainerUI.lua) and [TaxiFrame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_UIPanels_Game/Shared/TaxiFrame.lua): selected service costs/names and flight costs/destinations.
+- [GameDialogDefs](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_StaticPopup_Game/GameDialogDefs.lua): talent-reset costs, repair actions and gossip confirmation costs.
+- [MailFrame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_MailFrame/MailFrame.lua): displayed GetSendMailPrice, SetSendMailMoney composition and MAIL_SEND_SUCCESS. The observer does not read recipients, subjects or message bodies.
+- [MenuTemplates](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_Menu/MenuTemplates.lua): native checkbox menus use MenuResponse.Refresh for multiple selections.
+
+Daily grouping, bounded event matching and Unclassified fallback are addon policies. Loot uses only the dedicated loot-money event and native localized formats; no generic wallet increase is called loot. Quotes alone never create expenses. Source review and fixtures do not establish native ordering, localization coverage or full transaction completeness; those remain live checks.

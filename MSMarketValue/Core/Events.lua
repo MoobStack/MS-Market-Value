@@ -28,13 +28,15 @@ local function Initialize()
         "NEW_RECIPE_LEARNED", "MERCHANT_SHOW", "MERCHANT_UPDATE", "MERCHANT_CLOSED", "UPDATE_FACTION",
         "AUCTION_HOUSE_PURCHASE_COMPLETED", "COMMODITY_PRICE_UPDATED", "COMMODITY_PRICE_UNAVAILABLE",
         "COMMODITY_PURCHASE_SUCCEEDED", "COMMODITY_PURCHASE_FAILED", "MAIL_SHOW", "MAIL_INBOX_UPDATE", "MAIL_CLOSED",
-        "PLAYER_MONEY", "BAG_UPDATE_DELAYED",
+        "PLAYER_MONEY", "BAG_UPDATE_DELAYED", "CHAT_MSG_MONEY",
+        "TRAINER_SHOW", "TRAINER_UPDATE", "TRAINER_CLOSED", "TRAINER_SERVICE_INFO_NAME_UPDATE",
+        "TAXIMAP_OPENED", "TAXIMAP_CLOSED", "MAIL_SEND_INFO_UPDATE", "MAIL_SEND_SUCCESS", "MAIL_FAILED",
         "TRADE_SHOW", "TRADE_CLOSED", "TRADE_REQUEST_CANCEL", "TRADE_ACCEPT_UPDATE", "TRADE_UPDATE",
         "TRADE_MONEY_CHANGED", "PLAYER_TRADE_MONEY", "TRADE_PLAYER_ITEM_CHANGED", "TRADE_TARGET_ITEM_CHANGED",
         "UI_INFO_MESSAGE", "UI_ERROR_MESSAGE",
     }) do frame:RegisterEvent(event) end
     S.InstallObserver()
-    A.Transactions.Install()
+    A.Transactions.Install(); A.Cash.Install()
 end
 
 local function Login()
@@ -49,7 +51,7 @@ end
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:SetScript("OnEvent", function(_, event, arg1, arg2)
-    if D.data and not A.disabledReason then A.Transactions.Event(event,arg1,arg2) end
+    if D.data and not A.disabledReason then A.Transactions.Event(event,arg1,arg2); A.Cash.Event(event,arg1,arg2) end
     if event == "ADDON_LOADED" then
         if U.String(arg1) and arg1 == A.NAME then Initialize() end
         if U.String(arg1) and arg1 == "Blizzard_AuctionHouseUI" and A.auctionOpen then
@@ -128,7 +130,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     if uiElapsed >= 0.25 then
         uiElapsed = 0
-        if D.data and not A.disabledReason then A.Transactions.Tick() end
+        if D.data and not A.disabledReason then A.Cash.Tick(); A.Transactions.Tick() end
         A.History.Maintain()
         A.Watchlist.Ensure()
         A.Crafting.Tick()

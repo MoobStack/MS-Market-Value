@@ -28,13 +28,15 @@ local function Hook(object,key,callback)
     return ok
 end
 function T.Save(input)
-    local ok,why=L.Record(input,nil,true)
+    local ok,why
+    if input.kind=="loot"then ok,why=L.AddLoot(input.amount,input.time,input.lootDay)else ok,why=L.Record(input,nil,true)end
     if ok then T.captured=T.captured+1;return true end
     if why=="Transaction already recorded."then return true end
     T.reason=tostring(why);return false
 end
 function T.Enqueue(input)
-    input.time=math.floor(U.Now())
+    input.time=input.time or math.floor(U.Now())
+    if A.Cash then A.Cash.Claim(input)end
     if T.Save(input)then return end
     local pending,why=L.Stage(input)
     if not pending then return Warn(why)end
@@ -224,7 +226,7 @@ local function Inventory()
     if type(GetMoney)~="function"or not U.Table(C_Container)or type(C_Container.GetContainerNumSlots)~="function"then return nil end
     local money=Call(GetMoney)
     if not Money(money)then return nil end
-    local result={money=money,items={}}
+    local result={money=money,items={},at=U.Mono()}
     local bags=U.Number(NUM_BAG_SLOTS,0,11,true)and NUM_BAG_SLOTS or 4
     for bag=0,bags do
         local count=Call(C_Container.GetContainerNumSlots,bag)
@@ -310,6 +312,7 @@ function T.VendorTick()
             rows[#rows+1]={kind=sale and"vendor_sale"or"vendor_buy",name=item.name,itemID=item.id,quantity=math.abs(delta),amount=amount,fee=0,source="Vendor"}
         end
     end
+    if valid and #rows>0 and A.Cash then A.Cash.ReconcileVendorRepairs(before,current,total)end
     if valid and #rows>0 and current.money-before.money==total then
         for _,row in ipairs(rows)do
             T.serial=T.serial+1;row.autoKey="vendor:"..U.Now()..":"..string.format("%.3f",U.Mono())..":"..T.serial
@@ -349,7 +352,10 @@ function T.Install()
         if row then T.vendorPrices[row.key]=row.unit end
     end)
     for _,key in ipairs({"SellCursorItem","PickupMerchantItem"})do Hook(_G,key,T.VendorIntent)end
-    Hook(C_Container,"UseContainerItem",T.VendorIntent)
+    Hook(C_Container,"UseContainerItem",function()
+        if type(InRepairMode)=="function"and Call(InRepairMode)==true then return end
+        T.VendorIntent()
+    end)
     Hook(C_MerchantFrame,"SellAllJunkItems",T.VendorIntent)
     for _,key in ipairs({"TakeInboxMoney","TakeInboxItem","DeleteInboxItem"})do Hook(_G,key,T.CaptureMailIndex)end
 end
