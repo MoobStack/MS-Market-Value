@@ -42,6 +42,65 @@ function T.Enqueue(input)
     Warn("A confirmed transaction is saved and waiting for ledger space. Export or shorten retention.")
 end
 
+-- Gold offers are read only. Acceptance/closure alone never records a transfer.
+function T.ResetTrade()
+    T.trade,T.closedTrade=nil,nil
+end
+local function TradeHidden()
+    local frame=TradeFrame
+    return U.Table(frame)and type(frame.IsShown)=="function"and Call(frame.IsShown,frame)==false
+end
+function T.ReadTrade()
+    local row=T.trade
+    if not row then return end
+    -- The native close handler can clear offers before our TRADE_CLOSED callback.
+    if row.final and TradeHidden()then return end
+    local given,received=Call(GetPlayerTradeMoney),Call(GetTargetTradeMoney)
+    if row.given~=given or row.received~=received then row.final=nil end
+    row.given,row.received=given,received
+end
+function T.StartTrade()
+    T.ResetTrade()
+    T.tradeAPI=type(GetPlayerTradeMoney)=="function"and type(GetTargetTradeMoney)=="function"
+    if not D.Settings().trackTrade or not T.tradeAPI then return end
+    T.trade={player=U.PlayerKey()};T.ReadTrade()
+end
+function T.TradeAcceptUpdate(playerAccepted,targetAccepted)
+    local row=T.trade
+    if not row or(row.final and TradeHidden())then return end
+    T.ReadTrade()
+    row.final=nil
+    -- Native success is authoritative; the final 1/1 update need not arrive separately.
+    if U.Number(playerAccepted,0,1,true)and U.Number(targetAccepted,0,1,true)and(playerAccepted==1 or targetAccepted==1)and Money(row.given)and Money(row.received)then
+        row.final={given=row.given,received=row.received}
+    end
+end
+function T.TradeClosed()
+    if T.trade then T.closedTrade=T.trade;T.closedTrade.closedAt=U.Mono();T.trade=nil end
+end
+function T.CompleteTrade()
+    local row=T.closedTrade or T.trade
+    T.ResetTrade()
+    if not D.Settings().trackTrade or not row or row.player~=U.PlayerKey()or(row.closedAt and U.Mono()-row.closedAt>10)then return end
+    if not row.final then return Warn("Trade completed without readable final gold offers. Record it manually.")end
+    T.serial=T.serial+1
+    local key="trade:"..U.Now()..":"..string.format("%.3f",U.Mono())..":"..T.serial
+    for _,definition in ipairs({{"tip_received","Trade gold received",row.final.received},{"tip_given","Trade gold given",row.final.given}})do
+        if definition[3]>0 then
+            T.Enqueue({kind=definition[1],name=definition[2],quantity=1,amount=definition[3],fee=0,source="Player trade",autoKey=key..":"..definition[1]})
+        end
+    end
+end
+function T.TradeMessage(code,message)
+    if not T.trade and not T.closedTrade then return end
+    local name=U.Number(code,1,2147483647,true)and Call(GetGameMessageInfo,code)or nil
+    if (U.String(name)and name=="ERR_TRADE_COMPLETE")or(U.String(message)and U.String(ERR_TRADE_COMPLETE)and message==ERR_TRADE_COMPLETE)then
+        T.CompleteTrade()
+    elseif (U.String(name)and string.match(name,"^ERR_TRADE"))or(U.String(message)and U.String(ERR_TRADE_CANCELLED)and message==ERR_TRADE_CANCELLED)then
+        T.ResetTrade()
+    end
+end
+
 local function AuctionRow(row)
     if not U.Table(row)or not U.Number(row.auctionID,1,9007199254740991,true)or not U.Table(row.itemKey)or
        not U.Number(row.itemKey.itemID,1,2147483647,true)or not U.Number(row.quantity,1,1000000,true)or
@@ -270,6 +329,7 @@ function T.SyncQueue()
 end
 function T.Install()
     T.SyncQueue()
+    T.tradeAPI=type(GetPlayerTradeMoney)=="function"and type(GetTargetTradeMoney)=="function"
     local ah=C_AuctionHouse
     T.purchaseHook=Hook(ah,"PlaceBid",T.ObserveBid)
     T.commodityHook=Hook(ah,"StartCommoditiesPurchase",T.StartCommodity)
@@ -294,7 +354,15 @@ function T.Install()
     for _,key in ipairs({"TakeInboxMoney","TakeInboxItem","DeleteInboxItem"})do Hook(_G,key,T.CaptureMailIndex)end
 end
 function T.Event(event,a,b)
-    if event=="AUCTION_HOUSE_PURCHASE_COMPLETED"then T.PurchaseCompleted(a)
+    if event=="TRADE_SHOW"then T.StartTrade()
+    elseif event=="TRADE_ACCEPT_UPDATE"then T.TradeAcceptUpdate(a,b)
+    elseif event=="TRADE_CLOSED"then T.TradeClosed()
+    elseif event=="TRADE_REQUEST_CANCEL"or event=="PLAYER_LOGOUT"then T.ResetTrade()
+    elseif event=="TRADE_MONEY_CHANGED"or event=="PLAYER_TRADE_MONEY"or event=="TRADE_UPDATE"then T.ReadTrade()
+    elseif event=="TRADE_PLAYER_ITEM_CHANGED"or event=="TRADE_TARGET_ITEM_CHANGED"then
+        if T.trade and not(T.trade.final and TradeHidden())then T.trade.final=nil;T.ReadTrade()end
+    elseif event=="UI_INFO_MESSAGE"or event=="UI_ERROR_MESSAGE"then T.TradeMessage(a,b)
+    elseif event=="AUCTION_HOUSE_PURCHASE_COMPLETED"then T.PurchaseCompleted(a)
     elseif event=="COMMODITY_PRICE_UPDATED"then T.CommodityQuote(a,b)
     elseif event=="COMMODITY_PURCHASE_SUCCEEDED"then T.CommoditySucceeded()
     elseif event=="COMMODITY_PURCHASE_FAILED"or event=="COMMODITY_PRICE_UNAVAILABLE"then T.commodity=nil
@@ -319,6 +387,7 @@ end
 function T.Tick()
     if T.queuePlayer~=U.PlayerKey()then T.SyncQueue()end
     T.MailTick();T.VendorTick()
+    if T.closedTrade and U.Mono()-T.closedTrade.closedAt>10 then T.closedTrade=nil end
     for id,pending in pairs(T.pending)do if U.Mono()-pending.at>120 then T.pending[id]=nil end end
     if T.commodity and U.Mono()-T.commodity.at>120 then T.commodity=nil end
     if #T.queue>0 and (not T.retryAt or U.Mono()>=T.retryAt)then

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0-beta — 2026-10-20-beta001 — Test revision 7
+
+- Track completed trade gold as tips received/given, with report totals, filters and an independent setting. Require final offers and native success; reject cancellations and incomplete context.
+- Fix filter clicks being interrupted by periodic panel hiding. Apply filters immediately and keep open menus stable during refresh.
+- Replace the editor’s cycling Type button with a native dropdown, preserving draft amounts.
+- Use local calendar dates for ledger rows, periods and retention, including DST boundaries. Keep stored epochs and UTC price history; include local and UTC times in CSV.
+- Preserve existing data and update the guides. **504/504 local tests pass**; new trade/menu behavior needs live testing.
+
 ## 1.2.0-beta — 2026-10-20-beta001 — Test revision 6
 
 - Add Ledger and Watchlists shortcuts to `/msmv`, with a route back to settings outside the AH.

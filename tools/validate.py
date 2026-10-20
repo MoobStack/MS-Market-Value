@@ -52,7 +52,7 @@ def run(lua: str, luac: str | None = None) -> None:
     vendor = json.loads((ROOT / "tools/vendor.json").read_text(encoding="utf-8"))
     for relative, checksums in vendor["files"].items():
         assert hashlib.sha256((RUNTIME / relative).read_bytes()).hexdigest() == checksums["bundled_sha256"], relative
-    forbidden = re.compile(r"\b(?:RunScript|loadstring|loadfile|QueryAuctionItems|SendSearchQuery|PlaceAuctionBid|PlaceBid|StartCommoditiesPurchase|SellCursorItem|BuybackItem|UseContainerItem|SellAllJunkItems|TakeInboxMoney|TakeInboxItem|DeleteInboxItem|ReturnInboxItem|SendMail|BuyMerchantItem|PickupMerchantItem|CraftRecipe|PostItem|PostCommodity|ConfirmCommoditiesPurchase|CastSpellByName|SendChatMessage)\s*\(")
+    forbidden = re.compile(r"\b(?:RunScript|loadstring|loadfile|QueryAuctionItems|SendSearchQuery|PlaceAuctionBid|PlaceBid|StartCommoditiesPurchase|SellCursorItem|BuybackItem|UseContainerItem|SellAllJunkItems|TakeInboxMoney|TakeInboxItem|DeleteInboxItem|ReturnInboxItem|SendMail|BuyMerchantItem|PickupMerchantItem|CraftRecipe|PostItem|PostCommodity|ConfirmCommoditiesPurchase|CastSpellByName|SendChatMessage|InitiateTrade|AcceptTrade|CancelTrade|CancelTradeAccept|CloseTrade|SetTradeMoney|AddTradeMoney|PickupTradeMoney)\s*\(")
     for relative in paths:
         path = (RUNTIME / relative).resolve()
         assert path.is_relative_to(RUNTIME.resolve()) and path.is_file()

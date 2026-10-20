@@ -199,3 +199,19 @@ The supplied screenshots show the revision-4 craft quote and ledger draft. They 
 The supplied revision-5 ledger screenshot shows a 27s 23c commission with a 22s 69c material estimate and a 27s 36c manual AH sale without cost. The report should show 54s 59c income/cash flow, 4s 54c estimated craft profit, and no recorded-cost profit. That example is now a regression fixture.
 
 This revision reorganizes navigation and reports using the existing native templates; transaction observers, pricing sources and saved schemas are unchanged. Headless layout checks cover panel bounds and visibility, not native font rendering, artwork, layering or taint. The new screen still needs a live check.
+
+
+## Version 1.2.0, test revision 7: trades, menus and local dates
+
+Revision-6 screenshots show the transaction filters/editor and five ledger rows, including mail purchases, vendor trades and a commission. Diagnostics show Forever 1.60.1 / 70450, 26,777 scan rows, 2,385 priced items and nine vendor observations. They do not qualify the new trade observer.
+
+The same pinned build was reviewed:
+
+| Client source | Contract used |
+|---|---|
+| [Trade events](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_APIDocumentationGenerated/TradeInfoDocumentation.lua) and [native trade frame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_UIPanels_Game/Mainline/TradeFrame.lua) | Acceptance payloads, closure and native close clearing |
+| [Money frames](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_MoneyFrame/Shared/MoneyFrame.lua) | Read-only offered gold getters for both players |
+| [Game messages](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_APIDocumentationGenerated/GameErrorDocumentation.lua) and [error frame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_UIErrorsFrame/Mainline/UIErrorsFrame.lua) | Message type/text payloads and GetGameMessageInfo names; no hard-coded success code |
+| [Native menu guide](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_Menu/11_0_0_MenuImplementationGuide.lua) | DropdownButton, SetupMenu and radio selections |
+
+The completion grace period and tip classification are addon policies. Gold purpose and material cost are not supplied by the trade API. Local calendar conversion is tested under UTC and America/New_York; the latter includes 23- and 25-hour days. Native event ordering, restricted offers and menu layering remain live checks.

@@ -113,7 +113,7 @@ test("combat hides both ledger and transaction editor and blocks navigation",fun
     A.UI.OpenSettings();equal(A.UI.frame,nil)
 end)
 test("the compact ledger pages keep report and transaction regions separate",function()
-    local w,A,E=initial();equal(E.frame.height,660);truth(E.reportPanel:IsShown());equal(E.transactionsPanel:IsShown(),false)
+    local w,A,E=initial();equal(E.frame.height,690);truth(E.reportPanel:IsShown());equal(E.transactionsPanel:IsShown(),false)
     E.transactionsTab.scripts.OnClick();truth(E.transactionsPanel:IsShown());equal(E.reportPanel:IsShown(),false)
     equal(#E.ledgerRows,8);equal(E.editorFrame:IsShown(),false)
     for key,card in pairs(E.reportCards)do

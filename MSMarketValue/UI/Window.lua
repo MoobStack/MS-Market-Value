@@ -114,6 +114,8 @@ function UI.DiagnosticsText()
     if A.Ledger.reason then lines[#lines + 1] = "Ledger detail: " .. A.Ledger.reason end
     local tracking=A.Transactions
     lines[#lines+1]="Transaction tracking: AH="..tostring(D.Settings().trackAH).."; vendor="..tostring(D.Settings().trackVendor).."; captured="..tracking.captured.."; reconciled="..tracking.reconciled.."; waiting="..#tracking.queue
+    lines[#lines+1]="Trade tip tracking: enabled="..tostring(D.Settings().trackTrade).."; money_API="..tostring(tracking.tradeAPI==true).."; awaiting_completion="..tostring(tracking.trade~=nil or tracking.closedTrade~=nil)
+    lines[#lines+1]="Ledger time: local; "..date("%Y-%m-%d %H:%M:%S %Z",U.Now())
     lines[#lines+1]="Purchase observers: item="..tostring(tracking.purchaseHook==true).."; commodity="..tostring(tracking.commodityHook==true).."; mailbox="..tostring(tracking.mailOpen==true)
     lines[#lines+1]="Buy-page watch buttons: item="..tostring(A.EconomyUI.buyButtons and U.Table(AuctionHouseFrame)and A.EconomyUI.buyButtons[AuctionHouseFrame.ItemBuyFrame]~=nil or false).."; commodity="..tostring(A.EconomyUI.buyButtons and U.Table(AuctionHouseFrame)and A.EconomyUI.buyButtons[AuctionHouseFrame.CommoditiesBuyFrame]~=nil or false)
     if tracking.reason then lines[#lines+1]="Transaction detail: "..tracking.reason end

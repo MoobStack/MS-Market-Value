@@ -1,6 +1,6 @@
 # 1.2.0 beta checks
 
-Build `2026-10-20-beta001`, Test revision **6**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
+Build `2026-10-20-beta001`, Test revision **7**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
 
 ## Vendor costs
 
@@ -60,11 +60,22 @@ For a layout issue, include a screenshot. For vendor math, include item/recipe, 
 - Buy a reagent bundle, sell a known stack, sell several items quickly, and buy one back. Compare bag quantities and exact wallet changes with individual Vendor buy/sale entries.
 - Try a failed purchase, repair, bag move and unrelated wallet change. They must not become vendor trades. Unsupported/currency/refund cases may require manual entry and should not invent values.
 - Away from the AH, open `/msmv` and click **Ledger**. Check `/msmv ledger`, Settings, Watchlists and the return route. Repeat after closing the AH.
-- On **Period report**, compare income, spending, cash flow and all five activity sources with the recorded rows. Click an activity to open its transactions.
-- On **Transactions**, use all six visible filters. Test Today, 7 days, 30 days and a one-day custom UTC range. Dates should carry across views; report totals must still include all types.
+- On **Period report**, compare income, spending, cash flow and all activity sources with the recorded rows. Click an activity to open its transactions.
+- On **Transactions**, use all eight visible filters. Test Today, 7 days, 30 days and a one-day custom local range. Dates should carry across views; report totals must still include all types.
 - Compare recorded-cost P/L and estimated craft P/L separately. A sale without cost should say Needed, with no assigned profit; no costed entries should show `--` on the relevant card.
 - Copy CSV from both views: the report exports all period rows, Transactions only the chosen type/period. Compare the rows and totals.
+- Click type filters normally and hold/release a click across a refresh; each click should apply immediately. Open the Type dropdown, select a distant option and check that draft amounts remain.
+- Compare a new entry’s displayed time with the computer clock. Today and custom dates should use local midnights; CSV should include both local and UTC time.
 - At normal UI scale, check large gold amounts, long names, all eight table rows, New entry and row editing. Enter an invalid tip and confirm the draft stays open with an error.
-- In **Ledger settings**, disable AH/vendor tracking independently, then re-enable. Check retention and access to legacy expenses. Reload/relog and check preferences, watches, cost bases, entries and duplicate protection.
+- In **Ledger settings**, disable AH/vendor/trade-tip tracking independently, then re-enable. Check retention and access to legacy expenses. Reload/relog and check preferences, watches, cost bases, entries and duplicate protection.
 
 Back up SavedVariables before shortening retention. For a tracking problem, include diagnostics, transaction type, quantity/total, native confirmation/mail details, and whether another mailbox/AH addon was active.
+
+
+## Player trade tips
+
+- Receive gold, give gold, then exchange gold in both directions. Complete each trade and compare the exact amounts, source totals and cash flow. Each direction should have its own entry.
+- Cancel or close an accepted trade; it must not count. Change the gold offer and accept again; only the completed final amounts should count.
+- Open/close several trades, including an item-only trade. No empty or duplicate tip entries should appear. Try a trade during latency or with another trade addon and capture diagnostics on a miss.
+- Reclassify a craft payment through Type → Commission and enter its cost. Save the same entry; do not also Record sale. A pure tip can use 0 cost.
+- Disable trade tracking, complete a trade and confirm no tip entry appears. Re-enable it, reload and confirm entries/settings remain.

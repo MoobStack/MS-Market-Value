@@ -1,8 +1,8 @@
 # Next steps
 
-**1.2.0-beta / 2026-10-20-beta001** · Test revision **6**. Keep this version/build until publication.
+**1.2.0-beta / 2026-10-20-beta001** · Test revision **7**. Keep this version/build until publication.
 
-Revision 6 makes the ledger easier to open outside the AH and separates period reports, transaction filters and settings. Check the new layout at normal UI scale. Continue qualifying revision 5’s Buy-page watch controls, direct commissions and automatic tracking, especially commodity price changes, fast collection, repeated invoices and reloads. The source contract cannot resolve every identical mail replacement or supply the original sale time.
+Revision 7 adds completed-trade gold as tips, immediate filter clicks, a Type dropdown and local ledger dates. Check trade completion/cancellation, both gold directions, local periods and menu behavior in Forever. Continue qualifying revision 5’s Buy-page watch controls, direct commissions and automatic tracking, especially commodity price changes, fast collection, repeated invoices and reloads. The source contract cannot resolve every identical mail replacement or supply the original sale time.
 
 After live acceptance, consider:
 

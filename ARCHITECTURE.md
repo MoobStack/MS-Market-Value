@@ -1,6 +1,6 @@
 # Architecture
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 6 · Saved-data schema 1
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 7 · Saved-data schema 1
 
 ## Runtime
 
@@ -80,7 +80,7 @@ Service quotes compute material recovery plus markup and labor, subject to a min
 
 Watchlists have a schema-1 market map capped at 200 targets per market. Numeric IDs use item-wide series; links use exact suffix series. Buy thresholds can work without history; net-return/profit thresholds reuse the market evaluator with prior days, conservative baseline and configured cut. At most 20 watches or roughly four milliseconds are processed per frame. Snapshot/history/criteria/fee changes cancel unpublished work. Results publish together, and alert timestamps persist per item/scan. Alerts are local chat messages, with no background AH request.
 
-The ledger keeps schema-1 character/market profiles, up to 10,000 entries, 1–365 UTC retention and separate 20,000-entry receipt/invoice indexes. Existing rows and legacy expenses remain valid. Optional tips, commission costs and receipt fields are additive. Automatic writes change saved tables and can run in combat; manual edits and UI remain outside combat.
+The ledger keeps schema-1 character/market profiles, up to 10,000 entries, 1–365 local-calendar-day retention and separate 20,000-entry receipt/invoice indexes. Existing rows and legacy expenses remain valid. Optional tips, commission costs and receipt fields are additive. Automatic writes change saved tables and can run in combat; manual edits and UI remain outside combat. Tip received/given kinds and the trade tracking preference are additive; schema 1 and existing epoch timestamps remain intact.
 
 `Transactions.lua` observes native calls with `hooksecurefunc`; it does not replace or invoke transaction functions. A buyout intent captures selected quantity/price and commits only for its auction-ID completion. Commodities require the last server quote, matching confirmation arguments and success. Pending intents expire after 120 seconds. Persisted purchase receipts reconcile later invoices, including after reload or ledger deletion. Unknown native purchase context falls back to completed mailbox invoices.
 
@@ -90,9 +90,11 @@ Vendor observation takes a bag/wallet baseline at merchant open. Merchant action
 
 Commissions record immediately from a clicked craft sale: unit price × quantity plus one total tip. Fixed output uses per-item quote/cost; variable output uses per-craft values. Customer-material services have zero own material cost. Other material costs are saved estimates, separately reported until actual cost replaces them. Missing cost differs from zero. Income, spending, cash flow, known P/L and estimated craft P/L are separate; returned deposits are excluded.
 
-The standalone `/msmv` settings window and AH settings tab both link to the same portable ledger. The ledger separates Period report, Transactions and Ledger settings; manual entry/editing uses a child portrait window. Report summaries always use all types for the selected UTC period. Transactions use one of six direct type filters, with legacy expenses reachable from the report/settings. CSV follows the active view: all period rows for reports, filtered rows for Transactions. Scope changes clear editor context, and combat hides both windows.
+Player trades are observed through public trade events and gold getters, with no transaction calls. An acceptance update captures both readable gold offers; only a matching native completed-trade message can commit them. A separate final 1/1 acceptance event is not required. Closure retains a ten-second context for event ordering, while cancellation, failed/revised offers and player-scope changes invalidate it. Incoming/outgoing gold becomes separate tip rows and uses the existing receipt/confirmed-queue path. No counterparties, item transfers or invented material costs are stored.
 
-UTC/type filtering, summaries and CSV reuse the same cached row views. Record ordering uses a linear reverse for normal append order, with a sorted fallback for undo or out-of-order confirmations. Views/summaries cache by source and criteria. The auto-receipt key index uses constant-time lookup. Date ranges stay stable within the day. A full ledger keeps at most 100 confirmed live records in a validated saved queue, retries after space is freed and preserves their observation timestamps across reloads. Retention still applies; retained entries are never silently evicted.
+The standalone `/msmv` settings window and AH settings tab both link to the same portable ledger. The ledger separates Period report, Transactions and Ledger settings; manual entry/editing uses a child portrait window. Report summaries always use all types for the selected local period. Transactions use one of eight direct type filters, with legacy expenses reachable from the report/settings. CSV follows the active view: all period rows for reports, filtered rows for Transactions. Scope changes clear editor context, and combat hides both windows.
+
+Local-date/type filtering, summaries and CSV reuse the same cached row views. Calendar boundaries use local date/time conversion for each midnight, so DST days can be 23 or 25 hours; history continues using UTC. CSV includes both local and UTC time. The active report/transaction/settings panel only changes visibility on navigation, preserving mouse presses during periodic refresh. The editor uses Blizzard’s native DropdownButton menu; refresh does not rebuild an open menu. Record ordering uses a linear reverse for normal append order, with a sorted fallback for undo or out-of-order confirmations. Views/summaries cache by source and criteria. The auto-receipt key index uses constant-time lookup. Date ranges stay stable within the day. A full ledger keeps at most 100 confirmed live records in a validated saved queue, retries after space is freed and preserves their observation timestamps across reloads. Retention still applies; retained entries are never silently evicted.
 
 ## Daily history
 

@@ -11,7 +11,7 @@ D.defaults = {
     marketLookback = 14, marketMinDays = 3, marketMinReturn = 20,
     marketMinProfit = 100, marketFee = 5, marketMove = 15,
     serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
-    watchAlerts = true, ledgerDays = 90, trackAH = true, trackVendor = true,
+    watchAlerts = true, ledgerDays = 90, trackAH = true, trackVendor = true, trackTrade = true,
 }
 
 local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, historyDays = { 1, 30 },

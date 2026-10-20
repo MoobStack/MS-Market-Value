@@ -1,6 +1,6 @@
 # Git, recovery and testing
 
-The current work is on **develop/1.2.0**, tagged `v1.2.0-beta-test6`. Local `main` and `v1.1.0` retain release commit `d959424db004e24542322bd9bd7278a290f9df77`. Earlier branches, commits and all fourteen prior tag objects, including test1 through test5, remain intact.
+The current work is on **develop/1.2.0**, tagged `v1.2.0-beta-test7`. Local `main` and `v1.1.0` retain release commit `d959424db004e24542322bd9bd7278a290f9df77`. Earlier branches, commits and all fifteen prior tag objects, including test1 through test6, remain intact.
 
 Hold **1.2.0-beta / 2026-10-20-beta001** throughout testing. Increment `testRevision` and create a new annotated `v1.2.0-beta-testN` tag for each delivery. Do not move old tags. Final publication will use stable version 1.2.0 and a new release build/tag.
 
@@ -19,7 +19,7 @@ Hold **1.2.0-beta / 2026-10-20-beta001** throughout testing. Increment `testRevi
 All documentation is also tracked inside the full repository. Extract that package outside AddOns; do not initialize over its existing `.git`. To restore a bundle:
 
 ```bash
-git clone MoobStack-MSMarketValue-v1.2.0-beta-test6.bundle MS-Market-Value-restored
+git clone MoobStack-MSMarketValue-v1.2.0-beta-test7.bundle MS-Market-Value-restored
 cd MS-Market-Value-restored
 git switch develop/1.2.0
 git remote set-url origin https://github.com/MoobStack/MS-Market-Value.git

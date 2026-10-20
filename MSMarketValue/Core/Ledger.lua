@@ -3,9 +3,9 @@ local U, D = A.Util, A.DB
 local L = { revision = 0, limit = 10000 }
 A.Ledger = L
 local MAX_MONEY = 1000000000000
-local kinds = { sale = true, buy = true, commission = true, vendor_sale = true, vendor_buy = true, expense = true }
-local sources = { Manual=true, ["AH invoice"]=true, ["AH purchase"]=true, ["AH mail"]=true, Vendor=true, ["Craft quote"]=true }
-function L.Income(kind) return kind == "sale" or kind == "commission" or kind == "vendor_sale" end
+local kinds = { sale = true, buy = true, commission = true, vendor_sale = true, vendor_buy = true, tip_received = true, tip_given = true, expense = true }
+local sources = { Manual=true, ["AH invoice"]=true, ["AH purchase"]=true, ["AH mail"]=true, Vendor=true, ["Craft quote"]=true, ["Player trade"]=true }
+function L.Income(kind) return kind == "sale" or kind == "commission" or kind == "vendor_sale" or kind == "tip_received" end
 
 function L.Initialize()
     local saved = D.data.ledger
@@ -96,10 +96,11 @@ end
 function L.Maintain()
     local profile, key = L.Profile(false)
     if not profile then return end
-    local day = math.floor(U.Now() / 86400)
-    local stamp = key .. "|" .. day .. "|" .. D.Settings().ledgerDays
+    local day = L.LocalDay(U.Now())
+    local cutoff = L.LocalStart(day - D.Settings().ledgerDays + 1)
+    local stamp = key .. "|" .. day .. "|" .. cutoff .. "|" .. D.Settings().ledgerDays
     if L.maintained == stamp then return end
-    local cutoff, entries = (day - D.Settings().ledgerDays + 1) * 86400, {}
+    local entries = {}
     for _, row in ipairs(profile.entries) do if row.time >= cutoff then entries[#entries + 1] = row end end
     if #entries ~= #profile.entries then profile.entries = entries; L.revision = L.revision + 1 end
     local seen = {}
@@ -147,7 +148,7 @@ function L.Summary(filter)
         result.counts[row.kind]=(result.counts[row.kind] or 0)+1
         if L.Income(row.kind) then
             result.sales = result.sales + net; result.refunds = result.refunds + row.refund
-            result.tips=result.tips+(row.tip or 0)
+            result.tips=result.tips+(row.tip or 0)+(row.kind=="tip_received"and row.amount or 0)
             if profit ~= nil then
                 if row.estimatedCost then result.estimatedProfit=result.estimatedProfit+profit;result.estimated=result.estimated+1
                 else result.profit = result.profit + profit;result.known=result.known+1 end
@@ -215,7 +216,7 @@ function L.Record(input, editID, automatic)
             quantity=row.quantity,amount=row.amount,itemID=row.itemID}
         L.receiptIndex[row.autoKey]=row.id
     end
-    if row.time<(math.floor(U.Now()/86400)-D.Settings().ledgerDays+1)*86400 then L.maintained=nil end
+    if row.time<L.LocalStart(L.LocalDay(U.Now())-D.Settings().ledgerDays+1) then L.maintained=nil end
     L.revision = L.revision + 1; L.lastDeleted = nil
     return true, row.id
 end
@@ -254,7 +255,7 @@ function L.Undo()
     if U.Combat() or not L.lastDeleted then return false end
     local profile, key = L.Profile(false)
     if not profile or key ~= L.lastDeleted.key or #profile.entries >= L.limit then return false end
-    if L.lastDeleted.row.time < (math.floor(U.Now()/86400) - D.Settings().ledgerDays + 1)*86400 then return false end
+    if L.lastDeleted.row.time < L.LocalStart(L.LocalDay(U.Now()) - D.Settings().ledgerDays + 1) then return false end
     profile.entries[#profile.entries + 1] = L.lastDeleted.row; L.lastDeleted = nil; L.revision = L.revision + 1
     return true
 end
@@ -326,7 +327,7 @@ function L.ImportInvoice(row,ordinal)
     return L.Record(row,nil,true)
 end
 
--- Dates use UTC, matching saved market history and CSV exports.
+-- Ledger calendar dates use the client computer's local time. Saved epochs and market-history UTC days are unchanged.
 function L.DateDay(text)
     if not U.String(text)then return nil end
     local y,m,d=string.match(text,"^(%d%d%d%d)%-(%d%d)%-(%d%d)$")
@@ -340,15 +341,25 @@ function L.DateDay(text)
     local month=m+(m>2 and -3 or 9)
     return era*146097+year*365+math.floor(year/4)-math.floor(year/100)+math.floor((153*month+2)/5)+d-1-719468
 end
+function L.LocalDay(stamp)
+    return L.DateDay(date("%Y-%m-%d",stamp))
+end
+function L.LocalStart(day)
+    local calendar=date("!*t",day*86400)
+    -- Let the local clock choose DST for this date; never add 86400 to a local midnight.
+    return time({year=calendar.year,month=calendar.month,day=calendar.day,hour=0,min=0,sec=0})
+end
 function L.Range(period,first,last)
+    local a,b
     if period=="custom"then
-        local a,b=L.DateDay(first),L.DateDay(last)
-        if not a or not b or a>b then return nil,"Use valid UTC dates: YYYY-MM-DD, from date first."end
-        return {first=a*86400,last=(b+1)*86400-1}
+        a,b=L.DateDay(first),L.DateDay(last)
+        if not a or not b or a>b then return nil,"Use valid local dates: YYYY-MM-DD, from date first."end
+    else
+        b=L.LocalDay(U.Now())
+        local days=period=="today"and 1 or(period=="7d"and 7 or(period=="30d"and 30 or nil))
+        a=days and b-days+1 or nil
     end
-    local day=math.floor(U.Now()/86400)
-    local days=period=="today" and 1 or (period=="7d"and 7 or (period=="30d"and 30 or nil))
-    return {first=days and (day-days+1)*86400 or 0,last=(day+1)*86400-1}
+    return {first=a and L.LocalStart(a)or 0,last=L.LocalStart(b+1)-1}
 end
 function L.View(filter)
     local rows=L.Records()
@@ -368,10 +379,10 @@ function L.CSV(filter)
         if string.match(value,"^%s*[=+@%-]") then value = "'" .. value end
         return '"' .. string.gsub(value,'"','""') .. '"'
     end
-    local lines = {"UTC,Type,Name,Quantity,TotalCopper,FeeCopper,CostCopper,NetCopper,ProfitCopper,ReturnedDepositCopper,Source,TipCopper,CostBasis"}
+    local lines = {"LocalTime,UTC,Type,Name,Quantity,TotalCopper,FeeCopper,CostCopper,NetCopper,ProfitCopper,ReturnedDepositCopper,Source,TipCopper,CostBasis"}
     for _,row in ipairs(L.View(filter)) do
         local net,profit = L.Amounts(row)
-        lines[#lines+1] = table.concat({Text(date("!%Y-%m-%dT%H:%M:%SZ",row.time)),Text(row.kind),Text(row.name),row.quantity,row.amount,row.fee,
+        lines[#lines+1] = table.concat({Text(date("%Y-%m-%d %H:%M:%S",row.time)),Text(date("!%Y-%m-%dT%H:%M:%SZ",row.time)),Text(row.kind),Text(row.name),row.quantity,row.amount,row.fee,
             row.cost ~= nil and row.cost or "",net,profit ~= nil and profit or "",row.refund,Text(row.source),row.tip or 0,
             Text(row.cost==nil and "Unknown"or(row.estimatedCost and"Craft estimate"or"Recorded"))},",")
     end
