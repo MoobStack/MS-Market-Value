@@ -1,18 +1,18 @@
 # Validation
 
-**1.2.0-beta / 2026-10-20-beta001** · Test revision **4** · Tag `v1.2.0-beta-test4`
+**1.2.0-beta / 2026-10-20-beta001** · Test revision **5** · Tag `v1.2.0-beta-test5`
 
 | Check | Result |
 |---|---|
-| Lua 5.1 behavior | **388/388 passed** |
-| Runtime syntax | All 20 Lua files passed |
-| Identity | Fixed beta version/build; three identical TOCs; test revision 4 |
+| Lua 5.1 behavior | **446/446 passed** |
+| Runtime syntax | All 21 Lua files passed |
+| Identity | Fixed beta version/build; three identical TOCs; test revision 5 |
 | Dependencies | Pinned LibStub/LibAHTab bytes and notices retained |
-| Requests/actions | Watch checks use saved data; no automatic auction, crafting or mailbox action |
-| Prior history | Stable 1.1.0 and all twelve prior tag objects retained |
-| Native revision 4 | Pricing, watchlist UI and invoice import await in-game checks |
+| Actions | Native transaction functions are observed, never invoked/replaced; no automated buys, sells, crafts or mail collection |
+| History | Stable 1.1.0 and all thirteen prior tag objects retained |
+| Native revision 5 | Buy buttons, commissions, transaction ordering/reconciliation and reports need live checks |
 
-The 55 added cases cover net/break-even math, fee-aware ranking caches, service labor/minimum/customer materials, numeric row quotes, watch target combinations/history/suffixes/scopes, alerts and throttled native listings. Ledger checks cover unknown versus zero cost, fees/refunds/flow, edits/undo/retention, schema isolation, limits, reviewed invoices, duplicate identities across reload/deletion/pruning, CSV and restricted values. Existing scan/tooltip/crafting/history behavior and the 500% movement regression remain covered.
+The 58 new cases cover item/commodity success versus failed requests, exact captured totals, receipt reconciliation, offline-mail backfills, repeated/identical/reordered invoices, fast collection, reloads, capacity retry, vendor quantities/money, buyback prices, commissions/tips/cost bases, date/type reporting, filtered CSV, watch-header controls, idle work and restricted fields. Earlier scanning, tooltips, crafting, history, net-profit/quote/watchlist behavior and the movement-filter regression remain covered.
 
 ```bash
 python3 tools/validate.py --lua lua5.1 --luac luac5.1
@@ -21,18 +21,24 @@ MSMV_BENCHMARK=1 python3 tools/validate.py --lua lua5.1 --luac luac5.1
 
 ## Performance
 
-The synthetic 5,000-item / 15-day market analysis completed in 215 steps, using 478.15 ms total CPU and a 5.63 ms maximum step. The approximate four-millisecond per-job target can be exceeded by a completed operation or garbage collection.
+These are synthetic Lua CPU measurements, not client FPS or server results:
 
-For 200 watches over 15 days, checking completed in **11 steps / 5.60 ms total**, with a **0.62 ms** maximum step. A first view plus 100 cached record/summary refreshes for 2,000 ledger entries took **9.02 ms total**. CSV output was 162,107 bytes. Both workloads made **zero auction requests**. These are local Lua measurements, not native FPS or server tests.
+| Workload | Result |
+|---|---|
+| 5,000 items / 15 history days | 197 steps; 326.46 ms total; 9.13 ms maximum step |
+| 200 watches / 15 history days | 11 steps; 6.05 ms total; 0.57 ms maximum step |
+| 2,000 ledger rows, first view + 100 cached refreshes | 7.86 ms total |
+| 500 completed invoices | 101 read/commit steps; 77.77 ms total; 4.17 ms maximum step |
+| 10,000 ledger rows, first filtered view + 100 cached refreshes | 14.36 ms total; 5,250 matching sales |
 
-Pricing changes recompute net values/quotes from published material/sale values rather than rebuilding native schematics. Rank/search/summary caches have bounded identities. Watch jobs cancel on data/target/fee changes and pause in combat. Ledger UI reuses sorted records and totals until its revision/profile changes; invoice reads occur only on explicit import.
+All workloads made zero auction requests. Full 10,000-row CSV was 915,411 bytes. Mail reads/commits handle at most 10 entries per step, with an approximate four-millisecond target. An explicit fast-collection hook may inspect up to 100 visible headers/invoices to preserve duplicate multiplicity. Vendor reads occur only for merchant events/pending actions. Idle transaction checks read no bags or item metadata. Single operations and garbage collection can exceed a target budget.
 
 ## Native evidence and limits
 
-The latest supplied screenshot is revision 3's crafting list on Forever build 70450. It shows working service rows and identifies the need for numeric quotes. Prior revision 2 diagnostics show 26,852 rows / 2,483 priced items, four history days, service recipe 13529 and zero vendor observations. They do not verify revision 4's new features.
+The supplied screenshots show revision 4's quote and ledger draft; revision 2 diagnostics establish the earlier Forever 70450 scan/crafting/history baseline. They do not qualify revision 5. Matching client sources establish fields and handlers, not live ordering or native UI fit.
 
-The matching build-70450 mail source establishes the buyer/seller invoice fields used for preview/import. It supplies no durable mail ID; conservative signature/expiry matching can flag separate identical invoices. Imported records use recording time. Purchase-success notifications lack the complete transaction totals needed to infer a cost, so this build uses manual entries and reviewed invoices. No counterparty, subject or body is retained.
+The ledger does not infer completed sales from scan changes. AH sale/backfill dates are first-recorded times because the API supplies no original transaction date. Mail identity is signature/expiry based; identical replacements between observations cannot always be distinguished. Vendor writes require matching item/money changes and reject unsupported cases. Automatic known-cost allocation to sold stock is not implemented. Craft estimates and unknown costs remain explicit.
 
-Check the [live checklist](LIVE-TEST-CHECKLIST.md), including native quantities/fees/refunds, customer-material quotes, watch notices, listing links and save/reload behavior. Actual vendor prices still need a supplier visit. DE outcomes remain an unverified Classic reference. Frame fixtures do not establish native font fit, taint behavior or disk persistence.
+Run the [live checklist](LIVE-TEST-CHECKLIST.md), especially commodity price changes, fast collection, other mailbox addons, repeated invoices, vendor buybacks and reloads. Supplier observations and Forever DE outcomes still need native qualification.
 
-The delivery report records exact commit/tag identity, independent source/repository/bundle restores, retained tags, byte parity and package hashes. Packages exclude player SavedVariables.
+The delivery report verifies commit/tag identity, source/repository/bundle restores, retained refs, byte parity and archive hashes. Packages exclude player SavedVariables; local tests do not prove native persistence or taint behavior.

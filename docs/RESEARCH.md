@@ -175,3 +175,20 @@ Reviewed against the same matching Forever **1.60.1 / 70450** commit `172a387e3a
 The ledger previews the currently open completed invoice on a user click. It does not infer sales from listings or prices, read mail bodies, collect attachments, send money or automate purchases. Signature/expiry duplicate checks are deliberately conservative; close identical transactions remain a review case. Returned deposits are excluded from profit. This is implementation/source evidence, not a claim of a successful native invoice import.
 
 Net crafting estimates use the user's AH cut, not a detected server rate. Break-even prices, watch targets and service charges are addon policies. No new third-party runtime code or external price feed was added.
+
+
+## Version 1.2.0, test revision 5: observed transactions
+
+The same pinned **1.60.1 / 70450** commit was reviewed for these paths:
+
+| Primary client source | Contract used |
+|---|---|
+| [Native AH frame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_AuctionHouseUI/Shared/Blizzard_AuctionHouseFrame.lua) | Buyout confirmation calls PlaceBid; purchase-completed payload is the auction ID |
+| [Item Buy frame](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_AuctionHouseUI/Shared/Blizzard_AuctionHouseItemBuyFrame.lua) | Selected item rows expose quantity, buyout amount and item key; ItemDisplay provides the watch-button header |
+| [Commodity dialog](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_AuctionHouseUI/Shared/Blizzard_AuctionHouseBuyDialog.lua) | Server total-price updates, item/quantity confirmation and separate success/failure; dialog hide can cancel before another listener handles success |
+| [Merchant API](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_APIDocumentationGenerated/MerchantFrameDocumentation.lua) | Merchant price, bundle quantity and extended-cost fields; buyback identity |
+| [Bag API](https://github.com/Gethe/wow-ui-source/blob/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63/Interface/AddOns/Blizzard_APIDocumentationGenerated/ContainerDocumentation.lua) | Public bag slots, item IDs, links and quantities |
+
+Revision 5 adds secure post-observers, not replacement transaction functions. Captured prices become ledger amounts only after purchase success, a completed invoice, or matching merchant item/money changes. Merchant settlement timing and mail expiry tolerance are addon reconciliation policies and require native qualification. No original transaction timestamp or durable invoice ID was found in these mail contracts. Simultaneous identical invoices are counted; indistinguishable replacements remain a documented limit. No wallet-only or disappearing-listing inference is used.
+
+The supplied screenshots show the revision-4 craft quote and ledger draft. They support the direct-commission layout change, not acceptance of the new observers. All new automatic paths remain live-test items.

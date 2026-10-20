@@ -2,7 +2,7 @@ local _, A = ...
 local U,D,W,L = A.Util,A.DB,A.Watchlist,A.Ledger
 local E = { mode = "watch", watchPage = 1, ledgerPage = 1, kind = "sale", messages = {} }
 A.EconomyUI = E
-local kinds, titles = {"sale","buy","expense"}, {sale="Sale",buy="Buy",expense="Expense"}
+local kinds, titles = {"sale","buy","commission","vendor_sale","vendor_buy"}, {sale="AH sale",buy="AH buy",commission="Commission",vendor_sale="Vendor sale",vendor_buy="Vendor buy",expense="Legacy expense"}
 local function Label(parent,text,x,y,width,right)
     local f=parent:CreateFontString(nil,"OVERLAY","GameFontHighlightSmall")
     f:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);f:SetSize(width,16);f:SetWordWrap(false)
@@ -50,18 +50,68 @@ function E.SaveWatch()
 end
 function E.SelectWatch(row)
     E.selectedWatch=row.key
+    E.watchItemLabel:SetText(row.name)
     local v=E.watchInputs
     v.item:SetText(row.suffix~=nil and row.link or tostring(row.id))
     v.itemPrice:SetText(U.GoldText(row.watch.maxBuy));v.roi:SetText(tostring(row.watch.minReturn));v.profit:SetText(U.GoldText(row.watch.minProfit))
     E.Refresh()
 end
-function E.WatchDraft(row)
+function E.WatchDraft(row,source)
     if not row or U.Combat() then return end
     E.Show("watch")
+    local key=row.id..":"..(row.suffix~=nil and row.suffix or "*")
+    local existing
+    for _,watch in ipairs(W.Entries())do if watch.key==key then existing=watch.entry;break end end
     E.watchInputs.item:SetText(row.suffix~=nil and row.link or tostring(row.id))
-    E.watchInputs.itemPrice:SetText(U.GoldText(math.min(100000000,math.floor(row.maxBuy or row.buy or 0))))
-    E.watchInputs.roi:SetText(tostring(D.Settings().marketMinReturn));E.watchInputs.profit:SetText(U.GoldText(D.Settings().marketMinProfit))
-    E.selectedWatch=nil;E.messages.watch="Draft from Opportunities. Review the targets and click Save watch.";E.Refresh()
+    E.watchItemLabel:SetText(row.name or ("Selected item "..row.id))
+    E.watchInputs.itemPrice:SetText(U.GoldText(existing and existing.maxBuy or math.min(100000000,math.floor(row.maxBuy or row.buy or 0))))
+    E.watchInputs.roi:SetText(tostring(existing and existing.minReturn or(source=="buy"and 0 or D.Settings().marketMinReturn)))
+    E.watchInputs.profit:SetText(U.GoldText(existing and existing.minProfit or(source=="buy"and 0 or D.Settings().marketMinProfit)))
+    E.selectedWatch=existing and key or nil
+    E.messages.watch=existing and"Edit this item's saved targets, then Save watch."or"Item selected. Set your targets and click Save watch.";E.Refresh()
+end
+
+function E.WatchFromBuy(frame,commodity)
+    if U.Combat()or not A.auctionOpen or not U.Table(frame)then return end
+    local display=commodity and U.Table(frame.BuyDisplay)and frame.BuyDisplay.ItemDisplay or frame.ItemDisplay
+    local key=U.Table(display)and display.itemKey or frame.itemKey
+    if U.Table(display)and type(display.GetItemKey)=="function"then
+        local ok,value=pcall(display.GetItemKey,display);if ok and U.Table(value)then key=value end
+    end
+    local id
+    if U.Table(key)then id=key.itemID end
+    if not U.Number(id,1,2147483647,true)and commodity and type(frame.GetItemID)=="function"then
+        local ok,value=pcall(frame.GetItemID,frame);if ok then id=value end
+    end
+    if not U.Number(id,1,2147483647,true)then return U.Print("Choose an item on the Buy page first.")end
+    local suffix
+    if not commodity and U.Table(key)then suffix=key.itemSuffix end
+    if not U.Accessible(suffix)then return end
+    if suffix~=nil and not U.Number(suffix,-2147483647,2147483647,true)then return end
+    local itemLink="item:"..id..":0:0:0:0:0:"..(suffix or 0)..":0"
+    local item=A.Valuation.ItemInfo(itemLink)
+    local displayLink=item and item.link or itemLink
+    local price=D.Price(id,itemLink)
+    E.WatchDraft({id=id,suffix=suffix,link=displayLink,name=item and item.name or ("Selected item "..id),buy=price and price.low},"buy")
+end
+function E.InstallBuyButtons()
+    if U.Combat()or not U.Table(AuctionHouseFrame)then return end
+    E.buyButtons=E.buyButtons or{}
+    for _,definition in ipairs({{"ItemBuyFrame",false},{"CommoditiesBuyFrame",true}})do
+        local native=AuctionHouseFrame[definition[1]]
+        if U.Table(native)and not E.buyButtons[native]then
+            local commodity=definition[2]
+            local display=commodity and U.Table(native.BuyDisplay)and native.BuyDisplay.ItemDisplay or native.ItemDisplay
+            if U.Table(display)then
+                local b=CreateFrame("Button",nil,display,"UIPanelButtonTemplate")
+                b:SetSize(108,22);b:SetPoint("BOTTOMRIGHT",display,"BOTTOMRIGHT",-8,5);b:SetText("Watch item")
+                b:SetScript("OnClick",function()E.WatchFromBuy(native,commodity)end)
+                b:SetScript("OnEnter",function(self)if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:AddLine("Add this item or edit its watchlist targets.");GameTooltip:Show()end end)
+                b:SetScript("OnLeave",function()if GameTooltip then GameTooltip:Hide()end end)
+                b:Show();E.buyButtons[native]=b
+            end
+        end
+    end
 end
 function E.ViewWatch()
     for _,row in ipairs(W.rows)do if row.key==E.selectedWatch then
@@ -71,18 +121,18 @@ function E.ViewWatch()
 end
 
 function E.NewManual()
-    E.entryID,E.invoiceDraft,E.ledgerItemID=nil,nil,nil;E.kind="sale"
+    E.entryID,E.invoiceDraft,E.ledgerItemID,E.originalRow=nil,nil,nil,nil;E.kind="sale"
     if not E.ledgerInputs then return end
     local v=E.ledgerInputs
-    E.kindButton:SetText("Sale");v.name:SetText("");v.quantity:SetText("1");v.amount:SetText("");v.fee:SetText("0");v.cost:SetText("")
+    E.kindButton:SetText(titles.sale);v.name:SetText("");v.quantity:SetText("1");v.amount:SetText("");v.fee:SetText("0");v.tip:SetText("0");v.cost:SetText("")
     E.messages.ledger="Enter actual transaction totals. A blank sale cost stays unknown."
 end
 function E.LoadLedger(row)
-    E.entryID,E.kind,E.ledgerItemID=row.id,row.kind,row.itemID
+    E.entryID,E.kind,E.ledgerItemID,E.originalRow=row.id,row.kind,row.itemID,row
     E.invoiceDraft=row.invoiceKey and row or nil
     local v=E.ledgerInputs;E.kindButton:SetText(titles[row.kind]);v.name:SetText(row.name);v.quantity:SetText(tostring(row.quantity))
-    v.amount:SetText(U.GoldText(row.amount));v.fee:SetText(U.GoldText(row.fee));v.cost:SetText(row.cost~=nil and U.GoldText(row.cost)or"")
-    E.messages.ledger="Editing entry "..row.id..". Record entry saves the changes.";E.Refresh()
+    v.amount:SetText(U.GoldText(row.amount));v.fee:SetText(U.GoldText(row.fee));v.tip:SetText(U.GoldText(row.tip or 0));v.cost:SetText(row.cost~=nil and not row.estimatedCost and U.GoldText(row.cost)or"")
+    E.messages.ledger="Editing entry "..row.id..". "..(row.estimatedCost and "Cost is a craft estimate; enter an actual cost to replace it." or "Record entry saves the changes.");E.Refresh()
 end
 function E.ImportInvoice()
     local row,why=L.ReadOpenInvoice()
@@ -95,9 +145,12 @@ end
 function E.RecordLedger()
     local v=E.ledgerInputs
     local input={kind=E.kind,name=v.name:GetText(),quantity=tonumber(v.quantity:GetText()),amount=U.ParseGold(v.amount:GetText(),1000000000000),
-        fee=U.ParseGold(v.fee:GetText(),1000000000000),itemID=E.ledgerItemID}
+        fee=U.ParseGold(v.fee:GetText(),1000000000000),tip=L.Income(E.kind)and U.ParseGold(v.tip:GetText(),1000000000000)or 0,itemID=E.ledgerItemID}
     local cost=v.cost:GetText()
+    if cost=="" and E.originalRow and E.originalRow.estimatedCost then input.cost=E.originalRow.cost;input.estimatedCost=true end
     if cost~="" then input.cost=U.ParseGold(cost,1000000000000);if input.cost==nil then return Message("Enter a valid cost, or leave cost blank if unknown.")end end
+    if input.fee==nil or input.tip==nil then return Message("Enter valid fees and a total tip (0 is allowed).")end
+    if E.originalRow then input.recipeID=E.originalRow.recipeID end
     local invoice=E.invoiceDraft
     if invoice and invoice.kind==input.kind and invoice.name==input.name and invoice.quantity==input.quantity and invoice.amount==input.amount and invoice.fee==input.fee then
         input.invoiceKey,input.invoiceExpiry,input.refund=invoice.invoiceKey,invoice.invoiceExpiry,invoice.refund
@@ -105,14 +158,6 @@ function E.RecordLedger()
     local ok,why=L.Record(input,E.entryID)
     if not ok then return Message(why)end
     E.NewManual();E.messages.ledger="Entry recorded. Balances cover retained records only.";E.ledgerPage=1;E.Refresh();return true
-end
-function E.DraftSale(row)
-    if not row or U.Combat()then return end
-    E.Show("ledger");E.NewManual()
-    E.ledgerInputs.name:SetText(row.name);E.ledgerInputs.quantity:SetText("1")
-    local quote=A.Crafting.DisplayQuote(row)
-    if quote then E.ledgerInputs.amount:SetText(U.GoldText(math.floor(quote+.5)))end
-    E.messages.ledger="Draft from a quote. Confirm the actual payment and actual cost before recording.";E.Refresh()
 end
 function E.ApplyRetention()
     local days=tonumber(E.retention:GetText())
@@ -129,18 +174,32 @@ function E.CopyCSV()
         local scroll=CreateFrame("ScrollFrame",nil,f,"UIPanelScrollFrameTemplate")
         scroll:SetPoint("TOPLEFT",f,"TOPLEFT",20,-70);scroll:SetPoint("BOTTOMRIGHT",f,"BOTTOMRIGHT",-35,20)
         local box=CreateFrame("EditBox",nil,scroll);box:SetMultiLine(true);box:SetAutoFocus(false);box:SetFontObject("GameFontHighlightSmall")
-        box:SetSize(670,420);box:SetMaxLetters(1000000);scroll:SetScrollChild(box)
+        box:SetSize(670,420);box:SetMaxLetters(10000000);scroll:SetScrollChild(box)
         box:SetScript("OnEscapePressed",function()f:Hide()end);E.csvFrame,E.csvBox=f,box
         table.insert(UISpecialFrames,"MSMarketValueLedgerCSV")
     end
-    E.csvBox:SetText(L.CSV());E.csvFrame:Show();E.csvBox:SetFocus();E.csvBox:HighlightText()
+    E.csvBox:SetText(L.CSV(E.CurrentFilter()));E.csvFrame:Show();E.csvBox:SetFocus();E.csvBox:HighlightText()
+end
+
+function E.CurrentFilter()
+    local range=L.Range(E.period or "30d",E.appliedFirst,E.appliedLast)
+    range=range or {first=0,last=0};range.kind=E.filterKind or "all"
+    return range
+end
+function E.ApplyDates()
+    local range,why=L.Range("custom",E.dateFirst:GetText(),E.dateLast:GetText())
+    if not range then return Message(why)end
+    E.appliedFirst,E.appliedLast=E.dateFirst:GetText(),E.dateLast:GetText();E.period="custom";E.ledgerPage=1
+    E.messages.ledger="Showing the selected UTC dates. Reports and CSV use these filters.";E.Refresh();return true
 end
 
 function E.Create()
     if E.frame then return end
     local f=CreateFrame("Frame","MSMarketValueEconomy",UIParent,"PortraitFrameTemplate")
     f:SetSize(790,610);f:SetPoint("CENTER",UIParent,"CENTER",0,0);f:SetFrameStrata("DIALOG");f:SetClampedToScreen(true)
-    f:SetTitle("MS Market Value - Money tools");f:EnableMouse(true);f:SetMovable(true);f:RegisterForDrag("LeftButton")
+    f:SetTitle("MS Market Value - Money tools");
+    if f.PortraitContainer and f.PortraitContainer.portrait then f.PortraitContainer.portrait:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")end
+    f:EnableMouse(true);f:SetMovable(true);f:RegisterForDrag("LeftButton")
     f:SetScript("OnDragStart",function(self)if not U.Combat()then self:StartMoving()end end)
     f:SetScript("OnDragStop",function(self)self:StopMovingOrSizing()end)
     f.CloseButton:SetScript("OnClick",function()f:Hide()end);E.frame=f;table.insert(UISpecialFrames,"MSMarketValueEconomy")
@@ -150,7 +209,7 @@ function E.Create()
     E.status=Label(f,"",16,-573,756);E.status:SetHeight(30);E.status:SetWordWrap(true)
     local watch=CreateFrame("Frame",nil,f);watch:SetAllPoints(f);E.watchPanel=watch
     local filters=Inset(watch,-98,105)
-    Label(filters,"Item ID / pasted item link",14,-10,278);Label(filters,"Buy at or below (g)",310,-10,110)
+    E.watchItemLabel=Label(filters,"Item ID / pasted item link",14,-10,278);Label(filters,"Buy at or below (g)",310,-10,110)
     Label(filters,"Min return %",430,-10,90);Label(filters,"Min profit (g)",534,-10,100)
     E.watchInputs={item=Box(filters,20,-31,272),itemPrice=Box(filters,315,-31,98),roi=Box(filters,435,-31,80,true),profit=Box(filters,539,-31,95)}
     E.watchInputs.itemPrice:SetText("0");E.watchInputs.roi:SetText("0");E.watchInputs.profit:SetText("0")
@@ -185,33 +244,67 @@ function E.Create()
         for index,kind in ipairs(kinds)do if kind==E.kind then E.kind=kinds[index%#kinds+1];break end end
         E.kindButton:SetText(titles[E.kind]);E.Refresh()
     end)
-    E.ledgerInputs={name=Box(editor,129,-31,385),quantity=Box(editor,537,-31,60,true),amount=Box(editor,20,-91,125),fee=Box(editor,164,-91,110),cost=Box(editor,290,-91,145)}
+    E.ledgerInputs={name=Box(editor,129,-31,385),quantity=Box(editor,537,-31,60,true),amount=Box(editor,20,-91,102),fee=Box(editor,143,-91,80),tip=Box(editor,245,-91,80),cost=Box(editor,347,-91,106)}
     E.ledgerInputs.name:SetMaxLetters(256)
-    for _,key in ipairs({"amount","fee","cost"})do E.ledgerInputs[key]:SetMaxLetters(24)end
-    Label(editor,"Total amount (g)",14,-70,130);Label(editor,"Fees (g)",158,-70,112);Label(editor,"Actual cost (g, optional)",284,-70,155)
+    for _,key in ipairs({"amount","fee","tip","cost"})do E.ledgerInputs[key]:SetMaxLetters(24)end
+    Label(editor,"Total before tip (g)",14,-70,125);Label(editor,"Fees (g)",137,-70,90);Label(editor,"Total tip (g)",239,-70,90);Label(editor,"Actual cost (g)",341,-70,112)
     Button(editor,"Record entry",650,-31,100,E.RecordLedger)
-    Button(editor,"Use open invoice",448,-91,166,E.ImportInvoice)
+    Button(editor,"Use open invoice",473,-91,145,E.ImportInvoice)
     Button(editor,"New manual entry",624,-91,126,function()E.NewManual();E.Refresh()end)
     Label(editor,"Keep days",14,-141,88);E.retention=Box(editor,108,-135,57,true);E.retention:SetMaxLetters(3)
     Button(editor,"Apply",180,-135,74,E.ApplyRetention)
     E.deleteEntry=Button(editor,"Delete entry",283,-135,112,function()if L.Remove(E.entryID)then E.NewManual();E.Refresh()end end)
     E.undo=Button(editor,"Undo delete",405,-135,112,function()L.Undo();E.Refresh()end)
     Button(editor,"Copy CSV",530,-135,112,E.CopyCSV)
-    Label(editor,"Sale amount is before fees. Cost is the whole lot's actual cost; blank means unknown.",14,-169,736)
-    local entries=Inset(ledger,-296,207)
-    local ledgerColumns={{"Type",0,55},{"Item / note",59,222},{"Qty",285,34,true},{"Net",323,110,true},{"Cost",437,110,true},{"Profit",551,112,true},{"Source",667,76}}
+    Label(editor,"Amounts and cost cover the whole lot. Blank cost is unknown; tips are added to income.",14,-169,736)
+    local filters=Inset(ledger,-296,102)
+    E.filterKind,E.period="all","30d"
+    E.filterButton=Button(filters,"All transactions",14,-10,140,function()
+        local order={"all","sale","buy","commission","vendor_sale","vendor_buy","expense"}
+        for index,value in ipairs(order)do if value==E.filterKind then E.filterKind=order[index%#order+1];break end end
+        E.ledgerPage=1;E.Refresh()
+    end)
+    E.periodButton=Button(filters,"Last 30 days",164,-10,142,function()
+        local order={"all","today","7d","30d","custom"}
+        for index,value in ipairs(order)do if value==E.period then E.period=order[index%#order+1];break end end
+        E.ledgerPage=1;E.Refresh()
+    end)
+    Label(filters,"From",318,-16,36);E.dateFirst=Box(filters,361,-10,104)
+    Label(filters,"To",482,-16,20);E.dateLast=Box(filters,514,-10,104)
+    E.dateFirst:SetMaxLetters(10);E.dateLast:SetMaxLetters(10)
+    E.dateFirst:SetText(date("!%Y-%m-%d",U.Now()-29*86400));E.dateLast:SetText(date("!%Y-%m-%d",U.Now()))
+    E.appliedFirst,E.appliedLast=E.dateFirst:GetText(),E.dateLast:GetText()
+    Button(filters,"Apply dates",637,-10,112,E.ApplyDates)
+    E.autoAH=CreateFrame("CheckButton",nil,filters,"UICheckButtonTemplate")
+    E.autoAH:SetPoint("TOPLEFT",filters,"TOPLEFT",10,-47);E.autoAH:SetSize(26,26)
+    E.autoAH:SetScript("OnClick",function(self)D.data.settings.trackAH=self:GetChecked()==true;A.Transactions.RequestMail();E.Refresh()end)
+    Label(filters,"Track AH transactions",43,-54,180)
+    E.autoVendor=CreateFrame("CheckButton",nil,filters,"UICheckButtonTemplate")
+    E.autoVendor:SetPoint("TOPLEFT",filters,"TOPLEFT",233,-47);E.autoVendor:SetSize(26,26)
+    E.autoVendor:SetScript("OnClick",function(self)D.data.settings.trackVendor=self:GetChecked()==true;A.Transactions.ResetVendor();E.Refresh()end)
+    Label(filters,"Track vendor trades",266,-54,185)
+    Label(filters,"UTC dates | YYYY-MM-DD",490,-54,247)
+    Label(filters,"Completed AH sales are added when their invoices load in your mailbox.",14,-80,730)
+    local entries=Inset(ledger,-408,207)
+    local ledgerColumns={{"Date UTC",0,86},{"Type",90,80},{"Item / note",174,164},{"Qty",342,30,true},{"Net",376,101,true},{"Cost",481,100,true},{"Profit",585,100,true},{"Source",689,54}}
     E.ledgerRows=TableRows(entries,ledgerColumns,6,28,E.LoadLedger,function(button,row)
         if not GameTooltip then return end
         GameTooltip:SetOwner(button,"ANCHOR_RIGHT");GameTooltip:ClearLines();GameTooltip:AddLine(row.name,1,.82,0)
         GameTooltip:AddLine(date("!%Y-%m-%d %H:%M UTC",row.time).." - "..row.source)
+        GameTooltip:AddDoubleLine("Total before tip",U.Money(row.amount));GameTooltip:AddDoubleLine("Tip",U.Money(row.tip or 0));
+        if row.estimatedCost then GameTooltip:AddLine("Material cost and profit are estimates. Enter actual cost to replace them.",1,.82,.3,true)end
+        if row.source=="AH mail"then GameTooltip:AddLine("Date is when this invoice was first recorded, not the sale time.",.8,.8,.8,true)end
         GameTooltip:AddDoubleLine("Total",U.Money(row.amount));GameTooltip:AddDoubleLine("Fees",U.Money(row.fee))
         if row.refund>0 then GameTooltip:AddDoubleLine("Returned deposit (excluded)",U.Money(row.refund))end
         GameTooltip:AddLine("Click to edit. A blank cost is not treated as zero.");GameTooltip:Show()
     end)
-    E.ledgerPrevious=Button(ledger,"Previous",14,-512,100,function()E.ledgerPage=math.max(1,E.ledgerPage-1);E.Refresh()end)
-    E.ledgerPageText=Label(ledger,"",126,-518,480)
-    E.ledgerNext=Button(ledger,"Next",680,-512,90,function()E.ledgerPage=E.ledgerPage+1;E.Refresh()end)
-    E.ledgerTotals=Label(ledger,"",16,-544,754);E.ledgerTotals:SetHeight(26);E.ledgerTotals:SetWordWrap(true)
+    E.ledgerPrevious=Button(ledger,"Previous",14,-625,100,function()E.ledgerPage=math.max(1,E.ledgerPage-1);E.Refresh()end)
+    E.ledgerPageText=Label(ledger,"",126,-631,480)
+    E.ledgerNext=Button(ledger,"Next",680,-625,90,function()E.ledgerPage=E.ledgerPage+1;E.Refresh()end)
+    E.report={}
+    for _,field in ipairs({{"income",16,-656,180},{"spend",205,-656,175},{"flow",389,-656,190},{"tips",588,-656,182},{"profit",16,-677,250},{"estimate",280,-677,260},{"unknown",552,-677,218}})do
+        E.report[field[1]]=Label(ledger,"",field[2],field[3],field[4])
+    end
     E.NewManual();f:Hide()
 end
 
@@ -228,6 +321,8 @@ function E.Refresh()
     end
     E.watchTab:SetText(E.mode=="watch"and"|cffffd100Watchlists|r"or"Watchlists")
     E.ledgerTab:SetText(E.mode=="ledger"and"|cffffd100Personal ledger|r"or"Personal ledger")
+    E.frame:SetHeight(E.mode=="watch"and 610 or 730)
+    E.status:ClearAllPoints();E.status:SetPoint("TOPLEFT",E.frame,"TOPLEFT",16,E.mode=="watch"and -573 or -696)
     if E.mode=="watch"then
         E.watchPanel:Show();E.ledgerPanel:Hide();E.alerts:SetChecked(D.Settings().watchAlerts)
         local pages=math.max(1,math.ceil(#W.rows/7));E.watchPage=math.max(1,math.min(E.watchPage,pages))
@@ -249,22 +344,33 @@ function E.Refresh()
         E.status:SetText(W.reason or E.messages.watch or (W.job and"Checking watchlist targets from saved data..."or"Watchlists reuse saved scans and prior history. No background auction search is started."))
     else
         E.watchPanel:Hide();E.ledgerPanel:Show()
-        local rows=L.Records();local pages=math.max(1,math.ceil(#rows/6));E.ledgerPage=math.max(1,math.min(E.ledgerPage,pages))
+        local periodNames={all="All retained",today="Today",["7d"]="Last 7 days",["30d"]="Last 30 days",custom="Custom dates"}
+        E.filterButton:SetText(E.filterKind=="all"and"All transactions"or titles[E.filterKind]);E.periodButton:SetText(periodNames[E.period])
+        E.ledgerInputs.tip:SetEnabled(L.Income(E.kind))
+        E.autoAH:SetChecked(D.Settings().trackAH);E.autoVendor:SetChecked(D.Settings().trackVendor)
+        local filter=E.CurrentFilter()
+        local rows=L.View(filter);local pages=math.max(1,math.ceil(#rows/6));E.ledgerPage=math.max(1,math.min(E.ledgerPage,pages))
         for index,b in ipairs(E.ledgerRows)do
             local row=rows[(E.ledgerPage-1)*6+index];b.row=row
             if row then
                 local net,profit=L.Amounts(row)
-                local values={titles[row.kind],row.name,tostring(row.quantity),Signed(net),row.cost~=nil and U.Money(row.cost)or(row.kind=="sale"and"Needed"or"--"),profit~=nil and Signed(profit)or"--",row.source=="AH invoice"and"Invoice"or"Manual"}
+                local sourceNames={["AH invoice"]="Invoice",["AH purchase"]="Live AH",["AH mail"]="Mail",["Craft quote"]="Craft",Vendor="Vendor",Manual="Manual"}
+                local values={date("!%m-%d %H:%M",row.time),titles[row.kind],row.name,tostring(row.quantity),Signed(net),
+                    row.cost~=nil and ((row.estimatedCost and "Est. "or"")..U.Money(row.cost))or(L.Income(row.kind)and"Needed"or"--"),
+                    profit~=nil and ((row.estimatedCost and "Est. "or"")..Signed(profit))or"--",sourceNames[row.source]}
                 for n,value in ipairs(values)do b.labels[n]:SetText(value)end
-                b.labels[6]:SetTextColor(profit and profit>=0 and .35 or 1,profit and profit>=0 and .87 or .65,.38);b:Show()
+                b.labels[7]:SetTextColor(profit and profit>=0 and .35 or 1,profit and profit>=0 and .87 or .65,.38);b:Show()
             else b:Hide()end
         end
         E.ledgerPageText:SetText(#rows.." entries | Page "..E.ledgerPage.." / "..pages)
         E.ledgerPrevious:SetEnabled(E.ledgerPage>1);E.ledgerNext:SetEnabled(E.ledgerPage<pages)
         E.deleteEntry:SetEnabled(E.entryID~=nil and not U.Combat());E.undo:SetEnabled(L.lastDeleted~=nil and not U.Combat())
         if not E.retention:HasFocus()then E.retention:SetText(tostring(D.Settings().ledgerDays))end
-        local sums=L.Summary()
-        E.ledgerTotals:SetText("Net sales "..U.Money(sums.sales).." | Purchases/expenses "..U.Money(sums.spend).." | Recorded flow "..Signed(sums.flow).."\nKnown sale profit "..Signed(sums.profit).." | "..sums.unknown.." sales need cost. Returned deposits excluded.")
+        local sums=L.Summary(filter)
+        E.report.income:SetText("Income: "..U.Money(sums.sales));E.report.spend:SetText("Spending: "..U.Money(sums.spend))
+        E.report.flow:SetText("Cash flow: "..Signed(sums.flow));E.report.tips:SetText("Tips: "..U.Money(sums.tips))
+        E.report.profit:SetText("Known P/L: "..Signed(sums.profit));E.report.estimate:SetText("Est. craft P/L: "..Signed(sums.estimatedProfit))
+        E.report.unknown:SetText(sums.unknown.." income entries need cost")
         E.status:SetText(L.reason or E.messages.ledger or"Ledger records observed/reported transactions, not price-scan estimates.")
     end
 end

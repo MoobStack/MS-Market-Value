@@ -1,6 +1,6 @@
 # Using MS Market Value
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 4
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 5
 
 ## Crafting
 
@@ -37,11 +37,13 @@ At an auctioneer, **MS Opportunities** appears immediately before **MS Market Va
 
 Set whole-number **Markup** from 0 to 1000 percent and click **Apply** or press Enter. The default is zero. Under **Pricing**, service quotes also support **Labor per service (g)**, **Minimum service quote (g)** and **Customer supplies materials**. These settings apply to services across professions. Your materials use `max(minimum, materials × (1 + markup / 100) + labor)`. Customer-material service quotes use `max(minimum, labor)`. Service quotes round up to a whole copper; ordinary item quotes keep their existing output handling. A service quote reads `Enchant Chest - Lesser Absorption - 1g 16s 63c ea`.
 
-The recipe name uses the native profession-book link when available. **Insert in chat** opens a draft; choose the channel and send it yourself. Ctrl+C copies the field. Fixed multi-item outputs quote per item; variable or unknown output uses **per craft**. Use **Record sale** to open a ledger draft from a quote. Confirm the actual payment and actual cost before recording it; a quote is not a completed sale.
+The recipe name uses the native profession-book link when available. **Insert in chat** opens a draft; choose the channel and send it yourself. Ctrl+C copies the field. Fixed multi-item outputs quote per item; variable or unknown output uses **per craft**. Below the quote, **Record commission** has optional **Price / ea (g)**, **Total tip (g)** and **Quantity** fields. Price is per item/application, or per craft for variable/unknown output. Blank price uses the displayed quote. Quantity defaults to 1 and tip to 0. **Record sale** immediately records that payment as a commission; it does not open a draft. The tip is added once, not multiplied by quantity. Use it for completed direct player sales/services; AH sales are recorded from invoices.
+
+Own-material commissions save the current material cost as an estimate; customer-material services record zero own material cost. Missing material cost stays unknown. Enter actual cost in the ledger to replace an estimate. Quote, tip and quantity fields reset after a successful entry.
 
 ## Watchlists and ledger
 
-Open **Watchlists** or **Ledger** from Opportunities, or use `/msmv watch` and `/msmv ledger`. Watchlists use saved prices; ledger entries use actual reported transactions or a reviewed open AH invoice. See [money tools](docs/ECONOMY-TOOLS.md) for target rules, cost handling, retention and CSV.
+Open **Watchlists** or **Ledger** from Opportunities, or use `/msmv watch` and `/msmv ledger`. The native Buy item header has a **Watch item** button that fills editable targets and preserves an existing watch’s settings. Ledger tracking is on by default for confirmed AH purchases, completed mailbox invoices and verified gold-only vendor trades. Filters cover transaction type, Today, 7 days, 30 days, all retained records or custom UTC dates. Reports and CSV follow the same filters. See [money tools](docs/ECONOMY-TOOLS.md) for target rules, cost handling, retention and CSV.
 
 ## Price history
 
@@ -75,6 +77,6 @@ If rows disappear before copying finishes, progress stays paused. Retry if the o
 
 ## Saved data and reports
 
-`MSMarketValueDB` keeps current snapshots, compact daily history, settings, exclusions, window position and cooldown. Use normal logout, exit or `/reload` to let WoW save it. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` with WoW closed. Code archives do not include personal data.
+`MSMarketValueDB` keeps current snapshots, compact daily history, vendor observations, watchlists, this character’s ledger, settings, exclusions, window position and cooldown. Use normal logout, exit or `/reload` to let WoW save it. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` with WoW closed. Code archives do not include personal data.
 
-Copy `/msmv diagnostics` when reporting a problem. It identifies the version/build and test revision, vendor observations, market analysis counts, history dates/retention, crafting preferences, toggle visibility/header levels, scan progress, and catalog build/publication counts. Include the profession/recipe, exact error and a screenshot for layout issues. For resume, capture before/after diagnostics; a complete local resume must keep the request count unchanged. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).
+Copy `/msmv diagnostics` when reporting a problem. It identifies the version/build and test revision, vendor observations, market analysis counts, history dates/retention, crafting preferences, toggle visibility/header levels, scan progress, catalog build/publication counts, transaction observers, queued confirmations and Buy-page watch buttons. Include the profession/recipe, exact error and a screenshot for layout issues. For resume, capture before/after diagnostics; a complete local resume must keep the request count unchanged. Follow [LIVE-TEST-CHECKLIST.md](LIVE-TEST-CHECKLIST.md).

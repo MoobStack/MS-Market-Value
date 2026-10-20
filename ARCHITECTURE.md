@@ -1,10 +1,10 @@
 # Architecture
 
-`1.2.0-beta / 2026-10-20-beta001` · Test revision 4 · Saved-data schema 1
+`1.2.0-beta / 2026-10-20-beta001` · Test revision 5 · Saved-data schema 1
 
 ## Runtime
 
-The three identical TOCs load 20 Lua files. Bootstrap creates the addon namespace, followed by the bundled libraries, utilities/database/vendor/history, DE data and valuation, crafting analysis, market analysis, scanner, tooltips, three UI modules, and event wiring. Original code uses the per-addon namespace; `MSMarketValue` and the TOC's `MSMarketValueDB` are its public globals. Blizzard functions are not replaced.
+The three identical TOCs load 21 Lua files. Bootstrap creates the addon namespace, followed by the bundled libraries, utilities/database/vendor/history, DE data and valuation, crafting analysis, market analysis, transaction observation, scanner, tooltips, four UI modules, and event wiring. Original code uses the per-addon namespace; `MSMarketValue` and the TOC's `MSMarketValueDB` are its public globals. Blizzard functions are not replaced.
 
 | Module | Responsibility |
 |---|---|
@@ -12,7 +12,8 @@ The three identical TOCs load 20 Lua files. Bootstrap creates the addon namespac
 | `Core/Database.lua` | Schema-1 initialization, atomic completed snapshots, price lookup and settings |
 | `Core/Vendor.lua` | Per-player merchant purchase observations, bundle costs and discount invalidation |
 | `Market/Analysis.lua`, `UI/Market.lua` | Bounded history analysis, stable top-200 rankings and the opportunities AH tab |
-| `Core/Watchlist.lua`, `Core/Ledger.lua`, `UI/Economy.lua` | Saved target checks, personal transaction records and their money-tools window |
+| `Core/Watchlist.lua`, `Core/Ledger.lua`, `UI/Economy.lua` | Saved target checks, scoped ledger, filtered reports and money-tools UI |
+| `Core/Transactions.lua` | Secure post-observers, confirmed purchases, mailbox reconciliation and verified vendor trades |
 | `Core/History.lua` | Compact daily unit lows, UTC retention, migration and cached averages |
 | `Core/Valuation.lua`, `Data/Disenchant.lua` | Native metadata and labeled Classic DE estimates |
 | `Crafting/Analysis.lua` | Native schematic/selection adapter, costs, quotes and batched recipe ranking |
@@ -79,9 +80,17 @@ Service quotes compute material recovery plus markup and labor, subject to a min
 
 Watchlists have a schema-1 market map capped at 200 targets per market. Numeric IDs use item-wide series; links use exact suffix series. Buy thresholds can work without history; net-return/profit thresholds reuse the market evaluator with prior days, conservative baseline and configured cut. At most 20 watches or roughly four milliseconds are processed per frame. Snapshot/history/criteria/fee changes cancel unpublished work. Results publish together, and alert timestamps persist per item/scan. Alerts are local chat messages, with no background AH request.
 
-The ledger has schema-1 character/market profiles, at most 2,000 entries, configurable 1–365-day retention and a 4,000-entry invoice identity index. Manual input and open-invoice previews record whole-lot totals. Native invoice imports use reviewed buyer/seller totals; counterparty and mail body fields are ignored. Pending notices are excluded. Signature/expiry matching conservatively blocks likely duplicate imports, including after financial-row deletion/pruning; ambiguous identical invoices require explicit manual review.
+The ledger keeps schema-1 character/market profiles, up to 10,000 entries, 1–365 UTC retention and separate 20,000-entry receipt/invoice indexes. Existing rows and legacy expenses remain valid. Optional tips, commission costs and receipt fields are additive. Automatic writes change saved tables and can run in combat; manual edits and UI remain outside combat.
 
-Sale cost can be absent, distinct from zero. Net receipts, purchase/expense flow and costed sale profit are separate. Returned deposits do not enter profit/flow. Sorting and summaries cache by profile/revision. No wallet deltas, disappearing listings, market prices or purchase-success events are used to invent transaction costs. CSV is copyable local text; no message is sent. The ledger window has edit/delete/undo, retention and invoice preview controls. Ledger writes, watch editing and UI remain outside combat.
+`Transactions.lua` observes native calls with `hooksecurefunc`; it does not replace or invoke transaction functions. A buyout intent captures selected quantity/price and commits only for its auction-ID completion. Commodities require the last server quote, matching confirmation arguments and success. Pending intents expire after 120 seconds. Persisted purchase receipts reconcile later invoices, including after reload or ledger deletion. Unknown native purchase context falls back to completed mailbox invoices.
+
+A stable inbox read stages public completed buyer/seller fields in batches of 10, then commits in bounded batches. Mail-update generations and player scope cancel stale work. User collection hooks also capture a matching visible invoice group (up to 100 messages) before the background reader catches up. Signature/expiry matching recognises previous imports and simultaneous multiplicity. No durable mail ID is exposed: close identical replacements remain an acknowledged reconciliation limit. Native mail actions, bodies and counterparties are not invoked/read/stored. Mail backfills use first-recorded time, not an invented sale time.
+
+Vendor observation takes a bag/wallet baseline at merchant open. Merchant actions mark it dirty; bag/money events wait for a short settling interval. Gold-only buy prices or item sell values must explain the item deltas and the exact wallet change. Unmatched data is rejected after three seconds and reported; no wallet-only inference is made. Normal/buyback prices remain separate. Closing the merchant allows the pending confirmation to settle. Idle tracking reads no bags or item metadata.
+
+Commissions record immediately from a clicked craft sale: unit price × quantity plus one total tip. Fixed output uses per-item quote/cost; variable output uses per-craft values. Customer-material services have zero own material cost. Other material costs are saved estimates, separately reported until actual cost replaces them. Missing cost differs from zero. Income, spending, cash flow, known P/L and estimated craft P/L are separate; returned deposits are excluded.
+
+UTC/type filtering, summaries and CSV share the same view. Record ordering uses a linear reverse for normal append order, with a sorted fallback for undo or out-of-order confirmations. Views/summaries cache by source and criteria. The auto-receipt key index uses constant-time lookup. Date ranges stay stable within the day. A full ledger keeps at most 100 confirmed live records in a validated saved queue, retries after space is freed and preserves their observation timestamps across reloads. Retention still applies; retained entries are never silently evicted.
 
 ## Daily history
 

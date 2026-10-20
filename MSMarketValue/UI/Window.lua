@@ -112,6 +112,11 @@ function UI.DiagnosticsText()
     local ledger = A.Ledger.Summary()
     lines[#lines + 1] = "Ledger: " .. #ledger.rows .. " this character/market; retention=" .. D.Settings().ledgerDays .. " days; sales_needing_cost=" .. ledger.unknown
     if A.Ledger.reason then lines[#lines + 1] = "Ledger detail: " .. A.Ledger.reason end
+    local tracking=A.Transactions
+    lines[#lines+1]="Transaction tracking: AH="..tostring(D.Settings().trackAH).."; vendor="..tostring(D.Settings().trackVendor).."; captured="..tracking.captured.."; reconciled="..tracking.reconciled.."; waiting="..#tracking.queue
+    lines[#lines+1]="Purchase observers: item="..tostring(tracking.purchaseHook==true).."; commodity="..tostring(tracking.commodityHook==true).."; mailbox="..tostring(tracking.mailOpen==true)
+    lines[#lines+1]="Buy-page watch buttons: item="..tostring(A.EconomyUI.buyButtons and U.Table(AuctionHouseFrame)and A.EconomyUI.buyButtons[AuctionHouseFrame.ItemBuyFrame]~=nil or false).."; commodity="..tostring(A.EconomyUI.buyButtons and U.Table(AuctionHouseFrame)and A.EconomyUI.buyButtons[AuctionHouseFrame.CommoditiesBuyFrame]~=nil or false)
+    if tracking.reason then lines[#lines+1]="Transaction detail: "..tracking.reason end
     local history = A.History.Status()
     lines[#lines + 1] = "Historic pricing: " .. (history.reason or (tostring(history.days) .. " UTC days for this market; retention=" .. tostring(history.retention) .. " days"))
     if history.firstDay then

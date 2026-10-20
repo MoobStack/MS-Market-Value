@@ -210,10 +210,26 @@ function UI.CreatePricing(frame)
     UI.ResetPricing(); panel:Hide()
 end
 
+function UI.RecordCommission()
+    if U.Combat() or not UI.saleInputs then return false end
+    local v=UI.saleInputs
+    local text=string.match(v.price:GetText(),"^%s*(.-)%s*$")
+    local price=text~="" and U.ParseGold(text,1000000000000) or nil
+    if text~="" and price==nil then UI.saleMessage="Enter a valid unit price in gold, or leave it blank for the quote.";UI.Refresh();return false end
+    if UI.lastCommission and U.Mono()-UI.lastCommission<.75 then return false end
+    local tipText=string.match(v.tip:GetText(),"^%s*(.-)%s*$")
+    local quantityText=string.match(v.quantity:GetText(),"^%s*(.-)%s*$")
+    local ok,why=A.Ledger.Commission(C.selected,price,tipText==""and 0 or U.ParseGold(tipText,1000000000000),quantityText==""and 1 or tonumber(quantityText))
+    if not ok then UI.saleMessage=why;UI.Refresh();return false end
+    UI.lastCommission=U.Mono();v.price:SetText("");v.tip:SetText("0");v.quantity:SetText("1")
+    UI.saleMessage="Commission recorded. Tip is a total; blank price uses the quote. Material costs are estimates unless supplied by the customer."
+    UI.Refresh();return true
+end
+
 function UI.Create()
     if UI.frame or U.Combat() then return end
     local frame = CreateFrame("Frame", "MSMarketValueCrafting", UIParent, "PortraitFrameTemplate")
-    frame:SetSize(560, 650); frame:SetPoint("TOPLEFT", ProfessionsFrame, "TOPRIGHT", 6, 0)
+    frame:SetSize(560, 730); frame:SetPoint("TOPLEFT", ProfessionsFrame, "TOPRIGHT", 6, 0)
     frame:SetClampedToScreen(true); frame:SetFrameStrata("DIALOG"); frame:SetTitle("MS Market Value - Crafting")
     if frame.PortraitContainer and frame.PortraitContainer.portrait then
         frame.PortraitContainer.portrait:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")
@@ -243,7 +259,7 @@ function UI.Create()
     end)
 
     local details = CreateFrame("Frame", nil, frame)
-    details:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -95); details:SetSize(560, 514); UI.details = details
+    details:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -95); details:SetSize(560, 604); UI.details = details
     local summary = Inset(details, 0, 194)
     UI.recipeName = Label(summary, "Select a learned recipe", 14, -11, 507, "GameFontNormal")
     UI.recipeName:SetHeight(30); UI.recipeName:SetWordWrap(true)
@@ -275,9 +291,20 @@ function UI.Create()
     quote:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     UI.quoteBox = quote
     Label(quotes, "Ctrl+C to copy quote.", 14, -73, 215)
-    UI.recordSale = Button(quotes, "Record sale", 243, -67, 130, function() A.EconomyUI.DraftSale(C.selected) end)
     UI.insertQuote = Button(quotes, "Insert in chat", 383, -67, 137, UI.InsertQuote)
-    local materials = Inset(details, -310, 164)
+    local sale = Inset(details, -310, 92)
+    Label(sale, "Record commission (direct sale; blank price uses quote)", 14, -9, 480, "GameFontNormal")
+    UI.salePriceLabel = Label(sale, "Price / ea (g, optional)", 14, -32, 173)
+    Label(sale, "Total tip (g)", 200, -32, 110); Label(sale, "Quantity", 326, -32, 75)
+    UI.saleInputs = {}
+    for _,field in ipairs({{"price",20,153,false,""},{"tip",206,100,false,"0"},{"quantity",332,62,true,"1"}}) do
+        local box = CreateFrame("EditBox",nil,sale,"InputBoxTemplate")
+        box:SetPoint("TOPLEFT",sale,"TOPLEFT",field[2],-52); box:SetSize(field[3],24)
+        box:SetAutoFocus(false); box:SetNumeric(field[4]); box:SetMaxLetters(24); box:SetText(field[5])
+        box:SetScript("OnEscapePressed",function(self)self:ClearFocus()end); UI.saleInputs[field[1]]=box
+    end
+    UI.recordSale = Button(sale,"Record sale",412,-51,108,UI.RecordCommission)
+    local materials = Inset(details, -412, 148)
     Label(materials, "Materials", 14, -10, 507, "GameFontNormal")
     Label(materials, "Reagent", 14, -30, 230, "GameFontNormalSmall")
     Label(materials, "Qty", 256, -30, 35, "GameFontNormalSmall"):SetJustifyH("RIGHT")
@@ -287,7 +314,7 @@ function UI.Create()
     scroll:SetPoint("TOPLEFT", materials, "TOPLEFT", 14, -51); scroll:SetPoint("BOTTOMRIGHT", materials, "BOTTOMRIGHT", -31, 12)
     local child = CreateFrame("Frame", nil, scroll); child:SetSize(490, 98); scroll:SetScrollChild(child)
     UI.materialChild, UI.materialRows = child, {}
-    UI.reason = Label(details, "", 18, -483, 524); UI.reason:SetHeight(30); UI.reason:SetWordWrap(true)
+    UI.reason = Label(details, "", 18, -570, 524); UI.reason:SetHeight(30); UI.reason:SetWordWrap(true)
 
     local catalog = CreateFrame("Frame", nil, frame)
     catalog:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -95); catalog:SetSize(560, 510); UI.catalog = catalog
@@ -335,7 +362,7 @@ function UI.Create()
     UI.catalogNote = Label(status, "", 12, -29, 512); UI.catalogNote:SetHeight(28); UI.catalogNote:SetWordWrap(true)
     UI.empty = Label(list, "", 22, -124, 492); UI.empty:SetHeight(68); UI.empty:SetWordWrap(true)
     UI.CreatePricing(frame)
-    Label(frame, "Net craft profit includes the AH cut; deposits are excluded.\nService quotes follow your materials and labor settings.", 18, -616, 524):SetHeight(28)
+    Label(frame, "Net craft profit includes the AH cut; deposits are excluded.\nService quotes follow your materials and labor settings.", 18, -703, 524):SetHeight(28)
     frame:Hide()
 end
 
@@ -410,13 +437,18 @@ function UI.Refresh()
         if service then UI.serviceHelp:Show() else UI.serviceHelp:Hide() end
         local quoteText = C.QuoteText(row)
         if UI.quoteText ~= quoteText or UI.quoteRecipeID ~= (row and row.recipeID) then UI.quoteBox:ClearFocus() end
+        if UI.quoteRecipeID ~= (row and row.recipeID) then
+            UI.saleInputs.price:SetText(""); UI.saleInputs.tip:SetText("0"); UI.saleInputs.quantity:SetText("1"); UI.saleMessage=nil
+        end
+        local perItem=row and (row.service or (U.Number(row.quantityMin,1,1000000,true)and row.quantityMin==row.quantityMax))
+        UI.salePriceLabel:SetText(perItem and "Price / ea (g, optional)" or "Price / craft (g, optional)")
         UI.quoteRecipeID, UI.quoteText = row and row.recipeID, quoteText
         UI.recordSale:SetEnabled(row ~= nil and not U.Combat())
         UI.insertQuote:SetEnabled(quoteText ~= nil and ChatOpener() ~= nil and not U.Combat())
         if not UI.quoteBox:HasFocus() then UI.quoteBox:SetText(quoteText or "Quote unavailable until all material prices are known") end
         UI.RefreshMaterials(row)
-        UI.reason:SetText(service and (quoteText and (D.Settings().serviceCustomerMaterials and "Customer supplies materials. Quote is your service charge." or "Service quote ready. Auction profit does not apply.") or "Service quote unavailable. Check material cost and markup.") or
-            (row and row.reason or (row and row.estimated and "Variable output: profit shows the minimum and maximum yield." or "")))
+        UI.reason:SetText(UI.saleMessage or (service and (quoteText and (D.Settings().serviceCustomerMaterials and "Customer supplies materials. Quote is your service charge." or "Service quote ready. Auction profit does not apply.") or "Service quote unavailable. Check material cost and markup.") or
+            (row and row.reason or (row and row.estimated and "Variable output: profit shows the minimum and maximum yield." or ""))))
     else
         UI.details:Hide(); UI.catalog:Show(); UI.showAllButton:Show(); UI.pricingTab:Hide()
         local showAll = D.Settings().showAllRecipes

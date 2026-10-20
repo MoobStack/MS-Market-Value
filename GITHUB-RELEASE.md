@@ -1,12 +1,13 @@
 # MS Market Value 1.2.0 beta
 
-Build `2026-10-20-beta001` · Test revision **4**
+Build `2026-10-20-beta001` · Test revision **5**
 
-- Service rows now show numeric quotes. Pricing adds labor, a minimum charge and customer-supplied materials.
-- Crafting shows net profit/return after the configured AH cut and a break-even price. Deposits and expired listings remain separate.
-- Watchlists save buy/return/profit targets, check stored scans/history and provide local alerts plus live-listing links.
-- The personal ledger records manual transactions or a reviewed open AH invoice. It distinguishes unknown costs from zero, tracks costed sale profit, and supports edits, undo, retention and CSV copying.
+- Add **Watch item** to the native Buy item/commodity headers, with editable targets and existing-watch values.
+- Record crafting commissions directly below the quote: optional unit price, total tip and quantity. Blank price uses the quote; quantity defaults to 1, tip to 0.
+- Track confirmed AH purchases and completed mailbox invoices, reconciling purchases instead of counting them twice. Track vendor trades when bag quantities and money agree.
+- Add transaction-type and UTC date filters, filtered CSV and separate income, spending, cash-flow, known-profit and estimated-crafting reports.
+- Retain legacy expenses, increase ledger capacity to 10,000, and cache/batch the new work.
 
-Open **Pricing** in crafting, or use `/msmv watch` and `/msmv ledger`. The two money tools also open from Opportunities. Invoice import is a preview: open completed AH mail, review it and click Record entry. It never collects mail; similar invoices may require manual review.
+**446/446 local Lua 5.1 tests pass.** Automatic tracking, mailbox event ordering and native layout still need Forever testing. Sales/backfills are dated when first recorded from mail; identical invoices replaced between observations can require manual review. Material estimates are labeled and unknown costs do not become zero.
 
-**388/388 local Lua 5.1 tests pass.** Check pricing, watch targets and invoice amounts in Forever. Close WoW, replace the addon folder using the Clean ZIP and keep SavedVariables. All docs, tests and prior tags are included in the full Git repository.
+Close WoW, replace the addon folder using the Clean ZIP and keep SavedVariables. Use `/msmv watch` and `/msmv ledger`. The full repository includes all documentation and earlier tags.

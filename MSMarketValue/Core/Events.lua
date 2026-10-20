@@ -26,8 +26,12 @@ local function Initialize()
         "GET_ITEM_INFO_RECEIVED", "PLAYER_REGEN_DISABLED", "PLAYER_REGEN_ENABLED", "PLAYER_LOGOUT",
         "TRADE_SKILL_SHOW", "TRADE_SKILL_CLOSE", "TRADE_SKILL_LIST_UPDATE", "TRADE_SKILL_DATA_SOURCE_CHANGED",
         "NEW_RECIPE_LEARNED", "MERCHANT_SHOW", "MERCHANT_UPDATE", "MERCHANT_CLOSED", "UPDATE_FACTION",
+        "AUCTION_HOUSE_PURCHASE_COMPLETED", "COMMODITY_PRICE_UPDATED", "COMMODITY_PRICE_UNAVAILABLE",
+        "COMMODITY_PURCHASE_SUCCEEDED", "COMMODITY_PURCHASE_FAILED", "MAIL_SHOW", "MAIL_INBOX_UPDATE", "MAIL_CLOSED",
+        "PLAYER_MONEY", "BAG_UPDATE_DELAYED",
     }) do frame:RegisterEvent(event) end
     S.InstallObserver()
+    A.Transactions.Install()
 end
 
 local function Login()
@@ -42,16 +46,19 @@ end
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
 frame:SetScript("OnEvent", function(_, event, arg1, arg2)
+    if D.data and not A.disabledReason then A.Transactions.Event(event,arg1,arg2) end
     if event == "ADDON_LOADED" then
         if U.String(arg1) and arg1 == A.NAME then Initialize() end
         if U.String(arg1) and arg1 == "Blizzard_AuctionHouseUI" and A.auctionOpen then
             A.UI.OnAuctionShow()
+            A.Transactions.Install(); A.EconomyUI.InstallBuyButtons()
         end
     elseif event == "PLAYER_LOGIN" then
         Login()
     elseif event == "AUCTION_HOUSE_SHOW" then
         A.auctionOpen = true
         A.UI.OnAuctionShow()
+        A.EconomyUI.InstallBuyButtons()
         U.Notify()
     elseif event == "AUCTION_HOUSE_CLOSED" then
         A.auctionOpen = false
@@ -118,6 +125,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     if uiElapsed >= 0.25 then
         uiElapsed = 0
+        if D.data and not A.disabledReason then A.Transactions.Tick() end
         A.History.Maintain()
         A.Watchlist.Ensure()
         A.Crafting.Tick()
@@ -127,6 +135,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
             A.MarketUI.Refresh()
         end
         if A.auctionOpen and not A.UI.tabInstalled and not U.Combat() then A.UI.InstallAuctionTab() end
+        if A.auctionOpen and not U.Combat() then A.EconomyUI.InstallBuyButtons() end
         if A.EconomyUI.frame and A.EconomyUI.frame:IsShown() and not U.Combat() then A.EconomyUI.Refresh() end
         if (A.UI.frame and A.UI.frame:IsShown()) or (A.UI.panel and A.UI.panel:IsShown()) then A.UI.Refresh() end
         if A.refreshTooltips and not U.Combat() then

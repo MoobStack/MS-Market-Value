@@ -2,7 +2,7 @@
 
 Auction prices, market opportunities, crafting costs and profit, price history and disenchant estimates for WoW Forever.
 
-**Version 1.2.0-beta** · Build `2026-10-20-beta001` · Test revision **4**
+**Version 1.2.0-beta** · Build `2026-10-20-beta001` · Test revision **5**
 
 For Forever 1.60.1 / Interface 16001. By MoobStack. The version and build stay fixed throughout 1.2.0 testing; test revisions identify changes.
 
@@ -14,8 +14,8 @@ For Forever 1.60.1 / Interface 16001. By MoobStack. The version and build stay f
 - Crafting uses your observed vendor purchase cost for normal vendor materials and AH prices for other materials.
 - Crafting shows material cost, net profit after the chosen AH cut, net return and break-even prices. Search and rank recipes; service rows show numeric quotes.
 - Service pricing supports material markup, labor, minimum charges and customer-supplied materials.
-- Watchlists track buy prices and profit/return targets from saved scans, with local alerts and live-listing links.
-- A personal ledger records purchases, sales and expenses, with reviewed AH invoice imports, known-cost profit and copyable CSV.
+- Add or edit watchlist targets with **Watch item** on the Buy page. Saved scans provide buy-price/profit alerts and links back to listings.
+- A personal ledger tracks confirmed AH purchases, completed AH invoices, vendor trades and crafting commissions. Filter by type and UTC date; compare income, spending, cash flow and costed profit, or copy CSV.
 - Craft quotes use the native recipe link when available. Copy a quote or insert a chat draft; sending stays under your control.
 - Keep 1–30 days of daily prices, using each UTC day's latest completed scan. Auto-open for crafting profits is optional and off by default.
 
@@ -43,10 +43,10 @@ Open a profession and click **Show profits** beside its close button. **Recipe l
 
 Visit a supplies vendor to learn your discounted purchase prices. Known vendor materials without a current observation say **visit supplier**; inflated AH listings are not used instead. Other materials use the latest scan's lowest unit buyouts, including owned materials. Crafting profit includes the configured AH cut; deposits and expired listings are excluded. Asking prices do not guarantee sales. Missing prices or unsupported recipes stay unavailable. History averages the days with a price equally; one day is enough. Disenchant outcomes use an **unverified Classic reference** for Forever.
 
-In the crafting window, open **Pricing** to set fees and service charges. **Watchlists** and **Ledger** also open from Opportunities; [money tools](docs/ECONOMY-TOOLS.md) covers their controls.
+In the crafting window, open **Pricing** to set fees and service charges. Below the quote, **Record sale** adds a commission using unit price, total tip and quantity; blank price uses the quote. AH sales are added when completed invoices load in the mailbox; native purchase events have a mailbox fallback. **Watchlists** and **Ledger** also open from Opportunities; [money tools](docs/ECONOMY-TOOLS.md) covers their controls.
 
 See [DOCUMENTATION.md](DOCUMENTATION.md) for calculations and controls, [CHANGELOG.md](CHANGELOG.md) for changes, [UPGRADE.md](UPGRADE.md) for backup/rollback, and [GIT-WORKFLOW.md](GIT-WORKFLOW.md) for source recovery and publication. [ARCHITECTURE.md](ARCHITECTURE.md), [COMPATIBILITY.md](COMPATIBILITY.md) and [VALIDATION.md](VALIDATION.md) cover implementation and testing.
 
-**388/388 local Lua 5.1 tests pass.** Check the new pricing, watchlist and invoice controls in Forever. See [docs/MARKET-OPPORTUNITIES.md](docs/MARKET-OPPORTUNITIES.md), [docs/VENDOR-COSTS.md](docs/VENDOR-COSTS.md) and [VALIDATION.md](VALIDATION.md) for controls, calculations and checks.
+**446/446 local Lua 5.1 tests pass.** Automatic tracking and the revised controls still need live Forever checks. See [docs/MARKET-OPPORTUNITIES.md](docs/MARKET-OPPORTUNITIES.md), [docs/VENDOR-COSTS.md](docs/VENDOR-COSTS.md) and [VALIDATION.md](VALIDATION.md) for controls, calculations and checks.
 
 MoobStack is an independent community publisher, unaffiliated with Blizzard Entertainment or any server project. World of Warcraft and related marks belong to their owners.

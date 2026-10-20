@@ -5,8 +5,8 @@
   "build": "2026-10-20-beta001",
   "buildNumber": "001",
   "interface": 16001,
-  "gitTag": "v1.2.0-beta-test4",
+  "gitTag": "v1.2.0-beta-test5",
   "archiveDate": "2026-10-20",
   "releaseChannel": "beta",
-  "testRevision": 4
+  "testRevision": 5
 }

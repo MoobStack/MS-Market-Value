@@ -1,23 +1,18 @@
 # Upgrade and rollback
 
-**1.2.0-beta / 2026-10-20-beta001**, Test revision **4**. The addon folder, SavedVariable and root schema remain `MSMarketValue`, `MSMarketValueDB` and schema 1.
+**1.2.0-beta / 2026-10-20-beta001** · Test revision **5**
 
-1. Finish any scan and close WoW normally. Incomplete work is session-only.
+1. Finish or discard incomplete scans and close WoW normally.
 2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`.
-3. Replace `Interface/AddOns/MSMarketValue` using the Clean ZIP. Keep WTF/SavedVariables.
-4. Restart. Diagnostics should identify the version/build above and Test revision 4.
-5. Open a supplies vendor to learn your discounted material purchase prices. Then check a recipe with a vendor reagent.
+3. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP's addon folder. Keep WTF/SavedVariables.
+4. Restart and check **Test revision: 5** in `/msmv diagnostics`.
 
-Completed prices, daily history, preferences, markup, exclusions, positions and cooldown carry forward from 1.1.0. No AH scan is required solely to upgrade. Vendor purchase observations and market filters are new optional data; current-price and history formats stay unchanged.
+Completed prices, daily history, vendor observations, watches, ledger records and settings carry forward. No scan or history reset is needed. Retention remains separate: market history 1–30 days; ledger 1–365 days, default 90.
 
-Open **MS Opportunities** before the existing AH tab. Default resale filters need three earlier priced days per item, plus a fresh current scan. Same-day scans do not add earlier days. History settings still allow 1–30 calendar days; shortening retention removes older entries immediately.
+AH/vendor tracking is enabled by default and can be disabled separately in the ledger. Open the mailbox to discover completed AH sales and unobserved purchases. Prices from scans are never treated as completed sales. **Watch item** on the native Buy page fills editable targets; **Record sale** under crafting now records a commission immediately, using the quote when price is blank.
 
-Revision 4 adds net crafting profit, labor/minimum service charges, watchlists and a personal ledger. Service labor/minimum default to 0; customer materials defaults off. Existing quotes therefore keep their material-based behavior. AH cut defaults to the existing configured value (normally 5%).
+Existing Expense records are retained under **Legacy expense**. New entries offer commissions and vendor trades. Material costs saved by craft commissions are marked estimates; enter actual cost to replace them. The ledger cap is now 10,000 records. Back up/export before shortening retention.
 
-Watchlists and ledger use optional schema-1 sub-roots. Existing prices, history and preferences carry forward. Older builds ignore the new data. Search remains local to the open profession. Ledger retention defaults to 90 days and is separate from price history.
+Install only the `MSMarketValue` folder, not the full repository. Keep package components outside AddOns and do not mix revisions. The Complete Package contains the Clean ZIP, full repository/history, source, docs, bundle and validation files.
 
-Existing profit targets keep their value and display in gold (500 silver becomes 5 gold). Resale now applies the saved price-move threshold too; use 0 to disable that check. No price-history reset is needed.
-
-Keep code packages outside AddOns and install only their `MSMarketValue` folder. Do not mix files from different revisions. The Complete Package contains the Clean ZIP, full Git repository, source, docs, bundle and verification files.
-
-With WoW closed, roll back using the prior Clean ZIP and your SavedVariables backup if needed. Older schema-1 versions may ignore the newer vendor/filter fields. Unsupported future sub-schemas are preserved. Code archives exclude player data. See [GIT-WORKFLOW.md](GIT-WORKFLOW.md) for repository recovery.
+For rollback, close WoW and restore both the earlier Clean ZIP and the matching SavedVariables backup. Earlier betas may not understand the new transaction kinds. Future/invalid schemas remain preserved rather than overwritten. See [GIT-WORKFLOW.md](GIT-WORKFLOW.md) for source recovery.

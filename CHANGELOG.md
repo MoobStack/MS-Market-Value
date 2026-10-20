@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.2.0-beta — 2026-10-20-beta001 — Test revision 5
+
+- Add Buy-page watch buttons that open editable targets and preserve existing values.
+- Record crafting commissions directly with unit price, total tip and quantity. Use the quote for a blank price; label estimated material costs.
+- Observe confirmed AH purchases, reconcile completed mailbox invoices, and track vendor trades when items and money match. Keep failed/pending requests out of the ledger.
+- Add type/date filters, filtered CSV and separate cash-flow, known-profit and estimated-crafting reports. Retain legacy expenses and raise ledger capacity to 10,000.
+- Batch mailbox work, cache receipt/report lookups and document the native reconciliation limits. **446/446 local tests pass**; new automatic paths need live checks.
+
 ## 1.2.0-beta — 2026-10-20-beta001 — Test revision 4
 
 - Show numeric service quotes in each recipe row. Add labor fees, minimum charges and customer-material quotes under Pricing.

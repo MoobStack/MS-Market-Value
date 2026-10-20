@@ -1,6 +1,6 @@
 # 1.2.0 beta checks
 
-Build `2026-10-20-beta001`, Test revision **4**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
+Build `2026-10-20-beta001`, Test revision **5**. Keep SavedVariables when replacing the addon folder. Record `/msmv diagnostics` with any error or unexpected result.
 
 ## Vendor costs
 
@@ -38,12 +38,30 @@ Build `2026-10-20-beta001`, Test revision **4**. Keep SavedVariables when replac
 For a layout issue, include a screenshot. For vendor math, include item/recipe, required quantity and vendor price/bundle size. For a market signal, include the item, filters and diagnostics. No need to reset saved prices or settings.
 
 
-## Revision 4 pricing and money tools
+## Pricing, watchlists and commissions
 
-- In crafting **Pricing**, set AH cut, markup, labor and minimum charge. Check one item recipe's net profit/break-even and one service's quote against those settings.
-- Toggle customer materials. A service should charge labor/minimum only, even if material costs are unavailable; normal item quotes should still include materials.
-- On Opportunities, right-click an item and choose **Watch selected**. Save targets, check history coverage/scan age and verify an intentional target hit. Reopening should not repeat its local notice for the same scan.
-- Use `/msmv watch` away from the AH, then at an auctioneer test View listings for both an any-suffix item and an exact item link.
-- Use `/msmv ledger` to enter a sale with unknown cost, then edit its cost. Check net proceeds, known profit, spending and recorded flow separately. Delete/undo and copy CSV.
-- Open a completed AH invoice, preview it, then record it. Check total, quantity, fees and returned deposit against native mail. A second import should be blocked. Pending sale notices should be rejected. No money/items should be collected by the addon.
-- Reload and confirm pricing preferences, watch targets, alert deduplication and ledger entries remain. Back up SavedVariables before testing shorter ledger retention.
+- Check net crafting profit/break-even and labor/minimum/customer-material quotes against Pricing. Numeric service quotes should remain in recipe rows.
+- On both a normal item's and a commodity's native Buy page, click **Watch item**. Set/save targets, reopen it and confirm the values remain. Check a random-suffix item too.
+- Save a watch away from the AH and test View listings at an auctioneer. Reopening an unchanged scan should not repeat its alert.
+- Under Craft quote, leave price blank, quantity 1 and tip 0; Record sale should immediately add one Commission using the quote. Try an explicit 2g price, quantity 3 and 25s total tip: income should be 6g 25s.
+- Test fixed multi-item output, a service with your materials and customer-material mode. Estimated costs/profit should say Est.; customer-material own cost should be 0. Enter actual cost to replace an estimate.
+
+## Automatic AH tracking
+
+- Buy a normal item/stack: confirm exactly one AH buy with the actual total and quantity. A cancelled confirmation, unsuccessful buy or ordinary bid must not create a purchase.
+- Buy a commodity across multiple price levels. Compare the final server total, not just first unit price. Try a price increase and a failed purchase.
+- Collect the purchase mail. The existing purchase should reconcile instead of duplicating. Reload between purchase and mailbox collection and repeat the check.
+- Open completed seller mail, including a sale made while logged out. Check gross amount, fee and quantity; returned deposit must not increase income/profit. Pending sale notices must not count.
+- Test repeated mailbox opens, reordering, multiple identical invoices and fast Open All/collection. An unread old purchase should backfill once. Note identical invoices removed/replaced close together as an API ambiguity case; compare against native totals.
+- Delete/undo a recorded invoice and reopen mail. It should not be imported again. Tracking must not collect, delete or return mail itself.
+
+## Vendor trades and reports
+
+- Buy a reagent bundle, sell a known stack, sell several items quickly, and buy one back. Compare bag quantities and exact wallet changes with individual Vendor buy/sale entries.
+- Try a failed purchase, repair, bag move and unrelated wallet change. They must not become vendor trades. Unsupported/currency/refund cases may require manual entry and should not invent values.
+- Filter AH sales, AH buys, commissions, vendor sales and vendor buys separately. Test Today, 7 days, 30 days and a one-day custom UTC range. Reports and CSV should use the same rows.
+- Compare income, spending and cash flow separately from known P/L and estimated craft P/L. A sale without cost should say Needed, with no assigned profit.
+- Check type/date columns and separate commission controls at normal UI scale, including long names and larger gold amounts.
+- Disable AH/vendor tracking independently, then re-enable. Reload/relog and check preferences, watches, cost bases, entries and duplicate protection.
+
+Back up SavedVariables before shortening retention. For a tracking problem, include diagnostics, transaction type, quantity/total, native confirmation/mail details, and whether another mailbox/AH addon was active.
