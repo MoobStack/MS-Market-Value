@@ -2,7 +2,7 @@
 
 **MS Market Value 1.2.1** targets **WoW Forever 1.60.1 / Interface 16001**. It uses modern auction, profession, item and tooltip APIs. The standard, `_Camelot` and `_Forever` TOCs load the same addon. Different clients or Interface versions need an API review.
 
-Supplied diagnostics cover builds 70338 and 70450 on PvP/Horde. The latest screenshots show daily loot, personal repairs, transaction filters and consistent report totals. These are useful live checks, not proof of every profession, ruleset or transaction path. See [Validation](VALIDATION.md).
+Live checks cover builds 70338, 70450 and 70790 on PvP/Horde. Build 70790 confirmed recovery of a saved scan and a new day of price history. See [Validation](VALIDATION.md).
 
 ## Supported behavior and limits
 

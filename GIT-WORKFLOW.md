@@ -1,39 +1,20 @@
-# Source, recovery and release
+# Source and releases
 
-The **1.2.1** update builds on `v1.2.0` without changing that tag. The original 1.2.0 recovery package retains the earlier release and testing history.
+The **Git Repository ZIP** contains the source, guides, tests and Git history. Extract it into a new folder and open the `MS-Market-Value` directory there. The **Clean ZIP** is the one to install in WoW.
 
-## Package contents
+## Publish 1.2.1
 
-| File | Purpose |
-|---|---|
-| Clean ZIP | Installable addon only |
-| Source ZIP | All tracked code, tests and documentation |
-| Git Repository ZIP | Source plus complete `.git`, branches and tags |
-| Bundle | Portable Git history and refs |
-| Documentation ZIP | Guides, release notes and build metadata |
-| Validation / SHA256 | Exact-release checks and package hashes |
-
-All documentation is included in the full repository. Earlier notes are under `docs/history`; original versions also remain at their tags. Keep recovery files outside AddOns.
-
-Restore a bundle:
+The packaged `main` builds on GitHub’s 1.2.0 release. From the extracted repository, using an account with write access:
 
 ```bash
-git clone MoobStack-MSMarketValue-v1.2.0.bundle MS-Market-Value
-cd MS-Market-Value
-git switch main
-git remote set-url origin https://github.com/MoobStack/MS-Market-Value.git
-git fsck --full
-python3 tools/validate.py --lua lua5.1 --luac luac5.1
+git fetch origin
+git push --atomic origin main v1.2.1
 ```
 
-## Packaging and publication
+Create the GitHub release from the existing `v1.2.1` tag. Use [GITHUB-RELEASE.md](GITHUB-RELEASE.md) for the notes and attach the Clean ZIP. If Git reports that GitHub has newer commits, integrate those first.
 
-```bash
-python3 tools/validate.py --lua lua5.1 --luac luac5.1
-git diff --check
-python3 tools/package.py
-```
+## Build and recover
 
-Packaging requires a clean checkout at the exact annotated tag in build.json. Runtime/source/tag bytes must match. The complete delivery adds documentation and independent archive-restore checks. CI validates main, development and release branches; it does not publish releases.
+Run `python3 tools/validate.py --lua lua5.1 --luac luac5.1` to test. Run `python3 tools/package.py` from the clean checkout at the annotated tag in `build.json`.
 
-This package is prepared locally. No remote push or GitHub release was performed. Before publishing, fetch and verify remote ancestry/tag identity, use a verified commit identity, then push only the intended branch/new tag. Never move old tags or bulk-push recovered refs. Existing local commits use the placeholder `MoobStack <development@moobstack.invalid>`.
+The full archive preserves the original development branches and earlier annotated tags under `refs/archive/1.2.0/tags/`, alongside GitHub’s published tags. Earlier notes are in [docs/history](docs/history/README.md).
