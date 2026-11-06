@@ -14,7 +14,7 @@ function W.Initialize()
 end
 
 local function Profile(create)
-    local key = U.MarketKey()
+    local key = D.ProfileKey(W.data, "markets", U.MarketInfo(), "")
     if not W.data or not key then return nil end
     local profile = W.data.markets[key]
     if profile == nil and create then profile = { entries = {} }; W.data.markets[key] = profile end
@@ -92,7 +92,7 @@ local function Evaluate(job, watch)
     end
     row.current, row.buy = price.low, math.ceil(price.low)
     local samples, day = {}, math.floor(job.snapshot.startedAt / 86400)
-    local history = H.data and H.data.markets[job.key] or {}
+    local history = job.history
     for date = day - job.lookback, day - 1 do
         local record = history[date]
         local value = record and (row.suffix ~= nil and record.variants or record.prices)[index]
@@ -118,7 +118,9 @@ end
 
 function W.Ensure()
     if not W.data then return end
-    local key, snapshot = U.MarketKey(), D.Snapshot()
+    local market = U.MarketInfo()
+    local key, snapshot = market.key, D.Snapshot(market)
+    local history = H.Days(market)
     local fresh = snapshot ~= nil and U.Number(snapshot.startedAt, 0, U.Now()) and not D.IsStale(snapshot)
     local s = D.Settings()
     local signature = table.concat({ W.revision, H.revision or 0, s.marketLookback, s.marketMinDays, s.marketFee, tostring(fresh) }, "|")
@@ -126,7 +128,7 @@ function W.Ensure()
     W.key = key
     if W.source == snapshot and W.signature == signature then return end
     W.source, W.signature = snapshot, signature
-    W.job = { key = key, snapshot = snapshot, fresh = fresh, entries = W.Entries(), rows = {}, cursor = 1,
+    W.job = { key = key, snapshot = snapshot, fresh = fresh, history = history or {}, entries = W.Entries(), rows = {}, cursor = 1,
         signature = signature, revision = W.revision, historyRevision = H.revision, lookback = s.marketLookback, minDays = s.marketMinDays, fee = s.marketFee }
 end
 

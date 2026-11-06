@@ -1,6 +1,6 @@
 # Source, recovery and release
 
-The **1.2.0** release is tagged `v1.2.0`. Local `main` and `release/1.2.0` point to the release; `develop/1.2.0` retains test revision 8. All 17 earlier tag objects, including `v1.1.0` and the eight 1.2.0 beta revisions, remain unchanged.
+The **1.2.1** update builds on `v1.2.0` without changing that tag. The original 1.2.0 recovery package retains the earlier release and testing history.
 
 ## Package contents
 

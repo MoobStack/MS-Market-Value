@@ -1,5 +1,11 @@
 # Validation
 
+## 1.2.1 — Live market history
+
+**591/591 Lua 5.1 cases passed.** In the regression test, 1.2.0 kept one day after two scans on different PvP hosts. 1.2.1 keeps both. Local tests also cover same-day replacement, isolated markets, older scan recovery, and profile and pending transaction retention. In-game recovery with a player’s SavedVariables still needs verification.
+
+## 1.2.0
+
 Release **1.2.0 / 2026-10-20-release001** · Tag `v1.2.0`
 
 | Check | Result |

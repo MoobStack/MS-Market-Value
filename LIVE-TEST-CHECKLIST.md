@@ -1,11 +1,11 @@
 # Live checks
 
-Release **1.2.0 / 2026-10-20-release001**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
+Release **1.2.1 / 2026-11-06-release001**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
 
 The supplied results support successful scans/resumes, crafting, trade tips, responsive filters, daily loot and personal repairs. Continue checking less common paths as they occur:
 
 - **Scans:** complete a scan; pause/close/reopen/resume after Local copy completes. Confirm no extra full request. Check early buffer loss and cooldown behavior separately.
-- **Tooltips/history:** inspect single items, real stacks and links, including combat. Check history after another UTC day and after a retention change.
+- **Tooltips/history:** check the ruleset and recovered day count after updating. Complete a scan on another UTC day, then reload and confirm the day remains. Inspect single items, stacks and links, including combat.
 - **Crafting:** open/close from the profession button with auto-open off. Check an item craft, service quote, missing material, vendor discount and all-recipes/search views. Verify native recipe links and commission totals.
 - **Opportunities/watchlists:** apply movement/profit targets, open item and commodity listings, save/edit a Buy-page watch and check later alerts.
 - **AH/mail/vendor ledger:** buy an item/commodity, load completed sale mail, collect quickly and reopen/reload. Check duplicates, multiple identical invoices, buybacks and vendor trades.

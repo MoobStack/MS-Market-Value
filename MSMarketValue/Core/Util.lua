@@ -68,8 +68,8 @@ end
 function U.PlayerKey()
     local ok, guid = false, nil
     if type(UnitGUID) == "function" then ok, guid = pcall(UnitGUID, "player") end
-    local market = U.MarketKey()
-    if ok and U.String(guid) and #guid <= 128 and market then return market .. "|" .. guid end
+    if not ok or not U.String(guid) or #guid > 128 then return nil end
+    return A.DB.ProfileKey(A.Ledger and A.Ledger.data, "characters", U.MarketInfo(), "|" .. guid)
 end
 
 function U.Age(timestamp)
@@ -139,18 +139,32 @@ local function Describe(value, errorReason)
     return "unavailable"
 end
 
-local rulesetNames = { normal = "Normal", pvp = "PvP", roleplaying = "Roleplaying", hardcore = "Hardcore" }
+local rulesetNames = { normal = "Normal", pvp = "PvP", roleplaying = "Roleplaying",
+    roleplayingpvp = "Roleplaying PvP", hardcore = "Hardcore" }
+local rulesetTokens = { normal = "normal", pve = "normal", pvp = "pvp", rp = "roleplaying",
+    roleplay = "roleplaying", roleplaying = "roleplaying", rppvp = "roleplayingpvp",
+    roleplaypvp = "roleplayingpvp", roleplayingpvp = "roleplayingpvp", hardcore = "hardcore" }
 
-local function Ruleset(realm, source)
+local function LiveRuleset(realm)
+    local compact = RealmName(realm)
+    if not compact then return nil end
+    -- Live reporting hosts look like CAMWOWUS2Realm8PvP. The site/host
+    -- numbers are not market boundaries; the native region still is.
+    local site, token = string.match(string.lower(compact), "^camwow(%a+)%d+realm%d+(%a+)$")
+    if site and regions[site] then return rulesetTokens[token] end
+end
+
+local function Ruleset(realm, source, live)
     local hardcore = PublicCall(C_GameRules and C_GameRules.IsHardcoreActive)
     if hardcore == true then return "hardcore", "C_GameRules.IsHardcoreActive" end
+    if live then return live, source .. " (Forever live reporting alias)" end
     if not realm then return nil end
     local compact = string.lower(RealmName(realm) or "")
     -- These are internal reporting aliases, not traditional market realms.
     -- Match known Forever beta/future alias forms conservatively. Never infer
     -- a ruleset from the player's PvP flag or Classic/Modern UI preset.
     for _, prefix in ipairs({ "classicbeta", "forever", "wowforever" }) do
-        for token, ruleset in pairs({ normal = "normal", pve = "normal", pvp = "pvp", rp = "roleplaying", roleplaying = "roleplaying", hardcore = "hardcore" }) do
+        for token, ruleset in pairs(rulesetTokens) do
             if string.match(compact, "^" .. prefix .. token .. "%d*$") then
                 return ruleset, source .. " (Forever reporting alias)"
             end
@@ -194,7 +208,10 @@ function U.MarketInfo()
         info.region = regions[portal] and tostring(regions[portal]) or ("portal:" .. portal)
         info.regionSource = portalSource
     end
-    info.ruleset, info.rulesetSource = Ruleset(info.realm, info.realmSource)
+    local live = LiveRuleset(info.realm)
+    info.ruleset, info.rulesetSource = Ruleset(info.realm, info.realmSource, live)
+    info.liveAlias = live ~= nil and live == info.ruleset
+    if info.liveAlias and info.region then info.legacyKey = info.region .. "|" .. info.realm end
     if U.String(faction) and (faction == "Horde" or faction == "Alliance" or faction == "Neutral") then
         info.faction = faction
     end
@@ -220,6 +237,12 @@ function U.MarketInfo()
         info.key = info.region .. "|" .. info.realm
     end
     return info
+end
+
+function U.LegacyLiveHost(key, market)
+    if not market.liveAlias or not U.String(key) then return false end
+    local region, realm = string.match(key, "^([^|]+)|([^|]+)$")
+    return region == market.region and LiveRuleset(realm) == market.ruleset
 end
 
 function U.MarketKey()

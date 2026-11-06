@@ -1,13 +1,13 @@
 # Compatibility
 
-**MS Market Value 1.2.0** targets **WoW Forever 1.60.1 / Interface 16001**. It uses modern auction, profession, item and tooltip APIs. The standard, `_Camelot` and `_Forever` TOCs load the same addon. Different clients or Interface versions need an API review.
+**MS Market Value 1.2.1** targets **WoW Forever 1.60.1 / Interface 16001**. It uses modern auction, profession, item and tooltip APIs. The standard, `_Camelot` and `_Forever` TOCs load the same addon. Different clients or Interface versions need an API review.
 
 Supplied diagnostics cover builds 70338 and 70450 on PvP/Horde. The latest screenshots show daily loot, personal repairs, transaction filters and consistent report totals. These are useful live checks, not proof of every profession, ruleset or transaction path. See [Validation](VALIDATION.md).
 
 ## Supported behavior and limits
 
 - Full scans use one user-started replication request. Resume can use the complete session-local copy; unfinished work does not survive reload/logout. Use one full scanner at a time.
-- Markets remain separate by region/ruleset/faction. Cross-faction pooling is not qualified; old keys are not automatically merged.
+- Recognized live reporting hosts share prices within the same region, ruleset and faction. Earlier host prices lacked a faction, so recovery is limited to ordinary PvP where the saved data is consistent with a single faction. Other legacy prices stay in SavedVariables.
 - Native learned recipe schematics support ordinary item-reagent crafts and service quotes. Unresolved variants, currency costs, variable reagent quantities, salvage and recrafting cannot provide complete estimates. Quality-dependent output requires selection.
 - Vendor costs require current player observations of unlimited, gold-only supplies. Other discount changes may require another vendor visit.
 - AH sales come from completed mailbox invoices. Original transaction times and durable invoice IDs are unavailable, so some identical replacements remain ambiguous.

@@ -21,14 +21,14 @@ test("beta-to-stable upgrade retains all money tools settings and recorded cost 
     local roots={markets=saved.markets,history=saved.history,vendorBuy=saved.vendorBuy,watchlists=saved.watchlists,ledger=saved.ledger}
     local rows=L.Records();local sum=L.Summary();local first=rows[1].time
     local w2,A2=fresh(saved);w2.wall=w.wall;w2:load()
-    equal(A2.VERSION,"1.2.0");equal(A2.BUILD,"2026-10-20-release001");equal(A2.TEST_REVISION,nil)
+    equal(A2.VERSION,"1.2.1");equal(A2.BUILD,"2026-11-06-release001");equal(A2.TEST_REVISION,nil)
     for key,value in pairs(roots)do sameData(A2.DB.data[key],value)end
     equal(#A2.Ledger.Records(),4);equal(A2.Ledger.Records()[1].time,first)
     equal(A2.Ledger.Summary().flow,sum.flow);equal(A2.Ledger.Summary().profit,sum.profit);equal(A2.Ledger.Summary().estimatedProfit,sum.estimatedProfit)
     equal(#A2.Watchlist.Entries(),1);equal(A2.Vendor.Price(2320),9)
     equal(A2.DB.Settings().serviceLabor,120);equal(A2.DB.Settings().serviceMinimum,500);equal(A2.DB.Settings().ledgerDays,60)
     equal(A2.DB.Settings().trackLoot,false);equal(A2.DB.Settings().trackOther,false);equal(A2.DB.Settings().trackTrade,false)
-    equal(A2.DB.data.version,"1.2.0");equal(w2.requests,0)
+    equal(A2.DB.data.version,"1.2.1");equal(w2.requests,0)
 end)
 
 test("beta pending loot and expense confirmations settle once after the stable upgrade",function()

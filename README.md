@@ -2,7 +2,7 @@
 
 Auction prices, crafting profits and a personal gold ledger for **WoW Forever**.
 
-**Version 1.2.0** · Client 1.60.1 · Interface 16001 · By MoobStack
+**Version 1.2.1** · Client 1.60.1 · Interface 16001 · By MoobStack
 
 ## Install
 
@@ -43,6 +43,6 @@ Disenchant values use an **unverified Classic reference** for Forever. No buying
 
 Use `/msmv diagnostics` when reporting a problem. Include the client build, what happened and any error text.
 
-[User guide](DOCUMENTATION.md) · [What changed in 1.2.0](CHANGELOG.md) · [Money tools](docs/ECONOMY-TOOLS.md) · [Upgrade](UPGRADE.md) · [Compatibility](COMPATIBILITY.md) · [Validation](VALIDATION.md) · [Source and recovery](GIT-WORKFLOW.md)
+[User guide](DOCUMENTATION.md) · [Changelog](CHANGELOG.md) · [Money tools](docs/ECONOMY-TOOLS.md) · [Upgrade](UPGRADE.md) · [Compatibility](COMPATIBILITY.md) · [Validation](VALIDATION.md) · [Source and recovery](GIT-WORKFLOW.md)
 
 MoobStack is an independent community publisher, unaffiliated with Blizzard Entertainment. World of Warcraft and related marks belong to their owners.

@@ -1,6 +1,6 @@
 # Architecture
 
-Release **1.2.0** · Interface **16001** · Saved-data schema **1**
+Release **1.2.1** · Interface **16001** · Saved-data schema **1**
 
 ## Modules
 
@@ -35,6 +35,7 @@ Tooltip callbacks decorate accessible public item data, including during combat.
 
 `MSMarketValueDB` retains current snapshots, settings, exclusions, cooldown and optional schema-1 history/vendor/watch/ledger roots. Known Forever markets use region/ruleset/faction keys; unknown aliases stay isolated.
 
+- For compatible legacy PvP hosts, a session view selects the newest snapshot and the newest record per UTC day. It keeps the original records in place. Profile links reuse one prior profile without merging ledgers or rewriting receipt IDs.
 - History stores the latest complete scan per UTC request day, retaining 1–30 days. Missing prices are skipped; current prices stay separate. Average lookups cache up to 4,096 keys.
 - Vendor observations are per character/faction/market, valid for seven days and invalidated by detected reputation-tier changes. Known vendor supplies have no AH-cost fallback.
 - Watchlists hold up to 200 targets per market.

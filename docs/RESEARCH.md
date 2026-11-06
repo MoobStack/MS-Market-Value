@@ -10,6 +10,7 @@ Implementation was reviewed against pinned client UI/API source, then checked wi
 | [LibAHTab / LibStub](https://github.com/TheMouseNest/LibAHTab/tree/2ddbec58c8be37b2cd911bee7512d597e7dfdfe1) | Bundled tab coordination and dependencies; hashes in tools/vendor.json |
 | [CMaNGOS Classic database](https://github.com/cmangos/classic-db/blob/ec4f596146be6467ea93c57397858e329e2db852/Full_DB/ClassicDB_1_12_1_z2815.sql.gz) | Classic DE reference only; not verified Forever probabilities |
 | [Blizzard addon policy](https://us.forums.blizzard.com/en/wow/t/ui-add-on-development-policy/24534/1) | Distribution and addon behavior |
+| [Blizzard’s Forever ruleset guide](https://worldofwarcraft.blizzard.com/en-us/news/24302070) | Rulesets in place of realms; one faction per player on ordinary PvP |
 
 Useful build-70450 files include the generated AuctionHouse/TradeSkillUI API definitions, native AuctionHouse frames, MerchantFrame.lua, MailFrame.lua, GameDialogDefs.lua, Trainer UI, TaxiFrame.lua and MenuTemplates.lua. They establish readable native fields, action callbacks and menu behavior.
 

@@ -1,6 +1,6 @@
 # User guide
 
-MS Market Value **1.2.0** for WoW Forever. See the [README](README.md) for installation and a feature overview.
+MS Market Value **1.2.1** for WoW Forever. See the [README](README.md) for installation and a feature overview.
 
 ## Scans and tooltips
 
@@ -10,7 +10,7 @@ Pause/resume works within the current session. Keep the AH open until **Local co
 
 Tooltips show **Vendor sell**, **Historic avg**, **AH low**, then applicable **DE expected** values. Known quantities show each/stack totals. Public prices remain available in combat. Stale prices are dated; missing prices remain unavailable. Tooltip fields and item exclusions are configurable.
 
-History keeps 1–30 UTC days, default 30. Each day uses its latest completed scan, dated by request time. The average gives each available priced day equal weight; missing days/listings are skipped. Current prices remain separate. Markets and exact random-suffix series stay isolated.
+History keeps 1–30 UTC days, default 30. The number next to **Historic avg** is how many days had a price for that item. Each day uses the latest completed scan, dated by request time. Scanning twice on the same UTC day still counts as one day. **Crafting & history** shows the total saved days for the market.
 
 ## Crafting and quotes
 

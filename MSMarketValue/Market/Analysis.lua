@@ -63,7 +63,8 @@ function M.Ensure(view, sort, force)
     H.Maintain()
     view = (view == "rising" or view == "falling" or view == "all") and view or "deals"
     sort = sort == "profit" and "profit" or "return"
-    local key, snapshot = U.MarketKey(), D.Snapshot()
+    local market = U.MarketInfo()
+    local key, snapshot = market.key, D.Snapshot(market)
     if not Fresh(snapshot) then M.Clear(snapshot and "The saved scan is stale. Complete a fresh AH scan for current signals." or "Complete an AH scan to look for opportunities."); return end
     if not H.data then M.Clear(H.reason or "Price history is unavailable."); return end
     local signature = Signature(view, sort)
@@ -74,7 +75,7 @@ function M.Ensure(view, sort, force)
     local settings = {}
     for name, value in pairs(D.Settings()) do if U.String(name) and string.sub(name, 1, 6) == "market" then settings[name] = value end end
     local day, records = math.floor(snapshot.startedAt / 86400), {}
-    local days = H.data.markets[key] or {}
+    local days = H.Days(market) or {}
     for date = day - settings.marketLookback, day - 1 do
         local record = days[date]
         if record and record.startedAt < snapshot.startedAt then records[#records + 1] = record end

@@ -59,8 +59,8 @@ end
 
 function UI.DiagnosticsText()
     local version, build, _, interface = GetBuildInfo()
-    local snapshot = D.Snapshot()
     local market = U.MarketInfo()
+    local snapshot = D.Snapshot(market)
     local lines = {
         A.TITLE .. " " .. A.VERSION .. " / " .. A.BUILD,
         "Client: " .. tostring(version) .. " / " .. tostring(build) .. " / Interface " .. tostring(interface),
@@ -121,13 +121,19 @@ function UI.DiagnosticsText()
     lines[#lines+1]="Purchase observers: item="..tostring(tracking.purchaseHook==true).."; commodity="..tostring(tracking.commodityHook==true).."; mailbox="..tostring(tracking.mailOpen==true)
     lines[#lines+1]="Buy-page watch buttons: item="..tostring(A.EconomyUI.buyButtons and U.Table(AuctionHouseFrame)and A.EconomyUI.buyButtons[AuctionHouseFrame.ItemBuyFrame]~=nil or false).."; commodity="..tostring(A.EconomyUI.buyButtons and U.Table(AuctionHouseFrame)and A.EconomyUI.buyButtons[AuctionHouseFrame.CommoditiesBuyFrame]~=nil or false)
     if tracking.reason then lines[#lines+1]="Transaction detail: "..tracking.reason end
-    local history = A.History.Status()
-    lines[#lines + 1] = "Historic pricing: " .. (history.reason or (tostring(history.days) .. " UTC days for this market; retention=" .. tostring(history.retention) .. " days"))
+    local history = A.History.Status(market)
+    lines[#lines + 1] = "Historic pricing: " .. (history.reason or string.format("%d UTC day%s for this market; retention=%d days",
+        history.days, history.days == 1 and "" or "s", history.retention))
     if history.firstDay then
         lines[#lines + 1] = "History dates UTC: " .. date("!%Y-%m-%d", history.firstDay * 86400) .. " to " .. date("!%Y-%m-%d", history.lastDay * 86400)
     end
+    if market.liveAlias then
+        lines[#lines + 1] = string.format("Earlier reporting hosts: %d; recovered UTC days=%d", history.legacyHosts, history.legacyDays)
+        if history.legacyReason then lines[#lines + 1] = "History recovery detail: " .. history.legacyReason end
+    end
     if snapshot then
         lines[#lines + 1] = string.format("Saved snapshot: complete; rows=%d; priced_items=%d; bid_only=%d; sold=%d", snapshot.totalRows, snapshot.distinctItems, snapshot.bidOnlyRows, snapshot.soldRows)
+        if snapshot.legacyMarketKey then lines[#lines + 1] = "Snapshot recovered from: " .. snapshot.legacyMarketKey end
         lines[#lines + 1] = "Snapshot started UTC: " .. date("!%Y-%m-%dT%H:%M:%SZ", snapshot.startedAt)
         lines[#lines + 1] = "Snapshot age: " .. U.Age(snapshot.startedAt)
     else
@@ -260,7 +266,7 @@ function UI.Create()
     UI.retentionApply = Button(craftSettings, "Apply", 272, -34, 76, UI.ApplyRetention)
     Label(craftSettings, "1-30 days. Latest complete scan per UTC day.", 14, -72, 338)
     UI.historyText = Label(craftSettings, "", 14, -98, 338)
-    Label(craftSettings, "Shortening history removes older days.\nEarlier scans cannot be recovered.", 14, -124, 338)
+    Label(craftSettings, "Shortening history removes older days.\nBack up before reducing retention.", 14, -124, 338)
     UI.SettingsPage("tooltips")
 
     local prices = Inset(frame, 390, -216, 366, 204)

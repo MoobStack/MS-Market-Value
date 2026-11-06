@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 — 2026-11-06
+
+- Keep auction prices and history together when Forever assigns a different reporting host in the same market.
+- Reuse compatible PvP scans still saved under earlier host names. Diagnostics show how many days were recovered.
+- Keep existing ledger, watchlist and vendor profiles accessible after the market key changes.
+
 ## 1.2.0 — 2026-10-20
 
 Build `2026-10-20-release001` · Tag `v1.2.0`

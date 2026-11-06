@@ -25,7 +25,7 @@ local function Price(value) return U.Number(value, 0, MAX_PRICE) and value > 0 e
 
 local function ResetCache(dataChanged)
     H.cache, H.cacheEntries = {}, 0
-    if dataChanged then H.revision = (H.revision or 0) + 1 end
+    if dataChanged then H.dailyViews = {}; H.revision = (H.revision or 0) + 1 end
 end
 
 local function CopyPrices(source, keyCheck, records)
@@ -122,23 +122,50 @@ function H.SetRetention(value)
     return true
 end
 
-function H.Status()
+-- A market's view keeps the latest complete scan per UTC day, even when
+-- an older addon wrote the scans under multiple reporting-host keys.
+function H.Days(market)
     H.Maintain()
-    local key = U.MarketKey()
-    local days = key and H.data and H.data.markets[key]
+    if not H.data or not market.key then return nil, 0, 0 end
+    local own = H.data.markets[market.key]
+    local legacy = D.LegacyPrices(market)
+    if not legacy or #legacy.keys == 0 then
+        return own, 0, legacy and legacy.count or 0, legacy and legacy.reason
+    end
+    local view = H.dailyViews[market.key]
+    if not view then
+        local days, previousHosts = {}, {}
+        for day, record in pairs(own or {}) do days[day] = record end
+        for _, key in ipairs(legacy.keys) do
+            for day, record in pairs(H.data.markets[key] or {}) do
+                if not days[day] or record.startedAt > days[day].startedAt then
+                    days[day], previousHosts[day] = record, true
+                end
+            end
+        end
+        local count = 0
+        for _ in pairs(previousHosts) do count = count + 1 end
+        view = { days = days, legacyDays = count }
+        H.dailyViews[market.key] = view
+    end
+    return view.days, view.legacyDays, legacy.count
+end
+
+function H.Status(market)
+    local days, legacyDays, legacyHosts, legacyReason = H.Days(market or U.MarketInfo())
     local count, firstDay, lastDay = 0
     for day in pairs(days or {}) do
         count = count + 1
         firstDay, lastDay = math.min(firstDay or day, day), math.max(lastDay or day, day)
     end
-    return { days = count, firstDay = firstDay, lastDay = lastDay, retention = D.Settings().historyDays, reason = H.reason }
+    return { days = count, firstDay = firstDay, lastDay = lastDay, retention = D.Settings().historyDays, reason = H.reason,
+        legacyDays = legacyDays, legacyHosts = legacyHosts, legacyReason = legacyReason }
 end
 
 function H.Average(itemID, link)
     if not ItemKey(itemID) or not H.data then return nil end
-    H.Maintain()
-    local key = U.MarketKey()
-    local days = key and H.data.markets[key]
+    local market = U.MarketInfo()
+    local key, days = market.key, H.Days(market)
     if not days then return nil end
     local variant = U.VariantKey(link)
     if variant and U.ItemID(link) ~= itemID then variant = nil end
