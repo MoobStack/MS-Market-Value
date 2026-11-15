@@ -19,7 +19,9 @@ local function Check(parent,text,key,x,y,width)
     b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetSize(26,26)
     Label(parent,text,x+29,y-5,width or 530)
     b:SetScript("OnClick",function(self)
-        D.data.settings[key]=self:GetChecked()==true;F.summary=nil;UI.Refresh();UI.HUD()
+        if key=="farmIdle" then F.ConfigureIdle(self:GetChecked()==true,D.Settings().farmIdleMinutes)
+        else D.data.settings[key]=self:GetChecked()==true end
+        F.summary=nil;UI.Refresh();UI.HUD()
     end)
     b.key=key;UI.checks[#UI.checks+1]=b;return b
 end
@@ -78,8 +80,8 @@ function UI.Animate(elapsed)
     UI.displayRate=(UI.displayRate or 0)+(summary.perHour-(UI.displayRate or 0))*factor
     UI.displayTotal=(UI.displayTotal or 0)+(summary.total-(UI.displayTotal or 0))*factor
     if UI.hudRate then
-        UI.hudRate:SetText(summary.elapsed<60 and "Farming - first minute" or (U.Money(UI.displayRate) .. " / hour"))
-        UI.hudTotal:SetText((summary.paused and "Paused | " or "Est. ") .. U.Money(UI.displayTotal) .. " | " .. math.floor(summary.elapsed/60) .. "m")
+        UI.hudRate:SetText(summary.elapsed<60 and "Farming - first minute" or (U.Coins(UI.displayRate) .. " / hour"))
+        UI.hudTotal:SetText((summary.idlePaused and "Idle | " or summary.paused and "Paused | " or "Est. ") .. U.Coins(UI.displayTotal) .. " | " .. math.floor(summary.elapsed/60) .. "m")
     end
     UI.refreshElapsed=(UI.refreshElapsed or 0)+dt
     if UI.refreshElapsed>=1 then UI.refreshElapsed=0;if UI.frame and UI.frame:IsShown() then UI.Refresh() end end
@@ -158,8 +160,18 @@ function UI.Create()
         if not U.Number(value,0,1000,true) then UI.message="Enter a threshold from 0 to 1000%.";UI.Refresh();return end
         D.data.settings.farmThreshold=value;UI.threshold:ClearFocus();F.summary=nil;UI.message=nil;UI.Refresh()
     end)
-    local help=Label(settings,"Quest rewards and bound items use vendor value. Stale or missing AH data also falls back to the vendor. Items still loading are shown as unpriced.\n\nDrag the display to move it. Left-click opens the session; right-click pauses it. Offline time and loading screens are excluded.",18,-264,616)
-    help:SetHeight(128);help:SetWordWrap(true)
+    UI.idleCheck=Check(settings,"Auto-pause after no loot","farmIdle",14,-254,232)
+    UI.idleMinutes=Box(settings,264,-254,58);UI.idleMinutes:SetNumeric(true)
+    Label(settings,"minutes (5-1440)",336,-261,183)
+    UI.applyIdle=Button(settings,"Apply",534,-254,104,function()
+        local ok,reason=F.ConfigureIdle(D.Settings().farmIdle,tonumber(UI.idleMinutes:GetText()))
+        UI.message=reason
+        if ok then UI.idleMinutes:ClearFocus() end
+        UI.Refresh()
+    end)
+    local help=Label(settings,"Quest rewards and bound items use vendor value; stale AH data falls back to the vendor.\n\nIdle pause counts the full grace period. Your next loot, harvest or included quest reward resumes it. Manual pauses stay paused. Drag the display to move it; right-click to pause or resume.",18,-302,616)
+    help:SetHeight(77);help:SetWordWrap(true)
+    UI.settingsStatus=Label(settings,"",18,-388,616)
     local drops=UI.drops
     Check(drops,"Collect personal loot observations","dropTracking",14,-10)
     Check(drops,"Show drop tooltips","showDrops",14,-44,265)
@@ -169,7 +181,7 @@ function UI.Create()
     UI.mode:SetPoint("TOPLEFT",drops,"TOPLEFT",108,-83);UI.mode:SetSize(274,25)
     if UI.mode.SetupMenu then
         UI.mode:SetupMenu(function(_,root)
-            for _,entry in ipairs({{"observed","Personal observations"},{"reference","Reference observations"}}) do
+            for _,entry in ipairs({{"observed","Personal drops"},{"reference","Reference data"}}) do
                 local mode=entry[1]
                 root:CreateRadio(entry[2],function()return D.Settings().dropMode==mode end,function()
                     D.data.settings.dropMode=mode;P.cache=nil;UI.Refresh()
@@ -221,6 +233,8 @@ function UI.Refresh()
     for _,box in ipairs(UI.checks) do box:SetChecked(D.Settings()[box.key]) end
     if not UI.threshold:HasFocus() then UI.threshold:SetText(tostring(D.Settings().farmThreshold)) end
     if not UI.maxDrops:HasFocus() then UI.maxDrops:SetText(tostring(D.Settings().dropRows)) end
+    if not UI.idleMinutes:HasFocus() then UI.idleMinutes:SetText(tostring(D.Settings().farmIdleMinutes)) end
+    UI.settingsStatus:SetText(UI.message or "Idle pause is optional. Offline and loading time are excluded.")
     if UI.mode.Update then UI.mode:Update() end
     if UI.scope.Update then UI.scope:Update() end
     if UI.sourceMenu.Update then UI.sourceMenu:Update() end
@@ -230,13 +244,13 @@ function UI.Refresh()
     UI.dropStatus:SetText(UI.message or P.reason or ((profile and profile.mobs or 0) .. " source records; " ..
         (profile and profile.cells or 0) .. " item counters. Reset affects this character only."))
     local summary=F.Summary()
-    UI.rate:SetText(summary.elapsed<60 and "First minute - collecting a useful sample" or U.Money(summary.perHour) .. " per hour")
-    UI.total:SetText("Session value: " .. U.Money(summary.total) .. " | " .. math.floor(summary.elapsed/60) .. "m " .. math.floor(summary.elapsed%60) .. "s")
-    UI.categoryTotals[1]:SetText(U.Money((summary.coins or 0)+(summary.lootValue or 0)))
-    UI.categoryTotals[2]:SetText(U.Money((summary.questCoins or 0)+(summary.questValue or 0)))
-    UI.categoryTotals[3]:SetText(U.Money(summary.harvestValue or 0))
-    UI.categoryNotes[1]:SetText("Gold: " .. U.Money(summary.coins or 0) .. " + items")
-    UI.categoryNotes[2]:SetText("Gold: " .. U.Money(summary.questCoins or 0) .. " + rewards")
+    UI.rate:SetText(summary.elapsed<60 and "First minute - collecting a useful sample" or U.Coins(summary.perHour) .. " per hour")
+    UI.total:SetText("Session value: " .. U.Coins(summary.total) .. " | " .. math.floor(summary.elapsed/60) .. "m " .. math.floor(summary.elapsed%60) .. "s")
+    UI.categoryTotals[1]:SetText(U.Coins((summary.coins or 0)+(summary.lootValue or 0)))
+    UI.categoryTotals[2]:SetText(U.Coins((summary.questCoins or 0)+(summary.questValue or 0)))
+    UI.categoryTotals[3]:SetText(U.Coins(summary.harvestValue or 0))
+    UI.categoryNotes[1]:SetText("Gold: " .. U.Coins(summary.coins or 0) .. " + items")
+    UI.categoryNotes[2]:SetText("Gold: " .. U.Coins(summary.questCoins or 0) .. " + rewards")
     UI.categoryNotes[3]:SetText("Herbs, ore and skins")
     UI.pause:SetText(summary.paused and "Resume" or "Pause");UI.reset:SetText(UI.confirmSession and "Confirm reset" or "Reset session")
     local rows=UI.view=="recent" and summary.recent or summary.items
@@ -245,7 +259,7 @@ function UI.Refresh()
         local farming=F.Profile()
         local history=farming and farming.history[UI.historyIndex]
         rows=history and history.top or {}
-        UI.breakdownTitle:SetText(history and ("Session " .. UI.historyIndex .. ": " .. U.Money(history.total) .. " in " ..
+        UI.breakdownTitle:SetText(history and ("Session " .. UI.historyIndex .. ": " .. U.Coins(history.total) .. " in " ..
             math.floor(history.elapsed/60) .. "m - " .. date("%b %d %H:%M",history.startedAt)) or "No previous sessions")
     end
     local filtered={}
@@ -264,10 +278,10 @@ function UI.Refresh()
         if item then
             label:SetText((sourceLabels[item.source] and (sourceLabels[item.source] .. ": ") or "") ..
                 (item.quantity and (item.quantity .. " x ") or "") .. item.name .. "  -  " ..
-                U.Money(item.total or item.amount) .. (item.mode and (" (" .. item.mode .. ")") or ""))
+                U.Coins(item.total or item.amount) .. (item.mode and (" (" .. item.mode .. ")") or ""))
         else label:SetText(i==1 and "No recorded income yet." or "") end
     end
-    UI.note:SetText(UI.message or F.reason or (summary.unknown>0 and (summary.unknown .. " acquired items need item data; excluded from the estimate.") or
+    UI.note:SetText(UI.message or F.reason or (summary.idlePaused and "Idle - the next loot, harvest or included quest reward resumes the session.") or (summary.unknown>0 and (summary.unknown .. " acquired items need item data; excluded from the estimate.") or
         "Items are valued once. Mail, trades and sale proceeds are excluded; cash flow stays in the ledger."))
 end
 

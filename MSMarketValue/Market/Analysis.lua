@@ -139,6 +139,7 @@ local function Evaluate(job, key, entry, variant)
     row.link = U.String(entry.link) and U.ItemID(entry.link) == id and entry.link or
         ("item:" .. id .. ":0:0:0:0:0:" .. (suffix or 0) .. ":0")
     row.name = U.LinkName(entry.link)
+    row.r,row.g,row.b=U.ItemColor(entry.link,item and item.quality)
     if legacyEquipment then row.name=(row.name or (item and item.name) or ("Item " .. id)) .. " (item-wide; rescan)" end
     row.units = U.Number(entry.units,1,1000000000,true) and entry.units or nil
     row.lowUnits = U.Number(entry.lowUnits,1,1000000000,true) and entry.lowUnits or nil
@@ -234,5 +235,9 @@ function M.Name(row)
 end
 
 function M.OnItemInfo(id)
-    for _, row in ipairs(M.rows) do if row.id == id then row.name = nil end end
+    for _, row in ipairs(M.rows) do if row.id == id then
+        row.name = nil
+        local item=A.Valuation.ItemInfo(row.link)
+        row.r,row.g,row.b=U.ItemColor(row.link,item and item.quality)
+    end end
 end

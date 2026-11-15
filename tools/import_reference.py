@@ -7,6 +7,7 @@ No JavaScript is executed and no requests are made. Input is a JSON manifest:
 """
 from __future__ import annotations
 import argparse
+from collections import Counter
 from datetime import date
 import html
 import hashlib
@@ -15,7 +16,7 @@ from pathlib import Path
 import re
 from urllib.parse import urlsplit
 
-MAX_SOURCES, MAX_ROWS, MAX_TOTAL = 256, 200, 20000
+MAX_SOURCES, MAX_ROWS, MAX_TOTAL = 65536, 4096, 2000000
 TABLES = {"loot": "drops", "skinning": "skinning", "herbalism": "contains", "mining": "contains"}
 
 
@@ -72,9 +73,44 @@ def read_rows(page, source, minimum):
         seen.add(item)
         name = html.unescape(str(row.get("displayName") or row.get("name") or f"Item {item}"))
         name = re.sub(r"[\x00-\x1f\x7f]", "", name).replace("|", "")[:180]
-        result.append({"id": item, "name": name, "rate": round(count / samples * 100, 6), "samples": samples})
+        entry={"id": item, "name": name, "hits": count, "rate": count / samples * 100, "samples": samples}
+        if row.get("classs") == 12: entry["questItem"] = True
+        if integer(row.get("questID")): entry["questID"] = row["questID"]
+        result.append(entry)
     result.sort(key=lambda r: (-r["rate"], r["id"]))
-    return result[:MAX_ROWS], len(rows) - min(len(result), MAX_ROWS)
+    if len(result)>MAX_ROWS:
+        raise ValueError("Source exceeds 4,096 valid rows; split/review the source instead of silently dropping rates")
+    return result, len(rows) - len(result)
+
+
+ALPHABET="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
+
+
+def encode_uint(value):
+    if not integer(value, 0, 4000000003):
+        raise ValueError("Invalid packed integer")
+    result=[]
+    while value>=32:
+        result.append(ALPHABET[(value%32)+32]); value//=32
+    result.append(ALPHABET[value])
+    return "".join(result)
+
+
+def pack_rows(rows):
+    if not rows or len(rows)>MAX_ROWS: raise ValueError("Choose 1-4,096 rows for a source")
+    counts=Counter(row["samples"] for row in rows)
+    default=min(counts,key=lambda n:(-counts[n],n))
+    result=[encode_uint(len(rows)),encode_uint(default)]
+    previous=0
+    for row in sorted(rows,key=lambda r:r["id"]):
+        if not integer(row["samples"],1,1000000000) or not integer(row["id"],previous+1) or not integer(row["hits"],1,row["samples"]):
+            raise ValueError("Invalid packed drop row")
+        extra=(0 if row["samples"]==default else row["samples"])*4
+        extra+=int(row.get("questItem")==True)+2*int("questID" in row)
+        result.extend((encode_uint(row["id"]-previous),encode_uint(row["hits"]),encode_uint(extra)))
+        if "questID" in row: result.append(encode_uint(row["questID"]))
+        previous=row["id"]
+    return "".join(result)
 
 
 def lua_string(value):
@@ -86,7 +122,7 @@ def lua_string(value):
 def build(manifest, output, minimum=50, stamp=None):
     sources = json.loads(manifest.read_text(encoding="utf-8"))
     if not isinstance(sources, list) or not 1 <= len(sources) <= MAX_SOURCES:
-        raise ValueError("Choose 1-256 sources")
+        raise ValueError("Choose 1-65,536 sources")
     if not integer(minimum, 1, 1000000000):
         raise ValueError("Minimum samples must be a positive whole number")
     data, provenance, count = {}, [], 0
@@ -104,23 +140,29 @@ def build(manifest, output, minimum=50, stamp=None):
         data[key] = rows
         count += len(rows)
         if count > MAX_TOTAL:
-            raise ValueError("Reference pack exceeds 20,000 item rows; choose fewer sources")
+            raise ValueError("Reference pack exceeds 2,000,000 item rows; split/review the dataset")
+        origin=source.get("origin","mixed-or-unspecified")
+        if origin not in ("forever","classic","mixed-or-unspecified"):
+            raise ValueError("Origin must be forever, classic or mixed-or-unspecified; URL alone does not prove the rate's origin")
         provenance.append({"id": source["id"], "kind": source["kind"], "url": source["url"],
                            "imported": stamp, "pageSHA256": hashlib.sha256(file.read_bytes()).hexdigest(),
-                           "minimumSamples": minimum, "rows": len(rows), "omitted": omitted})
+                           "origin": origin, "format":"packed-v1", "minimumSamples": minimum, "rows": len(rows), "omitted": omitted})
     if count == 0:
         raise ValueError("No rows meet the sample threshold")
-    label = f"Wowhead Forever ({len(data)} sources; sampled)"
-    lines = ["-- Sampled observations, not verified server settings.", "local rows={"]
-    for key, values in sorted(data.items()):
-        lines.append("[" + lua_string(key) + "]={")
-        for row in values:
-            lines.append("{id=%d,rate=%.6f,samples=%d,name=%s}," %
-                         (row["id"], row["rate"], row["samples"], lua_string(row["name"])))
+    origins={row["origin"] for row in provenance}
+    label="Wowhead Forever samples" if origins=={"forever"} else "Wowhead Classic reference" if origins=={"classic"} else "Wowhead reference (source unverified)"
+    lines = ["-- Sampled references, not verified server settings. Requires test revision 3.", "local sources={"]
+    encoded_bytes=0
+    for kind in TABLES:
+        lines.append("["+lua_string(kind)+"]={")
+        for key,values in sorted(data.items(),key=lambda r:int(r[0].split(":")[1])):
+            source_kind,identifier=key.split(":")
+            if source_kind!=kind or not values: continue
+            code=pack_rows(values);encoded_bytes+=len(code)
+            lines.append("["+identifier+"]="+lua_string(code)+",")
         lines.append("},")
-    lines.extend(["}", "local A=_G.MSMarketValue", "if A and A.LootReference then",
-                  " A.LootReference.Register(" + lua_string(label) + ",function(id,kind)",
-                  '  return rows[(kind or "loot") .. ":" .. id]', " end,false)", "end", ""])
+    lines.extend(["}","local A=_G.MSMarketValue", "if A and A.LootReference and A.LootReference.RegisterPacked then",
+                  " A.LootReference.RegisterPacked(" + lua_string(label) + ",sources)", "end", ""])
     output.mkdir(parents=True, exist_ok=True)
     (output / "Reference.lua").write_text("\n".join(lines), encoding="utf-8")
     toc = ("## Interface: 16001\n## Title: MS Market Value - Reference observations\n"
@@ -131,14 +173,17 @@ def build(manifest, output, minimum=50, stamp=None):
     (output / "SOURCES.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
     (output / "README.txt").write_text(
         "Optional reference observations\n\n"
-        "Install this folder alongside MSMarketValue, reload WoW, then choose Reference observations in /msmv drops.\n"
+        "Requires MSMarketValue 1.3 beta test revision 3 or later.\n"
+        "Install this folder alongside MSMarketValue, reload WoW, then choose Reference data in /msmv drops.\n"
         "Only the sources in SOURCES.json are covered. Counts come from saved Wowhead Forever pages; they may include\n"
         "carried-over Classic observations. They are not verified Forever server chances. An absent item is unknown, not 0%.\n"
-        f"Imported {stamp}; minimum {minimum} samples per item; {count} rows. Very small samples are omitted.\n"
+        f"Imported {stamp}; minimum {minimum} samples per item; {count} rows; {encoded_bytes} encoded bytes.\n"
+        "The origin in SOURCES.json is mixed-or-unspecified unless the source was explicitly reviewed.\n"
+        "Numeric counts are packed; only viewed sources are decoded. No names, icons or page HTML are loaded in game.\n"
         "All files are local. The addon does not connect to Wowhead, upload data or change personal observations.\n"
         "To update, rebuild one combined pack from the desired source pages. Use only one reference pack at a time.\n",
         encoding="utf-8")
-    return {"sources": len(data), "rows": count, "minimumSamples": minimum}
+    return {"sources": len(data), "rows": count, "minimumSamples": minimum,"format":"packed-v1","encodedBytes":encoded_bytes}
 
 
 if __name__ == "__main__":

@@ -67,3 +67,11 @@ Optional source packs can call `MSMarketValue.LootReference.Register(label, quer
 Gathering casts and exposed loot-source GUIDs separate harvesting from corpse loot. Up to 128 spell-name decisions are cached. Visible object tooltips have a 0.25-second fallback check when typed callbacks are unavailable. The session keeps exact category counters and reuses cached valuations; HUD interpolation changes only the display.
 
 Standalone portrait windows use separate 1,024-level bands for their native children. Focusing a window moves the complete band, including high-level title and border frames.
+
+## Revision 3 details
+
+Farming persists online inactivity and a separate automatic-pause flag. Updates stop exactly at the configured boundary; receipts resume an automatic pause without backfilling the idle gap. Manual pauses stay independent. Old sessions gain the two optional fields without clearing totals.
+
+`Util.Coins` is for display; `Util.Money` remains plain for chat/clipboard/diagnostics. Opportunities caches each row’s native link/quality color. Quest-only filtering changes the displayed candidates, not saved hit counts.
+
+Packed references use a source-to-string index with sorted item-ID deltas, integer hits, shared sample totals and optional quest metadata. No global reverse index or full-table expansion is built. The eight-source cache also caps at 4,096 decoded rows. One source may contain up to 4,096 rows; oversized sources are rejected instead of silently truncated. Only a few relevant missing names are requested, with a 128-ID index and a 20-per-10-second request cap.

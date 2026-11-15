@@ -1,13 +1,12 @@
-# MS Market Value 1.3.0 beta — Test revision 2
+# MS Market Value 1.3.0 beta — Test revision 3
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
 
-- Track each item modifier separately, including bonus-based variants. Old item-wide prices stay labeled; they cannot supply a modifier’s price movement.
-- Browse 12 Opportunities rows with scrolling, collapsible filters and All items for prices that still need history.
-- Fix personal drop collection and creature tooltip identification. Add separate herb, ore and skinning observations.
-- Separate Loot, Quests and Harvesting in the farming report. Exclude mail/trade receipts and keep overlapping windows together.
-- Add a small optional Wowhead reference pack and an offline importer. These are sampled observations, not verified server rates.
+- Optional farming idle pause: 5–1,440 whole minutes, off by default. Counts the grace period, resumes on farming receipts and respects manual pauses.
+- Coin icons in price displays and item-quality colors in Opportunities. Copied quotes and exports remain plain text.
+- Clearer drop headers and active-quest filtering. Visible drops left behind still count once; farming income counts only receipts.
+- Compact reference packs with exact counts and a bounded cache. The included 132-row Mudfin Oracle pilot is not a full-world database.
 
-Close WoW, back up SavedVariables and replace the addon folder using the Clean ZIP. Keep your saved data. Complete a new AH scan, then check specific modifiers under All items.
+Close WoW, keep SavedVariables and replace the addon folder using the Clean ZIP. Enable idle pause under `/msmv farm` → Farming settings. The optional compact reference pack requires this test revision.
 
-Test a creature, herb/ore node and skinned corpse; compare farming totals before and after mail/trade gold. Include `/msmv diagnostics` with any problem. Reference mode needs the optional pack; the supplied example covers Mudfin Oracle only.
+Check the native coin layout, item colors, idle/resume behavior and quest filtering in Forever. Include `/msmv diagnostics` with any problem. This is a test package, not the official 1.3 release.

@@ -9,7 +9,7 @@ F.sources={loot="Loot",quest="Quests",herbalism="Herbalism",mining="Mining",skin
 function F.Harvest(kind) return kind=="herbalism" or kind=="mining" or kind=="skinning" end
 local function Amount(v) return U.Number(v,0,MAX,true) end
 local function New()
-    return {startedAt=U.Now(),elapsed=0,coins=0,questCoins=0,items={},itemTypes=0,recent={},paused=false}
+    return {startedAt=U.Now(),elapsed=0,coins=0,questCoins=0,items={},itemTypes=0,recent={},paused=false,idleElapsed=0,idlePaused=false}
 end
 
 function F.Initialize()
@@ -34,6 +34,11 @@ function F.Profile()
         F.reason="Invalid farming session preserved.";return nil
     end
     if F.checked~=profile then
+        if session.idleElapsed==nil then session.idleElapsed=0 end
+        if session.idlePaused==nil then session.idlePaused=false end
+        if not U.Number(session.idleElapsed,0,315360000) or not U.Accessible(session.idlePaused) or type(session.idlePaused)~="boolean" then
+            F.reason="Invalid idle timer preserved.";return nil
+        end
         local count=0
         for key,item in pairs(session.items) do
             count=count+1
@@ -62,9 +67,50 @@ function F.Profile()
     return profile,key
 end
 
-function F.Active()
+function F.Accepting()
     local profile=F.Profile()
     return profile and D.Settings().farmTracking and not profile.current.paused and F.inWorld~=false
+end
+
+function F.Active()
+    local profile=F.Profile()
+    return F.Accepting() and (not D.Settings().farmIdle or not profile.current.idlePaused)
+end
+
+-- Account up to the idle boundary, including the whole grace period. Persist
+-- online inactivity, never a monotonic timestamp or time spent logged out.
+function F.Advance(profile,key,now)
+    local session=profile and profile.current
+    if session and not D.Settings().farmIdle then session.idlePaused=false;session.idleElapsed=0 end
+    if session and F.last and F.player==key and D.Settings().farmTracking and not session.paused and F.inWorld~=false then
+        local delta=math.max(0,now-F.last)
+        if D.Settings().farmIdle then
+            local boundary=D.Settings().farmIdleMinutes*60
+            if session.idlePaused then delta=0 else delta=math.min(delta,math.max(0,boundary-session.idleElapsed)) end
+            session.idleElapsed=math.min(boundary,session.idleElapsed+delta)
+            if session.idleElapsed>=boundary then session.idlePaused=true end
+        end
+        session.elapsed=math.min(315360000,session.elapsed+delta)
+    end
+    F.player,F.last=key,now
+end
+
+function F.Activity()
+    if not F.Accepting() then return false end
+    local profile,key=F.Profile()
+    F.Advance(profile,key,U.Mono())
+    profile.current.idleElapsed,profile.current.idlePaused=0,false
+    return true
+end
+
+function F.ConfigureIdle(enabled,minutes)
+    if not D.data then return false,"Farming settings are unavailable." end
+    if type(enabled)~="boolean" or not U.Number(minutes,5,1440,true) then return false,"Choose 5-1440 whole minutes." end
+    F.Tick()
+    D.data.settings.farmIdle,D.data.settings.farmIdleMinutes=enabled,minutes
+    local profile=F.Profile()
+    if profile then profile.current.idleElapsed,profile.current.idlePaused=0,false end
+    F.last=U.Mono();return true
 end
 
 function F.Elapsed()
@@ -98,7 +144,8 @@ local function Recent(session,row)
 end
 
 function F.AddMoney(amount,quest)
-    if not Amount(amount) or amount==0 or not F.Active() or (quest and not D.Settings().farmIncludeQuest) then return false end
+    if not Amount(amount) or amount==0 or not F.Accepting() or (quest and not D.Settings().farmIncludeQuest) then return false end
+    F.Activity()
     local session=F.Profile().current
     local field=quest and "questCoins" or "coins"
     if not Amount(session[field]+amount) then return false end
@@ -110,9 +157,10 @@ end
 function F.AddItem(itemLink,quantity,source,settledSession)
     local profile=F.Profile()
     local session=profile and profile.current
-    if not session or (settledSession~=session and not F.Active()) or not U.String(itemLink) or #itemLink>2048 or not U.ItemID(itemLink) or
+    if not session or (settledSession~=session and not F.Accepting()) or not U.String(itemLink) or #itemLink>2048 or not U.ItemID(itemLink) or
        not U.Number(quantity,1,1000000,true) or not U.String(source) or not F.sources[source] or
        (source=="quest" and not D.Settings().farmIncludeQuest) then return false end
+    if settledSession~=session then F.Activity() end
     local key=(U.VariantKey(itemLink) or tostring(U.ItemID(itemLink))) .. "|" .. source
     local item=session.items[key]
     if not item then
@@ -165,14 +213,18 @@ function F.Summary()
     end
     result.elapsed=session.elapsed
     result.perHour=session.elapsed>=60 and result.total/session.elapsed*3600 or 0
-    result.paused=session.paused or not D.Settings().farmTracking or F.inWorld==false
+    result.idlePaused=D.Settings().farmIdle and session.idlePaused
+    result.idleSeconds=session.idleElapsed
+    result.paused=session.paused or result.idlePaused or not D.Settings().farmTracking or F.inWorld==false
     return result
 end
 
 function F.Pause(paused)
     local profile=F.Profile()
     if not profile then return false end
-    F.Tick();profile.current.paused=paused==true;F.last=U.Mono();return true
+    F.Tick();profile.current.paused=paused==true
+    profile.current.idleElapsed,profile.current.idlePaused=0,false
+    F.last=U.Mono();return true
 end
 
 function F.Reset()
@@ -217,7 +269,7 @@ local function Match(text,formatText)
 end
 
 function F.LootMessage(message,lineID)
-    if not F.Active() or not F.ReceiptAllowed() or not U.String(message) or #message>2048 then return end
+    if not F.Accepting() or not F.ReceiptAllowed() or not U.String(message) or #message>2048 then return end
     if U.Number(lineID,1,9007199254740991,true) then
         if F.messages[lineID] then return end
         F.messageRing[#F.messageRing+1]=lineID;F.messages[lineID]=true
@@ -227,6 +279,7 @@ function F.LootMessage(message,lineID)
         local itemLink,quantity=Match(message,_G[formatName])
         if U.ItemID(itemLink) and U.Number(quantity,1,1000000,true) then
             if #F.pending>=64 then F.reason="Loot receipt queue full; review the session.";return end
+            F.Activity()
             F.pending[#F.pending+1]={link=itemLink,quantity=quantity,at=U.Mono(),session=F.Profile().current,
                 source=A.Drops.ReceiptKind(U.ItemID(itemLink))}
             return
@@ -249,12 +302,7 @@ end
 function F.Tick(flush)
     local now=U.Mono()
     local profile,key=F.Profile()
-    if profile and F.last and F.player==key and F.Active() then
-        -- Time is online wall time, including travel/combat. Logout, loading
-        -- screens and manual pauses never extend the session.
-        profile.current.elapsed=math.min(315360000,profile.current.elapsed+math.max(0,now-F.last))
-    end
-    F.player,F.last=key,now
+    F.Advance(profile,key,now)
     local remaining={}
     for _,item in ipairs(F.pending) do
         if flush or now-item.at>=1 then

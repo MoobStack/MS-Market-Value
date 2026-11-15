@@ -1,3 +1,4 @@
+local function coin(amount) return _G.MSMarketValue.Util.Coins(amount) end
 local fresh,link,test,equal,truth,secret=...
 local function world(saved,configure)
     local w,A=fresh(saved);w.realm="ClassicBetaPvP2";w.money=1000000;w.repair=0;w.calls=0;w.training={{name="Fireball",cost=120}};w.flight=77;w.postage=30
@@ -53,7 +54,7 @@ local function record(L,category,amount)
 end
 
 test("release defaults enable loot and other spending independently",function()
-    local w,A=world();equal(A.DB.Settings().trackLoot,true);equal(A.DB.Settings().trackOther,true);equal(A.TEST_REVISION,2)
+    local w,A=world();equal(A.DB.Settings().trackLoot,true);equal(A.DB.Settings().trackOther,true);equal(A.TEST_REVISION,3)
 end)
 test("only the dedicated loot-money event creates loot income",function()
     local w,A,C,L=world();w:event("CHAT_MSG_SYSTEM","You loot 5 Silver.");w.money=w.money+500;w:event("PLAYER_MONEY");w:tick();equal(#L.Records(),0)
@@ -240,7 +241,7 @@ test("category filtering caches equivalent masks but responds immediately to cha
 end)
 test("Other categories do not narrow the whole-period report or All CSV",function()
     local w,A,E,L=ui();record(L,"repair",100);record(L,"flight",200);E.SetFilter("expense");E.SelectOther("none");E.SelectOther("repair");E.SetLedgerView("report")
-    equal(E.report.spend.text,"3s 00c");E.SetFilter("all");equal(#L.View(E.CurrentFilter()),2)
+    equal(E.report.spend.text,coin(300));E.SetFilter("all");equal(#L.View(E.CurrentFilter()),2)
 end)
 test("filtered CSV names expense categories and excludes unchecked ones",function()
     local w,A,E,L=ui();record(L,"repair",100);record(L,"flight",200);E.SetFilter("expense");E.SelectOther("none");E.SelectOther("repair");local csv=L.CSV(E.CurrentFilter())
@@ -254,7 +255,7 @@ test("editing an expense as an AH purchase clears its category",function()
     local w,A,E,L=ui();record(L,"repair",100);E.LoadLedger(L.Records()[1]);E.SetKind("buy");truth(E.RecordLedger());equal(L.Records()[1].kind,"buy");equal(L.Records()[1].category,nil)
 end)
 test("daily loot rows display a total date and their report total has a direct filter",function()
-    local w,A,E,L=ui();w:loot("1 Silver");E.Refresh();equal(E.activityRows.loot.value.text,"1s 00c");E.activityRows.loot.scripts.OnClick();equal(E.filterKind,"loot");truth(E.ledgerRows[1].labels[1].text:find("total",1,true))
+    local w,A,E,L=ui();w:loot("1 Silver");E.Refresh();equal(E.activityRows.loot.value.text,coin(100));E.activityRows.loot.scripts.OnClick();equal(E.filterKind,"loot");truth(E.ledgerRows[1].labels[1].text:find("total",1,true))
 end)
 test("daily loot edits retain their day and future awards still aggregate",function()
     local w,A,E,L=ui();w:loot("1 Silver");E.LoadLedger(L.Records()[1]);E.ledgerInputs.amount:SetText("0.02");truth(E.RecordLedger());w:loot("1 Silver");equal(#L.Records(),1);equal(L.Records()[1].amount,300)

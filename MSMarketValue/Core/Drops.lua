@@ -8,6 +8,21 @@ P.labels={loot="Drops",herbalism="Herbalism",mining="Mining",skinning="Skinning"
 local function ID(v) return U.Number(v,1,2147483647,true) end
 local function Text(v,fallback) return U.String(v) and #v>0 and #v<=180 and v or fallback end
 
+function P.RequestName(id)
+    if not ID(id) or not C_Item or type(C_Item.RequestLoadItemDataByID)~="function" then return end
+    local now=U.Mono()
+    P.nameLoads,P.nameQueue=P.nameLoads or {},P.nameQueue or {}
+    if P.nameLoads[id] and now-P.nameLoads[id]<60 then return end
+    if not P.nameWindow or now-P.nameWindow>=10 then P.nameWindow,P.nameCount=now,0 end
+    if P.nameCount>=20 then return end
+    if not P.nameLoads[id] then
+        P.nameQueue[#P.nameQueue+1]=id
+        if #P.nameQueue>128 then P.nameLoads[table.remove(P.nameQueue,1)]=nil end
+    end
+    P.nameLoads[id]=now;P.nameCount=P.nameCount+1
+    U.Call(C_Item.RequestLoadItemDataByID,id)
+end
+
 function P.SourceID(guid)
     if not U.String(guid) or #guid>128 then return nil end
     local kind,id=guid:match("^(%a+)%-[^-]+%-[^-]+%-[^-]+%-[^-]+%-(%d+)%-")
@@ -71,7 +86,8 @@ function P.Profile()
                         cells=cells+1
                         if bucketCount>MAX_ITEMS_PER_MOB or cells>MAX_CELLS or not ID(id) or not U.Table(item) or not U.Number(item.hits,0,bucket.samples,true) or
                            not U.Number(item.quantity,0,1000000000,true) or not U.String(item.name) or #item.name>180 or
-                           not U.Accessible(item.questID) or (item.questID~=nil and not ID(item.questID)) then
+                           not U.Accessible(item.questID) or (item.questID~=nil and not ID(item.questID)) or
+                           not U.Accessible(item.questItem) or (item.questItem~=nil and type(item.questItem)~="boolean") then
                             P.reason="Invalid drop item preserved.";return nil
                         end
                     end
@@ -205,13 +221,19 @@ function P.Observe(guid,items,context,group,kind)
                     entry.quantity=math.min(1000000000,entry.quantity+item.quantity-previous)
                     entry.name=Text(U.LinkName(item.link),entry.name or ("Item " .. item.id))
                     if ID(item.questID) then entry.questID=item.questID end
+                    if U.Accessible(item.questItem) and item.questItem==true then entry.questItem=true end
                     seen.items[item.id]=item.quantity
                     changed=true
                 else P.reason="Drop item limit reached. Reset older observations to keep collecting." end
             end
+            local entry=bucket.items[item.id]
+            if U.Table(entry) then
+                if ID(item.questID) and entry.questID~=item.questID then entry.questID=item.questID;changed=true end
+                if U.Accessible(item.questItem) and item.questItem==true and entry.questItem~=true then entry.questItem=true;changed=true end
+            end
         end
     end
-    if changed then P.revision=P.revision+1;P.cache=nil end
+    if changed then P.revision=P.revision+1;P.cache=nil;P.tipDirty=true end
     return true
 end
 
@@ -304,6 +326,7 @@ function P.ReadLoot()
                         local item=items[key] or {id=itemID,quantity=0,link=itemLink}
                         item.quantity=item.quantity+quantity
                         if ID(info[9]) then item.questID=info[9] end
+                        if U.Accessible(info[8]) and info[8]==true then item.questItem=true end
                         items[key]=item
                         local old=acquisitions[itemID]
                         acquisitions[itemID]={kind=old and old.kind~=kind and "loot" or kind,at=U.Mono()}
@@ -321,19 +344,21 @@ end
 
 function P.QuestItems()
     if P.questItems then return P.questItems end
-    local names={}
+    local names={active={},quests={}}
     local count=U.Call(C_QuestLog and C_QuestLog.GetNumQuestLogEntries)
     if U.Number(count,0,200,true) then
         for index=1,count do
             local info=U.Call(C_QuestLog.GetInfo,index)
             if U.Table(info) and ID(info.questID) then
+                names.quests[info.questID]=true
                 local objectives=U.Call(C_QuestLog.GetQuestObjectives,info.questID)
                 if U.Table(objectives) then
                     for i=1,math.min(#objectives,32) do
                         local objective=objectives[i]
-                        if U.Table(objective) and U.String(objective.type) and objective.type=="item" and
-                           U.Accessible(objective.finished) and objective.finished==false and U.String(objective.text) then
-                            names[#names+1]=string.lower(objective.text)
+                        if U.Table(objective) and U.String(objective.type) and objective.type=="item" and U.String(objective.text) then
+                            local text=string.lower(objective.text)
+                            names.active[#names.active+1]=text
+                            if U.Accessible(objective.finished) and objective.finished==false then names[#names+1]=text end
                         end
                     end
                 end
@@ -343,12 +368,18 @@ function P.QuestItems()
     P.questItems=names;return names
 end
 
-local function Wanted(row)
-    if row.questID and U.Call(C_QuestLog and C_QuestLog.IsOnQuest,row.questID)==true and
-       U.Call(C_QuestLog and C_QuestLog.IsComplete,row.questID)~=true then return true end
+local function QuestStatus(row,info)
+    local names=P.QuestItems()
+    local active=row.questID and (names.quests[row.questID] or U.Call(C_QuestLog and C_QuestLog.IsOnQuest,row.questID)==true)
+    local wanted=active and U.Call(C_QuestLog and C_QuestLog.IsComplete,row.questID)~=true
     local name=string.lower(row.name or A.Valuation.MaterialName(row.id))
-    for _,text in ipairs(P.QuestItems()) do if string.find(text,name,1,true) then return true end end
-    return false
+    for _,text in ipairs(names.active) do if string.find(text,name,1,true) then active=true;break end end
+    for _,text in ipairs(names) do if string.find(text,name,1,true) then wanted=true;break end end
+    -- Client item class/binding distinguishes quest-only drops from normal
+    -- supplies also used by a quest. Keep their rates even after the quest ends.
+    local questOnly=info and (info.classID==12 or info.bindType==4) or
+        (not info and (row.questItem==true or row.questID~=nil))
+    return not questOnly or active==true,wanted==true
 end
 
 function P.Rows(npcID,kind)
@@ -362,7 +393,7 @@ function P.Rows(npcID,kind)
     local rows,samples={},0
     if D.Settings().dropMode=="reference" then
         for _,row in ipairs(A.LootReference.Rows(npcID,kind)) do
-            rows[#rows+1]={id=row.id,name=row.name or A.Valuation.MaterialName(row.id),rate=row.rate,questID=row.questID,samples=row.samples}
+            rows[#rows+1]={id=row.id,name=row.name or A.Valuation.MaterialName(row.id),rate=row.rate,questID=row.questID,questItem=row.questItem,samples=row.samples}
         end
     else
         local profile=P.Profile()
@@ -375,6 +406,7 @@ function P.Rows(npcID,kind)
                 for id,item in pairs(bucket.items) do
                     if ID(id) and U.Table(item) and U.Number(item.hits,0,bucket.samples,true) then
                         local total=totals[id] or {id=id,hits=0,name=Text(item.name,A.Valuation.MaterialName(id)),questID=item.questID}
+                        if item.questItem then total.questItem=true end
                         total.hits=total.hits+item.hits;totals[id]=total
                     end
                 end
@@ -382,20 +414,35 @@ function P.Rows(npcID,kind)
         end
         for _,row in pairs(totals) do row.rate=samples>0 and row.hits/samples*100 or 0;rows[#rows+1]=row end
     end
+    local visible={}
+    local nameRequests=0
     for _,row in ipairs(rows) do
-        row.wanted=Wanted(row)
         local info=A.Valuation.ItemInfo(row.id)
-        local price=D.Price(row.id,nil,snapshot)
-        row.value=price and price.low or (info and info.vendor or 0)
-        row.score=row.rate*row.value
+        if not info and row.questItem and #P.QuestItems().active>0 and nameRequests<10 then
+            P.RequestName(row.id);nameRequests=nameRequests+1
+        end
+        local allowed,wanted=QuestStatus(row,info)
+        if allowed then
+            row.wanted=wanted
+            local price=D.Price(row.id,nil,snapshot)
+            row.value=price and price.low or (info and info.vendor or 0)
+            row.score=row.rate*row.value
+            visible[#visible+1]=row
+        end
     end
+    local hidden=#rows-#visible
+    rows=visible
     table.sort(rows,function(a,b)
         if a.wanted~=b.wanted then return a.wanted end
         if a.score~=b.score then return a.score>b.score end
         if a.rate~=b.rate then return a.rate>b.rate end
         return a.id<b.id
     end)
-    P.cache={key=cacheKey,rows=rows,samples=samples,snapshot=snapshot}
+    for index=1,math.min(#rows,D.Settings().dropRows) do
+        local row=rows[index]
+        if row.name=="Item " .. row.id then P.RequestName(row.id) end
+    end
+    P.cache={key=cacheKey,rows=rows,samples=samples,snapshot=snapshot,hidden=hidden}
     return rows,samples
 end
 
@@ -514,10 +561,15 @@ function P.Tooltip(tooltip,data)
     local rows,samples=P.Rows(id,kind)
     tooltip:AddLine(" ")
     local reference=D.Settings().dropMode=="reference"
-    local unit=kind=="loot" and "corpses" or "harvests"
+    local unit=kind=="loot" and "corpses" or kind=="skinning" and "skins" or "nodes"
+    if samples==1 then unit=kind=="loot" and "corpse" or kind=="skinning" and "skin" or "node" end
     tooltip:AddDoubleLine("MS Market Value - " .. P.labels[kind],reference and A.LootReference.label or
-        (samples .. " observed " .. unit),.55,.83,.85,.61,.66,.70)
-    if #rows==0 then tooltip:AddLine(reference and "No reference data for this source." or "No personal samples yet.",.61,.66,.70) end
+        (samples .. " " .. unit .. " checked"),.55,.83,.85,.61,.66,.70)
+    if #rows==0 then
+        local text=P.cache and P.cache.hidden>0 and "Quest-only drops hidden; no current matches." or
+            reference and "No reference data for this source." or samples>0 and "No item drops recorded yet." or "No personal samples yet."
+        tooltip:AddLine(text,.61,.66,.70)
+    end
     for index=1,math.min(#rows,D.Settings().dropRows) do
         local row=rows[index]
         local count=reference and (row.samples and (" (" .. row.samples .. " samples)") or "") or
@@ -529,13 +581,24 @@ function P.Tooltip(tooltip,data)
     end
     if #rows>D.Settings().dropRows then tooltip:AddLine("+" .. (#rows-D.Settings().dropRows) .. " more recorded items",.61,.66,.70) end
     if reference and not A.LootReference.verified then tooltip:AddLine("Sampled reference; not verified server settings.",.92,.72,.38) end
-    P.tip={key=key,data=data,lines=tooltip:NumLines()}
+    P.tip={key=key,data=data,lines=tooltip:NumLines()};P.tipDirty=false
 end
 function P.CheckTooltip()
     local tooltip=GameTooltip
     if not P.installed or not tooltip or not tooltip:IsShown() or (tooltip.IsForbidden and tooltip:IsForbidden()) then return end
     local data=U.Call(tooltip.GetPrimaryTooltipData,tooltip)
     if not U.Table(data) then P.fallbackData=P.fallbackData or {};data=P.fallbackData end
+    if P.tipDirty and P.tip and P.tip.lines==tooltip:NumLines() and not U.Combat() and type(tooltip.RebuildFromTooltipInfo)=="function" then
+        local info=U.Call(tooltip.GetPrimaryTooltipInfo,tooltip)
+        local id=P.ResolveTooltip(tooltip,data)
+        if id and U.Table(info) and U.String(info.getterName) and U.Table(info.getterArgs) then
+            local previous=P.tip
+            P.tip,P.tipDirty=nil,false
+            local ok=pcall(tooltip.RebuildFromTooltipInfo,tooltip)
+            if not ok then P.tip=previous end
+            return
+        end
+    end
     P.Tooltip(tooltip,data)
 end
 function P.Install()
@@ -543,7 +606,7 @@ function P.Install()
        not TooltipDataProcessor or not Enum or not Enum.TooltipDataType or Enum.TooltipDataType.Unit==nil then return end
     TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit,P.Tooltip)
     if Enum.TooltipDataType.Object~=nil then TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object,P.Tooltip) end
-    GameTooltip:HookScript("OnHide",function()P.tip,P.fallbackData=nil,nil end);P.installed=true
+    GameTooltip:HookScript("OnHide",function()P.tip,P.fallbackData,P.tipDirty=nil,nil,false end);P.installed=true
 end
 function P.Event(event,...)
     local unit,a,b,c=...
@@ -556,7 +619,7 @@ function P.Event(event,...)
         if U.String(unit) and unit=="player" then P.gather=nil end
     elseif event=="UPDATE_MOUSEOVER_UNIT" then P.Remember("mouseover")
     elseif event=="PLAYER_TARGET_CHANGED" then P.Remember("target")
-    elseif event=="QUEST_LOG_UPDATE" then P.questItems,P.cache=nil,nil
-    elseif event=="GET_ITEM_INFO_RECEIVED" then P.cache=nil
+    elseif event=="QUEST_LOG_UPDATE" then P.questItems,P.cache,P.tipDirty=nil,nil,true
+    elseif event=="GET_ITEM_INFO_RECEIVED" then P.cache,P.tipDirty=nil,true
     elseif event=="PLAYER_LOGIN" then P.Install() end
 end

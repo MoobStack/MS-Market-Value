@@ -1,3 +1,4 @@
+local function coin(amount) return _G.MSMarketValue.Util.Coins(amount) end
 local fresh,row,link,test,equal,near,truth,secret=...
 local function guid(id,spawn,kind) return (kind or "Creature") .. "-0-1-1-1-" .. id .. "-" .. (spawn or "1") end
 local function modern(id,bonuses,name)
@@ -154,7 +155,7 @@ test("personal creature tooltip resolves native unit tokens missing a data GUID"
     local w,A=world();A.Drops.Observe(guid(1000),{{id=100,quantity=1,link=link(100)}})
     GameTooltip.GetUnit=function()return "Test creature","mouseover"end
     w.unitTip(GameTooltip,{type=2,lines={{leftText="Test creature"}}})
-    equal(GameTooltip.lines[2].right,"1 observed corpses");truth(GameTooltip.lines[3].right:find("100.0%%"))
+    equal(GameTooltip.lines[2].right,"1 corpse checked");truth(GameTooltip.lines[3].right:find("100.0%%"))
     local data={type=2,id=1000,lines={{leftText="Test creature"}}}
     GameTooltip:ClearLines();GameTooltip.GetUnit=nil;w.guids.mouseover=nil
     w.unitTip(GameTooltip,data);truth(GameTooltip.lines[3].right:find("1/1",1,true))
@@ -182,7 +183,7 @@ test("harvest casts capture normal and rare node materials and categorize only p
     equal(sum.harvestValue,20);equal(sum.categories.herbalism,20);equal(sum.lootValue,0);equal(sum.recent[1].source,"herbalism")
     w:event("LOOT_CLOSED")
     GameTooltip:ClearLines();GameTooltip.data={lines={{leftText="Peacebloom"}}};GameTooltip:Show();A.Drops.CheckTooltip()
-    truth(GameTooltip.lines[2].left:find("Herbalism",1,true));equal(GameTooltip.lines[2].right,"1 observed harvests")
+    truth(GameTooltip.lines[2].left:find("Herbalism",1,true));equal(GameTooltip.lines[2].right,"1 node checked")
     A.DB.Settings().showHarvestDrops=false;GameTooltip:ClearLines();A.Drops.CheckTooltip();equal(#GameTooltip.lines,0)
 end)
 
@@ -236,7 +237,7 @@ test("categorized reports and saved summaries reconcile loot quests and harvesti
     A.Farm.AddMoney(100,false);A.Farm.AddMoney(200,true)
     local s=A.Farm.Summary();equal(s.total,350);equal(s.harvestValue,30);equal(s.categories.loot,110);equal(s.categories.quest,210)
     A.FarmingUI.Show("session");local ui=A.FarmingUI
-    equal(ui.categoryTotals[3]:GetText(),"30c")
+    equal(ui.categoryTotals[3]:GetText(),coin(30))
     ui.source="harvesting";ui.Refresh();truth(ui.pageText:GetText():find("3 entries",1,true))
     w:advance(60);A.Farm.Tick();truth(A.Farm.Reset());equal(A.Farm.Profile().history[1].categories.mining,10)
     equal(A.Farm.Profile().history[1].harvestValue,30)

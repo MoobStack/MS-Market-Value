@@ -30,7 +30,7 @@ local function Fill(parent, r, g, b, alpha)
 end
 
 function UI.SignedMoney(value)
-    return (value < 0 and "-" or "+") .. U.Money(math.abs(value))
+    return (value < 0 and "-" or "+") .. U.Coins(math.abs(value))
 end
 
 local function ChatOpener()
@@ -119,14 +119,14 @@ local function RecipeTooltip(button)
     GameTooltip:AddLine(row.name, 1, 0.82, 0)
     local _, state = UI.RecipeState(row)
     GameTooltip:AddLine(state, 0.83, 0.86, 0.89, true)
-    if row.cost ~= nil then GameTooltip:AddDoubleLine("Materials / craft", U.Money(row.cost)) end
+    if row.cost ~= nil then GameTooltip:AddDoubleLine("Materials / craft", U.Coins(row.cost)) end
     if row.service and C.DisplayQuote(row) ~= nil then
         -- Catalog quotes follow the current markup without repricing recipes.
-        GameTooltip:AddDoubleLine("Quote / service", U.Money(C.DisplayQuote(row)))
+        GameTooltip:AddDoubleLine("Quote / service", U.Coins(C.DisplayQuote(row)))
     elseif row.netProfitMin ~= nil then
         GameTooltip:AddDoubleLine("Net profit / craft", Range(row.netProfitMin, row.netProfitMax, UI.SignedMoney))
         GameTooltip:AddDoubleLine("Gross profit / craft", Range(row.profitMin, row.profitMax, UI.SignedMoney))
-        GameTooltip:AddDoubleLine("Break-even / item", Range(row.breakEvenUnitMin, row.breakEvenUnitMax, U.Money))
+        GameTooltip:AddDoubleLine("Break-even / item", Range(row.breakEvenUnitMin, row.breakEvenUnitMax, U.Coins))
     end
     if row.reason and not row.service then GameTooltip:AddLine(row.reason, 0.83, 0.86, 0.89, true) end
     GameTooltip:AddLine("Click to select this recipe.", 0.65, 0.65, 0.65)
@@ -196,8 +196,8 @@ function UI.CreatePricing(frame)
     local services = Inset(panel,-107,270)
     Label(services,"Quotes and service charges",14,-12,507,"GameFontNormal")
     Label(services,"Material markup % (also used for item quotes)",14,-54,265); Input(services,"quoteMarkup",290,-48,false)
-    Label(services,"Labor per service (g)",14,-96,265); Input(services,"serviceLabor",290,-90,true)
-    Label(services,"Minimum service quote (g)",14,-138,265); Input(services,"serviceMinimum",290,-132,true)
+    Label(services,"Labor per service " .. U.coin.gold,14,-96,265); Input(services,"serviceLabor",290,-90,true)
+    Label(services,"Minimum service quote " .. U.coin.gold,14,-138,265); Input(services,"serviceMinimum",290,-132,true)
     UI.customerMaterials = CreateFrame("CheckButton",nil,services,"UICheckButtonTemplate")
     UI.customerMaterials:SetPoint("TOPLEFT",services,"TOPLEFT",10,-175); UI.customerMaterials:SetSize(26,26)
     UI.customerMaterials:SetScript("OnClick",function() UI.priceDirty = true end)
@@ -296,7 +296,7 @@ function UI.Create()
     local sale = Inset(details, -310, 92)
     Label(sale, "Record commission (direct sale; blank price uses quote)", 14, -9, 480, "GameFontNormal")
     UI.salePriceLabel = Label(sale, "Price / ea (g, optional)", 14, -32, 173)
-    Label(sale, "Total tip (g)", 200, -32, 110); Label(sale, "Quantity", 326, -32, 75)
+    Label(sale, "Total tip " .. U.coin.gold, 200, -32, 110); Label(sale, "Quantity", 326, -32, 75)
     UI.saleInputs = {}
     for _,field in ipairs({{"price",20,153,false,""},{"tip",206,100,false,"0"},{"quantity",332,62,true,"1"}}) do
         local box = CreateFrame("EditBox",nil,sale,"InputBoxTemplate")
@@ -391,7 +391,7 @@ function UI.RefreshMaterials(row)
             button.name:SetText(material.name); button.quantity:SetText(tostring(material.quantity))
             button.source:SetText(material.mode == "vendor" and "Vendor" or (material.mode == "vendor-unseen" and "Visit supplier" or (material.total ~= nil and "AH low" or "Missing")))
             button.source:SetTextColor(material.total ~= nil and 0.70 or 1, material.total ~= nil and 0.75 or 0.65, 0.38)
-            button.total:SetText(material.total ~= nil and U.Money(material.total) or "Unavailable"); button:Show()
+            button.total:SetText(material.total ~= nil and U.Coins(material.total) or "Unavailable"); button:Show()
         else button:Hide() end
     end
     UI.materialChild:SetHeight(math.max(98, count * 26))
@@ -415,11 +415,11 @@ function UI.Refresh()
         if row then C.Net(row) end
         local service = row and row.service
         UI.recipeName:SetText(row and row.name or "Select a learned recipe")
-        UI.yield:SetText(service and "Service - quote per application" or (row and row.quantityMin and ("Output per craft: " .. (row.quantityMin == row.quantityMax and tostring(row.quantityMin) or (row.quantityMin .. "-" .. row.quantityMax)) .. (row.breakEvenUnitMax and ("  |  Break-even: " .. Range(row.breakEvenUnitMin,row.breakEvenUnitMax,U.Money) .. " ea") or "")) or ""))
+        UI.yield:SetText(service and "Service - quote per application" or (row and row.quantityMin and ("Output per craft: " .. (row.quantityMin == row.quantityMax and tostring(row.quantityMin) or (row.quantityMin .. "-" .. row.quantityMax)) .. (row.breakEvenUnitMax and ("  |  Break-even: " .. Range(row.breakEvenUnitMin,row.breakEvenUnitMax,U.Coins) .. " ea") or "")) or ""))
         local values = {
-            row and row.cost and U.Money(row.cost) or "Unavailable",
-            service and C.DisplayQuote(row) and U.Money(C.DisplayQuote(row)) or (row and Range(row.unitCostMin, row.unitCostMax, U.Money) or "Unavailable"),
-            row and Range(row.netSaleMin, row.netSaleMax, U.Money) or "Unavailable",
+            row and row.cost and U.Coins(row.cost) or "Unavailable",
+            service and C.DisplayQuote(row) and U.Coins(C.DisplayQuote(row)) or (row and Range(row.unitCostMin, row.unitCostMax, U.Coins) or "Unavailable"),
+            row and Range(row.netSaleMin, row.netSaleMax, U.Coins) or "Unavailable",
             row and Range(row.netProfitMin, row.netProfitMax, UI.SignedMoney) or "Unavailable",
             row and row.cost == 0 and "No material cost" or (row and Range(row.netReturnMin, row.netReturnMax, Return) or "Unavailable"),
         }
@@ -442,7 +442,7 @@ function UI.Refresh()
             UI.saleInputs.price:SetText(""); UI.saleInputs.tip:SetText("0"); UI.saleInputs.quantity:SetText("1"); UI.saleMessage=nil
         end
         local perItem=row and (row.service or (U.Number(row.quantityMin,1,1000000,true)and row.quantityMin==row.quantityMax))
-        UI.salePriceLabel:SetText(perItem and "Price / ea (g, optional)" or "Price / craft (g, optional)")
+        UI.salePriceLabel:SetText(perItem and ("Price / ea " .. U.coin.gold .. " (optional)") or ("Price / craft " .. U.coin.gold .. " (optional)"))
         UI.quoteRecipeID, UI.quoteText = row and row.recipeID, quoteText
         UI.recordSale:SetEnabled(row ~= nil and not U.Combat())
         UI.insertQuote:SetEnabled(quoteText ~= nil and ChatOpener() ~= nil and not U.Combat())
@@ -464,7 +464,7 @@ function UI.Refresh()
                 local _, state = UI.RecipeState(row)
                 button.name:SetText(row.name); button.note:SetText(state)
                 local quote = C.DisplayQuote(row)
-                button.profit:SetText(row.service and (quote and U.Money(quote) or "Unavailable") or (row.netProfitMin and UI.SignedMoney(row.netProfitMin) or "Unavailable"))
+                button.profit:SetText(row.service and (quote and U.Coins(quote) or "Unavailable") or (row.netProfitMin and UI.SignedMoney(row.netProfitMin) or "Unavailable"))
                 button.percent:SetText(row.service and "Service" or (row.netReturnMin and Return(row.netReturnMin) or (row.cost == 0 and "No cost" or "Unavailable")))
                 local r, g, b = 0.61, 0.66, 0.70
                 if row.netProfitMin then r, g, b = row.netProfitMin >= 0 and 0.35 or 1, row.netProfitMin >= 0 and 0.87 or 0.38, 0.38

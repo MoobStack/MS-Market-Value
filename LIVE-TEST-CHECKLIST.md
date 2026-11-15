@@ -1,8 +1,12 @@
 # Live checks
 
-Test **1.3.0-beta / 2026-11-15-beta001**, revision **2**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
+Test **1.3.0-beta / 2026-11-15-beta001**, revision **3**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
 
 Check the new features first:
+
+- **Idle:** enable five minutes; stop looting and confirm the whole five minutes counts before Idle appears. Loot gold or an item and check automatic resume. Repeat with a manual pause, mail/trade gold, a quest reward and a harvest. Change the input, disable it and reload.
+- **Prices/colors:** compare a blue item’s name with its Opportunities row. Check coin icons in tooltips, crafting, market, watchlist, reports and HUD at your normal UI scale. Copy a quote and CSV; both should remain plain text.
+- **Quest loot:** open a corpse, leave an item, close/reopen and compare counts. Pick up only one item and verify farming values only that receipt. Check an active quest item, then abandon/complete the quest and rehover; ordinary trade goods should remain visible.
 
 - **Opportunities:** scan, open All items, search Imposing Gloves and compare several modifiers with the Buy page. Scroll through more than 12 results and collapse/apply filters. Click an exact modifier, including while its item details load. Verify 25 units at 50s show a 12g 50s combined buyout. Try quantity limits and compare stock after a second scan.
 - **Drops:** loot Mudfin Oracle, then hover it while alive and dead, including combat. Confirm a sample list or an explanation appears. Inspect several corpses, reopen one and compare counts. Test party/raid loot and a current quest item. Check that missing reference data stays labeled unavailable.

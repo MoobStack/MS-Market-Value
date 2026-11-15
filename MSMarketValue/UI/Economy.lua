@@ -351,14 +351,14 @@ function E.CreateLedger(f)
         GameTooltip:AddLine(date("%Y-%m-%d %H:%M local",row.time).." - "..row.source)
         if L.Category(row)then GameTooltip:AddDoubleLine("Category",L.categoryTitles[L.Category(row)])end
         if row.kind=="loot"then GameTooltip:AddLine("Daily total; time is the first recorded loot award.",.8,.8,.8,true)end
-        GameTooltip:AddDoubleLine("Total before tip",U.Money(row.amount));GameTooltip:AddDoubleLine("Tip",U.Money(row.tip or 0))
-        GameTooltip:AddDoubleLine("Fees",U.Money(row.fee))
+        GameTooltip:AddDoubleLine("Total before tip",U.Coins(row.amount));GameTooltip:AddDoubleLine("Tip",U.Coins(row.tip or 0))
+        GameTooltip:AddDoubleLine("Fees",U.Coins(row.fee))
         local net,profit=L.Amounts(row)
         GameTooltip:AddDoubleLine("Net",Signed(net))
-        if row.cost~=nil then GameTooltip:AddDoubleLine(row.estimatedCost and"Estimated cost"or"Recorded cost",U.Money(row.cost))end
+        if row.cost~=nil then GameTooltip:AddDoubleLine(row.estimatedCost and"Estimated cost"or"Recorded cost",U.Coins(row.cost))end
         if profit~=nil then GameTooltip:AddDoubleLine(row.estimatedCost and"Estimated profit / loss"or"Profit / loss",Signed(profit))end
         if row.source=="AH mail"then GameTooltip:AddLine("Date: first recorded from mail.",.8,.8,.8,true)end
-        if row.refund>0 then GameTooltip:AddDoubleLine("Returned deposit (excluded)",U.Money(row.refund))end
+        if row.refund>0 then GameTooltip:AddDoubleLine("Returned deposit (excluded)",U.Coins(row.refund))end
         GameTooltip:AddLine("Click to edit this transaction.");GameTooltip:Show()
     end)
     E.ledgerEmpty=Label(entries,"No transactions match this type and period.",20,-108,726);E.ledgerEmpty:SetJustifyH("CENTER")
@@ -415,7 +415,7 @@ function E.CreateLedger(f)
     E.ledgerInputs={name=Box(fields,191,-31,331),quantity=Box(fields,553,-31,60,true),amount=Box(fields,20,-91,102),fee=Box(fields,143,-91,80),tip=Box(fields,245,-91,80),cost=Box(fields,347,-91,106)}
     E.ledgerInputs.name:SetMaxLetters(256)
     for _,key in ipairs({"amount","fee","tip","cost"})do E.ledgerInputs[key]:SetMaxLetters(24)end
-    Label(fields,"Total before tip (g)",14,-70,125);Label(fields,"Fees (g)",137,-70,90);Label(fields,"Total tip (g)",239,-70,90);Label(fields,"Actual cost (g)",341,-70,112)
+    Label(fields,"Total before tip " .. U.coin.gold,14,-70,125);Label(fields,"Fees " .. U.coin.gold,137,-70,90);Label(fields,"Total tip " .. U.coin.gold,239,-70,90);Label(fields,"Actual cost " .. U.coin.gold,341,-70,112)
     Button(fields,"Record entry",650,-31,100,E.RecordLedger)
     E.importInvoiceButton=Button(fields,"Use open invoice",473,-91,145,E.ImportInvoice)
     E.categoryLabel=Label(fields,"Expense category",473,-70,145)
@@ -455,11 +455,11 @@ function E.RefreshLedger()
     E.editorStatus:SetText(L.reason or E.messages.ledger or"")
     if E.ledgerView=="report"then
         local sums=L.Summary(range)
-        E.report.income:SetText(U.Money(sums.sales));E.report.spend:SetText(U.Money(sums.spend));E.report.flow:SetText(Signed(sums.flow));Accent(E.report.flow,sums.flow)
-        E.reportCards.income.note:SetText("Tips included: "..U.Money(sums.tips))
+        E.report.income:SetText(U.Coins(sums.sales));E.report.spend:SetText(U.Coins(sums.spend));E.report.flow:SetText(Signed(sums.flow));Accent(E.report.flow,sums.flow)
+        E.reportCards.income.note:SetText("Tips included: "..U.Coins(sums.tips))
         E.reportCards.spend.note:SetText("Purchases, tips and expenses")
         E.reportCards.flow.note:SetText(Count(#sums.rows).." in this period")
-        for kind,row in pairs(E.activityRows)do row.value:SetText(U.Money(math.abs(sums.byKind[kind]or 0)))end
+        for kind,row in pairs(E.activityRows)do row.value:SetText(U.Coins(math.abs(sums.byKind[kind]or 0)))end
         E.report.profit:SetText(sums.known>0 and Signed(sums.profit)or"--");
         if sums.known>0 then Accent(E.report.profit,sums.profit)else E.report.profit:SetTextColor(.65,.65,.65)end
         E.report.estimate:SetText(sums.estimated>0 and Signed(sums.estimatedProfit)or"--");
@@ -481,7 +481,7 @@ function E.RefreshLedger()
                 local net,profit=L.Amounts(row)
                 local sourceNames={["AH invoice"]="Invoice",["AH purchase"]="Live AH",["AH mail"]="Mail",["Craft quote"]="Craft",["Player trade"]="Trade",Vendor="Vendor",Manual="Manual",Loot="Loot",["Game expense"]="Game"}
                 local values={date(row.kind=="loot"and"%m-%d total"or"%m-%d %H:%M",row.time),L.Category(row)and L.categoryTitles[L.Category(row)]or titles[row.kind],row.name,tostring(row.quantity),Signed(net),
-                    row.cost~=nil and((row.estimatedCost and"Est. "or"")..U.Money(row.cost))or(L.Income(row.kind)and"Needed"or"--"),
+                    row.cost~=nil and((row.estimatedCost and"Est. "or"")..U.Coins(row.cost))or(L.Income(row.kind)and"Needed"or"--"),
                     profit~=nil and((row.estimatedCost and"Est. "or"")..Signed(profit))or"--",sourceNames[row.source]}
                 for n,value in ipairs(values)do b.labels[n]:SetText(value)end
                 if profit~=nil then Accent(b.labels[7],profit)else b.labels[7]:SetTextColor(.65,.65,.65)end
@@ -519,8 +519,8 @@ function E.Create()
     E.status=Label(f,"",16,-573,756);E.status:SetHeight(30);E.status:SetWordWrap(true)
     local watch=CreateFrame("Frame",nil,f);watch:SetAllPoints(f);E.watchPanel=watch
     local filters=Inset(watch,-98,105)
-    E.watchItemLabel=Label(filters,"Item ID / pasted item link",14,-10,278);Label(filters,"Buy at or below (g)",310,-10,110)
-    Label(filters,"Min return %",430,-10,90);Label(filters,"Min profit (g)",534,-10,100)
+    E.watchItemLabel=Label(filters,"Item ID / pasted item link",14,-10,278);Label(filters,"Buy at or below " .. U.coin.gold,310,-10,110)
+    Label(filters,"Min return %",430,-10,90);Label(filters,"Min profit " .. U.coin.gold,534,-10,100)
     E.watchInputs={item=Box(filters,20,-31,272),itemPrice=Box(filters,315,-31,98),roi=Box(filters,435,-31,80,true),profit=Box(filters,539,-31,95)}
     E.watchInputs.itemPrice:SetText("0");E.watchInputs.roi:SetText("0");E.watchInputs.profit:SetText("0")
     Button(filters,"Save watch",650,-31,100,E.SaveWatch)
@@ -534,7 +534,7 @@ function E.Create()
         if not GameTooltip then return end
         GameTooltip:SetOwner(button,"ANCHOR_RIGHT");GameTooltip:ClearLines();GameTooltip:AddLine(row.name,1,.82,0)
         GameTooltip:AddLine(row.suffix~=nil and "Exact modifier series" or "Any modifier / item-wide series")
-        GameTooltip:AddDoubleLine("Min return",row.watch.minReturn.."%");GameTooltip:AddDoubleLine("Min profit",U.Money(row.watch.minProfit))
+        GameTooltip:AddDoubleLine("Min return",row.watch.minReturn.."%");GameTooltip:AddDoubleLine("Min profit",U.Coins(row.watch.minProfit))
         if row.profit then GameTooltip:AddDoubleLine("Estimated net / item",Signed(row.profit))end
         GameTooltip:AddLine(row.status);GameTooltip:Show()
     end)
@@ -577,7 +577,7 @@ function E.Refresh()
         for index,b in ipairs(E.watchRows)do
             local row=W.rows[(E.watchPage-1)*7+index];b.row=row
             if row then
-                local values={row.name,row.current and U.Money(row.current)or"Unavailable",row.watch.maxBuy>0 and U.Money(row.watch.maxBuy)or"Off",row.roi and string.format("%+.0f%%",row.roi)or"--",tostring(row.days),row.status}
+                local values={row.name,row.current and U.Coins(row.current)or"Unavailable",row.watch.maxBuy>0 and U.Coins(row.watch.maxBuy)or"Off",row.roi and string.format("%+.0f%%",row.roi)or"--",tostring(row.days),row.status}
                 for n,value in ipairs(values)do b.labels[n]:SetText(value)end
                 b.labels[6]:SetTextColor(row.matched and .35 or .83,row.matched and .87 or .86,.38);b:Show()
             else b:Hide()end

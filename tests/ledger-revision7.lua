@@ -1,3 +1,4 @@
+local function coin(amount) return _G.MSMarketValue.Util.Coins(amount) end
 local fresh,test,equal,truth=...
 local function initial()
     local w,A=fresh();w:load();A.EconomyUI.Show("ledger");return w,A,A.EconomyUI
@@ -25,8 +26,8 @@ test("all eight type filters replace displayed rows immediately without waiting 
 end)
 test("trade tip report totals drill down without mixing received and given gold",function()
     local w,A,E=initial();record(A,"tip_received",500);record(A,"tip_given",200);E.Refresh()
-    equal(E.activityRows.tip_received.value.text,"5s 00c");equal(E.activityRows.tip_given.value.text,"2s 00c")
-    equal(E.report.flow.text,"+3s 00c");equal(E.report.profit.text,"--")
+    equal(E.activityRows.tip_received.value.text,coin(500));equal(E.activityRows.tip_given.value.text,coin(200))
+    equal(E.report.flow.text,"+" .. coin(300));equal(E.report.profit.text,"--")
     E.activityRows.tip_given.scripts.OnClick();equal(E.filterKind,"tip_given");equal(E.ledgerRows[1].row.kind,"tip_given")
 end)
 test("the native Type dropdown selects a distant choice in one menu selection",function()
@@ -91,5 +92,5 @@ test("combat closes the Type menu and blocks direct type selection",function()
 end)
 test("diagnostics identify local time and trade observation capability",function()
     local w,A,E=initial();local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 2",1,true));truth(string.find(text,"Ledger time: local;",1,true));truth(string.find(text,"Trade tip tracking: enabled=true;",1,true))
+    truth(string.find(text,"Test revision: 3",1,true));truth(string.find(text,"Ledger time: local;",1,true));truth(string.find(text,"Trade tip tracking: enabled=true;",1,true))
 end)

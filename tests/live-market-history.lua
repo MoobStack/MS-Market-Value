@@ -1,3 +1,4 @@
+local function coin(amount) return _G.MSMarketValue.Util.Coins(amount) end
 local fresh, row, link, test, equal, truth, bagTooltip, findLine, secret = ...
 local hostA, hostB, hostC = "CAMWOWUS2Realm8PvP", "CAMWOWUS3Realm12PvP", "CAMWOWUS2Realm20PvP"
 local oldA, oldB, oldC = "1|" .. hostA, "1|" .. hostB, "1|" .. hostC
@@ -40,7 +41,7 @@ test("completed scans on different live reporting hosts add days to one market",
     equal(A.DB.Price(100).low, 200)
     local tooltip = bagTooltip(w, 100, 2)
     A.Tooltips.Handle(tooltip, tooltip.data)
-    equal(findLine(tooltip.lines, "Historic avg (2 days)").right, "4s 00c / 8s 00c")
+    equal(findLine(tooltip.lines, "Historic avg (2 days)").right, coin(400) .. " / " .. coin(800))
 end)
 
 test("live reporting names recognize rulesets without guessing unknown names", function()

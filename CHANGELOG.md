@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 3 — 2026-11-15
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Add optional farming idle pause, with whole-minute input, a five-minute minimum and automatic resume on farming receipts. Keep manual pauses separate.
+- Use coin icons in displayed prices and item-quality colors in Opportunities. Keep copied quotes, CSV and diagnostics plain.
+- Replace “observed corpses” with “corpses checked.” Hide quest-only drops when their quest is absent, retaining the samples.
+- Confirm visible uncollected loot counts once across partial looting, reopening and reload. Keep it separate from farming income.
+- Pack reference data as numeric counts, decode only viewed sources and cap the cache. Preserve rare-rate precision and source notes; the supplied pilot still covers Mudfin Oracle only.
+
 ## 1.3.0 beta — Test revision 2 — 2026-11-15
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.

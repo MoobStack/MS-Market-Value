@@ -58,8 +58,8 @@ function T.Lines(itemID, link, stackCount)
         lines[#lines + 1] = { left = left, right = right, kind = kind }
     end
     local function money(value)
-        local each = U.Money(value)
-        if count > 1 then return each .. " / " .. U.Money(value * count) end
+        local each = U.Coins(value)
+        if count > 1 then return each .. " / " .. U.Coins(value * count) end
         return each
     end
     local average = settings.showHistory and A.History.Average(itemID, link) or nil

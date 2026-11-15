@@ -1,3 +1,4 @@
+local function coin(amount) return _G.MSMarketValue.Util.Coins(amount) end
 -- Crafting presentation behavior; native artwork still needs a client check.
 local fresh, craftingWorld, craftRecipe, test, equal, truth, secret = ...
 local function serviceWorld()
@@ -14,7 +15,7 @@ end
 
 test("service view shows material cost and quote instead of inapplicable auction profits", function()
     local w,A=serviceWorld(); local UI=A.CraftingUI
-    equal(UI.values[1].text,"4s 00c"); equal(UI.values[2].text,"4s 00c")
+    equal(UI.values[1].text,coin(400)); equal(UI.values[2].text,coin(400))
     equal(UI.valueLabels[2].text,"Quote / service"); truth(UI.serviceHelp:IsShown())
     for index=3,5 do equal(UI.values[index]:IsShown(),false); equal(UI.valueLabels[index]:IsShown(),false) end
     truth(string.find(UI.yield.text,"Service",1,true)); truth(string.find(UI.reason.text,"quote ready",1,true))
@@ -22,7 +23,7 @@ test("service view shows material cost and quote instead of inapplicable auction
 end)
 test("switching from a service restores item sale profit and return fields", function()
     local w,A=serviceWorld(); w.selectedID=1; A.Crafting.Tick(); local UI=A.CraftingUI
-    equal(UI.valueLabels[2].text,"Cost / item"); equal(UI.values[4].text,"+4s 55c")
+    equal(UI.valueLabels[2].text,"Cost / item"); equal(UI.values[4].text,"+" .. coin(455))
     for index=3,5 do truth(UI.values[index]:IsShown()); truth(UI.valueLabels[index]:IsShown()) end
     equal(UI.serviceHelp:IsShown(),false)
 end)
@@ -38,7 +39,7 @@ end)
 test("all-recipes service rows show numeric quotes and still select the native recipe", function()
     local w,A=serviceWorld(); list(A,true); A.CraftingUI.SetSearch("ENCHANT chest")
     local button=A.CraftingUI.catalogRows[1]
-    equal(button.recipeID,4); equal(button.profit.text,"4s 00c"); equal(button.percent.text,"Service")
+    equal(button.recipeID,4); equal(button.profit.text,coin(400)); equal(button.percent.text,"Service")
     button.scripts.OnClick(button); equal(w.selectedID,4); equal(A.CraftingUI.mode,"recipe")
     equal(w.openRecipeCalls,1); equal(w.requests,1)
 end)
@@ -91,7 +92,7 @@ test("catalog count summaries remain on the complete published list while rebuil
 end)
 test("material columns retain full quantities sources and missing-price state", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local material=A.CraftingUI.materialRows[1]
-    equal(material.quantity.text,"2"); equal(material.source.text,"AH low"); equal(material.total.text,"2s 00c")
+    equal(material.quantity.text,"2"); equal(material.source.text,"AH low"); equal(material.total.text,coin(200))
     A.DB.Snapshot().prices[100]=nil; A.Crafting.Tick()
     equal(material.quantity.text,"2"); equal(material.source.text,"Missing"); equal(material.total.text,"Unavailable")
     equal(A.CraftingUI.quoteText,nil)
@@ -105,7 +106,7 @@ end)
 test("markup changes update the service quote without inventing resale profit", function()
     local w,A=serviceWorld(); local UI=A.CraftingUI
     UI.markup:SetText("20"); truth(UI.ApplyMarkup()); equal(A.DB.Settings().quoteMarkup,20)
-    equal(UI.values[2].text,"4s 80c"); equal(UI.quoteText,"Enchant Chest - Test - 4s 80c ea")
+    equal(UI.values[2].text,coin(480)); equal(UI.quoteText,"Enchant Chest - Test - 4s 80c ea")
     equal(A.Crafting.selected.profitMin,nil); equal(A.Crafting.builds,1)
     UI.markup:SetText("1001"); equal(UI.ApplyMarkup(),false); equal(A.DB.Settings().quoteMarkup,20)
     w.combat=true; UI.markup:SetText("25"); equal(UI.ApplyMarkup(),false); equal(A.DB.Settings().quoteMarkup,20)
@@ -115,7 +116,7 @@ test("service hover quotes use the current markup without revaluing the catalog"
     UI.SetSearch("Enchant"); A.DB.data.settings.quoteMarkup=20
     local button=UI.catalogRows[1]; local builds=A.Crafting.builds
     button.scripts.OnEnter(button); truth(GameTooltip:IsShown())
-    equal(GameTooltip.lines[4].right,"4s 80c"); equal(A.Crafting.builds,builds)
+    equal(GameTooltip.lines[4].right,coin(480)); equal(A.Crafting.builds,builds)
     button.scripts.OnLeave(button); equal(GameTooltip:IsShown(),false); equal(w.requests,1)
 end)
 test("a service-only profession has a useful profitable-view empty message", function()
@@ -123,5 +124,5 @@ test("a service-only profession has a useful profitable-view empty message", fun
     equal(#A.CraftingUI.CatalogView(),0); truth(A.CraftingUI.empty:IsShown())
     truth(string.find(A.CraftingUI.empty.text,"services",1,true)); equal(A.CraftingUI.CatalogSummary().missing,0)
     A.CraftingUI.showAllButton.scripts.OnClick(); equal(A.CraftingUI.empty:IsShown(),false)
-    equal(A.CraftingUI.catalogRows[1].profit.text,"4s 00c")
+    equal(A.CraftingUI.catalogRows[1].profit.text,coin(400))
 end)

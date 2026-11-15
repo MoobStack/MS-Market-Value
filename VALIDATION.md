@@ -1,15 +1,13 @@
 # Validation
 
-**1.3.0-beta / 2026-11-15-beta001 · Test revision 2**
+**1.3.0-beta / 2026-11-15-beta001 · Test revision 3**
 
-- **640/640 Lua 5.1 cases** and **8/8 offline importer checks** passed. This includes the existing scan, history, crafting and ledger coverage.
-- New cases cover bonus-based modifiers, legacy history boundaries, exact Buy navigation, twelve-row scrolling, native loot-source pairs, missing-GUID tooltips, gathering, mail/trade exclusions, category totals and window focus.
-- A tracking workload with 12,800 drop item counters, a full 2,048-source ring and 500 farming item types retained under **4.8 MiB of additional Lua state**.
-- The 5,000-item / 15-day market workload retained at most **500 results**. Measured processing steps stayed below **4.9 ms** on the test host; the target is 4 ms. An isolated run retained about **15.7 MiB**, including its saved price/history data. These figures describe synthetic workloads, not total addon memory or native FPS.
-- All three TOCs, 26-file load order, pinned libraries and runtime operation checks passed. No automatic purchases, loot actions, web requests or chat sending were added.
+- **668/668 Lua 5.1 cases** and **12/12 Python checks/workloads** passed, including the previous scan, crafting, history and ledger coverage. One Python case generates the optional large reference workload.
+- New checks cover exact idle boundaries, automatic/manual resume, reload/loading time, coin rendering and plain exports, item colors, active-quest filtering, uncollected loot, packed-count round trips and cache/request limits.
+- A synthetic **500,000-rate / 1,000-source** reference pack retained about **1.8 MiB** as packed data, or **3.4 MiB including 4,000 decoded rows**. The longest measured decode was **1.44 ms**. This measures the Lua reader, not live tooltip or network timing.
+- Tracking 12,800 drop item counters, 2,048 recent sources and 500 farming item types retained under **4.8 MiB of extra Lua state**. The 5,000-item / 15-day market workload retained 500 results, with a longest measured processing step of **4.39 ms** on the test host and a 4 ms target.
+- All three TOCs, 26-file load order, pinned libraries and runtime operation checks passed. Item-name requests are bounded; no automated buying, loot actions or chat sending were added.
 
-The optional Mudfin Oracle pack contains 132 sampled rows from Wowhead Forever. It is not a verified server-rate database and covers one NPC only.
+These are synthetic component measurements, not total addon RAM or native FPS guarantees. The compact Mudfin Oracle pilot keeps 132 exact sampled rates in 458 encoded bytes. It is not a complete world database or verified server-rate table.
 
-The new layouts, native layering and loot/gathering event order still need a Forever check. See the [live checklist](LIVE-TEST-CHECKLIST.md) and [farming guide](docs/FARMING-AND-DROPS.md).
-
-The last live result for 1.2.1 was a complete 140,222-row scan with two saved UTC days. It does not qualify the new beta features.
+Live Forever checks remain for coin sizing, native item colors, idle behavior, quest tooltips and gathering/event timing. See the [live checklist](LIVE-TEST-CHECKLIST.md).

@@ -1,12 +1,21 @@
-# Reference observations
+# Reference drop data
 
-Wowhead has a [Forever database](https://www.wowhead.com/forever/npc=258573/mudfin-oracle) with collected drop counts. Those counts are useful reference samples, not the server’s configured drop chances. Some data may carry over from Classic. Always keep the source and sample size visible.
+Wowhead’s Forever pages contain collected counts and can include **Classic Era fallback rates**. These are reference samples, not verified server settings. Keep their origin, date and sample size with every import.
 
-The optional Mudfin Oracle pack in this test package covers **NPC 258573 only**, with 132 item rows. Extract its `MSMarketValueReference` folder beside `MSMarketValue`, reload, then choose **Reference observations** under `/msmv drops`. Other sources remain unavailable until a pack includes them. Personal observations continue independently.
+The optional pilot covers **Mudfin Oracle, NPC 258573**, with 132 item rows. Install `MSMarketValueReference` beside the main addon and choose **Reference data** in `/msmv drops`. Its packed counts use 458 bytes; the Lua wrapper adds a little more. It requires test revision 3 or later. Other sources remain unavailable until included in a pack.
 
-## Build a pack
+## Building broader coverage
 
-Use Python 3 and the full source repository. Save the desired Wowhead **Forever** NPC/object pages as HTML. Create a JSON manifest beside those files:
+1. Obtain a reusable Forever export/feed, or curate saved Forever NPC/object pages. Check IDs against the client. A complete collection has not been acquired for this beta.
+2. Keep Forever samples, Classic fallback and unknown origins distinct. Prefer a matching Forever sample when available; do not average the two sources together. The importer defaults to mixed/unspecified because a URL alone cannot prove the origin.
+3. Compile offline using item IDs, hits and sample totals. Keep all valid rare rows; use `--min-samples 1` when retaining every available sample. Missing data remains unknown.
+4. Bundle a versioned snapshot. Keep source links and hashes outside the runtime, use the game’s item names/icons, and update the pack with addon releases.
+
+The current compiler packs numeric records and shares repeated sample totals. Only the hovered source is decoded. The cache holds at most eight sources and 4,096 rows, and the data is not copied into SavedVariables. This avoids a large Lua table for every item across the whole world.
+
+## Build from saved pages
+
+Use Python 3 and the full source repository. Save the desired **Forever** pages as HTML and create a manifest beside them:
 
 ```json
 [
@@ -14,17 +23,16 @@ Use Python 3 and the full source repository. Save the desired Wowhead **Forever*
     "id": 258573,
     "kind": "loot",
     "file": "mudfin.html",
-    "url": "https://www.wowhead.com/forever/npc=258573/mudfin-oracle"
+    "url": "https://www.wowhead.com/forever/npc=258573/mudfin-oracle",
+    "origin": "mixed-or-unspecified"
   }
 ]
 ```
 
 ```bash
-python3 tools/import_reference.py manifest.json --output export/MSMarketValueReference
+python3 tools/import_reference.py manifest.json --output export/MSMarketValueReference --min-samples 1
 ```
 
-Use `loot` or `skinning` for NPC pages, and `herbalism` or `mining` for object pages. All desired sources go in one manifest. The importer reads embedded table data without running page scripts or making network requests. Missing tables or mismatched IDs stop the import.
+Kinds are `loot`, `skinning`, `herbalism` and `mining`; herbs/ore use object pages. Reviewed origins can be `forever` or `classic`. Use one pack at a time. Existing readable packs still work.
 
-By default, item rows need at least 50 recorded samples; change this with `--min-samples`. The pack keeps sample counts, source links, import date and input hashes. It is capped at 256 sources, 200 item rows per source and 20,000 rows overall. Smaller packs use less memory. Missing or omitted entries are unknown, not 0% drops.
-
-Install one reference pack at a time. The base addon does not download, upload or duplicate its database into SavedVariables. Verified server rates remain unavailable unless a trustworthy Forever source publishes them.
+The default threshold is 50 samples; lowering it retains smaller samples, whose percentages need caution. Input checks allow up to 65,536 sources, 4,096 rows per source and 2,000,000 rows overall. Oversized sources, duplicate modes and mismatched IDs require review rather than silent truncation. The importer reads embedded tables without running page scripts or making network requests.

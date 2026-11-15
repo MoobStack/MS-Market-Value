@@ -2,7 +2,7 @@
 
 Auction prices, crafting profits, farming estimates and a personal gold ledger for **WoW Forever**.
 
-**1.3.0 beta · Test revision 2** · Client 1.60.1 · Interface 16001 · By MoobStack
+**1.3.0 beta · Test revision 3** · Client 1.60.1 · Interface 16001 · By MoobStack
 
 This is a test build. Version `1.3.0-beta` and build `2026-11-15-beta001` stay fixed until release.
 
@@ -26,7 +26,7 @@ Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the 
 | **Personal ledger** | Record AH purchases and mailbox sales, vendor trades, commissions, trade gold, daily loot and expenses such as repairs, training, respecs, postage and flights. |
 | **Reports and filters** | Income, spending, cash flow and separate recorded/estimated profit totals. Filter by local dates and transaction type, combine Other expense categories, edit entries and copy filtered CSV. |
 | **Drop tooltips** | Personal observations for creatures, herbs, ore and skinning, including visible group loot. Needed quest items come first. Optional reference packs stay separate. Reset by source, zone, dungeon or character. |
-| **Farming sessions** | Estimated value per hour from your own loot, quest rewards and harvesting. Separate category totals; mail and trades are excluded. Movable display, hover-only option, pause/reset, item breakdown and five recent session summaries. |
+| **Farming sessions** | Estimated value per hour from your own loot, quest rewards and harvesting. Separate category totals; mail and trades are excluded. Movable display, hover-only option, optional idle pause, item breakdown and five recent session summaries. |
 
 ## Getting started
 
@@ -46,7 +46,7 @@ The ledger records observed activity. AH sales appear when completed invoices lo
 
 Disenchant values use an **unverified Classic reference** for Forever. No buying, selling, crafting, mail collection or chat sending is automated.
 
-Drop percentages are observations, not verified server chances. Reference mode accepts an optional pack built from saved Wowhead Forever pages. The base addon includes no external loot database. See [farming and drops](docs/FARMING-AND-DROPS.md) for the counting rules and storage limits.
+Drop percentages are observations, not verified server chances. Reference mode accepts an optional pack built from saved Wowhead Forever pages. The base addon includes no external loot database. Displayed prices use coin icons; copied quotes and exports stay plain text. See [farming and drops](docs/FARMING-AND-DROPS.md) for the counting rules and storage limits.
 
 ## Help
 

@@ -45,7 +45,7 @@ Open `/msmv ledger` anywhere outside combat. **Period report** covers all types 
 
 ## Commands and support
 
-Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature/harvesting tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted.
+Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature/harvesting tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted. Optional idle pause accepts 5–1,440 minutes, counts the whole grace period, and resumes on your next farming receipt. Manual pauses remain manual. Prices use coin icons in displays; copyable quotes, diagnostics and exports use plain text.
 
 | Command | Action |
 |---|---|

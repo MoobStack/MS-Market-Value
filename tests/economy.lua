@@ -1,3 +1,4 @@
+local function coin(amount) return _G.MSMarketValue.Util.Coins(amount) end
 local fresh,craftingWorld,craftRecipe,row,link,test,equal,near,truth,secret = ...
 local function watchWorld(prices,suffix)
     local w,A=fresh();w:load()
@@ -87,8 +88,8 @@ test("pricing screen validates all fields before applying and preserves an unfin
 end)
 test("service catalog rows display current numeric quotes without a catalog rebuild",function()
     local w,A=serviceWorld();local UI=A.CraftingUI
-    A.DB.data.settings.showAllRecipes=true;UI.mode="profit";UI.Refresh();equal(UI.catalogRows[1].profit.text,"4s 00c")
-    A.DB.data.settings.serviceLabor=10000;UI.Refresh();equal(UI.catalogRows[1].profit.text,"1g 04s 00c")
+    A.DB.data.settings.showAllRecipes=true;UI.mode="profit";UI.Refresh();equal(UI.catalogRows[1].profit.text,coin(400))
+    A.DB.data.settings.serviceLabor=10000;UI.Refresh();equal(UI.catalogRows[1].profit.text,coin(10400))
     equal(A.Crafting.builds,1);equal(w.requests,1)
 end)
 
@@ -270,7 +271,7 @@ test("watchlist UI saves gold and return thresholds without scanning",function()
 end)
 test("economy diagnostics report pricing watches and ledger cost gaps",function()
     local w,A=watchWorld();truth(A.Watchlist.Save(100,600,0,0));truth(A.Ledger.Record(transaction()));local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 2",1,true));truth(string.find(text,"Watchlists: 1",1,true));truth(string.find(text,"sales_needing_cost=1",1,true))
+    truth(string.find(text,"Test revision: 3",1,true));truth(string.find(text,"Watchlists: 1",1,true));truth(string.find(text,"sales_needing_cost=1",1,true))
 end)
 
 test("invoice identity survives ledger pruning and deliberate entry deletion",function()

@@ -48,6 +48,34 @@ function U.Money(copper)
     return string.format("%dc", bronze)
 end
 
+U.coin={gold="|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:1:0|t",
+    silver="|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:1:0|t",
+    copper="|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:1:0|t"}
+
+-- Rich text belongs in labels and tooltips. Quotes, clipboard text, CSV and
+-- diagnostics keep U.Money's plain denominations.
+function U.Coins(copper)
+    if not U.Number(copper,0) then return "Unavailable" end
+    if copper>0 and copper<1 then return "<1" .. U.coin.copper end
+    if copper~=math.floor(copper) then copper=math.floor(copper+.5) end
+    local gold,silver,bronze=math.floor(copper/10000),math.floor(copper/100)%100,copper%100
+    local parts={}
+    if gold>0 then parts[#parts+1]=string.format("%.0f",gold) .. U.coin.gold end
+    if silver>0 then parts[#parts+1]=silver .. U.coin.silver end
+    if bronze>0 or #parts==0 then parts[#parts+1]=bronze .. U.coin.copper end
+    return table.concat(parts," ")
+end
+
+function U.ItemColor(link,quality)
+    local hex=U.String(link) and link:match("|c%x%x(%x%x%x%x%x%x)|Hitem:")
+    if hex then return tonumber(hex:sub(1,2),16)/255,tonumber(hex:sub(3,4),16)/255,tonumber(hex:sub(5,6),16)/255 end
+    if U.Number(quality,0,8,true) and C_Item and type(C_Item.GetItemQualityColor)=="function" then
+        local r={pcall(C_Item.GetItemQualityColor,quality)}
+        if r[1] and U.Number(r[2],0,1) and U.Number(r[3],0,1) and U.Number(r[4],0,1) then return r[2],r[3],r[4] end
+    end
+    return .90,.89,.84
+end
+
 function U.ParseGold(text, maximum)
     if not U.String(text) then return nil end
     text = string.match(text, "^%s*(.-)%s*$")

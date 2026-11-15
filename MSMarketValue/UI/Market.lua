@@ -27,7 +27,7 @@ UI.ParseGold, UI.GoldText = U.ParseGold, U.GoldText
 
 local fields = {
     { "marketMinReturn", "Min return %", 10, -26, 0, 1000 },
-    { "marketMinProfit", "Min profit (g)", 210, -26, 0, 10000 },
+    { "marketMinProfit", "Min profit " .. U.coin.gold, 210, -26, 0, 10000 },
     { "marketFee", "AH cut %", 410, -26, 0, 30 },
     { "marketLookback", "Lookback days", 10, -71, 1, 30 },
     { "marketMinDays", "Min priced days", 210, -71, 2, 29 },
@@ -323,7 +323,7 @@ function UI.Create(parent)
     end)
     UI.apply = Button(filters, "Apply filters", 618, -19, 114, UI.Apply)
     UI.quickApply=Button(panel,"Apply search",559,-84,201,UI.Apply)
-    Label(filters, "0.25g = 25s", 618, -49, 114)
+    Label(filters, "0.25" .. U.coin.gold .. " = 25" .. U.coin.silver, 618, -49, 114)
     Label(filters, "Move: 0 = off", 618, -72, 114)
     local tableFrame = CreateFrame("Frame", nil, panel, "InsetFrameTemplate")
     UI.tableFrame=tableFrame
@@ -387,8 +387,8 @@ function UI.RefreshDetails()
                 (row.days .. " precise priced days; " .. D.Settings().marketMinDays .. " needed for price movement.")))
             return
         end
-        local target = row.maxBuy and row.maxBuy > 0 and ("Buy at " .. U.Money(row.maxBuy) .. " or less.") or "No positive target buy price."
-        local text = M.Name(row) .. ". " .. target .. " Baseline " .. U.Money(row.baseline) .. " (" .. row.days .. " days)."
+        local target = row.maxBuy and row.maxBuy > 0 and ("Buy at " .. U.Coins(row.maxBuy) .. " or less.") or "No positive target buy price."
+        local text = M.Name(row) .. ". " .. target .. " Baseline " .. U.Coins(row.baseline) .. " (" .. row.days .. " days)."
         text=text .. (row.stockMove and string.format(" Stock %+.0f%% since prior scan.",row.stockMove) or " Stock change needs two scans.")
         if not row.lowUnits then text=text .. " Rescan for quantities at the low." end
         if row.trend then text = text .. string.format(" Recent trend: %+.0f%%.", row.trend) end
@@ -426,14 +426,14 @@ function UI.Refresh()
         local row = index<=UI.pageSize and M.rows[UI.offset+index] or nil
         button.row = row
         if row then
-            local texts = { M.Name(row), U.Money(row.current), row.lowUnits and tostring(row.lowUnits) or "-",
-                row.lowBuyout and U.Money(row.lowBuyout) or "-", row.units and tostring(row.units) or "-",
+            local texts = { M.Name(row), U.Coins(row.current), row.lowUnits and tostring(row.lowUnits) or "-",
+                row.lowBuyout and U.Coins(row.lowBuyout) or "-", row.units and tostring(row.units) or "-",
                 row.profit and A.CraftingUI.SignedMoney(row.profit) or "-", row.roi and string.format("%+.0f%%", row.roi) or "-",
                 row.movement and string.format("%+.0f%%", row.movement) or "-" }
             for column, value in ipairs(texts) do button.labels[column]:SetText(value) end
             for _, column in ipairs({6,7}) do button.labels[column]:SetTextColor(row.profit and row.profit>0 and 0.35 or 1, row.profit and row.profit>0 and 0.87 or 0.38, 0.38) end
             button.labels[8]:SetTextColor(row.movement and row.movement>0 and 0.35 or 1, row.movement and row.movement>0 and 0.87 or 0.65, 0.38)
-            button.labels[1]:SetTextColor(row == UI.selected and 1 or 0.90, row == UI.selected and 0.82 or 0.89, row == UI.selected and 0.25 or 0.84)
+            button.labels[1]:SetTextColor(row.r or .90,row.g or .89,row.b or .84)
             Highlight(button); button:Show()
         else button:Hide() end
     end

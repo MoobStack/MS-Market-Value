@@ -152,6 +152,10 @@ function UI.DiagnosticsText()
     lines[#lines+1]=string.format("Farming: %.0fs; value=%s; unpriced=%d; paused=%s",farm.elapsed,U.Money(farm.total),farm.unknown,tostring(farm.paused))
     lines[#lines+1]="Farming receipts waiting: " .. #A.Farm.pending .. "; threshold=" .. D.Settings().farmThreshold .. "% above vendor after AH cut"
     lines[#lines+1]="Farming exclusions: mail/trade; ignored money messages=" .. (A.Farm.excludedReceipts or 0)
+    lines[#lines+1]="Farming idle: enabled=" .. tostring(D.Settings().farmIdle) .. "; minutes=" .. D.Settings().farmIdleMinutes ..
+        "; automatic_pause=" .. tostring(farm.idlePaused==true) .. "; online_no_loot=" .. math.floor(farm.idleSeconds or 0) .. "s"
+    lines[#lines+1]="Reference cache: format=" .. (A.LootReference.packed and "packed" or "table") .. "; sources=" ..
+        #A.LootReference.order .. "; decoded_rows=" .. A.LootReference.cachedRows .. "/4096"
     lines[#lines+1]="Farming categories: loot=" .. U.Money((farm.coins or 0)+(farm.lootValue or 0)) ..
         "; quests=" .. U.Money((farm.questCoins or 0)+(farm.questValue or 0)) .. "; harvesting=" .. U.Money(farm.harvestValue or 0)
     if A.Farm.reason then lines[#lines+1]="Farming detail: " .. A.Farm.reason end
