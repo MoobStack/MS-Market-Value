@@ -25,6 +25,13 @@ end
 
 UI.ParseGold, UI.GoldText = U.ParseGold, U.GoldText
 
+local function QualityLabel(quality)
+    local name=_G["ITEM_QUALITY" .. quality .. "_DESC"]
+    local r,g,b=U.ItemColor(nil,quality)
+    return string.format("|cff%02x%02x%02x%s|r",math.floor(r*255+.5),math.floor(g*255+.5),math.floor(b*255+.5),
+        U.String(name) and name or U.qualityNames[quality+1])
+end
+
 local fields = {
     { "marketMinReturn", "Min return %", 10, -26, 0, 1000 },
     { "marketMinProfit", "Min profit " .. U.coin.gold, 210, -26, 0, 10000 },
@@ -67,7 +74,7 @@ function UI.Apply()
     end
     local query=UI.searchBox:GetText()
     if not U.String(query) or #query>80 then return false end
-    if not U.Number(UI.qualityDraft,0,511,true) then return false end
+    if not U.Number(UI.qualityDraft,0,63,true) then return false end
     D.data.settings.marketQuality=UI.qualityDraft
     D.data.settings.marketSearch=query:match("^%s*(.-)%s*$")
     UI.searchBox:ClearFocus()
@@ -252,8 +259,8 @@ function UI.Layout()
     UI.pageSize=expanded and 4 or 12
     if expanded then UI.filters:Show() else UI.filters:Hide() end
     local caption=expanded and "Hide filters" or "Filters"
-    if D.Settings().marketQuality~=511 then
-        local count=0;for quality=0,8 do if M.QualityAllowed(D.Settings().marketQuality,quality) then count=count+1 end end
+    if D.Settings().marketQuality~=63 then
+        local count=0;for quality=0,5 do if M.QualityAllowed(D.Settings().marketQuality,quality) then count=count+1 end end
         caption=caption .. " (" .. count .. ")"
     end
     UI.filterToggle:SetText(caption)
@@ -327,13 +334,12 @@ function UI.Create(parent)
     UI.qualityMenu:SetPoint("TOPLEFT",filters,"TOPLEFT",518,-126);UI.qualityMenu:SetSize(214,24)
     UI.qualityMenu:SetDefaultText("All rarities")
     UI.qualityMenu:SetupMenu(function(_,root)
-        root:CreateCheckbox("All rarities",function()return UI.qualityDraft==511 end,function()
-            UI.qualityDraft=UI.qualityDraft==511 and 0 or 511;UI.dirty.marketQuality=true;UI.Refresh()
+        root:CreateCheckbox("All rarities",function()return UI.qualityDraft==63 end,function()
+            UI.qualityDraft=UI.qualityDraft==63 and 0 or 63;UI.dirty.marketQuality=true;UI.Refresh()
         end,"all")
-        for quality=0,8 do
+        for quality=0,5 do
             local q=quality
-            local label=_G["ITEM_QUALITY" .. q .. "_DESC"]
-            root:CreateCheckbox(U.String(label) and label or U.qualityNames[q+1],
+            root:CreateCheckbox(QualityLabel(q),
                 function()return M.QualityAllowed(UI.qualityDraft,q)end,function()
                     local bit=2^q
                     UI.qualityDraft=UI.qualityDraft+(M.QualityAllowed(UI.qualityDraft,q) and -bit or bit)
@@ -442,8 +448,8 @@ function UI.Refresh()
     if not UI.searchBox:HasFocus() and not UI.dirty.marketSearch then UI.searchBox:SetText(D.Settings().marketSearch) end
     if not UI.dirty.marketQuality then UI.qualityDraft=D.Settings().marketQuality end
     local count,label=0
-    for quality=0,8 do if M.QualityAllowed(UI.qualityDraft,quality) then count=count+1;label=U.qualityNames[quality+1] end end
-    if UI.qualityMenu.OverrideText then UI.qualityMenu:OverrideText(count==9 and "All rarities" or count==0 and "No rarities" or count==1 and label or (count .. " rarities selected")) end
+    for quality=0,5 do if M.QualityAllowed(UI.qualityDraft,quality) then count=count+1;label=QualityLabel(quality) end end
+    if UI.qualityMenu.OverrideText then UI.qualityMenu:OverrideText(count==6 and "All rarities" or count==0 and "No rarities" or count==1 and label or (count .. " rarities selected")) end
     UI.apply:SetEnabled(not combat); UI.quickApply:SetEnabled(not combat); UI.recheck:SetEnabled(not combat and not M.job and not next(UI.dirty))
     UI.sortButton:SetText((UI.view == "rising" or UI.view == "falling") and "Sort: movement" or ("Sort: " .. UI.sort))
     UI.sortButton:SetEnabled(not combat and UI.view ~= "rising" and UI.view ~= "falling")
@@ -477,7 +483,7 @@ function UI.Refresh()
     UI.pageText:SetText(string.format("%d-%d / %d%s",#M.rows>0 and UI.offset+1 or 0,math.min(UI.offset+UI.pageSize,#M.rows),
         M.eligible or 0,(M.eligible or 0)>M.limit and (" | Best " .. M.limit .. " shown") or ""))
     UI.status:SetText(UI.message or (next(UI.dirty) and "Changes not applied. Click Apply filters or press Enter; Esc restores the focused field.") or
-        (M.job and ((M.job.phase == "variants" and ("Checking history variants: " .. (M.job.prepared or 0)) or ("Checking saved prices: " .. M.job.examined)) .. ". Previous results remain until ready.") or M.reason) or
+        (M.job and ((M.job.phase == "variants" and ("Preparing item variants: " .. (M.job.prepared or 0)) or ("Updating results: " .. M.job.examined .. " current entries checked")) .. ". Previous results shown until finished.") or M.reason) or
         (M.truncated and "Large dataset: first 50,000 price entries checked." or "Resale requires the minimum price drop. Estimates exclude deposits and unsold stock."))
 end
 

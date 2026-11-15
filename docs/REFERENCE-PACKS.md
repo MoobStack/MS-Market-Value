@@ -2,7 +2,9 @@
 
 Wowhead’s Forever pages contain collected counts and can include **Classic Era fallback rates**. These are reference samples, not verified server settings. Keep their origin, date and sample size with every import.
 
-The optional pilot covers **Mudfin Oracle, NPC 258573**, with 132 item rows. Install `MSMarketValueReference` beside the main addon and choose **Reference data** in `/msmv drops`. Its packed counts use 458 bytes; the Lua wrapper adds a little more. It requires test revision 3 or later. Other sources remain unavailable until included in a pack.
+The optional pilot covers **Mudfin Oracle, NPC 258573**, with 132 item rows. Install `MSMarketValueReference` beside the main addon and choose **Reference data** in `/msmv drops`. Its packed counts use 458 bytes; the Lua wrapper adds a little more. It requires test revision 3 or later. From revision 5, missing items and sources use your personal samples, marked personal; the shared rates remain unchanged.
+
+The newer [Everloot export](EVERLOOT-DATASET.md) is a checked 2,027-rate baseline. It currently lacks loot-mode classifications and is kept as a review archive, not silently assigned to creature or gathering tables. The separate Dataset Builder can request typed public records for the next step.
 
 For exact download, save and build steps, use [Get a Wowhead reference dataset](WOWHEAD-DATASET.md). The starter ZIP includes a ready manifest and Windows build button; the full repository has the same files.
 

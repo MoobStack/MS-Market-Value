@@ -13,7 +13,7 @@ Set lookback, minimum priced days, AH cut, price movement, minimum return and mi
 
 Resale requires the price drop, return and profit thresholds to pass. Movement `0` disables its drop check. Same-day scans do not add history days. Stale scans, missing prices and known vendor supplies do not produce resale candidates.
 
-Under **Filters → Rarity**, check each quality you want, then Apply. All rarities is the default; selecting none gives no results. The filter applies before the 500-result limit. Item colors load for visible rows without needing a hover.
+Under **Filters → Rarity**, check Poor, Common, Uncommon, Rare, Epic or Legendary, then Apply. Each label uses its rarity color. All six is the default; selecting none gives no results. The filter applies before the 500-result limit. Item colors load for visible rows without needing a hover.
 
 ## Calculations
 
@@ -27,6 +27,8 @@ Under **Filters → Rarity**, check each quality you want, then Apply. All rarit
 | Price movement | Current low compared with the earlier median |
 
 Matching random-suffix series stay separate. With enough observations, recent-versus-older median context helps show a broader trend. Results are capped at 500 and publish together; unchanged settings reuse cached analysis.
+
+**Updating results** is active preparation. The previous list remains visible until the new list is ready. Work is spread across frames. Current scans reuse their variant index between filter changes, and keyword/supply checks run before historical valuation. Incoming item names queue one refresh instead of repeatedly restarting that work.
 
 Left-click a result to open native live listings; right-click for details. **Watch selected** creates or edits its target. Live navigation requires an auctioneer, no combat and usable current results. Native Buy filters still apply.
 

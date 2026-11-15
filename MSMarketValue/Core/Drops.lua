@@ -385,6 +385,31 @@ local function QuestStatus(row,info)
     return not questOnly or active==true,wanted==true
 end
 
+local function PersonalRows(sourceKey,context)
+    local rows,samples={},0
+    local profile=P.Profile()
+    local area=profile and profile.areas[context.key]
+    local mob=U.Table(area) and U.Table(area.mobs) and area.mobs[sourceKey]
+    local totals={}
+    for _,bucket in pairs(U.Table(mob) and U.Table(mob.groups) and mob.groups or {}) do
+        if U.Table(bucket) and U.Number(bucket.samples,0,1000000000,true) and U.Table(bucket.items) then
+            samples=samples+bucket.samples
+            for id,item in pairs(bucket.items) do
+                if ID(id) and U.Table(item) and U.Number(item.hits,0,bucket.samples,true) then
+                    local total=totals[id] or {id=id,hits=0,name=Text(item.name,A.Valuation.MaterialName(id)),questID=item.questID,quality=item.quality}
+                    if item.questItem then total.questItem=true end
+                    total.hits=total.hits+item.hits;totals[id]=total
+                end
+            end
+        end
+    end
+    for _,row in pairs(totals) do
+        row.rate=samples>0 and row.hits/samples*100 or 0
+        row.samples,row.origin=samples,"personal";rows[#rows+1]=row
+    end
+    return rows,samples
+end
+
 function P.Rows(npcID,kind)
     kind=kind or "loot"
     local sourceKey=P.SourceKey(npcID,kind)
@@ -393,30 +418,24 @@ function P.Rows(npcID,kind)
     local cacheKey=tostring(sourceKey) .. "|" .. context.key .. "|" .. D.Settings().dropMode .. "|" .. P.revision .. "|" .. (A.LootReference.revision or 0)
     local snapshot=D.Snapshot()
     if P.cache and P.cache.key==cacheKey and P.cache.snapshot==snapshot then return P.cache.rows,P.cache.samples end
-    local rows,samples={},0
+    local personal,samples=PersonalRows(sourceKey,context)
+    local rows,referenceCount={},0
     if D.Settings().dropMode=="reference" then
+        local included,knownItems={},{}
+        for _,row in ipairs(personal) do knownItems[row.id]=row end
         for _,row in ipairs(A.LootReference.Rows(npcID,kind)) do
-            rows[#rows+1]={id=row.id,name=row.name or A.Valuation.MaterialName(row.id),rate=row.rate,questID=row.questID,questItem=row.questItem,samples=row.samples}
-        end
-    else
-        local profile=P.Profile()
-        local area=profile and profile.areas[context.key]
-        local mob=U.Table(area) and U.Table(area.mobs) and area.mobs[sourceKey]
-        local totals={}
-        for _,bucket in pairs(U.Table(mob) and U.Table(mob.groups) and mob.groups or {}) do
-            if U.Table(bucket) and U.Number(bucket.samples,0,1000000000,true) and U.Table(bucket.items) then
-                samples=samples+bucket.samples
-                for id,item in pairs(bucket.items) do
-                    if ID(id) and U.Table(item) and U.Number(item.hits,0,bucket.samples,true) then
-                        local total=totals[id] or {id=id,hits=0,name=Text(item.name,A.Valuation.MaterialName(id)),questID=item.questID,quality=item.quality}
-                        if item.questItem then total.questItem=true end
-                        total.hits=total.hits+item.hits;totals[id]=total
-                    end
-                end
+            if not included[row.id] then
+                local known=knownItems[row.id]
+                rows[#rows+1]={id=row.id,name=row.name or (known and known.name) or A.Valuation.MaterialName(row.id),rate=row.rate,
+                    questID=row.questID or (known and known.questID),questItem=row.questItem or (known and known.questItem),
+                    quality=known and known.quality,samples=row.samples,origin="reference"}
+                included[row.id]=true;referenceCount=referenceCount+1
             end
         end
-        for _,row in pairs(totals) do row.rate=samples>0 and row.hits/samples*100 or 0;rows[#rows+1]=row end
-    end
+        -- Fill missing items and whole sources without blending denominators
+        -- or writing external samples into the character's observations.
+        for _,row in ipairs(personal) do if not included[row.id] then rows[#rows+1]=row end end
+    else rows=personal end
     local visible={}
     local nameRequests=0
     for _,row in ipairs(rows) do
@@ -447,7 +466,7 @@ function P.Rows(npcID,kind)
         local row=rows[index]
         if row.name=="Item " .. row.id then P.RequestName(row.id) end
     end
-    P.cache={key=cacheKey,rows=rows,samples=samples,snapshot=snapshot,hidden=hidden}
+    P.cache={key=cacheKey,rows=rows,samples=samples,snapshot=snapshot,hidden=hidden,referenceCount=referenceCount}
     return rows,samples
 end
 
@@ -568,7 +587,8 @@ function P.Tooltip(tooltip,data)
     local reference=D.Settings().dropMode=="reference"
     local unit=kind=="loot" and "corpses" or kind=="skinning" and "skins" or "nodes"
     if samples==1 then unit=kind=="loot" and "corpse" or kind=="skinning" and "skin" or "node" end
-    tooltip:AddDoubleLine("MS Market Value - " .. P.labels[kind],reference and A.LootReference.label or
+    tooltip:AddDoubleLine("MS Market Value - " .. P.labels[kind],reference and
+        ((P.cache and P.cache.referenceCount==0 and samples>0) and "Personal fallback" or A.LootReference.label) or
         (samples .. " " .. unit .. " checked"),.55,.83,.85,.61,.66,.70)
     if #rows==0 then
         local text=P.cache and P.cache.hidden>0 and "Quest-only drops hidden; no current matches." or
@@ -577,15 +597,16 @@ function P.Tooltip(tooltip,data)
     end
     for index=1,math.min(#rows,D.Settings().dropRows) do
         local row=rows[index]
-        local count=reference and (row.samples and (" (" .. row.samples .. " samples)") or "") or
-            (" (" .. row.hits .. "/" .. samples .. ")")
+        local personal=row.origin=="personal"
+        local count=personal and (" (" .. row.hits .. "/" .. row.samples .. (reference and " personal" or "") .. ")") or
+            (row.samples and (" (" .. row.samples .. " samples)") or "")
         local rate=row.rate>0 and row.rate<.01 and "<0.01%" or
             string.format(row.rate>0 and row.rate<1 and "%.2f%%" or "%.1f%%",row.rate)
         tooltip:AddDoubleLine((row.wanted and "|cffffd100Quest: |r" or "") .. row.name,
             rate .. count,row.r or .83,row.g or .86,row.b or .89,.83,.86,.89)
     end
     if #rows>D.Settings().dropRows then tooltip:AddLine("+" .. (#rows-D.Settings().dropRows) .. " more recorded items",.61,.66,.70) end
-    if reference and not A.LootReference.verified then tooltip:AddLine("Sampled reference; not verified server settings.",.92,.72,.38) end
+    if reference and P.cache and P.cache.referenceCount>0 and not A.LootReference.verified then tooltip:AddLine("Sampled reference; not verified server settings.",.92,.72,.38) end
     P.tip={key=key,data=data,lines=tooltip:NumLines()};P.tipDirty=false
 end
 function P.CheckTooltip()

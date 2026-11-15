@@ -155,7 +155,7 @@ test("reference mode stays separate from personal samples and validates external
         return {{id=100,rate=25},{id=101,rate=101},{id=secret,rate=5}}
     end,false))
     A.DB.Settings().dropMode="reference"
-    local rows,n=A.Drops.Rows(1000);equal(rows[1].rate,25);equal(n,0);equal(#rows,1)
+    local rows,n=A.Drops.Rows(1000);equal(rows[1].rate,25);equal(n,1);equal(#rows,1)
     A.DB.Settings().dropMode="observed";rows,n=A.Drops.Rows(1000);equal(rows[1].rate,100);equal(n,1)
 end)
 

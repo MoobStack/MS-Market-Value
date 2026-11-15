@@ -239,7 +239,7 @@ function UI.Refresh()
     if UI.scope.Update then UI.scope:Update() end
     if UI.sourceMenu.Update then UI.sourceMenu:Update() end
     UI.clearDrops:SetText(UI.confirmDrops and "Confirm reset" or "Reset selected")
-    UI.reference:SetText("Reference: " .. A.LootReference.label .. ". Imported observations stay separate from your samples; server drop settings are not available.")
+    UI.reference:SetText("Reference: " .. A.LootReference.label .. ". Missing items use your personal rates, marked personal. Sample counts stay separate; server drop settings are not available.")
     local profile=P.Profile()
     UI.dropStatus:SetText(UI.message or P.reason or ((profile and profile.mobs or 0) .. " source records; " ..
         (profile and profile.cells or 0) .. " item counters. Reset affects this character only."))

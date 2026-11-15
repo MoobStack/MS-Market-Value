@@ -64,6 +64,10 @@ Loot events feed per-character counters grouped by map/instance, source kind/ID 
 
 Optional source packs can call `MSMarketValue.LootReference.Register(label, query, verified)`. The query receives a source ID and kind (`loot`, `herbalism`, `mining` or `skinning`) and returns up to 200 `{id, rate, name?, questID?, samples?}` rows, with rate expressed as a percentage. Results cache for at most 64 sources. The optional offline importer builds a separate addon; no reference database is copied into player saved data.
 
+Reference views fill absent IDs from the current character/area's personal counters. Each row retains its origin and denominator; personal metadata may supply missing quest/rarity fields. The merged tooltip view has one cache and never writes shared counts into SavedVariables. Unclassified Everloot NPC/object rollups are not guessed into a loot mode.
+
+Opportunities keeps one current variant index, reused across filter changes. Modern scans do not walk daily variant maps during preparation. Legacy scans retain the historical safeguards. Keyword/supply filters precede valuation; a bounded heap retains the best 500 before sorting for publication. Metadata arriving during a job queues a follow-up instead of resetting its cursor. Work checks the existing 4 ms cooperative budget.
+
 Gathering casts and exposed loot-source GUIDs separate harvesting from corpse loot. Up to 128 spell-name decisions are cached. Visible object tooltips have a 0.25-second fallback check when typed callbacks are unavailable. The session keeps exact category counters and reuses cached valuations; HUD interpolation changes only the display.
 
 Standalone portrait windows use separate 1,024-level bands for their native children. Focusing a window moves the complete band, including high-level title and border frames.

@@ -93,7 +93,7 @@ test("rarity menu permits multiple checked qualities and applies them together",
     local w,A=world();scan(w,A,{{id=100,quality=2},{id=101,quality=3},{id=102,quality=4}})
     local ui=market(w,A);ui.qualityMenu:OpenMenu();truth(ui.qualityMenu:Pick("all"));equal(ui.qualityDraft,0)
     truth(ui.qualityMenu:Pick(2));truth(ui.qualityMenu:Pick(3));equal(ui.qualityDraft,12)
-    truth(ui.qualityMenu:IsMenuOpen());equal(A.DB.Settings().marketQuality,511)
+    truth(ui.qualityMenu:IsMenuOpen());equal(A.DB.Settings().marketQuality,63)
     truth(ui.Apply());analyze(A);ui.Refresh();equal(A.DB.Settings().marketQuality,12);equal(#A.Market.rows,2)
     for _,r in ipairs(A.Market.rows)do truth(r.quality==2 or r.quality==3)end
     local _,B=world(A.DB.data);equal(B.DB.Settings().marketQuality,12)
@@ -102,7 +102,7 @@ end)
 test("no selected rarities means no rows and All restores every quality",function()
     local w,A=world();scan(w,A,{{id=100,quality=0},{id=101,quality=1},{id=102,quality=3}})
     A.DB.Settings().marketQuality=0;analyze(A);equal(#A.Market.rows,0)
-    A.DB.Settings().marketQuality=511;analyze(A);equal(#A.Market.rows,3)
+    A.DB.Settings().marketQuality=63;analyze(A);equal(#A.Market.rows,3)
     equal(A.Market.QualityAllowed(8,secret),false)
 end)
 

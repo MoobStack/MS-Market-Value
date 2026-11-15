@@ -1,13 +1,13 @@
-# MS Market Value 1.3.0 beta — Test revision 4
+# MS Market Value 1.3.0 beta — Test revision 5
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
 
-- Farming idle pause starts enabled at five minutes. Set 5–60 whole minutes or disable it. This limits inactivity, not session length; farming receipts resume an idle pause.
-- Item-quality colors load before hover in Opportunities and appear in drop tooltips. A new rarity dropdown lets you check several qualities, then Apply.
-- The main window, ledger, farming report and diagnostics can open in combat. Native AH activity still waits until combat ends.
-- Exact modifier prices stay separate. All items shows them after one scan; Resale needs the configured number of earlier priced UTC days per variant.
-- The Wowhead starter includes a ready manifest, build button and collection instructions. The optional Mudfin reference remains a 132-row pilot, not a complete database.
+- Limit Rarity to Poor, Common, Uncommon, Rare, Epic and Legendary, with matching text colors. Existing supported selections carry forward.
+- Reuse the current variant index when filters change. Check keywords and supply limits before historical pricing, keep only the best 500 results, and finish searches before processing queued item-data refreshes.
+- Keep modifier names accurate when the client initially supplies a generic name. Missing names load without requiring a hover.
+- Fill reference gaps with this character's personal drop rates, including group and harvesting samples. Mark them personal; keep shared rates and sample counts separate.
+- Document the checked Everloot export: 2,027 rates, 268 sources and about 40 KiB compressed. Loot modes remain unresolved, so it is a review dataset rather than an installable reference pack.
 
-Close WoW and replace the addon folder with the Clean ZIP. Keep SavedVariables. Older unmarked profiles adopt the enabled idle default once; later choices are retained. Existing prices and personal data carry forward.
+Close WoW and replace the addon folder using the Clean ZIP. Keep SavedVariables. Check `/msmv diagnostics` says **Test revision: 5**.
 
-Check colors before hovering, rarity combinations, combat opening and idle/resume behavior in Forever. Include `/msmv diagnostics` with any problem. This is a test package, not the official 1.3 release.
+Test repeated keyword/rarity changes on the same scan, including `of the`, and compare exact modifiers with the Buy page. In Reference mode, check a source/item absent from the pack and confirm personal counts appear. This remains a beta; no official 1.3 release was published.

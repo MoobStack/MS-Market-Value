@@ -15,6 +15,8 @@ LibAHTab provides common modern AH tab coordination and explicitly handles Camel
 
 ## Inspected references
 
+The separate Everloot review ZIP retains its own **CC BY-SA 4.0** attribution and data terms in `NOTICE.txt`. It contains normalized community samples, not Everloot application code. This data license does not license the addon code. The review ZIP is not loaded by the Clean addon.
+
 Blizzard UI/API definitions were inspected for compatibility. No extracted Blizzard Lua source, fonts, music or game binaries are bundled. Runtime icon, font and texture paths refer to client-supplied assets.
 
 CMaNGOS Classic data was consulted for material IDs, probabilities and quantity facts. The package uses an original compact representation of those observations, labeled as unverified Classic estimates for Forever. It does not redistribute the SQL database, its executable code or its license as the addon's license.

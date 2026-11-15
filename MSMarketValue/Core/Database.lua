@@ -11,7 +11,7 @@ D.defaults = {
     marketLookback = 14, marketMinDays = 3, marketMinReturn = 20,
     marketMinProfit = 100, marketFee = 5, marketMove = 15,
     marketLowMin = 0, marketLowMax = 0, marketStockMin = 0, marketStockMax = 0,
-    marketStockDrop = 0, marketSearch = "", marketQuality = 511,
+    marketStockDrop = 0, marketSearch = "", marketQuality = 63,
     dropTracking = true, showDrops = true, showHarvestDrops = true, dropRows = 4, dropMode = "observed",
     farmTracking = true, farmShow = true, farmHover = false, farmUseAuction = true,
     farmIncludeQuest = true, farmThreshold = 10, farmIdle = true, farmIdleMinutes = 5,
@@ -25,7 +25,7 @@ local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, hist
     serviceLabor = { 0, 100000000 }, serviceMinimum = { 0, 100000000 }, ledgerDays = { 1, 365 },
     marketLowMin={0,1000000000},marketLowMax={0,1000000000},
     marketStockMin={0,1000000000},marketStockMax={0,1000000000},marketStockDrop={0,100},
-    dropRows={1,10},farmThreshold={0,1000},farmIdleMinutes={5,60},marketQuality={0,511} }
+    dropRows={1,10},farmThreshold={0,1000},farmIdleMinutes={5,60},marketQuality={0,63} }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB
@@ -45,6 +45,8 @@ function D.Initialize()
     -- Adopt the requested on default once; later choices survive upgrades.
     if db.settings.farmIdleConfigured~=true then db.settings.farmIdle=true end
     if U.Number(db.settings.farmIdleMinutes,61,1440,true) then db.settings.farmIdleMinutes=60 end
+    -- Preserve the six supported choices from earlier nine-quality masks.
+    if U.Number(db.settings.marketQuality,0,511,true) then db.settings.marketQuality=db.settings.marketQuality%64 end
     for key, value in pairs(D.defaults) do
         if type(value) == "boolean" then
             if type(db.settings[key]) ~= "boolean" then db.settings[key] = value end

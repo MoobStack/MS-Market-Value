@@ -14,7 +14,9 @@ Solo, party and raid samples are stored separately and combined for the tooltip.
 
 Herbalism, mining and skinning keep separate samples. Normal and rare materials appear after they have been observed. Nodes may need one successful harvest before a name-only tooltip can be identified. A skinned corpse keeps its ordinary drops separate. Turn **Include harvesting tooltips** off to hide these lists while keeping collection enabled.
 
-**Personal drops** works without a database. **Reference data** uses an optional local pack. Wowhead Forever pages provide collected counts, not verified server settings; some observations may carry over from Classic. The tooltip keeps sample sizes visible. Missing data is unknown, not a 0% chance.
+**Personal drops** works without a database. **Reference data** uses an optional local pack and fills missing items or whole sources from your personal records. Fallback rows say **personal** and keep their own hits/sample counts; shared and personal denominators are never combined. Quest and rarity details can also use known personal information. Switching to Personal drops shows only your records.
+
+External samples are not verified server settings. Wowhead pages can include Classic fallback. The [Everloot baseline](EVERLOOT-DATASET.md) contains 2,027 rates across 268 sources, but still needs loot-mode classification before it can become a runtime pack. Without either reference or personal evidence, a rate remains unknown.
 
 The test package includes an optional **Mudfin Oracle** reference pack (132 item rows, NPC 258573). It covers that source only. Install its `MSMarketValueReference` folder alongside the main addon, then select Reference data. It does not change your personal samples. Source links and import date are in the pack’s `SOURCES.json`. See [building reference packs](REFERENCE-PACKS.md) for other creatures or nodes.
 

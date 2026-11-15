@@ -47,7 +47,7 @@ Open `/msmv ledger` anywhere, including combat. **Period report** covers all typ
 
 Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature/harvesting tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted. Idle pause is enabled by default at five minutes. Set 5–60 whole minutes or disable it; the whole grace period counts, and your next farming receipt resumes it. Manual pauses remain manual. Prices use coin icons in displays; copyable quotes, diagnostics and exports use plain text.
 
-The main window, ledger, farming report and diagnostics can open in combat. Scans, live searches and profession controls still wait until combat ends. **Opportunities → Filters → Rarity** allows several checked qualities; Apply saves the selection. Drop tooltip names use item-quality colors too. For a baseline pack, follow the [Wowhead dataset steps](docs/WOWHEAD-DATASET.md).
+The main window, ledger, farming report and diagnostics can open in combat. Scans, live searches and profession controls still wait until combat ends. **Opportunities → Filters → Rarity** offers six colored choices from Poor through Legendary; Apply saves the selection. Drop tooltip names use item-quality colors too. Reference gaps use personal rates with separate counts. See the checked [Everloot baseline and next collection step](docs/EVERLOOT-DATASET.md), or the [Wowhead importer](docs/WOWHEAD-DATASET.md).
 
 | Command | Action |
 |---|---|

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 5 — 2026-11-15
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Use six colored rarity choices, from Poor through Legendary.
+- Reuse variant preparation across filters, reject unrelated keywords before pricing, and keep ranking work bounded. Prevent item-data replies from repeatedly restarting a search.
+- Resolve generic modifier names without hovering; preserve exact variant pricing and history.
+- Fill missing reference drops with personal rates and metadata, keeping their sample counts separate and labeling fallback rows.
+- Check and document the 2,027-rate Everloot baseline. Unclassified loot modes remain outside the runtime pack.
+
 ## 1.3.0 beta — Test revision 4 — 2026-11-15
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.

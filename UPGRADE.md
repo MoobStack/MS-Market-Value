@@ -1,13 +1,15 @@
 # Upgrade and rollback
 
-Test **1.3.0-beta**, build `2026-11-15-beta001`, revision **4**.
+Test **1.3.0-beta**, build `2026-11-15-beta001`, revision **5**.
 
 1. Finish or discard incomplete scans, then close WoW normally.
 2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`.
 3. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP’s addon folder. Keep WTF/SavedVariables.
-4. Restart and check `/msmv diagnostics` shows **1.3.0-beta**, test revision **4**.
+4. Restart and check `/msmv diagnostics` shows **1.3.0-beta**, test revision **5**.
 
 Existing prices, history, watches, ledger entries and beta farming/drop samples carry forward. From revision 2 onward, scans already have precise modifiers; a fresh scan adds native names and rarity. Older item-wide history stays saved but cannot identify a modifier's movement. All items shows current variants immediately; signals need enough earlier precise priced days. Missed drops cannot be reconstructed.
+
+Rarity now offers only Poor through Legendary. Supported selections carry forward. Reference mode fills missing entries from personal history without merging shared and personal counts.
 
 This update enables idle pause for older beta profiles that have no explicit-choice marker. Your session totals stay intact. Set 5–60 minutes or disable it in Farming settings; that choice is remembered. Older timeouts above 60 minutes are reduced to 60. Compact reference packs need test revision 3 or later; earlier readable packs still work.
 
