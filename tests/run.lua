@@ -50,6 +50,7 @@ local function widget(name)
     function w:ClearAllPoints() self.points = {} end
     function w:GetCenter() return 960, 540 end
     function w:SetSize(width, height) self.width, self.height = width, height end
+    function w:SetAlpha(value) self.alpha=value end
     function w:SetWidth(width) self.width = width end
     function w:SetHeight(height) self.height = height end
     function w:CreateFontString() return widget() end
@@ -99,6 +100,9 @@ end
 local function fresh(saved)
     local world = { wall = 1800000000, mono = 0, cpu = 0, rows = {}, requests = 0, loadRequests = 0, items = {}, realm = "FixtureRealm", region = 1, portal = "us", faction = "Horde", hardcore = false, combat = false, ready = true, interface = 16001, messages = {}, locations = {}, containers = {}, equipment = {} }
     _G.MSMarketValueDB = saved
+    for _,name in ipairs({"GetNumLootItems","GetLootSlotLink","GetLootSlotInfo","GetLootSourceInfo","UnitName",
+        "GetInstanceInfo","GetRealZoneText","GetZoneText","IsInRaid","IsInGroup","C_Map","C_QuestLog",
+        "LOOT_ITEM_SELF","LOOT_ITEM_SELF_MULTIPLE"}) do _G[name]=nil end
     _G.issecretvalue = function(v) return rawequal(v, secret) end
     _G.canaccessvalue = function(v) return not rawequal(v, secret) end
     _G.GetServerTime = function() return world.wall end
@@ -297,8 +301,8 @@ local function fresh(saved)
         end
         return ah
     end
-    function world:event(event, arg1, arg2)
-        A.eventFrame.scripts.OnEvent(A.eventFrame, event, arg1, arg2)
+    function world:event(event, ...)
+        A.eventFrame.scripts.OnEvent(A.eventFrame, event, ...)
     end
     function world:openAH()
         local ah = AuctionHouseFrame or self:makeAH()
@@ -1162,7 +1166,7 @@ test("beta upgrade retains the completed beta003 market, settings, exclusions an
     snapshot.version, snapshot.build = saved.version, saved.build
     saved.settings.staleHours=72; saved.excludedItems[300]=true
     local w2,A2 = fresh(saved); w2.realm="ClassicBetaPvP2"; w2.region=90; w2:load()
-    equal(A2.VERSION,"1.2.1"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
+    equal(A2.VERSION,"1.3.0-beta"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
     equal(A2.DB.data.settings.staleHours,72); equal(A2.DB.data.excludedItems[300],true)
     equal(A2.Scanner.RemainingCooldown(),900); equal(w2.requests,0)
 end)
@@ -1439,9 +1443,9 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("release diagnostics identify the stable build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.2.1 / 2026-11-06-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil)
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
-    equal(A.VERSION,"1.2.1"); equal(A.BUILD,"2026-11-06-release001")
+    equal(A.VERSION,"1.3.0-beta"); equal(A.BUILD,"2026-11-15-beta001")
 end)
 test("filtered native catalog fallback is labeled and leaves the user's filters intact", function()
     local w,A=craftingWorld(); C_TradeSkillUI.GetAllRecipeIDs=nil
@@ -1701,7 +1705,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.2.1 / 2026-11-06-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -2218,12 +2222,12 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.2.1 / 2026-11-06-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 1",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
 
-test("the 1.1.0-to-1.2.1 upgrade keeps prices history preferences and cooldown without scanning", function()
+test("the 1.1.0-to-1.3.0-beta upgrade keeps prices history preferences and cooldown without scanning", function()
     local w,A=craftingWorld()
     local saved,snapshot=A.DB.data,A.DB.Snapshot()
     saved.version,saved.build="1.1.0","2026-10-11-release001"
@@ -2232,7 +2236,7 @@ test("the 1.1.0-to-1.2.1 upgrade keeps prices history preferences and cooldown w
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.2.1"); equal(A2.BUILD,"2026-11-06-release001"); equal(A2.TEST_REVISION,nil)
+    equal(A2.VERSION,"1.3.0-beta"); equal(A2.BUILD,"2026-11-15-beta001"); equal(A2.TEST_REVISION,1)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)
@@ -2252,6 +2256,8 @@ assert(loadfile("tests/ledger-revision7.lua"))(fresh, test, equal, truth)
 assert(loadfile("tests/cash-ledger.lua"))(fresh, link, test, equal, truth, secret)
 assert(loadfile("tests/release.lua"))(fresh, craftingWorld, test, equal, truth)
 assert(loadfile("tests/live-market-history.lua"))(fresh, row, link, test, equal, truth, bagTooltip, findLine, secret)
+
+assert(loadfile("tests/v13.lua"))(fresh, row, link, test, equal, near, truth, secret)
 
 if os.getenv("MSMV_BENCHMARK") == "1" then
     assert(loadfile("tests/market-performance.lua"))(fresh, row, truth, equal)

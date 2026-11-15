@@ -47,7 +47,8 @@ end
 local function Signature(view, sort)
     local s = D.Settings()
     return table.concat({ view, sort, s.marketLookback, s.marketMinDays, s.marketFee,
-        s.marketMinReturn, s.marketMinProfit, s.marketMove, A.Vendor.revision }, "|")
+        s.marketMinReturn, s.marketMinProfit, s.marketMove, s.marketLowMin, s.marketLowMax,
+        s.marketStockMin, s.marketStockMax, s.marketStockDrop, s.marketSearch, A.Vendor.revision }, "|")
 end
 
 local function Fresh(snapshot)
@@ -129,9 +130,30 @@ local function Evaluate(job, key, entry, variant)
     end
     local row = M.Evaluate(entry.low, values, job.settings)
     if not row or not Include(job, row) then return end
-    job.eligible = job.eligible + 1
     row.id, row.suffix, row.key = id, suffix, tostring(key)
-    row.link = "item:" .. id .. ":0:0:0:0:0:" .. (suffix or 0) .. ":0"
+    row.link = U.String(entry.link) and U.ItemID(entry.link) == id and entry.link or
+        ("item:" .. id .. ":0:0:0:0:0:" .. (suffix or 0) .. ":0")
+    row.name = U.LinkName(entry.link)
+    row.units = U.Number(entry.units,1,1000000000,true) and entry.units or nil
+    row.lowUnits = U.Number(entry.lowUnits,1,1000000000,true) and entry.lowUnits or nil
+    row.lowBuyout = row.lowUnits and U.Number(entry.lowBuyout,0,9007199254740991) and entry.lowBuyout or nil
+    local previous = job.snapshot.previousSupply
+    local prior = U.Table(previous) and U.Table(previous[variant and "variants" or "prices"]) and
+        previous[variant and "variants" or "prices"][key]
+    if row.units and U.Number(prior,1,1000000000,true) then row.stockMove=(row.units/prior-1)*100 end
+    local s = job.settings
+    for _, filter in ipairs({{row.lowUnits,s.marketLowMin,s.marketLowMax},{row.units,s.marketStockMin,s.marketStockMax}}) do
+        if (filter[2]>0 and (not filter[1] or filter[1]<filter[2])) or
+           (filter[3]>0 and (not filter[1] or filter[1]>filter[3])) then return end
+    end
+    if s.marketStockDrop>0 and (not row.stockMove or row.stockMove > -s.marketStockDrop) then return end
+    if s.marketSearch~="" then
+        local name = M.Name(row)
+        for word in string.gmatch(string.lower(s.marketSearch),"%S+") do
+            if not string.find(string.lower(name),word,1,true) then return end
+        end
+    end
+    job.eligible = job.eligible + 1
     local rows = job.rows
     local low, high = 1, #rows + 1
     while low < high do
@@ -197,7 +219,8 @@ end
 function M.Name(row)
     if row.name then return row.name end
     local value = A.Valuation.ItemInfo(row.link)
-    row.name = value and value.name or (A.Crafting.MaterialName(row.id) .. (row.suffix and row.suffix ~= 0 and (" (suffix " .. row.suffix .. ")") or ""))
+    row.name = U.LinkName(row.link) or (value and value.name or A.Crafting.MaterialName(row.id))
+    if row.suffix and row.suffix ~= 0 and not U.LinkName(row.link) then row.name=row.name .. " (variant " .. row.suffix .. ")" end
     return row.name
 end
 

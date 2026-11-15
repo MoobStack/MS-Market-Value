@@ -1,6 +1,6 @@
 # User guide
 
-MS Market Value **1.2.1** for WoW Forever. See the [README](README.md) for installation and a feature overview.
+MS Market Value **1.3.0 beta** for WoW Forever. See the [README](README.md) for installation and a feature overview.
 
 ## Scans and tooltips
 
@@ -35,6 +35,8 @@ Below the quote, **Record sale** adds a commission. Price is per unit; blank use
 
 **MS Opportunities** finds resale and price-movement signals using saved history. Minimum profit accepts decimal gold: `0.25` means 25s. Resale must meet the price-drop, return and profit filters. Left-click a result to open live listings; right-click for detail. See [market calculations](docs/MARKET-OPPORTUNITIES.md).
 
+Modifier names and links come from the scan. Quantity filters use units, not listing counts; zero disables a limit. **Low buyout** is the cost of all units at that lowest price. Stock decline compares two completed scans and does not prove that items sold. Keyword search matches every word. Rescan after updating for complete quantity data.
+
 Use **Watch item** on the Buy page or **Watch selected** on Opportunities. Edit the price/return/profit targets, then save. Zero disables a target; every enabled target must pass. Alerts are local and evaluated after completed scans.
 
 Open `/msmv ledger` anywhere outside combat. **Period report** covers all types for the selected local dates. **Transactions** filters by type; **Other** lets you combine expense categories. All includes every type and category. Click a row to edit it; use the Type dropdown to reclassify payments. CSV follows the active period/type/category filter.
@@ -42,6 +44,8 @@ Open `/msmv ledger` anywhere outside combat. **Period report** covers all types 
 **Ledger settings** has independent AH, vendor, trade-tip, loot and other-spending tracking. Retention is 1–365 local calendar days, default 90. Shortening it removes older records. Back up/export anything you need first. [Money tools](docs/ECONOMY-TOOLS.md) explains tracking, reports and limits.
 
 ## Commands and support
+
+Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted.
 
 | Command | Action |
 |---|---|

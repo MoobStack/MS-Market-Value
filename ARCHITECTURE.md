@@ -1,10 +1,10 @@
 # Architecture
 
-Release **1.2.1** · Interface **16001** · Saved-data schema **1**
+Test **1.3.0-beta** · Interface **16001** · Saved-data schema **1**
 
 ## Modules
 
-The three identical TOCs load 22 Lua files. Bootstrap creates the addon namespace, then pinned libraries, data/services, the scanner, tooltip integration, UI and event wiring. Original code uses the addon namespace; Blizzard functions are not replaced.
+The three identical TOCs load 26 Lua files. Bootstrap creates the addon namespace, then pinned libraries, data/services, the scanner, tooltip integration, UI and event wiring. Original code uses the addon namespace; Blizzard functions are not replaced.
 
 | Module | Responsibility |
 |---|---|
@@ -13,6 +13,7 @@ The three identical TOCs load 22 Lua files. Bootstrap creates the addon namespac
 | `Data/Disenchant.lua`, `Core/Valuation.lua` | Labeled Classic DE model and saved-price valuation |
 | `Crafting/Analysis.lua` | Native recipe adapter, costs, quotes and batched rankings |
 | `Market/Analysis.lua`, `Core/Watchlist.lua` | History comparisons, bounded rankings, saved targets and alerts |
+| `Core/Drops.lua`, `Farming.lua`, `Data/LootReference.lua` | Capped personal loot counters, acquired-value sessions and optional reference queries |
 | `Core/Ledger.lua`, `Transactions.lua`, `Cash.lua` | Scoped records, reports, confirmed transactions, daily loot and expense matching |
 | `Auction/Scanner.lua`, `Integrations/Tooltips.lua` | Full AH copying/processing and guarded tooltip decoration |
 | `UI/*.lua`, `Core/Events.lua` | Native frames, commands, event routing and update budgets |
@@ -56,3 +57,9 @@ Expenses match native details to wallet deductions, or native repair-cost decrea
 Reports and type/category/date views are cached. The active panel only changes visibility on navigation, preserving mouse clicks during refresh. Native dropdowns select types and multiple expense categories. Manual UI/editing remains outside combat; automatic saved-table writes can run in combat.
 
 For calculations and limits, see the [user guide](DOCUMENTATION.md), [money tools](docs/ECONOMY-TOOLS.md) and [source notes](docs/RESEARCH.md).
+
+## Farming and drops
+
+Loot events feed per-character counters grouped by map/instance, NPC and solo/party/raid context. A 2,048-source session ring prevents normal reopen duplicates; a capped 64-source, five-minute receipt index carries recent protection across reloads. Only verified native source GUIDs are attributed to creatures; ambiguous sources stay unassigned. Farming uses localized self-loot receipts and dedicated quest events, with a short queue to reconcile overlapping quest/chat receipts. Existing ledger tracking remains independent.
+
+Optional source packs can call `MSMarketValue.LootReference.Register(label, query, verified)`. The query receives an NPC ID and returns up to 200 `{id, rate, name?, questID?}` rows, with rate expressed as a percentage. Results cache for at most 64 creatures. No server rates or third-party loot database are included.

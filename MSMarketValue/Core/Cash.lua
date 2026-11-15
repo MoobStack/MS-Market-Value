@@ -193,8 +193,8 @@ function C.ParseCoins(text)
     if not found or not Money(total)or total<=0 or text:gsub("[%s%.,;\194\160\226\128\175]","")~=""then return nil end
     return total
 end
-function C.LootMessage(message)
-    if not D.Settings().trackLoot or not U.String(message)or #message>1024 then return end
+function C.ParseLootMessage(message)
+    if not U.String(message)or #message>1024 then return end
     for _,key in ipairs({"YOU_LOOT_MONEY","LOOT_MONEY_SPLIT","YOU_LOOT_MONEY_GUILD","LOOT_MONEY_SPLIT_GUILD"})do
         local formatText=_G[key]
         if U.String(formatText)then
@@ -203,12 +203,18 @@ function C.LootMessage(message)
                 local money
                 for index,position in ipairs(positions)do if position==1 then money=C.ParseCoins(matches[index]);break end end
                 if not money then C.reason="Loot text could not be read; no amount was guessed.";return end
-                local stamp=math.floor(U.Now());local day=L.LocalDay(stamp)
-                T.Enqueue({kind="loot",name="Money looted",quantity=1,amount=money,cost=0,fee=0,source="Loot",time=stamp,lootDay=day,autoKey="loot:"..day})
-                C.lootAwards=C.lootAwards+1;return
+                return money
             end
         end
     end
+end
+function C.LootMessage(message)
+    if not D.Settings().trackLoot then return end
+    local money=C.ParseLootMessage(message)
+    if not money then return end
+    local stamp=math.floor(U.Now());local day=L.LocalDay(stamp)
+    T.Enqueue({kind="loot",name="Money looted",quantity=1,amount=money,cost=0,fee=0,source="Loot",time=stamp,lootDay=day,autoKey="loot:"..day})
+    C.lootAwards=C.lootAwards+1
 end
 function C.CaptureTrainer()
     C.trainer={};local count=Call(GetNumTrainerServices)

@@ -1,20 +1,9 @@
-# Source and releases
+# Source and testing
 
-The **Git Repository ZIP** contains the source, guides, tests and Git history. Extract it into a new folder and open the `MS-Market-Value` directory there. The **Clean ZIP** is the one to install in WoW.
+The Git Repository ZIP includes the source, tests, documentation and Git history. Extract it into a new folder and open `MS-Market-Value`. Install only the Clean ZIP's addon folder in WoW.
 
-## Publish 1.2.1
+Development is on `develop/1.3.0`, tagged `v1.3.0-beta-test1`. The official release remains 1.2.1. Keep `1.3.0-beta / 2026-11-15-beta001` throughout testing and advance only the test revision.
 
-The packaged `main` builds on GitHub’s 1.2.0 release. From the extracted repository, using an account with write access:
+Run `python3 tools/validate.py --lua lua5.1 --luac luac5.1` for checks, then `python3 tools/package.py` from the clean checkout at the annotated tag in build.json.
 
-```bash
-git fetch origin
-git push --atomic origin main v1.2.1
-```
-
-Create the GitHub release from the existing `v1.2.1` tag. Use [GITHUB-RELEASE.md](GITHUB-RELEASE.md) for the notes and attach the Clean ZIP. If Git reports that GitHub has newer commits, integrate those first.
-
-## Build and recover
-
-Run `python3 tools/validate.py --lua lua5.1 --luac luac5.1` to test. Run `python3 tools/package.py` from the clean checkout at the annotated tag in `build.json`.
-
-The full archive preserves the original development branches and earlier annotated tags under `refs/archive/1.2.0/tags/`, alongside GitHub’s published tags. Earlier notes are in [docs/history](docs/history/README.md).
+This beta is prepared locally. No changes were pushed and no official 1.3 release was created.

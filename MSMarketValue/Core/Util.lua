@@ -105,6 +105,18 @@ function U.VariantKey(link)
     return tostring(itemID) .. ":" .. tostring(suffix)
 end
 
+function U.LinkName(link)
+    if not U.String(link) or #link > 2048 then return nil end
+    local name = string.match(link, "|h%[([^%]]+)%]|h")
+    if name and #name <= 256 then return name end
+end
+
+function U.Call(fn, ...)
+    if type(fn) ~= "function" then return nil end
+    local ok, value = pcall(fn, ...)
+    if ok and U.Accessible(value) then return value end
+end
+
 local regions = { us = 1, kr = 2, eu = 3, tw = 4, cn = 5 }
 
 local function PublicCall(fn, ...)

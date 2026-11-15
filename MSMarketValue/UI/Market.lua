@@ -32,6 +32,11 @@ local fields = {
     { "marketLookback", "Lookback days", 10, -71, 1, 30 },
     { "marketMinDays", "Min priced days", 210, -71, 2, 29 },
     { "marketMove", "Price move %", 410, -71, 0, 1000 },
+    { "marketLowMin", "Low qty min", 10, -100, 0, 1000000000 },
+    { "marketLowMax", "Low qty max", 210, -100, 0, 1000000000 },
+    { "marketStockMin", "Stock min", 410, -100, 0, 1000000000 },
+    { "marketStockMax", "Stock max", 10, -129, 0, 1000000000 },
+    { "marketStockDrop", "Stock drop %", 210, -129, 0, 100 },
 }
 
 local function AppliedText(key)
@@ -56,6 +61,14 @@ function UI.Apply()
     if values.marketMinDays > values.marketLookback then
         UI.message = "Min priced days cannot exceed lookback days."; UI.Refresh(); return false
     end
+    if values.marketLowMax>0 and values.marketLowMin>values.marketLowMax or
+       values.marketStockMax>0 and values.marketStockMin>values.marketStockMax then
+        UI.message="A quantity minimum cannot exceed its maximum."; UI.Refresh(); return false
+    end
+    local query=UI.searchBox:GetText()
+    if not U.String(query) or #query>80 then return false end
+    D.data.settings.marketSearch=query:match("^%s*(.-)%s*$")
+    UI.searchBox:ClearFocus()
     for key, value in pairs(values) do D.data.settings[key] = value; UI.inputs[key]:ClearFocus() end
     UI.message, UI.page, UI.selected, UI.dirty = nil, 1, nil, {}
     M.Ensure(UI.view, UI.sort); UI.Refresh()
@@ -137,7 +150,10 @@ function UI.OpenListings(row, source)
         if not ok then return Message("Could not open live listings. Use the native Buy search and try again.") end
         return true
     end
-    -- Changed native APIs can still offer the ordinary name search.
+    -- A base-name fallback must not silently open all random modifiers.
+    if row.suffix and row.suffix~=0 then
+        return Message("Exact variant search is unavailable. Use the full item name on the Buy page.")
+    end
     local item, bar = A.Valuation.ItemInfo(row.link), ah.SearchBar
     local name = info and info.itemName or (item and item.name)
     if not U.String(name) or name == "" or not U.Table(bar) or type(bar.SetSearchText) ~= "function" or type(bar.StartSearch) ~= "function" then
@@ -183,7 +199,7 @@ function UI.Create(parent)
         UI.page, UI.selected = 1, nil; M.Ensure(UI.view, UI.sort, true); UI.Refresh()
     end)
     local filters = CreateFrame("Frame", nil, panel, "InsetFrameTemplate")
-    filters:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -84); filters:SetSize(746, 99)
+    filters:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -84); filters:SetSize(746, 157)
     Label(filters, "Profit targets", 10, -7, 500):SetFontObject("GameFontNormalSmall")
     Label(filters, "History & movement", 10, -52, 500):SetFontObject("GameFontNormalSmall")
     UI.inputs = {}
@@ -202,18 +218,27 @@ function UI.Create(parent)
         end)
         UI.inputs[key] = box
     end
+    Label(filters,"Keyword",410,-132,64)
+    UI.searchBox=CreateFrame("EditBox",nil,filters,"InputBoxTemplate")
+    UI.searchBox:SetPoint("TOPLEFT",filters,"TOPLEFT",478,-126); UI.searchBox:SetSize(254,24)
+    UI.searchBox:SetAutoFocus(false); UI.searchBox:SetMaxLetters(80); UI.searchBox:SetScript("OnEnterPressed",UI.Apply)
+    UI.searchBox:SetScript("OnTextChanged",function(_,user) if user then UI.dirty.marketSearch=true end end)
+    UI.searchBox:SetScript("OnEscapePressed",function(self)
+        self:ClearFocus(); self:SetText(D.Settings().marketSearch); UI.dirty.marketSearch=nil; UI.Refresh()
+    end)
     UI.apply = Button(filters, "Apply filters", 618, -19, 114, UI.Apply)
     Label(filters, "0.25g = 25s", 618, -49, 114)
     Label(filters, "Move: 0 = off", 618, -72, 114)
     local tableFrame = CreateFrame("Frame", nil, panel, "InsetFrameTemplate")
-    tableFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -190); tableFrame:SetSize(746, 184)
+    tableFrame:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -248); tableFrame:SetSize(746, 134)
     local header = CreateFrame("Frame", nil, tableFrame)
     header:SetPoint("TOPLEFT", tableFrame, "TOPLEFT", 3, -3); header:SetSize(740, 21)
     Fill(header, "BACKGROUND", 0.22, 0.18, 0.09, 0.45)
-    local columns = { {"Item",7,218}, {"Scan low",229,88}, {"Baseline",321,88},
-        {"Net / item",413,102}, {"Return",519,68}, {"Move",591,75}, {"Days",670,61} }
+    local columns = { {"Item / modifier",7,190}, {"Each",201,78}, {"At low",283,44},
+        {"Low buyout",331,95}, {"Stock",430,48}, {"Net / item",482,99},
+        {"Return",585,58}, {"Move",647,80} }
     for index, column in ipairs(columns) do Label(header, column[1], column[2], -3, column[3], index > 1):SetFontObject("GameFontNormalSmall") end
-    for index = 1, 7 do
+    for index = 1, 5 do
         local button = CreateFrame("Button", nil, tableFrame)
         button:SetPoint("TOPLEFT", tableFrame, "TOPLEFT", 3, -25 - (index - 1) * 22); button:SetSize(740, 22)
         Fill(button, "BACKGROUND", 0.12, 0.13, 0.15, index % 2 == 0 and 0.5 or 0.15)
@@ -237,13 +262,13 @@ function UI.Create(parent)
         UI.rows[index] = button
     end
     local details = CreateFrame("Frame", nil, panel, "InsetFrameTemplate")
-    details:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -380); details:SetSize(746, 40)
+    details:SetPoint("TOPLEFT", panel, "TOPLEFT", 14, -388); details:SetSize(746, 40)
     UI.detail = Label(details, "", 10, -6, 726); UI.detail:SetHeight(29); UI.detail:SetWordWrap(true)
-    UI.previous = Button(panel, "Previous", 14, -424, 100, function() UI.page = math.max(1, UI.page - 1); UI.hovered = nil; UI.Refresh() end)
-    UI.pageText = Label(panel, "", 127, -429, 270)
-    UI.watchSelected = Button(panel, "Watch selected", 420, -424, 145, function() A.EconomyUI.WatchDraft(UI.selected) end)
-    UI.next = Button(panel, "Next", 660, -424, 100, function() UI.page = UI.page + 1; UI.hovered = nil; UI.Refresh() end)
-    UI.status = Label(panel, "", 14, -451, 746)
+    UI.previous = Button(panel, "Previous", 14, -432, 100, function() UI.page = math.max(1, UI.page - 1); UI.hovered = nil; UI.Refresh() end)
+    UI.pageText = Label(panel, "", 127, -437, 270)
+    UI.watchSelected = Button(panel, "Watch selected", 420, -432, 145, function() A.EconomyUI.WatchDraft(UI.selected) end)
+    UI.next = Button(panel, "Next", 660, -432, 100, function() UI.page = UI.page + 1; UI.hovered = nil; UI.Refresh() end)
+    UI.status = Label(panel, "", 14, -459, 746)
     panel:SetScript("OnShow", function() M.Ensure(UI.view, UI.sort); UI.Refresh() end)
     panel:SetScript("OnHide", function() UI.hovered = nil; if GameTooltip then GameTooltip:Hide() end end)
     panel:Hide()
@@ -255,7 +280,9 @@ function UI.RefreshDetails()
     local row = UI.hovered or UI.selected
     if row then
         local target = row.maxBuy > 0 and ("For your profit targets, buy at " .. U.Money(row.maxBuy) .. " or less.") or "No positive buy price meets both profit targets."
-        local text = target .. " Prior range: " .. U.Money(row.low) .. " - " .. U.Money(row.high) .. "."
+        local text = target .. " Baseline " .. U.Money(row.baseline) .. " (" .. row.days .. " days)."
+        text=text .. (row.stockMove and string.format(" Stock %+.0f%% since prior scan.",row.stockMove) or " Stock change needs two scans.")
+        if not row.lowUnits then text=text .. " Rescan for quantities at the low." end
         if row.trend then text = text .. string.format(" Recent trend: %+.0f%%.", row.trend) end
         UI.detail:SetText(text)
     else UI.detail:SetText("Left-click an item to open live listings. Right-click for details; hover for its tooltip. Values are per item.") end
@@ -276,23 +303,25 @@ function UI.Refresh()
         local box = UI.inputs[field[1]]
         if not box:HasFocus() and not UI.dirty[field[1]] then box:SetText(AppliedText(field[1])) end
     end
+    if not UI.searchBox:HasFocus() and not UI.dirty.marketSearch then UI.searchBox:SetText(D.Settings().marketSearch) end
     UI.apply:SetEnabled(not combat); UI.recheck:SetEnabled(not combat and not M.job and not next(UI.dirty))
     UI.sortButton:SetText((UI.view == "rising" or UI.view == "falling") and "Sort: movement" or ("Sort: " .. UI.sort))
     UI.sortButton:SetEnabled(not combat and UI.view ~= "rising" and UI.view ~= "falling")
     if UI.publication ~= M.publications or not M.snapshot then
         UI.selected, UI.hovered, UI.publication = nil, nil, M.publications
     end
-    local pages = math.max(1, math.ceil(#M.rows / 7))
+    local pages = math.max(1, math.ceil(#M.rows / 5))
     UI.page = math.max(1, math.min(UI.page, pages))
     for index, button in ipairs(UI.rows) do
-        local row = M.rows[(UI.page - 1) * 7 + index]
+        local row = M.rows[(UI.page - 1) * 5 + index]
         button.row = row
         if row then
-            local texts = { M.Name(row), U.Money(row.current), U.Money(row.baseline), A.CraftingUI.SignedMoney(row.profit),
-                string.format("%+.0f%%", row.roi), string.format("%+.0f%%", row.movement), tostring(row.days) }
+            local texts = { M.Name(row), U.Money(row.current), row.lowUnits and tostring(row.lowUnits) or "-",
+                row.lowBuyout and U.Money(row.lowBuyout) or "-", row.units and tostring(row.units) or "-",
+                A.CraftingUI.SignedMoney(row.profit), string.format("%+.0f%%", row.roi), string.format("%+.0f%%", row.movement) }
             for column, value in ipairs(texts) do button.labels[column]:SetText(value) end
-            for _, column in ipairs({4,5}) do button.labels[column]:SetTextColor(row.profit > 0 and 0.35 or 1, row.profit > 0 and 0.87 or 0.38, 0.38) end
-            button.labels[6]:SetTextColor(row.movement > 0 and 0.35 or 1, row.movement > 0 and 0.87 or 0.65, 0.38)
+            for _, column in ipairs({6,7}) do button.labels[column]:SetTextColor(row.profit > 0 and 0.35 or 1, row.profit > 0 and 0.87 or 0.38, 0.38) end
+            button.labels[8]:SetTextColor(row.movement > 0 and 0.35 or 1, row.movement > 0 and 0.87 or 0.65, 0.38)
             button.labels[1]:SetTextColor(row == UI.selected and 1 or 0.90, row == UI.selected and 0.82 or 0.89, row == UI.selected and 0.25 or 0.84)
             Highlight(button); button:Show()
         else button:Hide() end

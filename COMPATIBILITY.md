@@ -1,6 +1,6 @@
 # Compatibility
 
-**MS Market Value 1.2.1** targets **WoW Forever 1.60.1 / Interface 16001**. It uses modern auction, profession, item and tooltip APIs. The standard, `_Camelot` and `_Forever` TOCs load the same addon. Different clients or Interface versions need an API review.
+**MS Market Value 1.3.0 beta** targets **WoW Forever 1.60.1 / Interface 16001**. It uses modern auction, profession, item and tooltip APIs. The standard, `_Camelot` and `_Forever` TOCs load the same addon. Different clients or Interface versions need an API review.
 
 Live checks cover builds 70338, 70450 and 70790 on PvP/Horde. Build 70790 confirmed recovery of a saved scan and a new day of price history. See [Validation](VALIDATION.md).
 
@@ -18,3 +18,5 @@ Live checks cover builds 70338, 70450 and 70790 on PvP/Horde. Build 70790 confir
 Saved-data schema remains 1. Existing prices, settings, history, watches and ledger records carry forward. Invalid/future roots are preserved. Back up SavedVariables before rollback, because older versions may not understand newer transaction kinds.
 
 The addon performs no automated purchases, sales, crafting, disenchanting, mail collection or trades. Bundled libraries and source references are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and [docs/RESEARCH.md](docs/RESEARCH.md).
+
+The new loot/farming paths were reviewed against build 70938 and checked locally. Their event timing, group-loot visibility and visual layout still need live testing. Personal drop rates use inspected corpses; a hidden or unlooted kill is not treated as a failed drop. Authoritative Forever reference rates are not included.

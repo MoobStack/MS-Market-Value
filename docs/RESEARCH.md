@@ -4,6 +4,7 @@ Implementation was reviewed against pinned client UI/API source, then checked wi
 
 | Source | Use |
 |---|---|
+| [Forever 1.60.1 / 70938](https://github.com/Gethe/wow-ui-source/tree/bebcb6bf309cf41b41bd74f8ca651e6a105b2676) | 1.3 loot events, quest rewards, unit tooltips and exact AH keys |
 | [Forever 1.60.1 / 70450](https://github.com/Gethe/wow-ui-source/tree/172a387e3ab85b26e6640d3058d5ec1e6ccd4c63) | Current AH, merchant, profession, mail, trade, money and menu contracts |
 | [Forever 1.60.1 / 70338](https://github.com/Gethe/wow-ui-source/tree/943764493e6b16d63ded3ab304150d1f05e58b57) | 1.1.0 profession header and scan-resume review |
 | [Forever 1.60.1 / 70205](https://github.com/Gethe/wow-ui-source/tree/e3ecc27b64d30fdc735a3f6579b866858f9f9df1) | Original replication, tooltip and stack-quantity implementation |
@@ -17,3 +18,5 @@ Useful build-70450 files include the generated AuctionHouse/TradeSkillUI API def
 Daily grouping, history averages, conservative resale baselines, expense matching windows and invoice deduplication are addon policies. No reviewed API supplies guaranteed sale demand, original invoice dates or a complete durable transaction identity. Generic wallet increases are not called loot, and quotes alone do not create expenses.
 
 Detailed earlier investigations are in [development history](history/README.md) and original Git tags. [Validation](../VALIDATION.md) distinguishes local checks from native observations.
+
+For 1.3, the reviewed `C_Loot`, `C_LootHistory` and `C_LootJournal` interfaces expose events, observed rolls and item sets, rather than an authoritative creature drop-rate table. `GetItemKeyFromItem` takes an ItemLocation, not a link; the scan keeps full links instead. The addon does not call internal/secure combat-log APIs or count unreadable events as failed drops. Reference mode is a provider interface; no external dataset or other addon's implementation is bundled.

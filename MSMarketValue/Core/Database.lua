@@ -10,6 +10,11 @@ D.defaults = {
     staleHours = 24, quoteMarkup = 0, historyDays = 30,
     marketLookback = 14, marketMinDays = 3, marketMinReturn = 20,
     marketMinProfit = 100, marketFee = 5, marketMove = 15,
+    marketLowMin = 0, marketLowMax = 0, marketStockMin = 0, marketStockMax = 0,
+    marketStockDrop = 0, marketSearch = "",
+    dropTracking = true, showDrops = true, dropRows = 4, dropMode = "observed",
+    farmTracking = true, farmShow = true, farmHover = false, farmUseAuction = true,
+    farmIncludeQuest = true, farmThreshold = 10,
     serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
     watchAlerts = true, ledgerDays = 90, trackAH = true, trackVendor = true, trackTrade = true, trackLoot = true, trackOther = true,
 }
@@ -17,7 +22,10 @@ D.defaults = {
 local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, historyDays = { 1, 30 },
     marketLookback = { 1, 30 }, marketMinDays = { 2, 29 }, marketMinReturn = { 0, 1000 },
     marketMinProfit = { 0, 100000000 }, marketFee = { 0, 30 }, marketMove = { 0, 1000 },
-    serviceLabor = { 0, 100000000 }, serviceMinimum = { 0, 100000000 }, ledgerDays = { 1, 365 } }
+    serviceLabor = { 0, 100000000 }, serviceMinimum = { 0, 100000000 }, ledgerDays = { 1, 365 },
+    marketLowMin={0,1000000000},marketLowMax={0,1000000000},
+    marketStockMin={0,1000000000},marketStockMax={0,1000000000},marketStockDrop={0,100},
+    dropRows={1,10},farmThreshold={0,1000} }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB
@@ -36,10 +44,13 @@ function D.Initialize()
     for key, value in pairs(D.defaults) do
         if type(value) == "boolean" then
             if type(db.settings[key]) ~= "boolean" then db.settings[key] = value end
+        elseif type(value) == "string" then
+            if not U.String(db.settings[key]) or #db.settings[key] > 80 then db.settings[key] = value end
         elseif not U.Number(db.settings[key], settingBounds[key][1], settingBounds[key][2], true) then
             db.settings[key] = value
         end
     end
+    if db.settings.dropMode ~= "observed" and db.settings.dropMode ~= "reference" then db.settings.dropMode = "observed" end
     if type(db.excludedItems) ~= "table" then db.excludedItems = {} end
     if not U.Number(db.cooldownUntil, 0) then db.cooldownUntil = 0 end
     db.version = A.VERSION
@@ -51,6 +62,8 @@ function D.Initialize()
     A.Vendor.Initialize()
     A.Watchlist.Initialize()
     A.Ledger.Initialize()
+    if A.Drops then A.Drops.Initialize() end
+    if A.Farm then A.Farm.Initialize() end
     return true
 end
 
@@ -193,13 +206,20 @@ function D.Snapshot(market)
     return snapshot
 end
 
-local function AddPrice(map, key, unitPrice, quantity)
+local function AddPrice(map, key, unitPrice, quantity, link)
     local p = map[key]
     if not p then
-        map[key] = { low = unitPrice, units = quantity, auctions = 1 }
+        map[key] = { low = unitPrice, units = quantity, auctions = 1,
+            lowUnits=quantity, lowAuctions=1, lowBuyout=unitPrice*quantity, link=link }
         return true
     end
-    p.low = math.min(p.low, unitPrice)
+    if unitPrice < p.low then
+        p.low, p.lowUnits, p.lowAuctions, p.lowBuyout, p.link = unitPrice, quantity, 1, unitPrice*quantity, link
+    elseif unitPrice == p.low then
+        p.lowUnits, p.lowAuctions = p.lowUnits + quantity, p.lowAuctions + 1
+        p.lowBuyout = p.lowBuyout + unitPrice*quantity
+        if not p.link then p.link=link end
+    end
     p.units = p.units + quantity
     p.auctions = p.auctions + 1
     return false
@@ -228,12 +248,13 @@ function D.AddRow(snapshot, itemID, quantity, buyout, link, saleStatus)
         return
     end
     local unitPrice = buyout / quantity
-    if AddPrice(snapshot.prices, itemID, unitPrice, quantity) then
+    if not U.String(link) or #link > 2048 or U.ItemID(link) ~= itemID then link=nil end
+    if AddPrice(snapshot.prices, itemID, unitPrice, quantity, link) then
         snapshot.distinctItems = snapshot.distinctItems + 1
     end
     local variant = U.VariantKey(link)
     if variant and U.ItemID(link) == itemID then
-        AddPrice(snapshot.variants, variant, unitPrice, quantity)
+        AddPrice(snapshot.variants, variant, unitPrice, quantity, link)
     end
     snapshot.buyoutRows = snapshot.buyoutRows + 1
 end
@@ -247,6 +268,16 @@ function D.Commit(snapshot)
     end
     local key = U.MarketKey()
     if key ~= snapshot.marketKey then return false, "Market changed while scanning." end
+    local previous = D.Snapshot()
+    if previous then
+        local supply = { startedAt=previous.startedAt, prices={}, variants={} }
+        for _, map in ipairs({"prices","variants"}) do
+            for id, price in pairs(previous[map]) do
+                if U.Table(price) and U.Number(price.units, 1, 1000000000, true) then supply[map][id]=price.units end
+            end
+        end
+        snapshot.previousSupply = supply
+    end
     snapshot.finishedAt = U.Now()
     snapshot.complete = true
     -- The sole authoritative current-price write. History receives only a

@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 1 — 2026-11-15
+
+- Keep scanned item links and full modifier names in Opportunities.
+- Add keyword, quantity and stock-decline filters, plus units and total buyout at the lowest price.
+- Add short creature drop tooltips from personal observations, with quest priority and scoped resets.
+- Add a farming session report and movable gold-per-hour estimate, with vendor/AH thresholds, pause/reset and recent sessions.
+- Bound the new data stores and reuse cached calculations. Reference drop rates stay separate from personal samples.
+
 ## 1.2.1 — 2026-11-06
 
 - Keep auction prices and history together when Forever assigns a different reporting host in the same market.

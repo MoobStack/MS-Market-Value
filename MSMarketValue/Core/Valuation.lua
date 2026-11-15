@@ -32,6 +32,7 @@ function V.ItemInfo(item)
     return {
         id = itemID, name = r[2], link = r[3], quality = r[4], level = r[5],
         equipLoc = r[10], vendor = r[12], classID = r[13], subclassID = r[14],
+        bindType = U.Number(r[15],0,10,true) and r[15] or nil,
     }
 end
 

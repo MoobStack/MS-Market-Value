@@ -34,6 +34,9 @@ local function Initialize()
         "TRADE_SHOW", "TRADE_CLOSED", "TRADE_REQUEST_CANCEL", "TRADE_ACCEPT_UPDATE", "TRADE_UPDATE",
         "TRADE_MONEY_CHANGED", "PLAYER_TRADE_MONEY", "TRADE_PLAYER_ITEM_CHANGED", "TRADE_TARGET_ITEM_CHANGED",
         "UI_INFO_MESSAGE", "UI_ERROR_MESSAGE",
+        "LOOT_READY", "LOOT_OPENED", "LOOT_SLOT_CHANGED", "LOOT_CLOSED", "CHAT_MSG_LOOT",
+        "UPDATE_MOUSEOVER_UNIT", "PLAYER_TARGET_CHANGED", "QUEST_LOG_UPDATE",
+        "QUEST_TURNED_IN", "QUEST_LOOT_RECEIVED", "PLAYER_ENTERING_WORLD", "PLAYER_LEAVING_WORLD",
     }) do frame:RegisterEvent(event) end
     S.InstallObserver()
     A.Transactions.Install(); A.Cash.Install()
@@ -43,6 +46,8 @@ local function Login()
     if not A.initialized then Initialize() end
     if not A.disabledReason then
         A.Tooltips.Install()
+        A.Drops.Install()
+        A.FarmingUI.HUD()
     end
     U.Print(A.VERSION .. " / " .. A.BUILD .. ". Type /msmv to open.")
     if A.disabledReason then U.Print(A.disabledReason) end
@@ -50,8 +55,10 @@ end
 
 frame:RegisterEvent("ADDON_LOADED")
 frame:RegisterEvent("PLAYER_LOGIN")
-frame:SetScript("OnEvent", function(_, event, arg1, arg2)
+frame:SetScript("OnEvent", function(_, event, ...)
+    local arg1,arg2=...
     if D.data and not A.disabledReason then A.Transactions.Event(event,arg1,arg2); A.Cash.Event(event,arg1,arg2) end
+    if D.data and not A.disabledReason then A.Drops.Event(event,...); A.Farm.Event(event,...) end
     if event == "ADDON_LOADED" then
         if U.String(arg1) and arg1 == A.NAME then Initialize() end
         if U.String(arg1) and arg1 == "Blizzard_AuctionHouseUI" and A.auctionOpen then
@@ -107,6 +114,7 @@ frame:SetScript("OnEvent", function(_, event, arg1, arg2)
         if A.CraftingUI.opener then A.CraftingUI.opener:Hide() end
         if A.EconomyUI.frame then A.EconomyUI.frame:Hide() end
         if A.EconomyUI.csvFrame then A.EconomyUI.csvFrame:Hide() end
+        if A.FarmingUI.frame then A.FarmingUI.frame:Hide() end
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.refreshTooltips = true
         if A.auctionOpen then A.UI.OnAuctionShow() end
@@ -118,6 +126,7 @@ end)
 
 local scanElapsed, uiElapsed = 0, 0
 frame:SetScript("OnUpdate", function(_, elapsed)
+    if D.data and not A.disabledReason then A.FarmingUI.Animate(elapsed) end
     scanElapsed, uiElapsed = scanElapsed + elapsed, uiElapsed + elapsed
     S.CopyTick()
     A.Watchlist.Tick()
@@ -130,7 +139,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     if uiElapsed >= 0.25 then
         uiElapsed = 0
-        if D.data and not A.disabledReason then A.Cash.Tick(); A.Transactions.Tick() end
+        if D.data and not A.disabledReason then A.Cash.Tick(); A.Transactions.Tick(); A.Farm.Tick() end
         A.History.Maintain()
         A.Watchlist.Ensure()
         A.Crafting.Tick()
@@ -178,6 +187,10 @@ SlashCmdList.MSMARKETVALUE = function(message)
         A.EconomyUI.Show("ledger")
     elseif command == "craft" then
         A.CraftingUI.Show()
+    elseif command == "farm" then
+        A.FarmingUI.Show("session")
+    elseif command == "drops" then
+        A.FarmingUI.Show("drops")
     elseif command == "status" then
         U.Print(S.state .. (S.message and (": " .. S.message) or ""))
         local snapshot = D.Snapshot()
@@ -185,6 +198,6 @@ SlashCmdList.MSMARKETVALUE = function(message)
     elseif command == "diagnostics" then
         A.UI.ShowDiagnostics()
     else
-        U.Print("/msmv | scan | pause | resume | restart | discard | craft | market | watch | ledger | status | diagnostics")
+        U.Print("/msmv | scan | pause | resume | restart | discard | craft | market | watch | ledger | farm | drops | status | diagnostics")
     end
 end

@@ -1,11 +1,13 @@
 # Upgrade and rollback
 
-Release **1.2.1**, build `2026-11-06-release001`.
+Test **1.3.0-beta**, build `2026-11-15-beta001`, revision **1**.
 
 1. Finish or discard incomplete scans, then close WoW normally.
 2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`.
 3. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP’s addon folder. Keep WTF/SavedVariables.
-4. Restart and check `/msmv diagnostics` shows **1.2.1**. On a recognized live PvP host it also shows the ruleset and any recovered days.
+4. Restart and check `/msmv diagnostics` shows **1.3.0-beta**, test revision **1**.
+
+Complete a new scan for the lowest-price quantity fields. Existing prices, history, settings, watches and ledger records carry forward. Drop tracking and farming start after this update; earlier activity cannot be reconstructed.
 
 Compatible PvP scans still saved under earlier host names are used automatically. No new scan is required for recovery. Unfinished, deleted or overwritten scans cannot be recreated. If 1.2.0 saved more than one profile for the same character or watchlist, the addon keeps using one and leaves the others in SavedVariables.
 

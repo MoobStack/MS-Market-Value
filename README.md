@@ -1,8 +1,10 @@
 # MS Market Value
 
-Auction prices, crafting profits and a personal gold ledger for **WoW Forever**.
+Auction prices, crafting profits, farming estimates and a personal gold ledger for **WoW Forever**.
 
-**Version 1.2.1** · Client 1.60.1 · Interface 16001 · By MoobStack
+**1.3.0 beta · Test revision 1** · Client 1.60.1 · Interface 16001 · By MoobStack
+
+This is a test build. Version `1.3.0-beta` and build `2026-11-15-beta001` stay fixed until release.
 
 ## Install
 
@@ -23,6 +25,8 @@ Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the 
 | **Watchlists** | Add items from the Buy page or Opportunities. Edit buy-price, return and profit targets; receive local alerts after saved scans. |
 | **Personal ledger** | Record AH purchases and mailbox sales, vendor trades, commissions, trade gold, daily loot and expenses such as repairs, training, respecs, postage and flights. |
 | **Reports and filters** | Income, spending, cash flow and separate recorded/estimated profit totals. Filter by local dates and transaction type, combine Other expense categories, edit entries and copy filtered CSV. |
+| **Creature drops** | A short tooltip list from your own inspected loot, including visible party and raid loot. Active quest items come first. Reset your observations by creature, zone, dungeon or character. |
+| **Farming sessions** | Estimated value per hour from your own loot and quest rewards. Movable display, hover-only option, pause/reset, item breakdown and five recent session summaries. |
 
 ## Getting started
 
@@ -30,6 +34,9 @@ Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the 
 2. Visit a supplies vendor to learn your discounted material prices. Open a profession and click **Show profits**, or use `/msmv craft`. Automatic opening is optional.
 3. Check **MS Opportunities** after collecting history. Its default needs three earlier priced days per item. Use **Watch item** on the Buy page to save a target.
 4. Open `/msmv ledger` anywhere outside combat. Choose a period, review totals or filter Transactions. **Other** has category checkboxes. Tracking options and 1–365-day ledger retention are in **Ledger settings**.
+5. Use `/msmv farm` for a session report and settings, or `/msmv drops` for the creature tooltip. Complete a fresh AH scan for Opportunities’ new quantity fields.
+
+The beta adds full modifier names, keyword and stock filters to Opportunities. **At low** is the number of units at the lowest unit price; **Low buyout** is their combined buyout. Stock movement compares the previous completed scan.
 
 ## Reading the numbers
 
@@ -38,6 +45,8 @@ AH prices are asking prices, not guaranteed sales. Crafting and resale estimates
 The ledger records observed activity. AH sales appear when completed invoices load in the mailbox. Trade gold starts as tips; reclassify craft payments instead of recording them twice. Unknown costs remain unknown. Cash flow includes recorded spending; profit cards cover income entries with known costs. Unrecognized deductions appear as **Unclassified**.
 
 Disenchant values use an **unverified Classic reference** for Forever. No buying, selling, crafting, mail collection or chat sending is automated.
+
+Drop percentages are personal observations, not verified server chances. Reference mode accepts an optional data pack; no authoritative Forever drop-rate database is bundled. See [farming and drops](docs/FARMING-AND-DROPS.md) for the counting rules and storage limits.
 
 ## Help
 

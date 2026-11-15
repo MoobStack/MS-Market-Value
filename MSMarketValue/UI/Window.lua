@@ -139,6 +139,17 @@ function UI.DiagnosticsText()
     else
         lines[#lines + 1] = "Saved snapshot: none for this market"
     end
+    local drops=A.Drops.Profile()
+    lines[#lines+1]="Loot API: sources=" .. tostring(type(GetLootSourceInfo)=="function") ..
+        "; slots=" .. tostring(type(GetLootSlotLink)=="function") .. "; recent_sources=" .. #A.Drops.ring .. "/2048"
+    lines[#lines+1]="Drop observations: " .. (drops and drops.mobs or 0) .. " creature records; " ..
+        (drops and drops.cells or 0) .. " item counters; mode=" .. D.Settings().dropMode
+    lines[#lines+1]="Drop tooltip: " .. tostring(A.Drops.installed==true) .. "; reference=" .. A.LootReference.label
+    if A.Drops.reason then lines[#lines+1]="Drop detail: " .. A.Drops.reason end
+    local farm=A.Farm.Summary()
+    lines[#lines+1]=string.format("Farming: %.0fs; value=%s; unpriced=%d; paused=%s",farm.elapsed,U.Money(farm.total),farm.unknown,tostring(farm.paused))
+    lines[#lines+1]="Farming receipts waiting: " .. #A.Farm.pending .. "; threshold=" .. D.Settings().farmThreshold .. "% above vendor after AH cut"
+    if A.Farm.reason then lines[#lines+1]="Farming detail: " .. A.Farm.reason end
     lines[#lines + 1] = "Recent local messages:"
     for _, message in ipairs(A.log) do lines[#lines + 1] = message end
     return table.concat(lines, "\n")
@@ -216,6 +227,7 @@ function UI.Create()
     local scan = Inset(frame, 12, -8, 744, 196)
     Label(scan, "Price snapshot", 14, -13, 365, "GameFontNormal")
     Label(scan, A.VERSION, 270, -14, 200)
+    UI.farmShortcut = Button(scan,"Farming",376,-8,110,function()A.FarmingUI.Show("session")end)
     UI.ledgerShortcut = Button(scan,"Ledger",496,-8,110,function()A.EconomyUI.Show("ledger")end)
     UI.watchShortcut = Button(scan,"Watchlists",616,-8,112,function()A.EconomyUI.Show("watch")end)
     UI.marketText = Label(scan, "", 14, -34, 716)

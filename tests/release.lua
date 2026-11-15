@@ -6,7 +6,7 @@ local function sameData(actual,expected)
     for key in pairs(actual)do truth(expected[key]~=nil,"unexpected saved field")end
 end
 
-test("beta-to-stable upgrade retains all money tools settings and recorded cost bases",function()
+test("saved beta data retains all money tools settings and recorded cost bases",function()
     local w,A=craftingWorld();local L=A.Ledger;local saved=A.DB.data
     w.vendorItems={{id=2320,price=45,stackCount=5,numAvailable=-1,isPurchasable=true,hasExtendedCost=false}}
     w:event("MERCHANT_SHOW")
@@ -21,17 +21,17 @@ test("beta-to-stable upgrade retains all money tools settings and recorded cost 
     local roots={markets=saved.markets,history=saved.history,vendorBuy=saved.vendorBuy,watchlists=saved.watchlists,ledger=saved.ledger}
     local rows=L.Records();local sum=L.Summary();local first=rows[1].time
     local w2,A2=fresh(saved);w2.wall=w.wall;w2:load()
-    equal(A2.VERSION,"1.2.1");equal(A2.BUILD,"2026-11-06-release001");equal(A2.TEST_REVISION,nil)
+    equal(A2.VERSION,"1.3.0-beta");equal(A2.BUILD,"2026-11-15-beta001");equal(A2.TEST_REVISION,1)
     for key,value in pairs(roots)do sameData(A2.DB.data[key],value)end
     equal(#A2.Ledger.Records(),4);equal(A2.Ledger.Records()[1].time,first)
     equal(A2.Ledger.Summary().flow,sum.flow);equal(A2.Ledger.Summary().profit,sum.profit);equal(A2.Ledger.Summary().estimatedProfit,sum.estimatedProfit)
     equal(#A2.Watchlist.Entries(),1);equal(A2.Vendor.Price(2320),9)
     equal(A2.DB.Settings().serviceLabor,120);equal(A2.DB.Settings().serviceMinimum,500);equal(A2.DB.Settings().ledgerDays,60)
     equal(A2.DB.Settings().trackLoot,false);equal(A2.DB.Settings().trackOther,false);equal(A2.DB.Settings().trackTrade,false)
-    equal(A2.DB.data.version,"1.2.1");equal(w2.requests,0)
+    equal(A2.DB.data.version,"1.3.0-beta");equal(w2.requests,0)
 end)
 
-test("beta pending loot and expense confirmations settle once after the stable upgrade",function()
+test("beta pending loot and expense confirmations settle once after the upgrade",function()
     local w,A=fresh();w:load();local L=A.Ledger;L.limit=1
     truth(L.Record({kind="buy",name="Existing entry",quantity=1,amount=10}))
     local stamp=math.floor(w.wall);local day=L.LocalDay(stamp)
