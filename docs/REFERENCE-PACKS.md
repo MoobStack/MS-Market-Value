@@ -4,6 +4,8 @@ Wowhead’s Forever pages contain collected counts and can include **Classic Era
 
 The optional pilot covers **Mudfin Oracle, NPC 258573**, with 132 item rows. Install `MSMarketValueReference` beside the main addon and choose **Reference data** in `/msmv drops`. Its packed counts use 458 bytes; the Lua wrapper adds a little more. It requires test revision 3 or later. Other sources remain unavailable until included in a pack.
 
+For exact download, save and build steps, use [Get a Wowhead reference dataset](WOWHEAD-DATASET.md). The starter ZIP includes a ready manifest and Windows build button; the full repository has the same files.
+
 ## Building broader coverage
 
 1. Obtain a reusable Forever export/feed, or curate saved Forever NPC/object pages. Check IDs against the client. A complete collection has not been acquired for this beta.

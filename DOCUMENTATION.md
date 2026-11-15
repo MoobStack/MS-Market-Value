@@ -39,13 +39,15 @@ Modifier names and links come from the scan, including modern bonus-based varian
 
 Use **Watch item** on the Buy page or **Watch selected** on Opportunities. Edit the price/return/profit targets, then save. Zero disables a target; every enabled target must pass. Alerts are local and evaluated after completed scans.
 
-Open `/msmv ledger` anywhere outside combat. **Period report** covers all types for the selected local dates. **Transactions** filters by type; **Other** lets you combine expense categories. All includes every type and category. Click a row to edit it; use the Type dropdown to reclassify payments. CSV follows the active period/type/category filter.
+Open `/msmv ledger` anywhere, including combat. **Period report** covers all types for the selected local dates. **Transactions** filters by type; **Other** lets you combine expense categories. All includes every type and category. Outside combat, click a row to edit it; use the Type dropdown to reclassify payments. CSV follows the active period/type/category filter.
 
 **Ledger settings** has independent AH, vendor, trade-tip, loot and other-spending tracking. Retention is 1–365 local calendar days, default 90. Shortening it removes older records. Back up/export anything you need first. [Money tools](docs/ECONOMY-TOOLS.md) explains tracking, reports and limits.
 
 ## Commands and support
 
-Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature/harvesting tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted. Optional idle pause accepts 5–1,440 minutes, counts the whole grace period, and resumes on your next farming receipt. Manual pauses remain manual. Prices use coin icons in displays; copyable quotes, diagnostics and exports use plain text.
+Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature/harvesting tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted. Idle pause is enabled by default at five minutes. Set 5–60 whole minutes or disable it; the whole grace period counts, and your next farming receipt resumes it. Manual pauses remain manual. Prices use coin icons in displays; copyable quotes, diagnostics and exports use plain text.
+
+The main window, ledger, farming report and diagnostics can open in combat. Scans, live searches and profession controls still wait until combat ends. **Opportunities → Filters → Rarity** allows several checked qualities; Apply saves the selection. Drop tooltip names use item-quality colors too. For a baseline pack, follow the [Wowhead dataset steps](docs/WOWHEAD-DATASET.md).
 
 | Command | Action |
 |---|---|

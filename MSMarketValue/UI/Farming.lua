@@ -162,7 +162,7 @@ function UI.Create()
     end)
     UI.idleCheck=Check(settings,"Auto-pause after no loot","farmIdle",14,-254,232)
     UI.idleMinutes=Box(settings,264,-254,58);UI.idleMinutes:SetNumeric(true)
-    Label(settings,"minutes (5-1440)",336,-261,183)
+    Label(settings,"minutes (5-60)",336,-261,183)
     UI.applyIdle=Button(settings,"Apply",534,-254,104,function()
         local ok,reason=F.ConfigureIdle(D.Settings().farmIdle,tonumber(UI.idleMinutes:GetText()))
         UI.message=reason
@@ -286,7 +286,6 @@ function UI.Refresh()
 end
 
 function UI.Show(page)
-    if U.Combat() then return U.Print("Open farming settings outside combat.") end
     UI.Create();UI.page=page=="drops" and "drops" or page=="settings" and "settings" or "session"
     UI.Refresh();UI.frame:Show();U.FocusWindow(UI.frame)
 end

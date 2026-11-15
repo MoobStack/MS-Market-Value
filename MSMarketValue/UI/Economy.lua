@@ -188,7 +188,6 @@ function E.ApplyRetention()
     D.data.settings.ledgerDays=days;L.maintained=nil;L.Maintain();E.messages.ledger="Retention saved; older ledger entries removed.";E.Refresh();return true
 end
 function E.CopyCSV()
-    if U.Combat()then return end
     if not E.csvFrame then
         local f=CreateFrame("Frame","MSMarketValueLedgerCSV",UIParent,"PortraitFrameTemplate")
         f:SetSize(740,530);f:SetPoint("CENTER",UIParent,"CENTER",0,0);f:SetFrameStrata("DIALOG");f:SetClampedToScreen(true)
@@ -229,19 +228,18 @@ local function Accent(label,value)
     label:SetTextColor(value<0 and 1 or .35,value<0 and .38 or .87,.38)
 end
 function E.SetLedgerView(view)
-    if U.Combat()or(view~="report"and view~="transactions"and view~="options")then return end
+    if view~="report"and view~="transactions"and view~="options"then return end
     E.ledgerView=view
     if E.editorFrame then E.editorFrame:Hide()end
     E.Refresh()
 end
 function E.SetFilter(kind)
-    if U.Combat()or(kind~="all"and not titles[kind])then return end
+    if kind~="all"and not titles[kind]then return end
     E.filterKind,E.ledgerPage,E.ledgerView=kind,1,"transactions"
     if kind~="expense"and E.otherDropdown then E.otherDropdown:CloseMenu()end
     E.Refresh()
 end
 function E.SelectOther(category)
-    if U.Combat()then return end
     E.otherCategories=E.otherCategories or{}
     if category=="all"or category=="none"then
         for _,entry in ipairs(L.expenseCategories)do E.otherCategories[entry[1]]=category=="all"end
@@ -254,7 +252,6 @@ function E.OtherTitle()
 end
 
 function E.SetPeriod(period)
-    if U.Combat()then return end
     for _,entry in ipairs(periods)do if entry[1]==period then E.period=period;E.ledgerPage=1;E.Refresh();return end end
 end
 function E.OpenEditor()
@@ -594,7 +591,6 @@ function E.Refresh()
     end
 end
 function E.Show(mode)
-    if U.Combat()then return U.Print("Open money tools outside combat.")end
     if not D.data or A.disabledReason then return end
     if A.UI.frame then A.UI.frame:Hide()end
     E.Create();E.mode=mode=="ledger"and"ledger"or"watch";W.Ensure();E.frame:Show();U.FocusWindow(E.frame);E.Refresh()

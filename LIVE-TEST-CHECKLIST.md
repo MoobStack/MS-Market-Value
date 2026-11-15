@@ -1,11 +1,12 @@
 # Live checks
 
-Test **1.3.0-beta / 2026-11-15-beta001**, revision **3**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
+Test **1.3.0-beta / 2026-11-15-beta001**, revision **4**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
 
 Check the new features first:
 
-- **Idle:** enable five minutes; stop looting and confirm the whole five minutes counts before Idle appears. Loot gold or an item and check automatic resume. Repeat with a manual pause, mail/trade gold, a quest reward and a harvest. Change the input, disable it and reload.
-- **Prices/colors:** compare a blue item’s name with its Opportunities row. Check coin icons in tooltips, crafting, market, watchlist, reports and HUD at your normal UI scale. Copy a quote and CSV; both should remain plain text.
+- **Idle:** confirm five minutes is enabled by default; stop looting and check the whole grace period counts. Loot gold or an item to resume. Try 60, reject 61, disable/reload and check the preference. Manual pauses, mail and trades must not resume it.
+- **Prices/colors:** compare green/blue items with Opportunities rows before hovering. Select several Rarity checkboxes, Apply, then try All/None. Check drop tooltip name colors and coin icons at normal UI scale. Copy a quote and CSV; both should remain plain text.
+- **Combat:** first open `/msmv`, ledger, farming and diagnostics during combat. Check periods and ledger filters; verify scans/live AH searches wait until combat ends. Repeat with the AH already open and check for taint errors.
 - **Quest loot:** open a corpse, leave an item, close/reopen and compare counts. Pick up only one item and verify farming values only that receipt. Check an active quest item, then abandon/complete the quest and rehover; ordinary trade goods should remain visible.
 
 - **Opportunities:** scan, open All items, search Imposing Gloves and compare several modifiers with the Buy page. Scroll through more than 12 results and collapse/apply filters. Click an exact modifier, including while its item details load. Verify 25 units at 50s show a 12g 50s combined buyout. Try quantity limits and compare stock after a second scan.

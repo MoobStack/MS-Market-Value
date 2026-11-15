@@ -6,6 +6,7 @@ from pathlib import Path
 import tempfile
 import subprocess
 import shutil
+import sys
 import unittest
 
 spec = importlib.util.spec_from_file_location("reference_import", Path(__file__).resolve().parents[1] / "tools/import_reference.py")
@@ -25,6 +26,19 @@ def page(rows, origin=None, table="drops"):
 
 
 class ImportChecks(unittest.TestCase):
+    def test_starter_manifest_builds_with_the_documented_cli(self):
+        repo=Path(__file__).resolve().parents[1]
+        manifest=repo/"examples/reference-input/manifest.json"
+        sources=json.loads(manifest.read_text())
+        self.assertEqual(sources[0]["id"],258573)
+        with tempfile.TemporaryDirectory() as folder:
+            root=Path(folder);target=root/"manifest.json";target.write_bytes(manifest.read_bytes())
+            (root/sources[0]["file"]).write_text(page([{"id":100,"count":1,"outof":1}],sources[0]))
+            result=subprocess.run([sys.executable,str(repo/"tools/import_reference.py"),str(target),
+                "--output",str(root/"MSMarketValueReference"),"--min-samples","1"],check=True,capture_output=True,text=True)
+            self.assertEqual(json.loads(result.stdout)["rows"],1)
+            self.assertEqual(json.loads((root/"MSMarketValueReference/SOURCES.json").read_text())[0]["origin"],"mixed-or-unspecified")
+
     def test_rates_keep_sample_denominators_and_omit_tiny_samples(self):
         rows, omitted = importer.read_rows(page([
             {"id": 100, "count": 10, "outof": 400, "name": "Material"},

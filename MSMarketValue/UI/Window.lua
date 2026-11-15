@@ -182,7 +182,6 @@ function UI.ApplyRetention()
 end
 
 function UI.ShowDiagnostics()
-    if U.Combat() then return U.Print("Open diagnostics outside combat.") end
     if not UI.diagnostics then
         local frame = PortraitWindow("MSMarketValueDiagnostics", "Diagnostics - Ctrl+C to copy", 620, 440)
         Inset(frame, 10, -35, 598, 386)
@@ -209,7 +208,7 @@ function UI.ShowDiagnostics()
 end
 
 function UI.Create()
-    if UI.frame or U.Combat() then return end
+    if UI.frame then return end
     UI.checks = {}
     local window = PortraitWindow("MSMarketValueWindow", A.TITLE, 800, 538)
     window:EnableMouse(true)
@@ -462,17 +461,15 @@ function UI.ShowStandalone()
 end
 
 function UI.OpenSettings()
-    if U.Combat()then return U.Print("Open MS Market Value outside combat.")end
     if A.EconomyUI.frame then A.EconomyUI.frame:Hide()end
-    if A.auctionOpen and UI.InstallAuctionTab()then
+    if not U.Combat() and A.auctionOpen and UI.InstallAuctionTab()then
         UI.Dock();UI.tabLibrary:SetSelected("MSMarketValue")
     else UI.ShowStandalone()end
 end
 
 function UI.Toggle()
-    if U.Combat() then return U.Print("Open MS Market Value outside combat.") end
     if A.EconomyUI.frame then A.EconomyUI.frame:Hide()end
-    if A.auctionOpen and UI.InstallAuctionTab() then
+    if not U.Combat() and A.auctionOpen and UI.InstallAuctionTab() then
         UI.Dock()
         if UI.panel:IsShown() and AuctionHouseFrameDisplayMode and AuctionHouseFrameDisplayMode.Buy then
             AuctionHouseFrame:SetDisplayMode(AuctionHouseFrameDisplayMode.Buy)

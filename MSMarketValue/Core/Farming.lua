@@ -105,9 +105,10 @@ end
 
 function F.ConfigureIdle(enabled,minutes)
     if not D.data then return false,"Farming settings are unavailable." end
-    if type(enabled)~="boolean" or not U.Number(minutes,5,1440,true) then return false,"Choose 5-1440 whole minutes." end
+    if type(enabled)~="boolean" or not U.Number(minutes,5,60,true) then return false,"Choose 5-60 whole minutes." end
     F.Tick()
     D.data.settings.farmIdle,D.data.settings.farmIdleMinutes=enabled,minutes
+    D.data.settings.farmIdleConfigured=true
     local profile=F.Profile()
     if profile then profile.current.idleElapsed,profile.current.idlePaused=0,false end
     F.last=U.Mono();return true

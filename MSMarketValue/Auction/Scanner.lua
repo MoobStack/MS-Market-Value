@@ -233,7 +233,9 @@ local function ReadRow(index)
     end
     local ok, link = pcall(C_AuctionHouse.GetReplicateItemLink, index)
     if not ok or not U.String(link) then link = nil end
-    return { itemID = itemID, quantity = quantity, buyout = buyout, link = link, saleStatus = saleStatus }
+    return { itemID = itemID, quantity = quantity, buyout = buyout, link = link, saleStatus = saleStatus,
+        quality=U.Number(values[5],0,8,true) and values[5] or nil,
+        name=U.String(values[2]) and #values[2]<=256 and values[2] or nil }
 end
 
 local function SaveCopy(index, row)
@@ -316,7 +318,7 @@ local function Process(index)
     end
     if row == nil then S.Stop(reason, true); return nil end
     if row == false then return false end
-    D.AddRow(S.work, row.itemID, row.quantity, row.buyout, row.link, row.saleStatus)
+    D.AddRow(S.work, row.itemID, row.quantity, row.buyout, row.link, row.saleStatus,row.quality,row.name)
     S.copy[index] = nil -- Aggregated rows no longer need a second in-memory copy.
     return true
 end

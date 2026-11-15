@@ -66,14 +66,35 @@ function U.Coins(copper)
     return table.concat(parts," ")
 end
 
+U.qualityNames={"Poor","Common","Uncommon","Rare","Epic","Legendary","Artifact","Heirloom","WoW Token"}
+local qualityHex={"9d9d9d","ffffff","1eff00","0070dd","a335ee","ff8000","e6cc80","00ccff","00ccff"}
+function U.ItemQuality(item,known)
+    if U.Number(known,0,8,true) then return known end
+    if U.String(item) or U.Number(item,1,2147483647,true) then
+        local quality=U.Call(C_Item and C_Item.GetItemQualityByID,item)
+        if U.Number(quality,0,8,true) then return quality end
+    end
+    local hex=U.String(item) and item:match("|c%x%x(%x%x%x%x%x%x)|Hitem:")
+    if hex then for index=1,6 do if hex:lower()==qualityHex[index] then return index-1 end end end
+end
+
 function U.ItemColor(link,quality)
-    local hex=U.String(link) and link:match("|c%x%x(%x%x%x%x%x%x)|Hitem:")
-    if hex then return tonumber(hex:sub(1,2),16)/255,tonumber(hex:sub(3,4),16)/255,tonumber(hex:sub(5,6),16)/255 end
     if U.Number(quality,0,8,true) and C_Item and type(C_Item.GetItemQualityColor)=="function" then
         local r={pcall(C_Item.GetItemQualityColor,quality)}
         if r[1] and U.Number(r[2],0,1) and U.Number(r[3],0,1) and U.Number(r[4],0,1) then return r[2],r[3],r[4] end
     end
+    local hex=U.Number(quality,0,8,true) and qualityHex[quality+1] or
+        (U.String(link) and link:match("|c%x%x(%x%x%x%x%x%x)|Hitem:"))
+    if hex then return tonumber(hex:sub(1,2),16)/255,tonumber(hex:sub(3,4),16)/255,tonumber(hex:sub(5,6),16)/255 end
     return .90,.89,.84
+end
+
+function U.ItemName(link,current,scanned)
+    local name=U.String(scanned) and #scanned>0 and scanned or U.LinkName(link)
+    if U.String(current) and #current>0 then
+        if not name or #current>#name then name=current end
+    end
+    return name
 end
 
 function U.ParseGold(text, maximum)
@@ -182,17 +203,19 @@ end
 -- standalone window a whole band so another window cannot cut through it.
 local windows,windowSet={},{}
 function U.FocusWindow(frame)
-    if U.Combat() then return end
     for _=1,16 do
         if not frame or windowSet[frame] then break end
         frame=frame.GetParent and frame:GetParent() or nil
     end
     if not frame or not windowSet[frame] then return end
+    if U.Combat() and frame.IsProtected and frame:IsProtected() then return end
     local index
     for i,other in ipairs(windows) do if other==frame then index=i;break end end
     if not index then return end
     table.remove(windows,index);windows[#windows+1]=frame
-    for i,other in ipairs(windows) do other:SetFrameLevel(20+(i-1)*1024) end
+    for i,other in ipairs(windows) do
+        if not U.Combat() or not other.IsProtected or not other:IsProtected() then other:SetFrameLevel(20+(i-1)*1024) end
+    end
 end
 function U.ManageWindow(frame)
     if not frame or windowSet[frame] then return end

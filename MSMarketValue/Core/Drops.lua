@@ -87,7 +87,8 @@ function P.Profile()
                         if bucketCount>MAX_ITEMS_PER_MOB or cells>MAX_CELLS or not ID(id) or not U.Table(item) or not U.Number(item.hits,0,bucket.samples,true) or
                            not U.Number(item.quantity,0,1000000000,true) or not U.String(item.name) or #item.name>180 or
                            not U.Accessible(item.questID) or (item.questID~=nil and not ID(item.questID)) or
-                           not U.Accessible(item.questItem) or (item.questItem~=nil and type(item.questItem)~="boolean") then
+                           not U.Accessible(item.questItem) or (item.questItem~=nil and type(item.questItem)~="boolean") or
+                           not U.Accessible(item.quality) or (item.quality~=nil and not U.Number(item.quality,0,8,true)) then
                             P.reason="Invalid drop item preserved.";return nil
                         end
                     end
@@ -230,6 +231,7 @@ function P.Observe(guid,items,context,group,kind)
             if U.Table(entry) then
                 if ID(item.questID) and entry.questID~=item.questID then entry.questID=item.questID;changed=true end
                 if U.Accessible(item.questItem) and item.questItem==true and entry.questItem~=true then entry.questItem=true;changed=true end
+                if U.Number(item.quality,0,8,true) and entry.quality~=item.quality then entry.quality=item.quality;changed=true end
             end
         end
     end
@@ -327,6 +329,7 @@ function P.ReadLoot()
                         item.quantity=item.quantity+quantity
                         if ID(info[9]) then item.questID=info[9] end
                         if U.Accessible(info[8]) and info[8]==true then item.questItem=true end
+                        if U.Number(info[6],0,8,true) then item.quality=info[6] end
                         items[key]=item
                         local old=acquisitions[itemID]
                         acquisitions[itemID]={kind=old and old.kind~=kind and "loot" or kind,at=U.Mono()}
@@ -405,7 +408,7 @@ function P.Rows(npcID,kind)
                 samples=samples+bucket.samples
                 for id,item in pairs(bucket.items) do
                     if ID(id) and U.Table(item) and U.Number(item.hits,0,bucket.samples,true) then
-                        local total=totals[id] or {id=id,hits=0,name=Text(item.name,A.Valuation.MaterialName(id)),questID=item.questID}
+                        local total=totals[id] or {id=id,hits=0,name=Text(item.name,A.Valuation.MaterialName(id)),questID=item.questID,quality=item.quality}
                         if item.questItem then total.questItem=true end
                         total.hits=total.hits+item.hits;totals[id]=total
                     end
@@ -424,6 +427,8 @@ function P.Rows(npcID,kind)
         local allowed,wanted=QuestStatus(row,info)
         if allowed then
             row.wanted=wanted
+            row.quality=U.ItemQuality(row.id,row.quality or (info and info.quality))
+            row.r,row.g,row.b=U.ItemColor(nil,row.quality)
             local price=D.Price(row.id,nil,snapshot)
             row.value=price and price.low or (info and info.vendor or 0)
             row.score=row.rate*row.value
@@ -577,7 +582,7 @@ function P.Tooltip(tooltip,data)
         local rate=row.rate>0 and row.rate<.01 and "<0.01%" or
             string.format(row.rate>0 and row.rate<1 and "%.2f%%" or "%.1f%%",row.rate)
         tooltip:AddDoubleLine((row.wanted and "|cffffd100Quest: |r" or "") .. row.name,
-            rate .. count,.83,.86,.89,.83,.86,.89)
+            rate .. count,row.r or .83,row.g or .86,row.b or .89,.83,.86,.89)
     end
     if #rows>D.Settings().dropRows then tooltip:AddLine("+" .. (#rows-D.Settings().dropRows) .. " more recorded items",.61,.66,.70) end
     if reference and not A.LootReference.verified then tooltip:AddLine("Sampled reference; not verified server settings.",.92,.72,.38) end

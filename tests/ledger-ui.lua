@@ -108,10 +108,10 @@ test("reports reuse cached data and do not request auctions or item metadata",fu
     for _=1,50 do E.Refresh()end
     equal(A.Ledger.Summary(E.PeriodFilter()),sums);equal(w.itemCalls or 0,itemCalls);equal(w.requests,0)
 end)
-test("combat hides both ledger and transaction editor and blocks navigation",function()
+test("combat keeps the ledger readable and hides the transaction editor",function()
     local w,A,E=initial();E.OpenEditor();w.combat=true;w:event("PLAYER_REGEN_DISABLED")
-    equal(E.frame:IsShown(),false);equal(E.editorFrame:IsShown(),false);E.SetFilter("buy");equal(E.filterKind,"all")
-    A.UI.OpenSettings();equal(A.UI.frame,nil)
+    truth(E.frame:IsShown());equal(E.editorFrame:IsShown(),false);E.SetFilter("buy");equal(E.filterKind,"buy")
+    A.UI.OpenSettings();truth(A.UI.frame:IsShown())
 end)
 test("the compact ledger pages keep report and transaction regions separate",function()
     local w,A,E=initial();equal(E.frame.height,720);truth(E.reportPanel:IsShown());equal(E.transactionsPanel:IsShown(),false)

@@ -9,7 +9,7 @@ for day = 1, days do
     for index = 1, count do
         local id = 100000 + index
         local entry = row(id, 1, day == days and 500 + index % 100 or 1000 + index % 100)
-        A.DB.AddRow(snapshot, id, 1, entry.buyout, entry.link, 0)
+        A.DB.AddRow(snapshot, id, 1, entry.buyout, entry.link, 0,2,"Fixture item " .. id)
     end
     truth(A.DB.Commit(snapshot))
     if day < days then w:advance(86400) end

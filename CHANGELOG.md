@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 4 — 2026-11-15
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Enable farming idle pause by default at five minutes; allow 5–60 minutes or Off. Preserve later explicit choices and existing session totals.
+- Load visible Opportunities colors before hover and color item names in drop tooltips. Keep native scan names and rarity in compact metadata.
+- Add a rarity dropdown with checkboxes, applied before the result limit. Explain when precise modifier history is still missing.
+- Allow the main window, ledger, farming report and diagnostics to open in combat. Keep native AH scans/searches deferred.
+- Include a ready manifest, Windows build button and step-by-step Wowhead reference guide. Full-world coverage remains separate from the supplied Mudfin pilot.
+
 ## 1.3.0 beta — Test revision 3 — 2026-11-15
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.

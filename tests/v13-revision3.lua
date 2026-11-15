@@ -29,10 +29,10 @@ local function loot(w,id,quantity,line)
 end
 
 test("idle pause is optional and validates whole minutes with a five-minute minimum",function()
-    local w,A=world();equal(A.DB.Settings().farmIdle,false);equal(A.DB.Settings().farmIdleMinutes,5)
+    local w,A=world();equal(A.DB.Settings().farmIdle,true);equal(A.DB.Settings().farmIdleMinutes,5);truth(A.Farm.ConfigureIdle(false,5))
     tick(w,A,900);near(A.Farm.Elapsed(),900);equal(A.Farm.Summary().idlePaused,false)
-    for _,n in ipairs({0,4,5.5,1441,secret})do equal(A.Farm.ConfigureIdle(true,n),false)end
-    enable(A,5);equal(A.DB.Settings().farmIdle,true);equal(A.Farm.ConfigureIdle(true,1440),true)
+    for _,n in ipairs({0,4,5.5,61,secret})do equal(A.Farm.ConfigureIdle(true,n),false)end
+    enable(A,5);equal(A.DB.Settings().farmIdle,true);equal(A.Farm.ConfigureIdle(true,60),true)
 end)
 
 test("the complete idle grace period counts and the timer stops at its precise boundary",function()

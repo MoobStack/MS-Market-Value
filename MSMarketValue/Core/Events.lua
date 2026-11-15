@@ -110,16 +110,12 @@ frame:SetScript("OnEvent", function(_, event, ...)
     elseif event == "PLAYER_REGEN_DISABLED" then
         A.MarketUI.pendingVariant=nil
         S.Stop("Combat started.")
-        if A.UI.frame then A.UI.frame:Hide() end
         if A.UI.panel then A.UI.panel:Hide() end
         if A.MarketUI.panel then A.MarketUI.panel:Hide() end
         U.Notify()
-        if A.UI.diagnostics then A.UI.diagnostics:Hide() end
-        if A.CraftingUI.frame then A.CraftingUI.frame:Hide() end
         if A.CraftingUI.opener then A.CraftingUI.opener:Hide() end
-        if A.EconomyUI.frame then A.EconomyUI.frame:Hide() end
-        if A.EconomyUI.csvFrame then A.EconomyUI.csvFrame:Hide() end
-        if A.FarmingUI.frame then A.FarmingUI.frame:Hide() end
+        if A.CraftingUI.frame then A.CraftingUI.frame:Hide() end
+        if A.EconomyUI.editorFrame then A.EconomyUI.editorFrame:Hide() end
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.refreshTooltips = true
         if A.auctionOpen then A.UI.OnAuctionShow() end
@@ -156,7 +152,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
         end
         if A.auctionOpen and not A.UI.tabInstalled and not U.Combat() then A.UI.InstallAuctionTab() end
         if A.auctionOpen and not U.Combat() then A.EconomyUI.InstallBuyButtons() end
-        if A.EconomyUI.frame and A.EconomyUI.frame:IsShown() and not U.Combat() then A.EconomyUI.Refresh() end
+        if A.EconomyUI.frame and A.EconomyUI.frame:IsShown() then A.EconomyUI.Refresh() end
         if (A.UI.frame and A.UI.frame:IsShown()) or (A.UI.panel and A.UI.panel:IsShown()) then A.UI.Refresh() end
         if A.refreshTooltips and not U.Combat() then
             A.refreshTooltips = false

@@ -67,6 +67,8 @@ function UI.Apply()
     end
     local query=UI.searchBox:GetText()
     if not U.String(query) or #query>80 then return false end
+    if not U.Number(UI.qualityDraft,0,511,true) then return false end
+    D.data.settings.marketQuality=UI.qualityDraft
     D.data.settings.marketSearch=query:match("^%s*(.-)%s*$")
     UI.searchBox:ClearFocus()
     for key, value in pairs(values) do D.data.settings[key] = value; UI.inputs[key]:ClearFocus() end
@@ -249,7 +251,12 @@ function UI.Layout()
     local expanded=UI.filtersOpen==true
     UI.pageSize=expanded and 4 or 12
     if expanded then UI.filters:Show() else UI.filters:Hide() end
-    UI.filterToggle:SetText(expanded and "Hide filters" or "Filters")
+    local caption=expanded and "Hide filters" or "Filters"
+    if D.Settings().marketQuality~=511 then
+        local count=0;for quality=0,8 do if M.QualityAllowed(D.Settings().marketQuality,quality) then count=count+1 end end
+        caption=caption .. " (" .. count .. ")"
+    end
+    UI.filterToggle:SetText(caption)
     if UI.layoutExpanded~=expanded then
         UI.tableFrame:ClearAllPoints()
         UI.tableFrame:SetPoint("TOPLEFT",UI.panel,"TOPLEFT",14,expanded and -280 or -116)
@@ -314,6 +321,26 @@ function UI.Create(parent)
         end)
         UI.inputs[key] = box
     end
+    Label(filters,"Rarity",410,-132,100)
+    UI.qualityDraft=D.Settings().marketQuality
+    UI.qualityMenu=CreateFrame("DropdownButton",nil,filters,"WowStyle1DropdownTemplate")
+    UI.qualityMenu:SetPoint("TOPLEFT",filters,"TOPLEFT",518,-126);UI.qualityMenu:SetSize(214,24)
+    UI.qualityMenu:SetDefaultText("All rarities")
+    UI.qualityMenu:SetupMenu(function(_,root)
+        root:CreateCheckbox("All rarities",function()return UI.qualityDraft==511 end,function()
+            UI.qualityDraft=UI.qualityDraft==511 and 0 or 511;UI.dirty.marketQuality=true;UI.Refresh()
+        end,"all")
+        for quality=0,8 do
+            local q=quality
+            local label=_G["ITEM_QUALITY" .. q .. "_DESC"]
+            root:CreateCheckbox(U.String(label) and label or U.qualityNames[q+1],
+                function()return M.QualityAllowed(UI.qualityDraft,q)end,function()
+                    local bit=2^q
+                    UI.qualityDraft=UI.qualityDraft+(M.QualityAllowed(UI.qualityDraft,q) and -bit or bit)
+                    UI.dirty.marketQuality=true;UI.Refresh()
+                end,q)
+        end
+    end)
     UI.searchBox=CreateFrame("EditBox",nil,panel,"InputBoxTemplate")
     UI.searchBox:SetPoint("TOPLEFT",panel,"TOPLEFT",80,-81); UI.searchBox:SetSize(308,24)
     UI.searchBox:SetAutoFocus(false); UI.searchBox:SetMaxLetters(80); UI.searchBox:SetScript("OnEnterPressed",UI.Apply)
@@ -413,6 +440,10 @@ function UI.Refresh()
         if not box:HasFocus() and not UI.dirty[field[1]] then box:SetText(AppliedText(field[1])) end
     end
     if not UI.searchBox:HasFocus() and not UI.dirty.marketSearch then UI.searchBox:SetText(D.Settings().marketSearch) end
+    if not UI.dirty.marketQuality then UI.qualityDraft=D.Settings().marketQuality end
+    local count,label=0
+    for quality=0,8 do if M.QualityAllowed(UI.qualityDraft,quality) then count=count+1;label=U.qualityNames[quality+1] end end
+    if UI.qualityMenu.OverrideText then UI.qualityMenu:OverrideText(count==9 and "All rarities" or count==0 and "No rarities" or count==1 and label or (count .. " rarities selected")) end
     UI.apply:SetEnabled(not combat); UI.quickApply:SetEnabled(not combat); UI.recheck:SetEnabled(not combat and not M.job and not next(UI.dirty))
     UI.sortButton:SetText((UI.view == "rising" or UI.view == "falling") and "Sort: movement" or ("Sort: " .. UI.sort))
     UI.sortButton:SetEnabled(not combat and UI.view ~= "rising" and UI.view ~= "falling")
@@ -422,6 +453,9 @@ function UI.Refresh()
     UI.offset=math.max(0,math.min(UI.offset or 0,math.max(0,#M.rows-UI.pageSize)))
     UI.page=math.floor(UI.offset/UI.pageSize)+1
     UI.syncScroll=true;UI.scrollbar:SetMinMaxValues(0,math.max(0,#M.rows-UI.pageSize));UI.scrollbar:SetValue(UI.offset);UI.syncScroll=false
+    local visible={}
+    for index=1,UI.pageSize do if M.rows[UI.offset+index] then visible[#visible+1]=M.rows[UI.offset+index] end end
+    M.RequestVisibleInfo(visible)
     for index, button in ipairs(UI.rows) do
         local row = index<=UI.pageSize and M.rows[UI.offset+index] or nil
         button.row = row

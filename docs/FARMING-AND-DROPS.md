@@ -41,7 +41,7 @@ Drag the display to move it. Left-click opens the report; right-click pauses or 
 
 ## Idle pause
 
-In **Farming settings**, enable **Auto-pause after no loot** and enter 5–1,440 whole minutes. It is off by default, with five minutes ready to use. Apply the field after changing the time.
+**Auto-pause after no loot** is enabled by default at five minutes. In **Farming settings**, enter 5–60 whole minutes and Apply, or uncheck it to disable. The cap applies to the idle timeout; sessions can run longer than an hour.
 
 The full grace period counts toward the session. After that the timer pauses and the display says **Idle**. Your next received loot, harvested item or included quest reward resumes it. Looking at loot, another player’s drops, mail and trades do not resume it. A manual pause stays paused until you resume it yourself. Offline and loading time are excluded.
 

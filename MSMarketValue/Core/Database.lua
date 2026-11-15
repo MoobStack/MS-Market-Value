@@ -11,10 +11,10 @@ D.defaults = {
     marketLookback = 14, marketMinDays = 3, marketMinReturn = 20,
     marketMinProfit = 100, marketFee = 5, marketMove = 15,
     marketLowMin = 0, marketLowMax = 0, marketStockMin = 0, marketStockMax = 0,
-    marketStockDrop = 0, marketSearch = "",
+    marketStockDrop = 0, marketSearch = "", marketQuality = 511,
     dropTracking = true, showDrops = true, showHarvestDrops = true, dropRows = 4, dropMode = "observed",
     farmTracking = true, farmShow = true, farmHover = false, farmUseAuction = true,
-    farmIncludeQuest = true, farmThreshold = 10, farmIdle = false, farmIdleMinutes = 5,
+    farmIncludeQuest = true, farmThreshold = 10, farmIdle = true, farmIdleMinutes = 5,
     serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
     watchAlerts = true, ledgerDays = 90, trackAH = true, trackVendor = true, trackTrade = true, trackLoot = true, trackOther = true,
 }
@@ -25,7 +25,7 @@ local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, hist
     serviceLabor = { 0, 100000000 }, serviceMinimum = { 0, 100000000 }, ledgerDays = { 1, 365 },
     marketLowMin={0,1000000000},marketLowMax={0,1000000000},
     marketStockMin={0,1000000000},marketStockMax={0,1000000000},marketStockDrop={0,100},
-    dropRows={1,10},farmThreshold={0,1000},farmIdleMinutes={5,1440} }
+    dropRows={1,10},farmThreshold={0,1000},farmIdleMinutes={5,60},marketQuality={0,511} }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB
@@ -41,6 +41,10 @@ function D.Initialize()
     db.schema = A.SCHEMA
     db.markets = db.markets or {}
     if type(db.settings) ~= "table" then db.settings = {} end
+    -- Earlier betas stored an off default without an explicit-choice marker.
+    -- Adopt the requested on default once; later choices survive upgrades.
+    if db.settings.farmIdleConfigured~=true then db.settings.farmIdle=true end
+    if U.Number(db.settings.farmIdleMinutes,61,1440,true) then db.settings.farmIdleMinutes=60 end
     for key, value in pairs(D.defaults) do
         if type(value) == "boolean" then
             if type(db.settings[key]) ~= "boolean" then db.settings[key] = value end
@@ -206,19 +210,26 @@ function D.Snapshot(market)
     return snapshot
 end
 
-local function AddPrice(map, key, unitPrice, quantity, link)
+local function AddPrice(map, key, unitPrice, quantity, link, display)
     local p = map[key]
     if not p then
         map[key] = { low = unitPrice, units = quantity, auctions = 1,
-            lowUnits=quantity, lowAuctions=1, lowBuyout=unitPrice*quantity, link=link }
+            lowUnits=quantity, lowAuctions=1, lowBuyout=unitPrice*quantity, link=link,display=display }
         return true
     end
     if unitPrice < p.low then
         p.low, p.lowUnits, p.lowAuctions, p.lowBuyout, p.link = unitPrice, quantity, 1, unitPrice*quantity, link
+        p.display=display
     elseif unitPrice == p.low then
         p.lowUnits, p.lowAuctions = p.lowUnits + quantity, p.lowAuctions + 1
         p.lowBuyout = p.lowBuyout + unitPrice*quantity
         if not p.link then p.link=link end
+        if display then
+            if not p.display then p.display=display
+            elseif (p.display[1]==nil and display[1]~=nil) or (not p.display[2] and display[2]) then
+                p.display={p.display[1] or display[1],p.display[2] or display[2]}
+            end
+        end
     end
     p.units = p.units + quantity
     p.auctions = p.auctions + 1
@@ -236,7 +247,7 @@ function D.NewSnapshot(marketKey, count, startedAt)
 end
 
 -- Values were validated by the scan adapter before reaching this accumulator.
-function D.AddRow(snapshot, itemID, quantity, buyout, link, saleStatus)
+function D.AddRow(snapshot, itemID, quantity, buyout, link, saleStatus, quality, name)
     snapshot.processedRows = snapshot.processedRows + 1
     if saleStatus ~= 0 then
         snapshot.soldRows = snapshot.soldRows + 1
@@ -249,12 +260,21 @@ function D.AddRow(snapshot, itemID, quantity, buyout, link, saleStatus)
     end
     local unitPrice = buyout / quantity
     if not U.String(link) or #link > 2048 or U.ItemID(link) ~= itemID then link=nil end
-    if AddPrice(snapshot.prices, itemID, unitPrice, quantity, link) then
+    quality=U.Number(quality,0,8,true) and quality or nil
+    name=U.String(name) and #name>0 and #name<=256 and name or nil
+    local variant=U.VariantKey(link)
+    local base,exact=snapshot.prices[itemID],variant and snapshot.variants[variant]
+    -- An eighth field fits the existing price table. Share the small metadata
+    -- pair between base/variant lows, and allocate it only for a candidate low.
+    local display
+    if (quality~=nil or name) and (not base or unitPrice<=base.low or variant and (not exact or unitPrice<=exact.low)) then
+        display={quality,name}
+    end
+    if AddPrice(snapshot.prices, itemID, unitPrice, quantity, link,display) then
         snapshot.distinctItems = snapshot.distinctItems + 1
     end
-    local variant = U.VariantKey(link)
     if variant and U.ItemID(link) == itemID then
-        AddPrice(snapshot.variants, variant, unitPrice, quantity, link)
+        AddPrice(snapshot.variants, variant, unitPrice, quantity, link,display)
     end
     snapshot.buyoutRows = snapshot.buyoutRows + 1
 end
