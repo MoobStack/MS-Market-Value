@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 2 — 2026-11-15
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Separate bonus-based item modifiers in prices, history, watchlists and live Buy navigation. Label old item-wide data instead of assigning it to a modifier.
+- Show 12 Opportunities rows with scrolling, collapsible filters and an All items view. Keep at most 500 results.
+- Fix the native loot-source reader and missing-GUID creature tooltips. Show an explanation when no samples exist.
+- Add optional herbalism, mining and skinning tooltips, with separate sampling and farming categories.
+- Explicitly exclude mail/trade receipts from farming. Add category totals and a source filter to the session report.
+- Keep overlapping addon windows on separate layers. Add an offline Wowhead Forever reference importer with sample counts and source links.
+
 ## 1.3.0 beta — Test revision 1 — 2026-11-15
 
 - Keep scanned item links and full modifier names in Opportunities.

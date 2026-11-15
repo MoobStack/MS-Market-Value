@@ -87,22 +87,55 @@ function U.ItemID(link)
     if U.Number(itemID, 1, 2147483647, true) then return itemID end
 end
 
--- Vanilla-content item variants differ by signed random suffix. Do not key on
--- enchantment, gems, unique instance ID, or the viewer's level.
+-- Keep legacy random suffixes and modern bonus lists separate. Link level,
+-- unique instance ID, gems and player-applied enchants are not market variants.
 function U.VariantKey(link)
-    if not U.String(link) then return nil end
+    if not U.String(link) or #link>2048 then return nil end
     local payload = string.match(link, "item:([^|]+)")
     if not payload then return nil end
     local fields = {}
     for field in string.gmatch(payload .. ":", "(.-):") do
         fields[#fields + 1] = field
-        if #fields >= 7 then break end
+        if #fields >= 64 then return nil end
     end
     local itemID = tonumber(fields[1])
     local suffix = tonumber(fields[7]) or 0
     if not U.Number(itemID, 1, 2147483647, true) or
        not U.Number(suffix, -2147483647, 2147483647, true) then return nil end
-    return tostring(itemID) .. ":" .. tostring(suffix)
+    local key=tostring(itemID) .. ":" .. tostring(suffix)
+    local count=(fields[13]==nil or fields[13]=="") and 0 or tonumber(fields[13])
+    if not U.Number(count,0,16,true) then return nil end
+    if count>0 then
+        local bonuses,seen={},{}
+        for index=14,13+count do
+            local value=tonumber(fields[index])
+            if not U.Number(value,1,2147483647,true) then return nil end
+            if not seen[value] then bonuses[#bonuses+1]=value;seen[value]=true end
+        end
+        table.sort(bonuses)
+        key=key .. ":b" .. table.concat(bonuses,",")
+    end
+    return key
+end
+
+function U.SplitVariant(key)
+    if not U.String(key) or #key>224 then return nil end
+    local id,suffix,tail=key:match("^(%d+):(%-?%d+)(.*)$")
+    id,suffix=tonumber(id),tonumber(suffix)
+    if not U.Number(id,1,2147483647,true) or not U.Number(suffix,-2147483647,2147483647,true) then return nil end
+    if tail~="" then
+        local values=tail:match("^:b(%d[%d,]*)$")
+        if not values then return nil end
+        local previous,count=0,0
+        for part in values:gmatch("[^,]+") do
+            local n=tonumber(part);count=count+1
+            if not U.Number(n,1,2147483647,true) or n<=previous or count>16 then return nil end
+            previous=n
+        end
+        if values:find(",,",1,true) or values:sub(-1)=="," then return nil end
+    end
+    if key:sub(1,#tostring(id)+#tostring(suffix)+1)~=id .. ":" .. suffix then return nil end
+    return id,suffix,tail~=""
 end
 
 function U.LinkName(link)
@@ -115,6 +148,31 @@ function U.Call(fn, ...)
     if type(fn) ~= "function" then return nil end
     local ok, value = pcall(fn, ...)
     if ok and U.Accessible(value) then return value end
+end
+
+-- Native portrait titles sit hundreds of levels above their root. Give each
+-- standalone window a whole band so another window cannot cut through it.
+local windows,windowSet={},{}
+function U.FocusWindow(frame)
+    if U.Combat() then return end
+    for _=1,16 do
+        if not frame or windowSet[frame] then break end
+        frame=frame.GetParent and frame:GetParent() or nil
+    end
+    if not frame or not windowSet[frame] then return end
+    local index
+    for i,other in ipairs(windows) do if other==frame then index=i;break end end
+    if not index then return end
+    table.remove(windows,index);windows[#windows+1]=frame
+    for i,other in ipairs(windows) do other:SetFrameLevel(20+(i-1)*1024) end
+end
+function U.ManageWindow(frame)
+    if not frame or windowSet[frame] then return end
+    if #windows>=12 then return end
+    windowSet[frame]=true;windows[#windows+1]=frame
+    if frame.SetToplevel then frame:SetToplevel(true) end
+    frame:HookScript("OnShow",function(self)U.FocusWindow(self)end)
+    frame:HookScript("OnMouseDown",function(self)U.FocusWindow(self)end)
 end
 
 local regions = { us = 1, kr = 2, eu = 3, tw = 4, cn = 5 }

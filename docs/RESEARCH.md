@@ -20,3 +20,7 @@ Daily grouping, history averages, conservative resale baselines, expense matchin
 Detailed earlier investigations are in [development history](history/README.md) and original Git tags. [Validation](../VALIDATION.md) distinguishes local checks from native observations.
 
 For 1.3, the reviewed `C_Loot`, `C_LootHistory` and `C_LootJournal` interfaces expose events, observed rolls and item sets, rather than an authoritative creature drop-rate table. `GetItemKeyFromItem` takes an ItemLocation, not a link; the scan keeps full links instead. The addon does not call internal/secure combat-log APIs or count unreadable events as failed drops. Reference mode is a provider interface; no external dataset or other addon's implementation is bundled.
+
+The revision 2 source reader uses the client’s alternating `GUID, quantity` loot-source pairs; the earlier count-prefixed fixture was wrong. Tooltip fallback handles public unit tokens and readable NPC IDs. Gathering uses a recent profession cast plus its exposed loot source, with separate corpse/skinning counters.
+
+[Wowhead’s Mudfin Oracle page](https://www.wowhead.com/forever/npc=258573/mudfin-oracle) embeds sampled drop counts. The optional importer reads those counts from saved Forever pages, retains sample sizes and source URLs, and never treats the result as server configuration. The addon makes no web requests. The supplied example covers one NPC; it is not a complete Forever loot database.

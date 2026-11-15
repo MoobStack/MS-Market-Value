@@ -13,22 +13,25 @@ function R.Register(label, query, verified)
     return true
 end
 
-function R.Rows(npcID)
+function R.Rows(npcID,kind)
     if not U.Number(npcID,1,2147483647,true) or not R.query then return {} end
-    if R.cache[npcID] then return R.cache[npcID] end
-    local ok, source = pcall(R.query,npcID)
+    kind=kind or "loot"
+    local key=kind=="loot" and npcID or (kind .. ":" .. npcID)
+    if R.cache[key] then return R.cache[key] end
+    local ok, source = pcall(R.query,npcID,kind)
     local result = {}
     if ok and U.Table(source) then
         for index=1,math.min(#source,200) do
             local row=source[index]
             if U.Table(row) and U.Number(row.id,1,2147483647,true) and U.Number(row.rate,0,100) then
                 result[#result+1]={id=row.id,rate=row.rate,name=U.String(row.name) and row.name or nil,
-                    questID=U.Number(row.questID,1,2147483647,true) and row.questID or nil}
+                    questID=U.Number(row.questID,1,2147483647,true) and row.questID or nil,
+                    samples=U.Number(row.samples,1,1000000000,true) and row.samples or nil}
             end
         end
     end
-    R.order[#R.order+1]=npcID
+    R.order[#R.order+1]=key
     if #R.order>64 then R.cache[table.remove(R.order,1)]=nil end
-    R.cache[npcID]=result
+    R.cache[key]=result
     return result
 end

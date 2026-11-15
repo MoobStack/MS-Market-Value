@@ -7,7 +7,9 @@ python3 tools/validate.py --lua lua5.1 --luac luac5.1
 TZ=America/New_York python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-**619 cases** load the real runtime and pinned libraries. Fixtures cover scans/resume, public tooltip data and stacks, crafting/quotes, daily history across live reporting hosts, modifier/supply filters, loot samples, farming receipts and resource caps, vendor costs, market math/navigation, watchlists, confirmed transactions, ledger reports, trade gold, loot/expenses, category menus and stable upgrades. Restricted-value sentinels catch unsafe reads/arithmetic. Local-date cases include 23- and 25-hour DST days under America/New_York.
+**640 Lua cases** load the real runtime and pinned libraries. Fixtures cover scans/resume, public tooltip data and stacks, crafting/quotes, daily history across live reporting hosts, modifier/supply filters, loot samples, farming receipts and resource caps, vendor costs, market math/navigation, watchlists, confirmed transactions, ledger reports, trade gold, loot/expenses, category menus and stable upgrades. Restricted-value sentinels catch unsafe reads/arithmetic. Local-date cases include 23- and 25-hour DST days under America/New_York.
+
+The same command runs **8 Python importer checks** for source identity, sample counts, table separation, size limits and safe output.
 
 For optional synthetic workloads:
 

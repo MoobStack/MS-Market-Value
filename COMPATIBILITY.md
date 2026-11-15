@@ -19,4 +19,4 @@ Saved-data schema remains 1. Existing prices, settings, history, watches and led
 
 The addon performs no automated purchases, sales, crafting, disenchanting, mail collection or trades. Bundled libraries and source references are listed in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md) and [docs/RESEARCH.md](docs/RESEARCH.md).
 
-The new loot/farming paths were reviewed against build 70938 and checked locally. Their event timing, group-loot visibility and visual layout still need live testing. Personal drop rates use inspected corpses; a hidden or unlooted kill is not treated as a failed drop. Authoritative Forever reference rates are not included.
+The new loot/farming paths were reviewed against build 70938 and checked locally. Their event timing, group-loot visibility and visual layout still need live testing. Personal drop rates use exposed corpses or harvests; a hidden or unlooted kill is not treated as a failed drop. Authoritative Forever reference rates are not included.

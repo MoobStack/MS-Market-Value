@@ -23,6 +23,8 @@ end
 
 local function Valid(row)
     return U.Table(row) and U.Number(row.id, 1, 2147483647, true) and
+        U.Accessible(row.variantKey) and (row.variantKey==nil or U.SplitVariant(row.variantKey)==row.id) and
+        U.Accessible(row.link) and (row.link==nil or (U.String(row.link) and #row.link<=2048 and U.ItemID(row.link)==row.id)) and
         U.Accessible(row.suffix) and (row.suffix == nil or U.Number(row.suffix, -2147483647, 2147483647, true)) and
         U.Number(row.maxBuy, 0, 100000000, true) and U.Number(row.minReturn, 0, 1000, true) and
         U.Number(row.minProfit, 0, 100000000, true)
@@ -33,7 +35,7 @@ function W.Entries()
     for key, row in pairs(profile and profile.entries or {}) do
         visited = visited + 1
         if visited > 400 then W.reason = "Oversized watchlist preserved; restore a valid backup."; return {} end
-        if U.String(key) and Valid(row) and key == row.id .. ":" .. (row.suffix or "*") then
+        if U.String(key) and Valid(row) and key == (row.variantKey or (row.id .. ":" .. (row.suffix or "*"))) then
             result[#result + 1] = { key = key, entry = row }
             if #result > MAX_ITEMS then W.reason = "More than 200 watches saved; restore a valid backup."; return {} end
         end
@@ -45,26 +47,27 @@ end
 
 function W.Save(input, maxBuy, minReturn, minProfit)
     if U.Combat() then return false, "Edit watchlists outside combat." end
-    local id, suffix
+    local id, suffix, variant
     if U.Number(input, 1, 2147483647, true) then id = input
     elseif U.String(input) then
         if string.match(input, "^%s*%d+%s*$") then id = tonumber(input)
         else
             id = U.ItemID(input)
-            local variant = U.VariantKey(input)
-            suffix = variant and tonumber(string.match(variant, ":(%-?%d+)$"))
+            variant = U.VariantKey(input)
+            if variant then local parsed;parsed,suffix=U.SplitVariant(variant) end
         end
     end
-    local row = { id = id, suffix = suffix, maxBuy = maxBuy, minReturn = minReturn, minProfit = minProfit }
+    local row = { id = id, suffix = suffix, variantKey=variant, link=variant and input or nil,
+        maxBuy = maxBuy, minReturn = minReturn, minProfit = minProfit }
     if not Valid(row) then return false, "Choose an item ID/link and valid price/return targets." end
     local profile = Profile(true)
     if not profile then return false, W.reason or "The current market is unavailable." end
-    local key = id .. ":" .. (suffix or "*")
+    local key = variant or (id .. ":" .. (suffix or "*"))
     local entries = W.Entries()
     if W.reason then return false, W.reason end
     if profile.entries[key] == nil and #entries >= MAX_ITEMS then return false, "Watchlist limit: 200 items per market." end
     local info = A.Valuation.ItemInfo(suffix ~= nil and input or id)
-    row.name = info and info.name or ("Item " .. id)
+    row.name = U.LinkName(row.link) or (info and info.name) or ("Item " .. id)
     local old = profile.entries[key]
     if Valid(old) then row.lastAlertAt = old.lastAlertAt end
     profile.entries[key] = row; W.revision = W.revision + 1
@@ -80,12 +83,13 @@ end
 
 local function Evaluate(job, watch)
     local entry = watch.entry
-    local row = { id = entry.id, suffix = entry.suffix, key = watch.key, watch = entry,
+    local row = { id = entry.id, suffix = entry.suffix, variantKey=entry.variantKey,
+        hasBonuses=entry.variantKey and select(3,U.SplitVariant(entry.variantKey)), key = watch.key, watch = entry,
         name = U.String(entry.name) and entry.name or ("Item " .. entry.id), days = 0, matched = false }
-    row.link = "item:" .. row.id .. ":0:0:0:0:0:" .. (row.suffix or 0) .. ":0"
+    row.link = entry.link or ("item:" .. row.id .. ":0:0:0:0:0:" .. (row.suffix or 0) .. ":0")
     if not job.fresh then row.status = "Fresh scan needed"; return row end
     local series = row.suffix ~= nil and job.snapshot.variants or job.snapshot.prices
-    local index = row.suffix ~= nil and (row.id .. ":" .. row.suffix) or row.id
+    local index = row.variantKey or (row.suffix ~= nil and (row.id .. ":" .. row.suffix) or row.id)
     local price = series[index]
     if not U.Table(price) or not U.Number(price.low, 0, 1000000000000) or price.low <= 0 then
         row.status = "Not listed"; return row
@@ -93,10 +97,12 @@ local function Evaluate(job, watch)
     row.current, row.buy = price.low, math.ceil(price.low)
     local samples, day = {}, math.floor(job.snapshot.startedAt / 86400)
     local history = job.history
+    local item=A.Valuation.ItemInfo(row.link)
+    local preciseEquipment=row.suffix==0 and item and (item.classID==2 or item.classID==4) and item.quality>=2
     for date = day - job.lookback, day - 1 do
         local record = history[date]
         local value = record and (row.suffix ~= nil and record.variants or record.prices)[index]
-        if U.Number(value, 0, 1000000000000) and value > 0 then samples[#samples + 1] = value end
+        if U.Number(value, 0, 1000000000000) and value > 0 and (not preciseEquipment or record.variantFormat==2) then samples[#samples + 1] = value end
     end
     row.days = #samples
     local settings = { marketMinDays = job.minDays, marketFee = job.fee, marketMove = 0,

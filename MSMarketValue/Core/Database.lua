@@ -12,7 +12,7 @@ D.defaults = {
     marketMinProfit = 100, marketFee = 5, marketMove = 15,
     marketLowMin = 0, marketLowMax = 0, marketStockMin = 0, marketStockMax = 0,
     marketStockDrop = 0, marketSearch = "",
-    dropTracking = true, showDrops = true, dropRows = 4, dropMode = "observed",
+    dropTracking = true, showDrops = true, showHarvestDrops = true, dropRows = 4, dropMode = "observed",
     farmTracking = true, farmShow = true, farmHover = false, farmUseAuction = true,
     farmIncludeQuest = true, farmThreshold = 10,
     serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
@@ -230,7 +230,7 @@ function D.NewSnapshot(marketKey, count, startedAt)
         marketKey = marketKey, totalRows = count, processedRows = 0,
         buyoutRows = 0, bidOnlyRows = 0, soldRows = 0, distinctItems = 0,
         prices = {}, variants = {}, bidOnlyItems = {},
-        startedAt = startedAt, method = "C_AuctionHouse.ReplicateItems",
+        startedAt = startedAt, method = "C_AuctionHouse.ReplicateItems", variantFormat=2,
         version = A.VERSION, build = A.BUILD, complete = false,
     }
 end

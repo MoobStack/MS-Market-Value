@@ -2,7 +2,8 @@ local _, A = ...
 local U, D, H = A.Util, A.DB, A.History
 local M = { rows = {}, builds = 0, publications = 0 }
 A.Market = M
-local MAX_PRICE, MAX_RESULTS, MAX_ITEMS = 1000000000000, 200, 50000
+local MAX_PRICE, MAX_RESULTS, MAX_ITEMS = 1000000000000, 500, 50000
+M.limit=MAX_RESULTS
 
 local function Price(value) return U.Number(value, 0, MAX_PRICE) and value > 0 end
 local function Quantile(values, fraction)
@@ -62,7 +63,7 @@ end
 
 function M.Ensure(view, sort, force)
     H.Maintain()
-    view = (view == "rising" or view == "falling" or view == "all") and view or "deals"
+    view = (view == "rising" or view == "falling" or view == "all" or view=="listed") and view or "deals"
     sort = sort == "profit" and "profit" or "return"
     local market = U.MarketInfo()
     local key, snapshot = market.key, D.Snapshot(market)
@@ -84,7 +85,7 @@ function M.Ensure(view, sort, force)
     local maps = { snapshot.variants }
     for _, record in ipairs(records) do maps[#maps + 1] = record.variants end
     M.job = { snapshot = snapshot, records = records, settings = settings, maps = maps, vendorKnown = A.Vendor.KnownItems(),
-        mapIndex = 1, variants = {}, phase = "variants", rows = {}, examined = 0, eligible = 0,
+        mapIndex = 1, variants = {}, currentVariants={}, phase = "variants", rows = {}, examined = 0, eligible = 0,
         view = view, sort = sort, day = day, started = U.Mono() }
     M.ready, M.reason = false, nil
     M.builds = M.builds + 1
@@ -92,11 +93,7 @@ end
 
 local function Identity(key, variant)
     if variant then
-        if not U.String(key) then return nil end
-        local id, suffix = string.match(key, "^(%d+):(%-?%d+)$")
-        id, suffix = tonumber(id), tonumber(suffix)
-        if not U.Number(id, 1, 2147483647, true) or not U.Number(suffix, -2147483647, 2147483647, true) then return nil end
-        return id, suffix
+        return U.SplitVariant(key)
     end
     if U.Number(key, 1, 2147483647, true) then return key end
 end
@@ -107,11 +104,13 @@ local function Better(a, b, job)
     elseif job.view == "falling" then av, bv = -a.movement, -b.movement
     elseif job.sort == "profit" then av, bv = a.profit, b.profit
     else av, bv = a.roi, b.roi end
+    av,bv=av or -math.huge,bv or -math.huge
     if av == bv then return a.key < b.key end
     return av > bv
 end
 
 local function Include(job, row)
+    if job.view=="listed" then return true end
     if job.view == "deals" then return row.deal end
     if job.view == "rising" then return row.rising end
     if job.view == "falling" then return row.falling end
@@ -120,20 +119,27 @@ end
 
 local function Evaluate(job, key, entry, variant)
     job.examined = job.examined + 1
-    local id, suffix = Identity(key, variant)
-    if not id or (not variant and job.variants[id]) or job.vendorKnown[id] or
+    local id, suffix, bonuses = Identity(key, variant)
+    if not id or (not variant and job.variants[id] and (job.view~="listed" or job.currentVariants[id])) or (job.vendorKnown[id] and job.view~="listed") or
        not U.Table(entry) or not Price(entry.low) then return end
+    local item=A.Valuation.ItemInfo(entry.link or id)
+    local equipment=item and (item.classID==2 or item.classID==4) and item.quality>=2
+    local legacyEquipment=(equipment and (not U.String(entry.link) or not variant)) or
+        (job.snapshot.variantFormat~=2 and not U.String(entry.link))
     local values = {}
     for _, record in ipairs(job.records) do
         local value = (variant and record.variants or record.prices)[key]
-        if Price(value) then values[#values + 1] = value end
+        if Price(value) and (not equipment or suffix~=0 or record.variantFormat==2) then values[#values + 1] = value end
     end
-    local row = M.Evaluate(entry.low, values, job.settings)
+    local row=not legacyEquipment and M.Evaluate(entry.low, values, job.settings) or nil
+    if job.view=="listed" and not row then row={current=entry.low,buy=math.ceil(entry.low),days=#values,needsHistory=true} end
     if not row or not Include(job, row) then return end
-    row.id, row.suffix, row.key = id, suffix, tostring(key)
+    row.id, row.suffix, row.key, row.variantKey, row.hasBonuses = id, suffix, tostring(key), variant and key or nil,bonuses
+    row.itemWide=legacyEquipment
     row.link = U.String(entry.link) and U.ItemID(entry.link) == id and entry.link or
         ("item:" .. id .. ":0:0:0:0:0:" .. (suffix or 0) .. ":0")
     row.name = U.LinkName(entry.link)
+    if legacyEquipment then row.name=(row.name or (item and item.name) or ("Item " .. id)) .. " (item-wide; rescan)" end
     row.units = U.Number(entry.units,1,1000000000,true) and entry.units or nil
     row.lowUnits = U.Number(entry.lowUnits,1,1000000000,true) and entry.lowUnits or nil
     row.lowBuyout = row.lowUnits and U.Number(entry.lowBuyout,0,9007199254740991) and entry.lowBuyout or nil
@@ -193,7 +199,10 @@ function M.Tick()
                 else
                     job.prepared = (job.prepared or 0) + 1
                     local id = Identity(key, true)
-                    if id and job.snapshot.prices[id] ~= nil then job.variants[id] = true end
+                    if id and job.snapshot.prices[id] ~= nil then
+                        job.variants[id] = true
+                        if job.mapIndex==1 then job.currentVariants[id]=true end
+                    end
                     if job.prepared >= 500000 then
                         job.reason = "History is too large for this analysis. Reduce the lookback window."
                         job.rows, job.truncated = {}, true; Publish(job); return

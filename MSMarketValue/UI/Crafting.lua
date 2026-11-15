@@ -244,6 +244,7 @@ function UI.Create()
         HideTooltip()
     end)
     frame:SetScript("OnShow", function() if UI.opener then UI.opener:SetText("Hide profits") end end)
+    U.ManageWindow(frame)
     table.insert(UISpecialFrames, "MSMarketValueCrafting")
     UI.frame = frame
     UI.age = Label(frame, "", 72, -38, 470)
@@ -572,7 +573,7 @@ function UI.Show()
     if U.Combat() then return U.Print("Open crafting analysis outside combat.") end
     if not C.Form() then return U.Print("Open a profession and select a learned recipe first.") end
     C.Tick()
-    if UI.frame then UI.suppressed = false; UI.frame:Show(); UI.Refresh() end
+    if UI.frame then UI.suppressed = false; UI.frame:Show(); U.FocusWindow(UI.frame); UI.Refresh() end
 end
 
 function UI.Toggle()

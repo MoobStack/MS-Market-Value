@@ -252,15 +252,15 @@ test("market processing respects the frame time budget and pauses in combat", fu
     debugprofilestop=function() w.cpu=w.cpu+5; return w.cpu end
     A.Market.Tick(); truth(A.Market.job); equal(A.Market.job.examined,0)
 end)
-test("ranked market results retain the best 200 rather than allocating every signal", function()
+test("ranked market results retain the best 500 rather than allocating every signal", function()
     local series={}
     for day=1,4 do
         series[day]={}
-        for id=100000,100399 do series[day][#series[day]+1]=row(id,1,day==4 and (id-99900) or 1000) end
+        for id=100000,100599 do series[day][#series[day]+1]=row(id,1,day==4 and (id-99900) or 1000) end
     end
     local w,A=marketWorld(series); drain(A)
-    equal(#A.Market.rows,200); equal(A.Market.eligible,400)
-    equal(A.Market.rows[1].id,100000); equal(A.Market.rows[200].id,100199)
+    equal(#A.Market.rows,500); equal(A.Market.eligible,600)
+    equal(A.Market.rows[1].id,100000); equal(A.Market.rows[500].id,100499)
 end)
 test("a recent three-point median can expose a sustained shift separately from one ask", function()
     local w,A=simple({1000,1000,1000,1500,1500,2000}); drain(A,"rising")
@@ -299,7 +299,7 @@ test("market controls apply all validated targets together and display selected 
     A.MarketUI.inputs.marketMinReturn:SetText("80"); A.MarketUI.inputs.marketMinProfit:SetText("0.02")
     truth(A.MarketUI.Apply()); equal(A.DB.Settings().marketMinProfit,200)
     drain(A); A.MarketUI.Refresh(); A.MarketUI.rows[1].scripts.OnClick(A.MarketUI.rows[1], "RightButton")
-    truth(string.find(A.MarketUI.detail.text,"buy at",1,true))
+    truth(string.find(A.MarketUI.detail.text,"Buy at",1,true))
     A.MarketUI.views.rising.scripts.OnClick(); equal(A.MarketUI.sortButton.text,"Sort: movement")
 end)
 test("invalid market filters preserve existing settings and do not begin a rebuild", function()
@@ -321,7 +321,7 @@ end)
 test("diagnostics identify beta revision vendor coverage and the market analysis", function()
     local w,A=fresh(); w:load(); merchant(w,{supply(2320,20)})
     local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 1",1,true)); truth(string.find(text,"Vendor purchase prices: 1",1,true))
+    truth(string.find(text,"Test revision: 2",1,true)); truth(string.find(text,"Vendor purchase prices: 1",1,true))
     truth(string.find(text,"Market analysis:",1,true))
 end)
 
@@ -469,7 +469,7 @@ end)
 test("right click and hover show details without issuing any item search", function()
     local w,A=liveWorld(); local button=A.MarketUI.rows[1]
     button.scripts.OnEnter(button); truth(button.highlight:IsShown()); truth(GameTooltip:IsShown())
-    click(A,"RightButton"); truth(string.find(A.MarketUI.detail.text,"buy at",1,true))
+    click(A,"RightButton"); truth(string.find(A.MarketUI.detail.text,"Buy at",1,true))
     button.scripts.OnLeave(button); equal(GameTooltip:IsShown(),false)
     equal(w.itemSearches,0); equal(w.browseSearches,0); truth(A.MarketUI.panel:IsShown())
 end)

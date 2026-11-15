@@ -28,3 +28,11 @@ Matching random-suffix series stay separate. With enough observations, recent-ve
 Left-click a result to open native live listings; right-click for details. **Watch selected** creates or edits its target. Live navigation requires an auctioneer, no combat and usable current results. Native Buy filters still apply.
 
 These are asking-price signals. The addon does not know demand, how much stock is available at the low, future sale prices or the chance of a sale. Deposits and unsold listings are excluded. Check live listings before deciding to buy; purchases remain under your control.
+
+## Modifier prices and browsing
+
+Random suffixes and bonus-based variants have independent series. A specific modifier never borrows another modifier’s price history. Older suffix-zero equipment history may contain several modifiers; it stays saved but does not become a precise baseline. Complete new scans on later UTC days to build that history.
+
+**All items** shows current prices even without enough history. The list shows 12 rows with a scrollbar and mouse wheel, keeping at most 500 matching results. **Filters** opens the extra fields; applying them returns to the larger list. Keyword search is always visible. Select or hover a shortened name to see the full modifier.
+
+Clicking a bonus-based variant uses the native sample link to find its exact Buy key. If details are still loading, the addon waits briefly rather than guessing a different modifier. You still choose and purchase listings yourself.

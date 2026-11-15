@@ -86,22 +86,22 @@ end)
 
 test("drop reads deduplicate reopen events and count stack hits per observed corpse",function()
     local w,A=world();local g=guid(1000)
-    w.loot={{link=link(100),quantity=3,sources={1,g,3}}}
+    w.loot={{link=link(100),quantity=3,sources={g,3}}}
     w:event("LOOT_READY");w:event("LOOT_OPENED");w:event("LOOT_SLOT_CHANGED",1)
     local rows,n=A.Drops.Rows(1000);equal(n,1);equal(rows[1].hits,1);equal(rows[1].rate,100)
-    w.loot={{quantity=1,sources={1,guid(1000,"000002"),1}}}
+    w.loot={{quantity=1,sources={guid(1000,"000002"),1}}}
     w:event("LOOT_READY");rows,n=A.Drops.Rows(1000);equal(n,2);equal(rows[1].rate,50)
 end)
 
 test("area loot attributes each source quantity and party raid cohorts without crediting player income",function()
     local w,A=world();w.group="party"
-    w.loot={{link=link(100),quantity=4,sources={2,guid(1000),2,guid(1000,"000002"),2}}}
+    w.loot={{link=link(100),quantity=4,sources={guid(1000),2,guid(1000,"000002"),2}}}
     w:event("LOOT_READY")
     local rows,n=A.Drops.Rows(1000);equal(n,2);equal(rows[1].hits,2)
     local profile=A.Drops.Profile()
     local bucket=profile.areas[A.Drops.Context().key].mobs[1000].groups.party
     equal(bucket.samples,2);equal(bucket.items[100].quantity,4)
-    w.group="raid";w.loot={{link=link(100),sources={1,guid(1000,"000003"),1}}};w:event("LOOT_READY")
+    w.group="raid";w.loot={{link=link(100),sources={guid(1000,"000003"),1}}};w:event("LOOT_READY")
     rows,n=A.Drops.Rows(1000);equal(n,3)
     equal(A.Farm.Summary().total,0)
 end)
@@ -111,7 +111,7 @@ test("quest drops outrank more valuable items and creature tooltips enforce the 
     C_QuestLog={IsOnQuest=function(id)return id==42 end}
     local one=named(100,0,"Quest token");local two=named(101,0,"Expensive drop")
     w.items[100]={name="Quest token",vendor=0};w.items[101]={name="Expensive drop",vendor=100000}
-    w.loot={{link=one,sources={1,guid(1000),1},questID=42},{link=two,sources={1,guid(1000),1}}}
+    w.loot={{link=one,sources={guid(1000),1},questID=42},{link=two,sources={guid(1000),1}}}
     w:event("LOOT_READY")
     local rows=A.Drops.Rows(1000);equal(rows[1].id,100);truth(rows[1].wanted)
     A.DB.Settings().dropRows=1
@@ -142,9 +142,9 @@ end)
 
 test("unknown or restricted loot sources are skipped without guessing their NPC",function()
     local w,A=world()
-    w.loot={{link=link(100),sources={1,secret,1}}};w:event("LOOT_READY")
+    w.loot={{link=link(100),sources={secret,1}}};w:event("LOOT_READY")
     equal(A.Drops.Profile().mobs,0)
-    w.loot={{link=secret,sources={1,guid(1000),secret}}};w:event("LOOT_READY")
+    w.loot={{link=secret,sources={guid(1000),secret}}};w:event("LOOT_READY")
     equal(A.Drops.Profile().mobs,0)
     equal(A.Drops.Observe("GameObject-0-1-1-1-1000-1",{}),false)
 end)
@@ -236,7 +236,7 @@ test("farming HUD interpolates without changing accounting and hover mode stays 
 end)
 
 test("live loot events never cause auction requests or automated game actions",function()
-    local w,A=world();w.loot={{link=link(100),sources={1,guid(1000),1}}}
+    local w,A=world();w.loot={{link=link(100),sources={guid(1000),1}}}
     for i=1,50 do w:event("LOOT_READY");A.Farm.Tick();A.FarmingUI.Animate(.1)end
     equal(w.requests,0);equal(select(2,A.Drops.Rows(1000)),1)
 end)

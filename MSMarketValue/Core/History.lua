@@ -14,11 +14,7 @@ local function MarketKey(key) return U.String(key) and #key > 0 and #key <= 256 
 local function ItemKey(key) return U.Number(key, 1, MAX_ID, true) end
 
 local function VariantKey(key)
-    if not U.String(key) or #key > 32 then return false end
-    local id, suffix = string.match(key, "^(%d+):(%-?%d+)$")
-    return U.Number(tonumber(id), 1, MAX_ID, true) and
-           U.Number(tonumber(suffix), -MAX_ID, MAX_ID, true) and
-           key == tostring(tonumber(id)) .. ":" .. tostring(tonumber(suffix))
+    return U.SplitVariant(key)~=nil
 end
 
 local function Price(value) return U.Number(value, 0, MAX_PRICE) and value > 0 end
@@ -84,6 +80,7 @@ function H.Initialize()
                 if U.Number(day, oldest, today, true) and U.Table(record) and Day(record.startedAt) == day and
                    U.Table(record.prices) and U.Table(record.variants) then
                     validDays[day] = { startedAt = record.startedAt,
+                        variantFormat=U.Number(record.variantFormat,2,2,true) and 2 or nil,
                         prices = CopyPrices(record.prices, ItemKey), variants = CopyPrices(record.variants, VariantKey) }
                 end
             end
@@ -107,7 +104,7 @@ function H.Record(snapshot)
     local days = H.data.markets[snapshot.marketKey] or {}
     local previous = days[day]
     if previous and previous.startedAt > snapshot.startedAt then return false end
-    days[day] = { startedAt = snapshot.startedAt,
+    days[day] = { startedAt = snapshot.startedAt, variantFormat=snapshot.variantFormat==2 and 2 or nil,
         prices = CopyPrices(snapshot.prices, ItemKey, true), variants = CopyPrices(snapshot.variants, VariantKey, true) }
     H.data.markets[snapshot.marketKey] = days
     ResetCache(true)

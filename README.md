@@ -2,7 +2,7 @@
 
 Auction prices, crafting profits, farming estimates and a personal gold ledger for **WoW Forever**.
 
-**1.3.0 beta · Test revision 1** · Client 1.60.1 · Interface 16001 · By MoobStack
+**1.3.0 beta · Test revision 2** · Client 1.60.1 · Interface 16001 · By MoobStack
 
 This is a test build. Version `1.3.0-beta` and build `2026-11-15-beta001` stay fixed until release.
 
@@ -21,12 +21,12 @@ Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the 
 | **Price history** | Keep 1–30 days of prices, using each UTC day’s latest completed scan. Averages use the days with available prices. |
 | **Crafting profits** | Material costs, net profit after the chosen AH cut, return on cost and break-even prices. Search and rank learned recipes; include unprofitable recipes when needed. Normal vendor materials use your observed purchase price. |
 | **Craft quotes** | Numeric item/service quotes with markup, labor, minimum charges and customer-supplied materials. Native recipe links where available. Copy a quote, open a chat draft or record a completed commission with price, tip and quantity. |
-| **Market opportunities** | Find resale candidates, rising prices and falling prices from saved scans. Filter by price movement, return and minimum profit in decimal gold. Click an item to open its live Buy listings. |
+| **Market opportunities** | Find resale candidates, rising prices and falling prices from saved scans. Filter by price movement, return and minimum profit in decimal gold. Keep modifier variants separate. Search a scrolling list with 12 rows, then open the exact live Buy listings. |
 | **Watchlists** | Add items from the Buy page or Opportunities. Edit buy-price, return and profit targets; receive local alerts after saved scans. |
 | **Personal ledger** | Record AH purchases and mailbox sales, vendor trades, commissions, trade gold, daily loot and expenses such as repairs, training, respecs, postage and flights. |
 | **Reports and filters** | Income, spending, cash flow and separate recorded/estimated profit totals. Filter by local dates and transaction type, combine Other expense categories, edit entries and copy filtered CSV. |
-| **Creature drops** | A short tooltip list from your own inspected loot, including visible party and raid loot. Active quest items come first. Reset your observations by creature, zone, dungeon or character. |
-| **Farming sessions** | Estimated value per hour from your own loot and quest rewards. Movable display, hover-only option, pause/reset, item breakdown and five recent session summaries. |
+| **Drop tooltips** | Personal observations for creatures, herbs, ore and skinning, including visible group loot. Needed quest items come first. Optional reference packs stay separate. Reset by source, zone, dungeon or character. |
+| **Farming sessions** | Estimated value per hour from your own loot, quest rewards and harvesting. Separate category totals; mail and trades are excluded. Movable display, hover-only option, pause/reset, item breakdown and five recent session summaries. |
 
 ## Getting started
 
@@ -36,7 +36,7 @@ Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the 
 4. Open `/msmv ledger` anywhere outside combat. Choose a period, review totals or filter Transactions. **Other** has category checkboxes. Tracking options and 1–365-day ledger retention are in **Ledger settings**.
 5. Use `/msmv farm` for a session report and settings, or `/msmv drops` for the creature tooltip. Complete a fresh AH scan for Opportunities’ new quantity fields.
 
-The beta adds full modifier names, keyword and stock filters to Opportunities. **At low** is the number of units at the lowest unit price; **Low buyout** is their combined buyout. Stock movement compares the previous completed scan.
+Use **All items** to see current modifier prices before enough history exists. **Filters** opens the extra controls; applying them restores the larger list. Older item-wide prices cannot identify a modifier’s movement. Start a new scan to collect precise variant history. **At low** is the number of units at the lowest unit price; **Low buyout** is their combined buyout. Stock movement compares the previous completed scan.
 
 ## Reading the numbers
 
@@ -46,7 +46,7 @@ The ledger records observed activity. AH sales appear when completed invoices lo
 
 Disenchant values use an **unverified Classic reference** for Forever. No buying, selling, crafting, mail collection or chat sending is automated.
 
-Drop percentages are personal observations, not verified server chances. Reference mode accepts an optional data pack; no authoritative Forever drop-rate database is bundled. See [farming and drops](docs/FARMING-AND-DROPS.md) for the counting rules and storage limits.
+Drop percentages are observations, not verified server chances. Reference mode accepts an optional pack built from saved Wowhead Forever pages. The base addon includes no external loot database. See [farming and drops](docs/FARMING-AND-DROPS.md) for the counting rules and storage limits.
 
 ## Help
 

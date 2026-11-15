@@ -5,6 +5,8 @@ A.Farm=F
 local MAX_ITEMS, MAX_RECENT, MAX_HISTORY = 500, 20, 5
 F.limits={items=MAX_ITEMS,recent=MAX_RECENT,history=MAX_HISTORY}
 local MAX=1000000000000
+F.sources={loot="Loot",quest="Quests",herbalism="Herbalism",mining="Mining",skinning="Skinning"}
+function F.Harvest(kind) return kind=="herbalism" or kind=="mining" or kind=="skinning" end
 local function Amount(v) return U.Number(v,0,MAX,true) end
 local function New()
     return {startedAt=U.Now(),elapsed=0,coins=0,questCoins=0,items={},itemTypes=0,recent={},paused=false}
@@ -35,10 +37,10 @@ function F.Profile()
         local count=0
         for key,item in pairs(session.items) do
             count=count+1
-            if count>MAX_ITEMS or not U.String(key) or #key>64 or not U.Table(item) or not U.String(item.link) or
+            if count>MAX_ITEMS or not U.String(key) or #key>256 or not U.Table(item) or not U.String(item.link) or
                #item.link>2048 or not U.ItemID(item.link) or not U.Number(item.quantity,1,1000000000,true) or
                not U.String(item.name) or #item.name>256 or not U.String(item.source) or
-               (item.source~="quest" and item.source~="loot") then F.reason="Invalid farming item preserved.";return nil end
+               not F.sources[item.source] then F.reason="Invalid farming item preserved.";return nil end
         end
         if count~=session.itemTypes then F.reason="Session counters did not match its items; session preserved.";return nil end
         for _,item in ipairs(session.recent) do
@@ -101,7 +103,7 @@ function F.AddMoney(amount,quest)
     local field=quest and "questCoins" or "coins"
     if not Amount(session[field]+amount) then return false end
     session[field]=session[field]+amount
-    Recent(session,{time=U.Now(),name=quest and "Quest gold" or "Looted gold",amount=amount,kind="money"})
+    Recent(session,{time=U.Now(),name=quest and "Quest gold" or "Looted gold",amount=amount,kind="money",source=quest and "quest" or "loot"})
     F.revision=F.revision+1;return true
 end
 
@@ -109,7 +111,7 @@ function F.AddItem(itemLink,quantity,source,settledSession)
     local profile=F.Profile()
     local session=profile and profile.current
     if not session or (settledSession~=session and not F.Active()) or not U.String(itemLink) or #itemLink>2048 or not U.ItemID(itemLink) or
-       not U.Number(quantity,1,1000000,true) or (source~="loot" and source~="quest") or
+       not U.Number(quantity,1,1000000,true) or not U.String(source) or not F.sources[source] or
        (source=="quest" and not D.Settings().farmIncludeQuest) then return false end
     local key=(U.VariantKey(itemLink) or tostring(U.ItemID(itemLink))) .. "|" .. source
     local item=session.items[key]
@@ -124,7 +126,7 @@ function F.AddItem(itemLink,quantity,source,settledSession)
     if unit and not U.Number(unit*item.quantity,0,MAX) then unit,mode=nil,"unavailable" end
     if mode=="loading" then U.Call(C_Item and C_Item.RequestLoadItemDataByID,item.id) end
     item.unit,item.mode=unit,mode
-    Recent(session,{time=U.Now(),name=item.name,link=itemLink,quantity=quantity,amount=unit and unit*quantity,kind=source})
+    Recent(session,{time=U.Now(),name=item.name,link=itemLink,quantity=quantity,amount=unit and unit*quantity,kind=source,source=source})
     F.revision=F.revision+1;F.summary=nil;return true
 end
 
@@ -138,7 +140,9 @@ function F.Summary()
     local result=F.summary
     if not result or result.signature~=signature or result.snapshot~=snapshot or result.session~=session then
         result={total=session.coins+session.questCoins,coins=session.coins,questCoins=session.questCoins,
-            lootValue=0,questValue=0,unknown=0,items={},recent=session.recent,signature=signature,snapshot=snapshot,session=session}
+            lootValue=0,questValue=0,harvestValue=0,unknown=0,items={},recent=session.recent,
+            categories={loot=session.coins,quest=session.questCoins,herbalism=0,mining=0,skinning=0},
+            signature=signature,snapshot=snapshot,session=session}
         local count=0
         for _,item in pairs(session.items) do
             count=count+1;if count>MAX_ITEMS then F.reason="Oversized session preserved.";break end
@@ -149,8 +153,9 @@ function F.Summary()
                 row.total=unit and unit*item.quantity
                 if row.total then
                     result.total=result.total+row.total
-                    local field=item.source=="quest" and "questValue" or "lootValue"
+                    local field=item.source=="quest" and "questValue" or F.Harvest(item.source) and "harvestValue" or "lootValue"
                     result[field]=result[field]+row.total
+                    result.categories[item.source]=(result.categories[item.source] or 0)+row.total
                 else result.unknown=result.unknown+item.quantity end
                 result.items[#result.items+1]=row
             end
@@ -179,11 +184,12 @@ function F.Reset()
     local summary=F.Summary()
     if summary.elapsed>0 then
         local top={};for index=1,math.min(#summary.items,10) do
-            local item=summary.items[index];top[index]={name=item.name,quantity=item.quantity,total=item.total,mode=item.mode}
+            local item=summary.items[index];top[index]={name=item.name,quantity=item.quantity,total=item.total,mode=item.mode,source=item.source}
         end
         table.insert(profile.history,1,{startedAt=profile.current.startedAt,endedAt=U.Now(),elapsed=summary.elapsed,
             total=summary.total,coins=summary.coins,questCoins=summary.questCoins,
-            lootValue=summary.lootValue,questValue=summary.questValue,unknown=summary.unknown,top=top})
+            lootValue=summary.lootValue,questValue=summary.questValue,harvestValue=summary.harvestValue,
+            categories=summary.categories,unknown=summary.unknown,top=top})
         if #profile.history>MAX_HISTORY then table.remove(profile.history) end
     end
     profile.current=New();F.last=U.Mono();F.pending,F.questCredits,F.messages,F.messageRing={},{},{},{}
@@ -211,7 +217,7 @@ local function Match(text,formatText)
 end
 
 function F.LootMessage(message,lineID)
-    if not F.Active() or not U.String(message) or #message>2048 then return end
+    if not F.Active() or not F.ReceiptAllowed() or not U.String(message) or #message>2048 then return end
     if U.Number(lineID,1,9007199254740991,true) then
         if F.messages[lineID] then return end
         F.messageRing[#F.messageRing+1]=lineID;F.messages[lineID]=true
@@ -221,7 +227,8 @@ function F.LootMessage(message,lineID)
         local itemLink,quantity=Match(message,_G[formatName])
         if U.ItemID(itemLink) and U.Number(quantity,1,1000000,true) then
             if #F.pending>=64 then F.reason="Loot receipt queue full; review the session.";return end
-            F.pending[#F.pending+1]={link=itemLink,quantity=quantity,at=U.Mono(),session=F.Profile().current}
+            F.pending[#F.pending+1]={link=itemLink,quantity=quantity,at=U.Mono(),session=F.Profile().current,
+                source=A.Drops.ReceiptKind(U.ItemID(itemLink))}
             return
         end
     end
@@ -255,19 +262,29 @@ function F.Tick(flush)
             local credit=F.questCredits[variant]
             local skip=credit and math.abs(item.at-credit.at)<=1 and math.min(item.quantity,credit.quantity) or 0
             if skip>0 then credit.quantity=credit.quantity-skip end
-            if item.quantity>skip and profile and profile.current==item.session then F.AddItem(item.link,item.quantity-skip,"loot",item.session) end
+            if item.quantity>skip and profile and profile.current==item.session then F.AddItem(item.link,item.quantity-skip,item.source or "loot",item.session) end
         else remaining[#remaining+1]=item end
     end
     F.pending=remaining
     for key,credit in pairs(F.questCredits) do if now-credit.at>3 then F.questCredits[key]=nil end end
 end
 
+function F.ReceiptAllowed()
+    return not F.mailOpen and not F.tradeOpen and
+        (not F.mailClosed or U.Mono()-F.mailClosed>2) and (not F.tradeClosed or U.Mono()-F.tradeClosed>2)
+end
 function F.Event(event,...)
     local a,b,c=...
     if event=="PLAYER_LOGIN" or event=="PLAYER_ENTERING_WORLD" then F.inWorld=true;F.last=U.Mono()
+    elseif event=="MAIL_SHOW" then F.mailOpen=true;F.mailClosed=nil
+    elseif event=="MAIL_CLOSED" then F.mailOpen=false;F.mailClosed=U.Mono()
+    elseif event=="TRADE_SHOW" then F.tradeOpen=true;F.tradeClosed=nil
+    elseif event=="TRADE_CLOSED" or event=="TRADE_REQUEST_CANCEL" then F.tradeOpen=false;F.tradeClosed=U.Mono()
     elseif event=="PLAYER_LEAVING_WORLD" or event=="PLAYER_LOGOUT" then F.Tick(true);F.inWorld=false;F.last=nil
     elseif event=="CHAT_MSG_LOOT" then F.LootMessage(a,select(11,...))
-    elseif event=="CHAT_MSG_MONEY" then local amount=A.Cash.ParseLootMessage(a);if amount then F.AddMoney(amount,false) end
+    elseif event=="CHAT_MSG_MONEY" then
+        if F.ReceiptAllowed() then local amount=A.Cash.ParseLootMessage(a);if amount then F.AddMoney(amount,false) end
+        else F.excludedReceipts=(F.excludedReceipts or 0)+1 end
     elseif event=="QUEST_TURNED_IN" then F.AddMoney(c,true)
     elseif event=="QUEST_LOOT_RECEIVED" then F.QuestLoot(a,b,c)
     elseif event=="GET_ITEM_INFO_RECEIVED" then F.summary=nil end

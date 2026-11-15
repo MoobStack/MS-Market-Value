@@ -28,7 +28,7 @@ Pause keeps staging and retry progress. Copying can continue at the AH outside c
 
 Recipe catalogs run in batches of 20 on 0.25-second ticks while a profession is open. A complete staged catalog publishes atomically; unchanged catalog events reuse it. Selected recipes include readable native allocations. Ranking, search and summaries cache by source and pricing settings. Unknown material shapes stay unavailable; minimum yield drives variable-output ranking.
 
-Market analysis runs only while visible. Each frame handles up to 500 entries with a four-millisecond target. It indexes exact variant series and retains at most 200 results. Watch checks handle up to 20 targets per step and publish together. Both reuse saved prices; neither sends auction queries. A player click delegates live listing navigation to the native Buy UI.
+Market analysis runs only while visible. Each frame handles up to 500 entries with a four-millisecond target. It indexes exact variant series and retains at most 500 results. Watch checks handle up to 20 targets per step and publish together. Both reuse saved prices; neither sends auction queries. A player click delegates live listing navigation to the native Buy UI.
 
 Tooltip callbacks decorate accessible public item data, including during combat. Only verified quantity contexts produce stack totals. Primary-tooltip rebuilds wait until combat ends; comparison rebuilds remain native-owned.
 
@@ -60,6 +60,10 @@ For calculations and limits, see the [user guide](DOCUMENTATION.md), [money tool
 
 ## Farming and drops
 
-Loot events feed per-character counters grouped by map/instance, NPC and solo/party/raid context. A 2,048-source session ring prevents normal reopen duplicates; a capped 64-source, five-minute receipt index carries recent protection across reloads. Only verified native source GUIDs are attributed to creatures; ambiguous sources stay unassigned. Farming uses localized self-loot receipts and dedicated quest events, with a short queue to reconcile overlapping quest/chat receipts. Existing ledger tracking remains independent.
+Loot events feed per-character counters grouped by map/instance, source kind/ID and solo/party/raid context. A 2,048-source session ring prevents normal reopen duplicates; a capped 64-source, five-minute receipt index carries recent protection across reloads. Only verified native source GUIDs are attributed to creatures; ambiguous sources stay unassigned. Farming uses localized self-loot receipts and dedicated quest events, with a short queue to reconcile overlapping quest/chat receipts. Existing ledger tracking remains independent.
 
-Optional source packs can call `MSMarketValue.LootReference.Register(label, query, verified)`. The query receives an NPC ID and returns up to 200 `{id, rate, name?, questID?}` rows, with rate expressed as a percentage. Results cache for at most 64 creatures. No server rates or third-party loot database are included.
+Optional source packs can call `MSMarketValue.LootReference.Register(label, query, verified)`. The query receives a source ID and kind (`loot`, `herbalism`, `mining` or `skinning`) and returns up to 200 `{id, rate, name?, questID?, samples?}` rows, with rate expressed as a percentage. Results cache for at most 64 sources. The optional offline importer builds a separate addon; no reference database is copied into player saved data.
+
+Gathering casts and exposed loot-source GUIDs separate harvesting from corpse loot. Up to 128 spell-name decisions are cached. Visible object tooltips have a 0.25-second fallback check when typed callbacks are unavailable. The session keeps exact category counters and reuses cached valuations; HUD interpolation changes only the display.
+
+Standalone portrait windows use separate 1,024-level bands for their native children. Focusing a window moves the complete band, including high-level title and border frames.

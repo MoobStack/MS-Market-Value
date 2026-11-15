@@ -142,13 +142,18 @@ function UI.DiagnosticsText()
     local drops=A.Drops.Profile()
     lines[#lines+1]="Loot API: sources=" .. tostring(type(GetLootSourceInfo)=="function") ..
         "; slots=" .. tostring(type(GetLootSlotLink)=="function") .. "; recent_sources=" .. #A.Drops.ring .. "/2048"
-    lines[#lines+1]="Drop observations: " .. (drops and drops.mobs or 0) .. " creature records; " ..
+    lines[#lines+1]="Drop observations: " .. (drops and drops.mobs or 0) .. " source records; " ..
         (drops and drops.cells or 0) .. " item counters; mode=" .. D.Settings().dropMode
     lines[#lines+1]="Drop tooltip: " .. tostring(A.Drops.installed==true) .. "; reference=" .. A.LootReference.label
+    lines[#lines+1]="Loot windows read: " .. (A.Drops.readWindows or 0) .. "; skipped source pairs=" .. A.Drops.skipped ..
+        "; harvesting tooltips=" .. tostring(D.Settings().showHarvestDrops)
     if A.Drops.reason then lines[#lines+1]="Drop detail: " .. A.Drops.reason end
     local farm=A.Farm.Summary()
     lines[#lines+1]=string.format("Farming: %.0fs; value=%s; unpriced=%d; paused=%s",farm.elapsed,U.Money(farm.total),farm.unknown,tostring(farm.paused))
     lines[#lines+1]="Farming receipts waiting: " .. #A.Farm.pending .. "; threshold=" .. D.Settings().farmThreshold .. "% above vendor after AH cut"
+    lines[#lines+1]="Farming exclusions: mail/trade; ignored money messages=" .. (A.Farm.excludedReceipts or 0)
+    lines[#lines+1]="Farming categories: loot=" .. U.Money((farm.coins or 0)+(farm.lootValue or 0)) ..
+        "; quests=" .. U.Money((farm.questCoins or 0)+(farm.questValue or 0)) .. "; harvesting=" .. U.Money(farm.harvestValue or 0)
     if A.Farm.reason then lines[#lines+1]="Farming detail: " .. A.Farm.reason end
     lines[#lines + 1] = "Recent local messages:"
     for _, message in ipairs(A.log) do lines[#lines + 1] = message end
@@ -190,9 +195,11 @@ function UI.ShowDiagnostics()
         edit:SetScript("OnEscapePressed", function() frame:Hide() end)
         scroll:SetScrollChild(edit)
         UI.diagnostics, UI.diagnosticsEdit = frame, edit
+        U.ManageWindow(frame)
     end
     UI.diagnosticsEdit:SetText(UI.DiagnosticsText())
     UI.diagnostics:Show()
+    U.FocusWindow(UI.diagnostics)
     UI.diagnosticsEdit:SetFocus()
     UI.diagnosticsEdit:HighlightText()
 end
@@ -323,6 +330,7 @@ function UI.Create()
     Label(frame, "AH values are asking prices, before fees. Disenchant outcomes use an unverified Classic reference.\nKeep the AH open until Local copy is complete. Paused scans resume outside combat at an auctioneer.", 14, -433, 740)
     frame:SetScript("OnShow", UI.Refresh)
     window:SetScript("OnShow", UI.Refresh)
+    U.ManageWindow(window)
     window:Hide()
     UI.frame = window
     frame:Show()
@@ -446,6 +454,7 @@ function UI.ShowStandalone()
     UI.content:SetPoint("TOPLEFT", UI.frame, "TOPLEFT", 16, -38)
     UI.content:Show()
     UI.frame:Show()
+    U.FocusWindow(UI.frame)
 end
 
 function UI.OpenSettings()

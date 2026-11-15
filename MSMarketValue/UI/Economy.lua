@@ -62,7 +62,7 @@ end
 function E.WatchDraft(row,source)
     if not row or U.Combat() then return end
     E.Show("watch")
-    local key=row.id..":"..(row.suffix~=nil and row.suffix or "*")
+    local key=row.variantKey or (row.suffix~=nil and U.VariantKey(row.link)) or (row.id..":"..(row.suffix~=nil and row.suffix or "*"))
     local existing
     for _,watch in ipairs(W.Entries())do if watch.key==key then existing=watch.entry;break end end
     E.watchInputs.item:SetText(row.suffix~=nil and row.link or tostring(row.id))
@@ -92,10 +92,17 @@ function E.WatchFromBuy(frame,commodity)
     if not U.Accessible(suffix)then return end
     if suffix~=nil and not U.Number(suffix,-2147483647,2147483647,true)then return end
     local itemLink="item:"..id..":0:0:0:0:0:"..(suffix or 0)..":0"
+    if not commodity and C_AuctionHouse and type(C_AuctionHouse.GetItemKeySampleLink)=="function" then
+        local sample=U.Call(C_AuctionHouse.GetItemKeySampleLink,key)
+        if U.ItemID(sample)~=id or not U.VariantKey(sample) then return U.Print("That modifier's item link is not ready. Select it again shortly.") end
+        itemLink=sample
+        local parsed;parsed,suffix=U.SplitVariant(U.VariantKey(sample))
+    end
     local item=A.Valuation.ItemInfo(itemLink)
-    local displayLink=item and item.link or itemLink
+    local displayLink=U.LinkName(itemLink) and itemLink or (item and item.link or itemLink)
     local price=D.Price(id,itemLink)
-    E.WatchDraft({id=id,suffix=suffix,link=displayLink,name=item and item.name or ("Selected item "..id),buy=price and price.low},"buy")
+    E.WatchDraft({id=id,suffix=suffix,variantKey=not commodity and U.VariantKey(displayLink) or nil,
+        link=displayLink,name=U.LinkName(displayLink) or (item and item.name) or ("Selected item "..id),buy=price and price.low},"buy")
 end
 function E.InstallBuyButtons()
     if U.Combat()or not U.Table(AuctionHouseFrame)then return end
@@ -193,8 +200,9 @@ function E.CopyCSV()
         box:SetSize(670,420);box:SetMaxLetters(10000000);scroll:SetScrollChild(box)
         box:SetScript("OnEscapePressed",function()f:Hide()end);E.csvFrame,E.csvBox=f,box
         table.insert(UISpecialFrames,"MSMarketValueLedgerCSV")
+        U.ManageWindow(f)
     end
-    E.csvBox:SetText(L.CSV(E.CurrentFilter()));E.csvFrame:Show();E.csvBox:SetFocus();E.csvBox:HighlightText()
+    E.csvBox:SetText(L.CSV(E.CurrentFilter()));E.csvFrame:Show();U.FocusWindow(E.csvFrame);E.csvBox:SetFocus();E.csvBox:HighlightText()
 end
 
 function E.PeriodFilter()
@@ -502,6 +510,7 @@ function E.Create()
     f:SetScript("OnDragStart",function(self)if not U.Combat()then self:StartMoving()end end)
     f:SetScript("OnDragStop",function(self)self:StopMovingOrSizing()end)
     f.CloseButton:SetScript("OnClick",function()f:Hide()end);E.frame=f;table.insert(UISpecialFrames,"MSMarketValueEconomy")
+    U.ManageWindow(f)
     E.scope=Label(f,"",72,-39,700)
     E.ledgerTab=Button(f,"Ledger",16,-63,164,function()E.mode="ledger";E.Refresh()end)
     E.watchTab=Button(f,"Watchlists",190,-63,140,function()E.mode="watch";E.Refresh()end)
@@ -524,7 +533,7 @@ function E.Create()
     E.watchRows=TableRows(tableFrame,columns,7,29,E.SelectWatch,function(button,row)
         if not GameTooltip then return end
         GameTooltip:SetOwner(button,"ANCHOR_RIGHT");GameTooltip:ClearLines();GameTooltip:AddLine(row.name,1,.82,0)
-        GameTooltip:AddLine(row.suffix~=nil and ("Exact suffix: "..row.suffix)or"Any suffix / item-wide series")
+        GameTooltip:AddLine(row.suffix~=nil and "Exact modifier series" or "Any modifier / item-wide series")
         GameTooltip:AddDoubleLine("Min return",row.watch.minReturn.."%");GameTooltip:AddDoubleLine("Min profit",U.Money(row.watch.minProfit))
         if row.profit then GameTooltip:AddDoubleLine("Estimated net / item",Signed(row.profit))end
         GameTooltip:AddLine(row.status);GameTooltip:Show()
@@ -577,7 +586,7 @@ function E.Refresh()
         E.watchPrevious:SetEnabled(E.watchPage>1);E.watchNext:SetEnabled(E.watchPage<pages)
         E.watchView:SetEnabled(selected~=nil and selected.current~=nil and not W.job and not U.Combat())
         E.watchRemove:SetEnabled(selected~=nil and not U.Combat())
-        E.watchDetail:SetText(selected and (selected.name..": "..selected.status..". "..selected.days.." earlier priced days. Targets use per-item prices and the configured AH cut.")or"Select a row to edit its targets. Item IDs track any suffix; item links track an exact suffix. Buy/return/profit targets combine.")
+    E.watchDetail:SetText(selected and (selected.name..": "..selected.status..". "..selected.days.." earlier priced days. Targets use per-item prices and the configured AH cut.")or"Select a row to edit its targets. Item IDs track any modifier; item links track the exact variant. Buy/return/profit targets combine.")
         E.status:SetText(W.reason or E.messages.watch or (W.job and"Checking watchlist targets from saved data..."or"Watchlists reuse saved scans and prior history. No background auction search is started."))
     else
         E.watchPanel:Hide();E.ledgerPanel:Show()
@@ -588,5 +597,5 @@ function E.Show(mode)
     if U.Combat()then return U.Print("Open money tools outside combat.")end
     if not D.data or A.disabledReason then return end
     if A.UI.frame then A.UI.frame:Hide()end
-    E.Create();E.mode=mode=="ledger"and"ledger"or"watch";W.Ensure();E.frame:Show();E.Refresh()
+    E.Create();E.mode=mode=="ledger"and"ledger"or"watch";W.Ensure();E.frame:Show();U.FocusWindow(E.frame);E.Refresh()
 end

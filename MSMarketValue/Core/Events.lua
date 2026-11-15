@@ -37,6 +37,8 @@ local function Initialize()
         "LOOT_READY", "LOOT_OPENED", "LOOT_SLOT_CHANGED", "LOOT_CLOSED", "CHAT_MSG_LOOT",
         "UPDATE_MOUSEOVER_UNIT", "PLAYER_TARGET_CHANGED", "QUEST_LOG_UPDATE",
         "QUEST_TURNED_IN", "QUEST_LOOT_RECEIVED", "PLAYER_ENTERING_WORLD", "PLAYER_LEAVING_WORLD",
+        "UNIT_SPELLCAST_SENT", "UNIT_SPELLCAST_START", "UNIT_SPELLCAST_SUCCEEDED",
+        "UNIT_SPELLCAST_FAILED", "UNIT_SPELLCAST_INTERRUPTED", "AUCTION_HOUSE_BROWSE_RESULTS_UPDATED",
     }) do frame:RegisterEvent(event) end
     S.InstallObserver()
     A.Transactions.Install(); A.Cash.Install()
@@ -59,6 +61,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
     local arg1,arg2=...
     if D.data and not A.disabledReason then A.Transactions.Event(event,arg1,arg2); A.Cash.Event(event,arg1,arg2) end
     if D.data and not A.disabledReason then A.Drops.Event(event,...); A.Farm.Event(event,...) end
+    if event=="AUCTION_HOUSE_BROWSE_RESULTS_UPDATED" and A.MarketUI.ResolvePendingVariant then A.MarketUI.ResolvePendingVariant() end
     if event == "ADDON_LOADED" then
         if U.String(arg1) and arg1 == A.NAME then Initialize() end
         if U.String(arg1) and arg1 == "Blizzard_AuctionHouseUI" and A.auctionOpen then
@@ -73,6 +76,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         A.EconomyUI.InstallBuyButtons()
         U.Notify()
     elseif event == "AUCTION_HOUSE_CLOSED" then
+        A.MarketUI.pendingVariant=nil
         A.auctionOpen = false
         S.Stop("The auction house closed.")
         if A.UI.panel then A.UI.panel:Hide() end
@@ -104,6 +108,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
             A.Market.OnItemInfo(arg1)
         end
     elseif event == "PLAYER_REGEN_DISABLED" then
+        A.MarketUI.pendingVariant=nil
         S.Stop("Combat started.")
         if A.UI.frame then A.UI.frame:Hide() end
         if A.UI.panel then A.UI.panel:Hide() end
@@ -139,7 +144,8 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     if uiElapsed >= 0.25 then
         uiElapsed = 0
-        if D.data and not A.disabledReason then A.Cash.Tick(); A.Transactions.Tick(); A.Farm.Tick() end
+        if D.data and not A.disabledReason then A.Cash.Tick(); A.Transactions.Tick(); A.Farm.Tick(); A.Drops.CheckTooltip() end
+        if A.MarketUI.pendingVariant then A.MarketUI.ResolvePendingVariant() end
         A.History.Maintain()
         A.Watchlist.Ensure()
         A.Crafting.Tick()

@@ -1,6 +1,7 @@
 -- Optional synthetic workload. Run with MSMV_BENCHMARK=1 tools/validate.py.
 local fresh, row, truth, equal = ...
 local w, A = fresh(); w:load()
+collectgarbage("collect")
 local before = collectgarbage("count")
 local count, days = 5000, 15
 for day = 1, days do
@@ -22,5 +23,7 @@ while A.Market.job do
     maximum, ticks = math.max(maximum, (os.clock() - tick) * 1000), ticks + 1
     truth(ticks < 10000, "benchmark work must be bounded")
 end
-equal(#A.Market.rows, 200); equal(A.Market.eligible, count); equal(w.requests, 0)
-print(string.format("BENCHMARK items=%d days=%d ticks=%d cpu_ms=%.2f max_tick_ms=%.2f results=%d lua_kib=%.0f", count, days, ticks, (os.clock()-start)*1000, maximum, #A.Market.rows, collectgarbage("count")-before))
+equal(#A.Market.rows, 500); equal(A.Market.eligible, count); equal(w.requests, 0)
+local cpu,heap=(os.clock()-start)*1000,collectgarbage("count")-before
+collectgarbage("collect")
+print(string.format("BENCHMARK items=%d days=%d ticks=%d cpu_ms=%.2f max_tick_ms=%.2f results=%d heap_lua_kib=%.0f retained_lua_kib=%.0f", count, days, ticks, cpu, maximum, #A.Market.rows, heap,collectgarbage("count")-before))

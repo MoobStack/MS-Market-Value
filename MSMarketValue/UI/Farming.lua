@@ -1,7 +1,9 @@
 local _, A = ...
 local U, D, F, P = A.Util, A.DB, A.Farm, A.Drops
-local UI={page="session",view="items",historyIndex=0,listPage=1}
+local UI={page="session",view="items",historyIndex=0,listPage=1,source="all"}
 A.FarmingUI=UI
+local sourceLabels={all="All sources",loot="Loot",quest="Quests",harvesting="Harvesting",
+    herbalism="Herbalism",mining="Mining",skinning="Skinning"}
 
 local function Label(parent,text,x,y,width,normal)
     local font=parent:CreateFontString(nil,"OVERLAY",normal and "GameFontNormal" or "GameFontHighlightSmall")
@@ -12,10 +14,10 @@ local function Button(parent,text,x,y,width,callback)
     local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
     b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetSize(width,24);b:SetText(text);b:SetScript("OnClick",callback);return b
 end
-local function Check(parent,text,key,x,y)
+local function Check(parent,text,key,x,y,width)
     local b=CreateFrame("CheckButton",nil,parent,"UICheckButtonTemplate")
     b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetSize(26,26)
-    Label(parent,text,x+29,y-5,530)
+    Label(parent,text,x+29,y-5,width or 530)
     b:SetScript("OnClick",function(self)
         D.data.settings[key]=self:GetChecked()==true;F.summary=nil;UI.Refresh();UI.HUD()
     end)
@@ -105,26 +107,41 @@ function UI.Create()
     local session=UI.session
     UI.rate=Label(session,"",14,-12,350,true)
     UI.total=Label(session,"",14,-37,626,true)
-    UI.money=Label(session,"",14,-63,626)
-    UI.goods=Label(session,"",14,-87,626)
+    UI.categoryTotals={};UI.categoryNotes={}
+    for i,title in ipairs({"Loot","Quests","Harvesting"}) do
+        local x=14+(i-1)*211
+        Label(session,title,x,-66,200,true)
+        UI.categoryTotals[i]=Label(session,"",x,-85,200)
+        UI.categoryNotes[i]=Label(session,"",x,-104,200)
+    end
     UI.pause=Button(session,"Pause",430,-12,98,function()F.Pause(not F.Summary().paused);UI.Refresh()end)
     UI.reset=Button(session,"Reset session",536,-12,106,function()
         if not UI.confirmSession then UI.confirmSession=true;UI.reset:SetText("Confirm reset");return end
         UI.confirmSession=false;local ok,reason=F.Reset();UI.message=reason;UI.displayRate,UI.displayTotal=0,0;UI.Refresh()
     end)
-    UI.itemsButton=Button(session,"Item breakdown",14,-115,140,function()UI.view="items";UI.historyIndex=0;UI.listPage=1;UI.Refresh()end)
-    UI.recentButton=Button(session,"Recent pickups",164,-115,140,function()UI.view="recent";UI.historyIndex=0;UI.listPage=1;UI.Refresh()end)
-    UI.historyButton=Button(session,"Previous sessions",314,-115,150,function()
+    UI.itemsButton=Button(session,"Items",14,-133,98,function()UI.view="items";UI.historyIndex=0;UI.listPage=1;UI.Refresh()end)
+    UI.recentButton=Button(session,"Recent pickups",120,-133,130,function()UI.view="recent";UI.historyIndex=0;UI.listPage=1;UI.Refresh()end)
+    UI.historyButton=Button(session,"Previous sessions",258,-133,142,function()
         local profile=F.Profile();local count=profile and #profile.history or 0
         if count>0 then UI.historyIndex=UI.historyIndex%count+1;UI.view="history";UI.listPage=1 end;UI.Refresh()
     end)
-    UI.breakdownTitle=Label(session,"",14,-151,626,true)
+    UI.sourceMenu=CreateFrame("DropdownButton",nil,session,"WowStyle1DropdownTemplate")
+    UI.sourceMenu:SetPoint("TOPLEFT",session,"TOPLEFT",410,-133);UI.sourceMenu:SetSize(230,24)
+    if UI.sourceMenu.SetupMenu then UI.sourceMenu:SetupMenu(function(_,root)
+        for _,key in ipairs({"all","loot","quest","harvesting","herbalism","mining","skinning"}) do
+            local source=key
+            root:CreateRadio(sourceLabels[source],function()return UI.source==source end,function()
+                UI.source=source;UI.listPage=1;UI.Refresh()
+            end)
+        end
+    end) end
+    UI.breakdownTitle=Label(session,"",14,-166,626,true)
     UI.lines={}
-    for i=1,8 do UI.lines[i]=Label(session,"",14,-176-(i-1)*21,626) end
-    UI.prev=Button(session,"Previous",14,-348,98,function()UI.listPage=UI.listPage-1;UI.Refresh()end)
-    UI.pageText=Label(session,"",126,-354,360)
-    UI.next=Button(session,"Next",542,-348,98,function()UI.listPage=UI.listPage+1;UI.Refresh()end)
-    UI.note=Label(session,"",14,-379,626);UI.note:SetHeight(30);UI.note:SetWordWrap(true)
+    for i=1,7 do UI.lines[i]=Label(session,"",14,-191-(i-1)*21,626) end
+    UI.prev=Button(session,"Previous",14,-344,98,function()UI.listPage=UI.listPage-1;UI.Refresh()end)
+    UI.pageText=Label(session,"",126,-350,360)
+    UI.next=Button(session,"Next",542,-344,98,function()UI.listPage=UI.listPage+1;UI.Refresh()end)
+    UI.note=Label(session,"",14,-376,626);UI.note:SetHeight(34);UI.note:SetWordWrap(true)
     UI.checks={}
     local settings=UI.settings
     Label(settings,"Acquisition value, not sale proceeds or net cash flow.",14,-12,626,true)
@@ -145,13 +162,14 @@ function UI.Create()
     help:SetHeight(128);help:SetWordWrap(true)
     local drops=UI.drops
     Check(drops,"Collect personal loot observations","dropTracking",14,-10)
-    Check(drops,"Show a short drop list on creature tooltips","showDrops",14,-44)
+    Check(drops,"Show drop tooltips","showDrops",14,-44,265)
+    Check(drops,"Include harvesting tooltips","showHarvestDrops",320,-44,285)
     Label(drops,"Display",18,-91,80)
     UI.mode=CreateFrame("DropdownButton",nil,drops,"WowStyle1DropdownTemplate")
     UI.mode:SetPoint("TOPLEFT",drops,"TOPLEFT",108,-83);UI.mode:SetSize(274,25)
     if UI.mode.SetupMenu then
         UI.mode:SetupMenu(function(_,root)
-            for _,entry in ipairs({{"observed","Personal observations"},{"reference","Fixed reference data"}}) do
+            for _,entry in ipairs({{"observed","Personal observations"},{"reference","Reference observations"}}) do
                 local mode=entry[1]
                 root:CreateRadio(entry[2],function()return D.Settings().dropMode==mode end,function()
                     D.data.settings.dropMode=mode;P.cache=nil;UI.Refresh()
@@ -168,14 +186,14 @@ function UI.Create()
         UI.Refresh()
     end)
     UI.reference=Label(drops,"",18,-127,616);UI.reference:SetHeight(48);UI.reference:SetWordWrap(true)
-    local desc=Label(drops,"Quest items you still need come first, followed by expected item value. Personal percentages use inspected corpses, including visible party and raid loot; they are not a count of every kill.",18,-179,616)
+    local desc=Label(drops,"Needed quest items come first, then expected item value. Personal rates use inspected corpses or harvests, including visible group loot. Herbs, ore and skinning have separate samples; unseen kills are not counted.",18,-179,616)
     desc:SetHeight(55);desc:SetWordWrap(true)
     Label(drops,"Reset personal observations",18,-244,400,true)
     UI.scope=CreateFrame("DropdownButton",nil,drops,"WowStyle1DropdownTemplate")
     UI.scope:SetPoint("TOPLEFT",drops,"TOPLEFT",18,-270);UI.scope:SetSize(212,25)
     UI.resetScope="monster"
     if UI.scope.SetupMenu then UI.scope:SetupMenu(function(_,root)
-        for _,entry in ipairs({{"monster","Creature name / NPC ID"},{"zone","Current zone"},{"dungeon","Current dungeon"},{"all","All my observations"}}) do
+        for _,entry in ipairs({{"monster","Creature / node name or ID"},{"zone","Current zone"},{"dungeon","Current dungeon"},{"all","All my observations"}}) do
             local scope=entry[1]
             root:CreateRadio(entry[2],function()return UI.resetScope==scope end,function()UI.resetScope=scope;UI.confirmDrops=false;UI.Refresh()end)
         end
@@ -190,6 +208,7 @@ function UI.Create()
     end)
     UI.dropStatus=Label(drops,"",18,-314,616);UI.dropStatus:SetHeight(78);UI.dropStatus:SetWordWrap(true)
     frame:SetScript("OnHide",function()UI.confirmSession,UI.confirmDrops=false,false end)
+    U.ManageWindow(frame)
     frame:Hide()
 end
 
@@ -204,16 +223,21 @@ function UI.Refresh()
     if not UI.maxDrops:HasFocus() then UI.maxDrops:SetText(tostring(D.Settings().dropRows)) end
     if UI.mode.Update then UI.mode:Update() end
     if UI.scope.Update then UI.scope:Update() end
+    if UI.sourceMenu.Update then UI.sourceMenu:Update() end
     UI.clearDrops:SetText(UI.confirmDrops and "Confirm reset" or "Reset selected")
-    UI.reference:SetText("Reference: " .. A.LootReference.label .. ". No authoritative Forever drop-rate table is included.")
+    UI.reference:SetText("Reference: " .. A.LootReference.label .. ". Imported observations stay separate from your samples; server drop settings are not available.")
     local profile=P.Profile()
-    UI.dropStatus:SetText(UI.message or P.reason or ((profile and profile.mobs or 0) .. " creature records; " ..
+    UI.dropStatus:SetText(UI.message or P.reason or ((profile and profile.mobs or 0) .. " source records; " ..
         (profile and profile.cells or 0) .. " item counters. Reset affects this character only."))
     local summary=F.Summary()
     UI.rate:SetText(summary.elapsed<60 and "First minute - collecting a useful sample" or U.Money(summary.perHour) .. " per hour")
     UI.total:SetText("Session value: " .. U.Money(summary.total) .. " | " .. math.floor(summary.elapsed/60) .. "m " .. math.floor(summary.elapsed%60) .. "s")
-    UI.money:SetText("Looted gold: " .. U.Money(summary.coins or 0) .. "     Quest gold: " .. U.Money(summary.questCoins or 0))
-    UI.goods:SetText("Loot value: " .. U.Money(summary.lootValue or 0) .. "     Quest items (vendor): " .. U.Money(summary.questValue or 0))
+    UI.categoryTotals[1]:SetText(U.Money((summary.coins or 0)+(summary.lootValue or 0)))
+    UI.categoryTotals[2]:SetText(U.Money((summary.questCoins or 0)+(summary.questValue or 0)))
+    UI.categoryTotals[3]:SetText(U.Money(summary.harvestValue or 0))
+    UI.categoryNotes[1]:SetText("Gold: " .. U.Money(summary.coins or 0) .. " + items")
+    UI.categoryNotes[2]:SetText("Gold: " .. U.Money(summary.questCoins or 0) .. " + rewards")
+    UI.categoryNotes[3]:SetText("Herbs, ore and skins")
     UI.pause:SetText(summary.paused and "Resume" or "Pause");UI.reset:SetText(UI.confirmSession and "Confirm reset" or "Reset session")
     local rows=UI.view=="recent" and summary.recent or summary.items
     UI.breakdownTitle:SetText(UI.view=="recent" and "Recent pickups - value when received" or "Item breakdown - current valuation")
@@ -224,23 +248,31 @@ function UI.Refresh()
         UI.breakdownTitle:SetText(history and ("Session " .. UI.historyIndex .. ": " .. U.Money(history.total) .. " in " ..
             math.floor(history.elapsed/60) .. "m - " .. date("%b %d %H:%M",history.startedAt)) or "No previous sessions")
     end
-    local pages=math.max(1,math.ceil(#rows/8))
+    local filtered={}
+    for _,item in ipairs(rows) do
+        if UI.source=="all" or item.source==UI.source or (UI.source=="harvesting" and F.Harvest(item.source)) then
+            filtered[#filtered+1]=item
+        end
+    end
+    rows=filtered
+    local pages=math.max(1,math.ceil(#rows/#UI.lines))
     UI.listPage=math.max(1,math.min(UI.listPage,pages))
     UI.prev:SetEnabled(UI.listPage>1);UI.next:SetEnabled(UI.listPage<pages)
     UI.pageText:SetText("Page " .. UI.listPage .. " / " .. pages .. " | " .. #rows .. " entries")
     for i,label in ipairs(UI.lines) do
-        local item=rows[(UI.listPage-1)*8+i]
+        local item=rows[(UI.listPage-1)*#UI.lines+i]
         if item then
-            label:SetText((item.quantity and (item.quantity .. " x ") or "") .. item.name .. "  -  " ..
+            label:SetText((sourceLabels[item.source] and (sourceLabels[item.source] .. ": ") or "") ..
+                (item.quantity and (item.quantity .. " x ") or "") .. item.name .. "  -  " ..
                 U.Money(item.total or item.amount) .. (item.mode and (" (" .. item.mode .. ")") or ""))
         else label:SetText(i==1 and "No recorded income yet." or "") end
     end
     UI.note:SetText(UI.message or F.reason or (summary.unknown>0 and (summary.unknown .. " acquired items need item data; excluded from the estimate.") or
-        "Estimates include acquired items once. Vendor/AH sales, purchases and trade transfers stay in the ledger."))
+        "Items are valued once. Mail, trades and sale proceeds are excluded; cash flow stays in the ledger."))
 end
 
 function UI.Show(page)
     if U.Combat() then return U.Print("Open farming settings outside combat.") end
     UI.Create();UI.page=page=="drops" and "drops" or page=="settings" and "settings" or "session"
-    UI.Refresh();UI.frame:Show()
+    UI.Refresh();UI.frame:Show();U.FocusWindow(UI.frame)
 end

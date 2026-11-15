@@ -7,6 +7,7 @@ import json
 import pathlib
 import re
 import subprocess
+import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 RUNTIME = ROOT / "MSMarketValue"
@@ -62,6 +63,7 @@ def run(lua: str, luac: str | None = None) -> None:
             subprocess.run([luac, "-p", str(path)], check=True)
     result = subprocess.run([lua, "-e", 'assert(_VERSION == "Lua 5.1", "Use Lua 5.1 to validate this addon")'], check=True)
     assert result.returncode == 0
+    subprocess.run([sys.executable, "-m", "unittest", "discover", "-s", "tests", "-p", "test_*.py"], cwd=ROOT, check=True)
     subprocess.run([lua, "tests/run.lua"], cwd=ROOT, check=True)
     print("PASS TOC/load order, release identity, Lua 5.1, and runtime operation checks.")
 

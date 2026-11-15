@@ -35,7 +35,7 @@ Below the quote, **Record sale** adds a commission. Price is per unit; blank use
 
 **MS Opportunities** finds resale and price-movement signals using saved history. Minimum profit accepts decimal gold: `0.25` means 25s. Resale must meet the price-drop, return and profit filters. Left-click a result to open live listings; right-click for detail. See [market calculations](docs/MARKET-OPPORTUNITIES.md).
 
-Modifier names and links come from the scan. Quantity filters use units, not listing counts; zero disables a limit. **Low buyout** is the cost of all units at that lowest price. Stock decline compares two completed scans and does not prove that items sold. Keyword search matches every word. Rescan after updating for complete quantity data.
+Modifier names and links come from the scan, including modern bonus-based variants. Each variant has its own prices and history. **All items** includes current prices without a movement estimate when history is missing. The scrolling list shows 12 rows; **Filters** expands the controls, and Apply collapses them again. Quantity filters use units, not listing counts; zero disables a limit. **Low buyout** is the cost of all units at that lowest price. Stock decline compares two completed scans and does not prove that items sold. Keyword search matches every word. Rescan after updating for precise modifier and quantity data. Older item-wide days are kept but cannot supply a specific modifier’s baseline.
 
 Use **Watch item** on the Buy page or **Watch selected** on Opportunities. Edit the price/return/profit targets, then save. Zero disables a target; every enabled target must pass. Alerts are local and evaluated after completed scans.
 
@@ -45,7 +45,7 @@ Open `/msmv ledger` anywhere outside combat. **Period report** covers all types 
 
 ## Commands and support
 
-Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted.
+Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature/harvesting tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted.
 
 | Command | Action |
 |---|---|
