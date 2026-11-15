@@ -4,7 +4,7 @@ Open `/msmv farm` for the session report and display settings, or `/msmv drops` 
 
 ## Drop tooltips
 
-The tooltip shows four items by default, adjustable from 1–10. Active quest items come first, then items with the highest expected value. Percentages include a sample count: an item seen on 3 of 10 inspected corpses shows **30% (3/10)**. A stack counts as one successful drop.
+The tooltip shows four items by default, adjustable from 1–10. Active quest items come first, then items with the highest expected value. Percentages include a sample count: an item seen on 3 of 10 inspected corpses shows **30% (3/10)**. A stack counts as one successful drop. Rare rates keep extra decimal precision instead of rounding a recorded drop to 0%.
 
 Solo, party and raid samples are stored separately and combined for the tooltip. Only loot exposed by the client is counted. Unlooted kills, hidden group loot and quest eligibility can affect the sample; these numbers are observations, not the server’s configured drop chance.
 

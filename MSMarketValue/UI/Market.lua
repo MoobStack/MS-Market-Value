@@ -198,9 +198,13 @@ function UI.OpenListings(row, source)
         if not U.Table(bar) or type(bar.SetSearchText)~="function" or type(bar.StartSearch)~="function" then
             return Message("Exact modifier details are unavailable. Use the Buy search.")
         end
-        UI.pendingVariant={row=row,market=U.MarketKey(),snapshot=snapshot,at=U.Mono(),index=1,query=M.Name(row)}
+        -- Search the base name to populate native variant keys. Only the
+        -- matching full sample link may then open a modifier's listings.
+        local item=A.Valuation.ItemInfo(row.id)
+        local query=item and item.name or M.Name(row)
+        UI.pendingVariant={row=row,market=U.MarketKey(),snapshot=snapshot,at=U.Mono(),index=1,query=query}
         UI.lastSearch,UI.message=U.Mono(),nil
-        local ok=pcall(function()ah:SetDisplayMode(modes.Buy);bar:SetSearchText(M.Name(row));bar:StartSearch()end)
+        local ok=pcall(function()ah:SetDisplayMode(modes.Buy);bar:SetSearchText(query);bar:StartSearch()end)
         if not ok then UI.pendingVariant=nil;return Message("Could not start the native modifier search.") end
         return true
     end

@@ -23,7 +23,7 @@ Resale requires the price drop, return and profit thresholds to pass. Movement `
 | Return | Net profit divided by current unit cost × 100 |
 | Price movement | Current low compared with the earlier median |
 
-Matching random-suffix series stay separate. With enough observations, recent-versus-older median context helps show a broader trend. Results are capped at 200 and publish together; unchanged settings reuse cached analysis.
+Matching random-suffix series stay separate. With enough observations, recent-versus-older median context helps show a broader trend. Results are capped at 500 and publish together; unchanged settings reuse cached analysis.
 
 Left-click a result to open native live listings; right-click for details. **Watch selected** creates or edits its target. Live navigation requires an auctioneer, no combat and usable current results. Native Buy filters still apply.
 

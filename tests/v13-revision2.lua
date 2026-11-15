@@ -121,6 +121,7 @@ test("pending modifier searches resolve once and cancel when the player's search
     C_AuctionHouse.GetItemKeySampleLink=function()return a end
     function AuctionHouseFrame.SearchBar:GetSearchText()return self.searchText end
     truth(A.MarketUI.OpenListings(A.Market.rows[1]));equal(w.browseSearches,1);truth(A.MarketUI.pendingVariant)
+    equal(AuctionHouseFrame.SearchBar:GetSearchText(),"Imposing Gloves");equal(w.itemSearches,0)
     AuctionHouseFrame.SearchBar:SetSearchText("Another item");A.MarketUI.ResolvePendingVariant()
     equal(A.MarketUI.pendingVariant,nil);equal(w.itemSearches,0)
     w:advance(1);truth(A.MarketUI.OpenListings(A.Market.rows[1]))
@@ -194,6 +195,8 @@ test("skinning and creature loot from the same corpse use independent denominato
     equal(n,1);equal(rows[1].id,101)
     w.unitTip(GameTooltip,{type=2,guid=guid(1000)})
     truth(GameTooltip.lines[2].left:find("Skinning",1,true))
+    A.DB.Settings().showHarvestDrops=false;GameTooltip:ClearLines()
+    w.unitTip(GameTooltip,{type=2,guid=guid(1000)});truth(GameTooltip.lines[2].left:find("Drops",1,true))
     truth(A.Drops.Reset("monster","1000"));equal(A.Drops.Profile().mobs,0)
 end)
 
@@ -262,12 +265,14 @@ end)
 test("reference node tooltips do not require an existing personal area record",function()
     local _,A=world();A.DB.Settings().dropMode="reference"
     A.LootReference.Register("Reference source",function(id,kind)
-        if id==1731 and kind=="mining" then return {{id=2770,name="Copper Ore",rate=90,samples=500}} end
+        if id==1731 and kind=="mining" then return {{id=2770,name="Copper Ore",rate=90,samples=500},
+            {id=1210,name="Rare gem",rate=.024,samples=4204},{id=12363,name="Tiny sample rate",rate=.0001,samples=1000000}} end
         return {}
     end,false)
     A.Drops.Tooltip(GameTooltip,{guid=guid(1731,1,"GameObject"),lines={{leftText="Copper Vein"}}})
     truth(GameTooltip.lines[2].left:find("Mining",1,true))
     truth(GameTooltip.lines[3].right:find("500 samples",1,true));equal(A.Drops.Profile().mobs,0)
+    truth(GameTooltip.lines[4].right:find("0.02%",1,true));truth(GameTooltip.lines[5].right:find("<0.01%",1,true))
 end)
 
 test("combat spell name checks are cached with a bounded index",function()

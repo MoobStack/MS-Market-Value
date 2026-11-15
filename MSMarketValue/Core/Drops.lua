@@ -493,7 +493,7 @@ function P.ResolveTooltip(tooltip,data)
     if name or id then P.hover={id=id,guid=guid,name=name or (id and P.names[id]),at=U.Mono()} end
     if sourceType=="Creature" or sourceType=="Vehicle" then
         local dead=U.Call(UnitIsDead,"mouseover")
-        if dead==true then
+        if dead==true and D.Settings().showHarvestDrops then
             local rows,n=P.Rows(id,"skinning")
             if n>0 or (D.Settings().dropMode=="reference" and #rows>0) then return id,"skinning",name end
         end
@@ -522,8 +522,10 @@ function P.Tooltip(tooltip,data)
         local row=rows[index]
         local count=reference and (row.samples and (" (" .. row.samples .. " samples)") or "") or
             (" (" .. row.hits .. "/" .. samples .. ")")
+        local rate=row.rate>0 and row.rate<.01 and "<0.01%" or
+            string.format(row.rate>0 and row.rate<1 and "%.2f%%" or "%.1f%%",row.rate)
         tooltip:AddDoubleLine((row.wanted and "|cffffd100Quest: |r" or "") .. row.name,
-            string.format("%.1f%%",row.rate) .. count,.83,.86,.89,.83,.86,.89)
+            rate .. count,.83,.86,.89,.83,.86,.89)
     end
     if #rows>D.Settings().dropRows then tooltip:AddLine("+" .. (#rows-D.Settings().dropRows) .. " more recorded items",.61,.66,.70) end
     if reference and not A.LootReference.verified then tooltip:AddLine("Sampled reference; not verified server settings.",.92,.72,.38) end
