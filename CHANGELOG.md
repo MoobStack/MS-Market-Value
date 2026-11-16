@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 10 — 2026-11-16
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Add drop-rate sorting from high to low or low to high, plus the existing expected-value option. Default to high-to-low rates.
+- Add six colored rarity checkboxes and All rarities, independent of auction filters. Apply filtering before the visible item limit.
+- Keep needed quest drops visible and first regardless of rarity choices. Preserve existing quest-eligibility rules.
+- Reorganize the Drop rates settings page and explain automatic personal gap filling after the Forever and Classic reference layers.
+- Save display choices without changing reference counts, personal observations, farming totals or auction history. Refresh owned tooltips after display changes without duplicate sections.
+- Retain the accepted test9 market-search fix. Native test9 diagnostics report ready results with no outstanding watches.
+
 ## 1.3.0 beta — Test revision 9 — 2026-11-16
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.

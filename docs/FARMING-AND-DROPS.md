@@ -4,9 +4,23 @@ Open `/msmv farm` for the report and display settings, or `/msmv drops` for tool
 
 ## Drop tooltips
 
-The list shows four items by default, adjustable from 1–10. Needed quest items come first, then expected item value. Quest-only drops are hidden when their quest is absent; normal trade materials remain visible. Item names use their rarity colors.
+The list shows four items by default, adjustable from **1–10**. Open **Drop rates** for display options:
+
+| Control | Choices |
+|---|---|
+| Sort | Drop rate: high to low (default), drop rate: low to high, or expected item value. |
+| Rarity | Any combination of Poor, Common, Uncommon, Rare, Epic and Legendary, using colored checkboxes and All rarities. |
+| Max items | The maximum visible tooltip rows; press Apply after editing. |
+
+**Needed quest drops always stay visible and first**, including when their rarity is unchecked. The selected sort also orders each priority group. Rarity choices filter the other items before the maximum-row limit is applied. With no rarity selected, only needed quest drops remain. Quest-only drops are hidden when their quest is absent; completed quest drops no longer get the needed-item exception. Ordinary materials used by quests remain normal drops. Item names use their rarity colors.
+
+Sort and rarity choices apply immediately and are saved independently of the Auction House filters. Unknown rarities remain visible under All rarities; with a restricted selection, bounded item-data requests can resolve them. Display changes never delete observations.
 
 **Reference data** is the default. Each item uses Forever community counts first, Classic fallback second, and your personal samples last. Classic rows are marked and are unverified for Forever. Counts from different sources are never combined. **Personal drops** shows only your records. Personal collection is on by default in either mode; explicit choices are remembered.
+
+**Missing reference items are added automatically from personal observations.** This also covers a whole source absent from both reference layers. For example, an otherwise missing item found on three of ten inspected corpses appears as **30% (3/10 personal)**. A known Forever or Classic entry keeps its own rate and denominator; personal counts never overwrite it or average into it. Choose Personal drops to inspect your own rate for an item already present in a reference pack. Display filters, quest eligibility and Max items still determine which entries fit in the tooltip.
+
+Gap filling uses this character's current-area/source observations, keeping corpse loot, skinning, herbalism and mining separate. Collection must be enabled; already collected samples remain available when collection is paused.
 
 The bundle includes [1,876 Everloot rates](EVERLOOT-DATASET.md) and [Classic coverage for 4,395 creatures](CLASSIC-DATASET.md). It is broader than the earlier pilot but does not cover every Forever creature or change. No separate reference addon is needed; disable older `MSMarketValueReference` pilots.
 

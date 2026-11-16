@@ -156,6 +156,8 @@ function UI.DiagnosticsText()
     lines[#lines+1]="Drop observations: " .. (drops and drops.mobs or 0) .. " source records; " ..
         (drops and drops.cells or 0) .. " item counters; mode=" .. D.Settings().dropMode .. "; tracking=" .. tostring(D.Settings().dropTracking)
     lines[#lines+1]="Drop tooltip: " .. tostring(A.Drops.installed==true) .. "; reference=" .. A.LootReference.label
+    lines[#lines+1]="Drop display: sort="..D.Settings().dropSort.."; rarity_mask="..D.Settings().dropQuality..
+        "; max_items="..D.Settings().dropRows.."; needed_quests=always_first; personal_gaps=true"
     local base=A.LootReference.bundled
     if base then lines[#lines+1]="Bundled reference: Everloot " .. base.version .. "; rates=" .. base.rates ..
         "; sources/modes=" .. base.sources .. "; snapshot UTC=" .. base.updatedAt end

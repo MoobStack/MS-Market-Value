@@ -7,7 +7,7 @@ python3 tools/validate.py --lua lua5.1 --luac luac5.1
 TZ=America/New_York python3 tools/validate.py --lua lua5.1 --luac luac5.1
 ```
 
-**759 Lua cases** load the real runtime and pinned libraries. New coverage replays native cache loss, alternating full/partial replies, metadata retention across keyword/rarity/view changes, snapshot/market invalidation, the cache limit, exact-name identity and per-variant history, then checks the layered reference data, centered/locked/resized HUD, combat-aware idle, five-minute peaks, quest exclusion, recent history, saved sessions and upgrades. Existing scan, crafting, history, ledger and restricted-value cases remain. Local-date cases include 23- and 25-hour DST days under America/New_York.
+**779 Lua cases** load the real runtime and pinned libraries. New coverage checks drop sorting, all 64 rarity masks, quest precedence, live tooltip refresh, personal/reference gap filling and saved settings, then replays native cache loss, alternating full/partial replies, metadata retention across keyword/rarity/view changes, snapshot/market invalidation, the cache limit, exact-name identity and per-variant history, then checks the layered reference data, centered/locked/resized HUD, combat-aware idle, five-minute peaks, quest exclusion, recent history, saved sessions and upgrades. Existing scan, crafting, history, ledger and restricted-value cases remain. Local-date cases include 23- and 25-hour DST days under America/New_York.
 
 The same command runs **22 Python checks** for importers, deterministic rebuilding, probability fixtures, archive integrity and every shipped source's agreement with the real Lua reader.
 

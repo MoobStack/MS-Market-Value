@@ -411,12 +411,23 @@ local function PersonalRows(sourceKey,context)
     return rows,samples
 end
 
+function P.QualityAllowed(mask,quality)
+    if mask==63 then return true end
+    return U.Number(mask,0,63,true) and U.Number(quality,0,5,true) and math.floor(mask/2^quality)%2==1
+end
+
+function P.InvalidateDisplay()
+    P.cache,P.tipDirty=nil,true
+end
+
 function P.Rows(npcID,kind)
     kind=kind or "loot"
     local sourceKey=P.SourceKey(npcID,kind)
     if not sourceKey then return {},0 end
     local context=P.Context()
-    local cacheKey=tostring(sourceKey) .. "|" .. context.key .. "|" .. D.Settings().dropMode .. "|" .. P.revision .. "|" .. (A.LootReference.revision or 0)
+    local settings=D.Settings()
+    local cacheKey=table.concat({tostring(sourceKey),context.key,settings.dropMode,settings.dropSort,
+        settings.dropQuality,settings.dropRows,P.revision,A.LootReference.revision or 0},"|")
     local snapshot=D.Snapshot()
     if P.cache and P.cache.key==cacheKey and P.cache.snapshot==snapshot then return P.cache.rows,P.cache.samples end
     local personal,samples=PersonalRows(sourceKey,context)
@@ -438,7 +449,7 @@ function P.Rows(npcID,kind)
         for _,row in ipairs(personal) do if not included[row.id] then rows[#rows+1]=row end end
     else rows=personal end
     local visible={}
-    local nameRequests=0
+    local nameRequests,qualityHidden=0,0
     for _,row in ipairs(rows) do
         local info=A.Valuation.ItemInfo(row.id)
         if not info and row.questItem and #P.QuestItems().active>0 and nameRequests<10 then
@@ -448,17 +459,27 @@ function P.Rows(npcID,kind)
         if allowed then
             row.wanted=wanted
             row.quality=U.ItemQuality(row.id,row.quality or (info and info.quality))
-            row.r,row.g,row.b=U.ItemColor(nil,row.quality)
-            local price=D.Price(row.id,nil,snapshot)
-            row.value=price and price.low or (info and info.vendor or 0)
-            row.score=row.rate*row.value
-            visible[#visible+1]=row
+            if row.quality==nil and settings.dropQuality~=63 and nameRequests<10 then
+                P.RequestName(row.id);nameRequests=nameRequests+1
+            end
+            -- Needed quest drops stay visible even if their rarity is hidden.
+            if wanted or P.QualityAllowed(settings.dropQuality,row.quality) then
+                row.r,row.g,row.b=U.ItemColor(nil,row.quality)
+                local price=D.Price(row.id,nil,snapshot)
+                row.value=price and price.low or (info and info.vendor or 0)
+                row.score=row.rate*row.value
+                visible[#visible+1]=row
+            else qualityHidden=qualityHidden+1 end
         end
     end
     local hidden=#rows-#visible
     rows=visible
     table.sort(rows,function(a,b)
         if a.wanted~=b.wanted then return a.wanted end
+        if settings.dropSort~="value" and a.rate~=b.rate then
+            if settings.dropSort=="rate_asc" then return a.rate<b.rate end
+            return a.rate>b.rate
+        end
         if a.score~=b.score then return a.score>b.score end
         if a.rate~=b.rate then return a.rate>b.rate end
         return a.id<b.id
@@ -467,7 +488,7 @@ function P.Rows(npcID,kind)
         local row=rows[index]
         if row.name=="Item " .. row.id then P.RequestName(row.id) end
     end
-    P.cache={key=cacheKey,rows=rows,samples=samples,snapshot=snapshot,hidden=hidden,referenceCount=referenceCount}
+    P.cache={key=cacheKey,rows=rows,samples=samples,snapshot=snapshot,hidden=hidden,qualityHidden=qualityHidden,referenceCount=referenceCount}
     return rows,samples
 end
 
@@ -598,7 +619,8 @@ function P.Tooltip(tooltip,data)
         ((P.cache and P.cache.referenceCount==0 and samples>0) and "Personal fallback" or label) or
         (samples .. " " .. unit .. " checked"),.55,.83,.85,.61,.66,.70)
     if #rows==0 then
-        local text=P.cache and P.cache.hidden>0 and "Quest-only drops hidden; no current matches." or
+        local text=P.cache and P.cache.qualityHidden>0 and "No drops match the selected rarities." or
+            P.cache and P.cache.hidden>0 and "Quest-only drops hidden; no current matches." or
             reference and "No reference data for this source." or samples>0 and "No item drops recorded yet." or "No personal samples yet."
         tooltip:AddLine(text,.61,.66,.70)
     end

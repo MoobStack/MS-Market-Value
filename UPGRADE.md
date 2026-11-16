@@ -1,13 +1,13 @@
 # Upgrade and rollback
 
-Test **1.3.0-beta**, build `2026-11-15-beta001`, revision **9**.
+Test **1.3.0-beta**, build `2026-11-15-beta001`, revision **10**.
 
 1. Finish or discard incomplete scans, then close WoW normally.
 2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`.
 3. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP’s addon folder. Keep WTF/SavedVariables.
-4. Disable any older `MSMarketValueReference` pilot, then restart. Check `/msmv diagnostics` shows test revision **9** and the bundled Everloot reference.
+4. Disable any older `MSMarketValueReference` pilot, then restart. Check `/msmv diagnostics` shows test revision **10** and the bundled Everloot reference.
 
-This fix uses your existing completed scan and history; no wipe or history restart is needed. Existing prices, history, watches, ledger entries and beta farming/drop samples carry forward. From revision 2 onward, scans already have precise modifiers; a fresh scan adds native names and rarity. Older item-wide history stays saved but cannot identify a modifier's movement. All items shows current variants immediately; signals need enough earlier precise priced days. Missed drops cannot be reconstructed.
+This update adds saved drop-sort and rarity choices. The default is drop rate high to low with all rarities; Expected item value retains the earlier ordering. Needed quest drops remain visible and first. It uses your existing completed scan and history; no wipe or history restart is needed. Existing prices, history, watches, ledger entries and beta farming/drop samples carry forward. From revision 2 onward, scans already have precise modifiers; a fresh scan adds native names and rarity. Older item-wide history stays saved but cannot identify a modifier's movement. All items shows current variants immediately; signals need enough earlier precise priced days. Missed drops cannot be reconstructed.
 
 Profiles predating bundled data select Reference once. Later display choices are remembered. Personal tracking remains on by default; an explicitly disabled tracker stays off. Forever samples take priority over Classic fallback, then personal gap filling. Rarity choices still run from Poor through Legendary.
 

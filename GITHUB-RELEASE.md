@@ -1,15 +1,18 @@
-# MS Market Value 1.3.0 beta — Test revision 9
+# MS Market Value 1.3.0 beta — Test revision 10
 
-Same testing version and build: `1.3.0-beta / 2026-11-15-beta001`.
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
 
-- Fix filtered Opportunities searches that keep updating after item data is briefly resolved and then becomes incomplete again.
-- Keep verified item fields across automatic rebuilds and changes to keywords, rarity and view. Partial replies cannot erase previously learned fields.
-- Preserve exact modifier identities, completed scans, history and all test7 farming/estimator changes. Add metadata-cache diagnostics.
+Open `/msmv drops` for the reorganized **Drop rates** page.
 
-Close WoW and replace `Interface/AddOns/MSMarketValue` using the Clean ZIP. Keep WTF/SavedVariables. No scan or history reset is needed. `/msmv diagnostics` should show **Test revision: 9**.
+- Sort drops by rate from high to low (default), low to high, or expected item value.
+- Show/hide Poor, Common, Uncommon, Rare, Epic and Legendary drops using colored checkboxes. These choices are independent of auction filters.
+- Needed quest drops always stay visible and first, even when their rarity is hidden. Rarity filtering applies to other drops before the 1–10-item tooltip limit.
+- Sort and rarity selections apply immediately and survive reload. Use Apply after changing Max items.
 
-Search `pants`, change rarity and quantity filters, and switch between Resale and All items. Once any genuinely new item data has loaded, results should settle and the build/publication counters should stop increasing. If the issue persists, include the full diagnostics with the new **Market metadata cache** line.
+**Reference mode automatically includes personally observed items missing from both reference layers**, including a whole missing creature/node. Forever entries take priority, then Classic, then personal gaps. Each keeps its own rate and sample count. Personal collection works in either display mode when enabled. Already referenced items keep the reference rate; choose Personal drops to see your own rate for them. Filters, quest eligibility and the item limit can still hide an entry without deleting its observations.
 
-The supplied diagnostics already find **340 matching entries, including 241 modified variants**. Of those matches, 256 need more exact-variant history and 79 are excluded by other signal criteria, leaving five Resale results. All items shows current matches without requiring enough prior days, while still applying rarity and supply filters.
+The test9 Opportunities loop fix remains. Your supplied test9 diagnostics show ready results, matched build/publication counts and no pending watches.
 
-This remains a test build. Native client event ordering and UI behavior need in-game confirmation. Nothing was pushed or officially published.
+Close WoW, replace Interface/AddOns/MSMarketValue from the Clean ZIP, and keep SavedVariables. Confirm `/msmv diagnostics` shows **Test revision: 10**. No new scan or history reset is required. Try both sort directions, deselect Common while tracking a needed quest drop, and compare Reference/Personal display. Native appearance and event timing still need in-game confirmation.
+
+This remains a test build; nothing was pushed or officially published.

@@ -13,6 +13,7 @@ D.defaults = {
     marketLowMin = 0, marketLowMax = 0, marketStockMin = 0, marketStockMax = 0,
     marketStockDrop = 0, marketSearch = "", marketQuality = 63,
     dropTracking = true, showDrops = true, showHarvestDrops = true, dropRows = 4, dropMode = "reference",
+    dropSort = "rate_desc", dropQuality = 63,
     farmTracking = true, farmShow = true, farmShowTotal = true, farmHover = false, farmUseAuction = true,
     farmIncludeQuest = true, farmThreshold = 10, farmIdle = true, farmIdleMinutes = 5,
     farmHUDWidth = 320, farmHUDLocked = false,
@@ -26,7 +27,7 @@ local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, hist
     serviceLabor = { 0, 100000000 }, serviceMinimum = { 0, 100000000 }, ledgerDays = { 1, 365 },
     marketLowMin={0,1000000000},marketLowMax={0,1000000000},
     marketStockMin={0,1000000000},marketStockMax={0,1000000000},marketStockDrop={0,100},
-    dropRows={1,10},farmThreshold={0,1000},farmIdleMinutes={5,60},farmHUDWidth={240,520},marketQuality={0,63} }
+    dropRows={1,10},dropQuality={0,63},farmThreshold={0,1000},farmIdleMinutes={5,60},farmHUDWidth={240,520},marketQuality={0,63} }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB
@@ -63,6 +64,7 @@ function D.Initialize()
         end
     end
     if db.settings.dropMode ~= "observed" and db.settings.dropMode ~= "reference" then db.settings.dropMode = "reference" end
+    if db.settings.dropSort~="rate_desc" and db.settings.dropSort~="rate_asc" and db.settings.dropSort~="value" then db.settings.dropSort="rate_desc" end
     if type(db.excludedItems) ~= "table" then db.excludedItems = {} end
     if not U.Number(db.cooldownUntil, 0) then db.cooldownUntil = 0 end
     db.version = A.VERSION

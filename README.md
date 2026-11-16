@@ -2,7 +2,7 @@
 
 Auction prices, crafting profits, farming estimates and a personal gold ledger for **WoW Forever**.
 
-**1.3.0 beta · Test revision 9** · Client 1.60.1 · Interface 16001 · By MoobStack
+**1.3.0 beta · Test revision 10** · Client 1.60.1 · Interface 16001 · By MoobStack
 
 This is a test build. Version `1.3.0-beta` and build `2026-11-15-beta001` stay fixed until release.
 
@@ -27,7 +27,7 @@ Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the 
 | **Watchlists** | Add items from the Buy page or Opportunities. Edit buy-price, return and profit targets; receive local alerts after saved scans. |
 | **Personal ledger** | Record AH purchases and mailbox sales, vendor trades, commissions, trade gold, daily loot and expenses such as repairs, training, respecs, postage and flights. |
 | **Reports and filters** | Income, spending, cash flow and separate recorded/estimated profit totals. Filter by local dates and transaction type, combine Other expense categories, edit entries and copy filtered CSV. |
-| **Drop tooltips** | Forever community rates, Classic fallback and personal gap filling. Personal collection stays on, including visible group loot. Needed quest items come first. Reset by source, zone, dungeon or character. |
+| **Drop tooltips** | Forever community rates, Classic fallback and personal gap filling. Personal collection stays on, including visible group loot. Needed quest items come first. Sort by drop rate in either direction or expected value; filter six colored rarities while keeping needed quest drops first. Reset by source, zone, dungeon or character. |
 | **Farming sessions** | Session value, whole-session average, recent rate and a located farming peak that excludes quests. Centered display with adjustable width, position lock, optional total and hover mode. Combat-aware idle pause, category breakdown and five saved summaries. |
 
 ## Getting started

@@ -4,6 +4,14 @@ local UI={page="session",view="items",historyIndex=0,listPage=1,source="all"}
 A.FarmingUI=UI
 local sourceLabels={all="All sources",loot="Loot",quest="Quests",harvesting="Harvesting",
     herbalism="Herbalism",mining="Mining",skinning="Skinning"}
+local dropSorts={{"rate_desc","Drop rate: high to low"},{"rate_asc","Drop rate: low to high"},{"value","Expected item value"}}
+
+local function QualityLabel(quality)
+    local name=_G["ITEM_QUALITY"..quality.."_DESC"]
+    local r,g,b=U.ItemColor(nil,quality)
+    return string.format("|cff%02x%02x%02x%s|r",math.floor(r*255+.5),math.floor(g*255+.5),math.floor(b*255+.5),
+        U.String(name) and name or U.qualityNames[quality+1])
+end
 
 local function Label(parent,text,x,y,width,normal)
     local font=parent:CreateFontString(nil,"OVERLAY",normal and "GameFontNormal" or "GameFontHighlightSmall")
@@ -258,25 +266,54 @@ function UI.Create()
             for _,entry in ipairs({{"observed","Personal drops"},{"reference","Reference data"}}) do
                 local mode=entry[1]
                 root:CreateRadio(entry[2],function()return D.Settings().dropMode==mode end,function()
-                    D.data.settings.dropMode=mode;D.data.settings.dropModeConfigured=true;P.cache=nil;UI.Refresh()
+                    D.data.settings.dropMode=mode;D.data.settings.dropModeConfigured=true;P.InvalidateDisplay();UI.Refresh()
                 end)
             end
         end)
     end
     Label(drops,"Max items",400,-91,80)
     UI.maxDrops=Box(drops,480,-84,50);UI.maxDrops:SetNumeric(true)
-    Button(drops,"Apply",542,-84,96,function()
+    UI.applyDrops=Button(drops,"Apply",542,-84,96,function()
         local count=tonumber(UI.maxDrops:GetText())
-        if U.Number(count,1,10,true) then D.data.settings.dropRows=count;UI.maxDrops:ClearFocus();UI.message=nil
+        if U.Number(count,1,10,true) then D.data.settings.dropRows=count;P.InvalidateDisplay();UI.maxDrops:ClearFocus();UI.message=nil
         else UI.message="Choose 1-10 tooltip items." end
         UI.Refresh()
     end)
-    UI.reference=Label(drops,"",18,-127,616);UI.reference:SetHeight(48);UI.reference:SetWordWrap(true)
-    local desc=Label(drops,"Needed quest items come first, then expected item value. Personal rates use inspected corpses or harvests, including visible group loot. Herbs, ore and skinning have separate samples; unseen kills are not counted.",18,-179,616)
-    desc:SetHeight(55);desc:SetWordWrap(true)
-    Label(drops,"Reset personal observations",18,-244,400,true)
+    Label(drops,"Sort",18,-131,80)
+    UI.dropSort=CreateFrame("DropdownButton",nil,drops,"WowStyle1DropdownTemplate")
+    UI.dropSort:SetPoint("TOPLEFT",drops,"TOPLEFT",108,-123);UI.dropSort:SetSize(274,25)
+    UI.dropSort:SetupMenu(function(_,root)
+        for _,entry in ipairs(dropSorts)do
+            local sort=entry[1]
+            root:CreateRadio(entry[2],function()return D.Settings().dropSort==sort end,function()
+                D.data.settings.dropSort=sort;P.InvalidateDisplay();UI.Refresh()
+            end,sort)
+        end
+    end)
+    Label(drops,"Rarity",400,-131,80)
+    UI.dropQuality=CreateFrame("DropdownButton",nil,drops,"WowStyle1DropdownTemplate")
+    UI.dropQuality:SetPoint("TOPLEFT",drops,"TOPLEFT",480,-123);UI.dropQuality:SetSize(224,25)
+    UI.dropQuality:SetDefaultText("All rarities")
+    UI.dropQuality:SetupMenu(function(_,root)
+        root:CreateCheckbox("All rarities",function()return D.Settings().dropQuality==63 end,function()
+            D.data.settings.dropQuality=D.Settings().dropQuality==63 and 0 or 63;P.InvalidateDisplay();UI.Refresh()
+        end,"all")
+        for quality=0,5 do
+            local q=quality
+            root:CreateCheckbox(QualityLabel(q),function()return P.QualityAllowed(D.Settings().dropQuality,q)end,function()
+                D.data.settings.dropQuality=D.Settings().dropQuality+(P.QualityAllowed(D.Settings().dropQuality,q) and -2^q or 2^q)
+                P.InvalidateDisplay();UI.Refresh()
+            end,q)
+        end
+    end)
+    local priority=Muted(Label(drops,"Needed quest drops always stay visible and first. Sort and rarity choices apply to the other drops.\nUnknown rarity stays visible with All rarities selected.",18,-161,700))
+    priority:SetHeight(42);priority:SetWordWrap(true)
+    UI.reference=Label(drops,"",18,-211,700);UI.reference:SetHeight(60);UI.reference:SetWordWrap(true)
+    local desc=Muted(Label(drops,"Personal rates count inspected corpses or harvests, including visible group loot. Herbs, ore and skinning have separate samples; unseen kills are not counted.",18,-279,700))
+    desc:SetHeight(42);desc:SetWordWrap(true)
+    Muted(Label(drops,"Reset personal observations",18,-340,400))
     UI.scope=CreateFrame("DropdownButton",nil,drops,"WowStyle1DropdownTemplate")
-    UI.scope:SetPoint("TOPLEFT",drops,"TOPLEFT",18,-270);UI.scope:SetSize(212,25)
+    UI.scope:SetPoint("TOPLEFT",drops,"TOPLEFT",18,-367);UI.scope:SetSize(212,25)
     UI.resetScope="monster"
     if UI.scope.SetupMenu then UI.scope:SetupMenu(function(_,root)
         for _,entry in ipairs({{"monster","Creature / node name or ID"},{"zone","Current zone"},{"dungeon","Current dungeon"},{"all","All my observations"}}) do
@@ -284,15 +321,15 @@ function UI.Create()
             root:CreateRadio(entry[2],function()return UI.resetScope==scope end,function()UI.resetScope=scope;UI.confirmDrops=false;UI.Refresh()end)
         end
     end) end
-    UI.monster=Box(drops,244,-270,254)
+    UI.monster=Box(drops,244,-367,254)
     UI.monster:SetScript("OnTextChanged",function(_,user)
         if user then UI.confirmDrops=false;UI.clearDrops:SetText("Reset selected") end
     end)
-    UI.clearDrops=Button(drops,"Reset selected",510,-270,128,function()
+    UI.clearDrops=Button(drops,"Reset selected",510,-367,128,function()
         if not UI.confirmDrops then UI.confirmDrops=true;UI.clearDrops:SetText("Confirm reset");return end
         UI.confirmDrops=false;local ok,reason=P.Reset(UI.resetScope,UI.monster:GetText());UI.message=reason;UI.Refresh()
     end)
-    UI.dropStatus=Label(drops,"",18,-314,616);UI.dropStatus:SetHeight(78);UI.dropStatus:SetWordWrap(true)
+    UI.dropStatus=Label(drops,"",18,-407,700);UI.dropStatus:SetHeight(78);UI.dropStatus:SetWordWrap(true)
     frame:SetScript("OnHide",function()UI.confirmSession,UI.confirmDrops=false,false end)
     U.ManageWindow(frame)
     frame:Hide()
@@ -311,10 +348,16 @@ function UI.Refresh()
     if not UI.hudWidth:HasFocus() then UI.hudWidth:SetText(tostring(D.Settings().farmHUDWidth)) end
     UI.settingsStatus:SetText(UI.message or "Idle pause is optional. Offline and loading time are excluded.")
     if UI.mode.Update then UI.mode:Update() end
+    if UI.dropSort.Update then UI.dropSort:Update() end
+    local count,label=0
+    for quality=0,5 do if P.QualityAllowed(D.Settings().dropQuality,quality) then count=count+1;label=QualityLabel(quality) end end
+    if UI.dropQuality.OverrideText then UI.dropQuality:OverrideText(count==6 and "All rarities" or count==0 and "Quest drops only" or count==1 and label or (count.." rarities selected")) end
     if UI.scope.Update then UI.scope:Update() end
     if UI.sourceMenu.Update then UI.sourceMenu:Update() end
     UI.clearDrops:SetText(UI.confirmDrops and "Confirm reset" or "Reset selected")
-    UI.reference:SetText("Reference: " .. A.LootReference.DisplayLabel() .. ". Forever samples take priority, then Classic rates, then your personal drops. Classic rates are unverified for Forever; sample counts stay separate.")
+    UI.reference:SetText(D.Settings().dropMode=="reference" and
+        ("Reference: "..A.LootReference.DisplayLabel()..". Forever entries take priority, then Classic.\nMissing items and entire sources use your personal observations. Rates and sample counts stay separate. Classic rates are unverified for Forever.") or
+        "Personal display: only this character's observations for the current area and source. Reference data remains available in the Display menu; collecting personal observations works in either mode.")
     local profile=P.Profile()
     UI.dropStatus:SetText(UI.message or P.reason or ((profile and profile.mobs or 0) .. " source records; " ..
         (profile and profile.cells or 0) .. " item counters. Reset affects this character only."))
