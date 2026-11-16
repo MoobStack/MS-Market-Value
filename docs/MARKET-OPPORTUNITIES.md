@@ -28,7 +28,7 @@ Under **Filters → Rarity**, check Poor, Common, Uncommon, Rare, Epic or Legend
 
 Matching random-suffix series stay separate. With enough observations, recent-versus-older median context helps show a broader trend. Results are capped at 500 and publish together; unchanged settings reuse cached analysis.
 
-**Updating results** is active preparation. The previous list remains visible until the new list is ready. Work is spread across frames. Current scans reuse their variant index between filter changes, and keyword/supply checks run before historical valuation. Item replies only queue another analysis when usable name, rarity or item-class data changes. Duplicate replies and unrelated missing vendor data do not restart the search. Visible names/colors are reused between refreshes.
+**Updating results** is active preparation. The previous list remains visible until the new list is ready. Work is spread across frames. Current scans reuse their variant index between filter changes, and keyword/supply checks run before historical valuation. Item replies only queue another analysis when usable name, rarity or item-class data changes. Verified item fields stay cached across automatic rebuilds and filter changes for the same completed scan. Incomplete or evicted native data cannot erase them and restart the same search indefinitely. The cache resets with a replacement scan or market change, stays outside SavedVariables and caps at 50,000 identities. Visible names/colors are reused between refreshes.
 
 Left-click a result to open native live listings; right-click for details. **Watch selected** creates or edits its target. Live navigation requires an auctioneer, no combat and usable current results. Native Buy filters still apply.
 
@@ -44,4 +44,4 @@ Use **All items** and search `pants` to browse current matching modifiers immedi
 
 Clicking a bonus-based variant uses the native sample link to find its exact Buy key. If details are still loading, the addon waits briefly rather than guessing a different modifier. You still choose and purchase listings yourself.
 
-If results are missing, diagnostics now show current/modified variant counts, matching variants, entries needing history and entries excluded by the other signal filters. Test revision 8 uses the existing scan format and keeps saved data.
+If results are missing, diagnostics now show current/modified variant counts, matching variants, entries needing history and entries excluded by the other signal filters. Test revision 9 uses the existing scan format and keeps saved data.

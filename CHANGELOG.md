@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 9 — 2026-11-16
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Fix the remaining filtered-search loop when native item data disappears between a reply and the next analysis pass.
+- Retain verified name, rarity and class fields across automatic rebuilds and keyword/rarity/view changes for the same snapshot. Merge partial fields without erasing prior progress.
+- Keep exact modifiers and numeric item lookups separate. Reset the bounded session cache for a replacement snapshot or market change.
+- Add cache diagnostics and regression coverage for alternating full/partial replies and native cache loss.
+- Reuse existing completed scans and history; all test7 farming and estimator changes remain.
+
 ## 1.3.0 beta — Test revision 8 — 2026-11-15
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.

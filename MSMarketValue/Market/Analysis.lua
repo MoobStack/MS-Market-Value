@@ -83,7 +83,7 @@ function M.Ensure(view, sort, force)
     force=force or M.metadataDirty;M.metadataDirty=nil
     if not force and M.source == snapshot and M.historyRevision == H.revision and M.signature == signature then return end
     M.source, M.historyRevision, M.signature = snapshot, H.revision, signature
-    I.Begin()
+    I.Begin(snapshot,key)
     local settings = {}
     for name, value in pairs(D.Settings()) do if U.String(name) and string.sub(name, 1, 6) == "market" then settings[name] = value end end
     local day, records = math.floor(snapshot.startedAt / 86400), {}
@@ -136,7 +136,7 @@ function M.RequestVisibleInfo(rows)
             row.quality=U.ItemQuality(row.link,row.scannedQuality or (item and item.quality))
             row.r,row.g,row.b=U.ItemColor(row.link,row.quality)
             row.name=DisplayName(row,item);row.infoChecked=true
-            if not item or not item.complete or row.quality==nil then I.Await(row.id,row.link,item,false) end
+            if not item or not item.complete or row.quality==nil then I.Await(row.id,row.link,item,false,row.variantKey) end
         end
     end
     I.Request()
@@ -227,18 +227,18 @@ local function Evaluate(job, key, entry, variant)
     if #job.words>0 and variant and suffix==0 and not bonuses and linkedName and not Matches(job.words,linkedName) then return end
     local item=I.Read(entry.link or id,variant and key or nil)
     local quality=U.ItemQuality(entry.link or id,scannedQuality or (item and item.quality))
-    if not item and scannedQuality==nil and s.marketQuality~=63 then I.Await(id,entry.link or id,item,true) end
+    if not item and scannedQuality==nil and s.marketQuality~=63 then I.Await(id,entry.link or id,item,true,variant and key or nil) end
     if quality==nil and s.marketQuality~=63 then
-        I.Await(id,entry.link or id,item,true);job.qualityMissing=(job.qualityMissing or 0)+1;return
+        I.Await(id,entry.link or id,item,true,variant and key or nil);job.qualityMissing=(job.qualityMissing or 0)+1;return
     end
     if not M.QualityAllowed(job.settings.marketQuality,quality) then return end
     local scannedName=display and U.String(display[2]) and display[2] or nil
     local name=U.ItemName(entry.link,item and item.name,scannedName)
     if #job.words>0 then
-        if not name then I.Await(id,entry.link or id,item,true);return end
+        if not name then I.Await(id,entry.link or id,item,true,variant and key or nil);return end
         if not Matches(job.words,name) then
             if (not item or not item.complete) and (variant and (suffix~=0 or bonuses) or not linkedName and not scannedName) then
-                I.Await(id,entry.link or id,item,true);job.nameMissing=(job.nameMissing or 0)+1
+                I.Await(id,entry.link or id,item,true,variant and key or nil);job.nameMissing=(job.nameMissing or 0)+1
             end
             return
         end

@@ -115,6 +115,8 @@ function UI.DiagnosticsText()
     local info=A.MarketMetadata
     lines[#lines+1]="Market item replies: received=" .. info.replies .. "; changed=" .. info.changes .. "; unchanged=" .. info.unchanged ..
         "; watched_ids=" .. #info.order .. "/256; watched_variants=" .. info.count .. "/1024"
+    lines[#lines+1]="Market metadata cache: entries=" .. info.cacheCount .. "/50000; hits=" .. info.hits ..
+        "; retained_partial=" .. info.retained
     lines[#lines + 1] = "Craft pricing: AH cut=" .. D.Settings().marketFee .. "%; labor=" .. U.Money(D.Settings().serviceLabor) .. "; minimum=" .. U.Money(D.Settings().serviceMinimum) .. "; customer_materials=" .. tostring(D.Settings().serviceCustomerMaterials)
     lines[#lines + 1] = "Watchlists: " .. #A.Watchlist.Entries() .. " this market; " .. (A.Watchlist.job and "checking" or "ready") .. "; publications=" .. A.Watchlist.publications
     if A.Watchlist.reason then lines[#lines + 1] = "Watchlist detail: " .. A.Watchlist.reason end

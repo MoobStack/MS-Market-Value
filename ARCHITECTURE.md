@@ -4,7 +4,7 @@ Test **1.3.0-beta** · Interface **16001** · Saved-data schema **1**
 
 ## Modules
 
-The three identical TOCs load 26 Lua files. Bootstrap creates the addon namespace, then pinned libraries, data/services, the scanner, tooltip integration, UI and event wiring. Original code uses the addon namespace; Blizzard functions are not replaced.
+The three identical TOCs load 30 Lua files. Bootstrap creates the addon namespace, then pinned libraries, data/services, the scanner, tooltip integration, UI and event wiring. Original code uses the addon namespace; Blizzard functions are not replaced.
 
 | Module | Responsibility |
 |---|---|
@@ -28,7 +28,7 @@ Pause keeps staging and retry progress. Copying can continue at the AH outside c
 
 Recipe catalogs run in batches of 20 on 0.25-second ticks while a profession is open. A complete staged catalog publishes atomically; unchanged catalog events reuse it. Selected recipes include readable native allocations. Ranking, search and summaries cache by source and pricing settings. Unknown material shapes stay unavailable; minimum yield drives variable-output ranking.
 
-Market analysis runs only while visible. Each frame handles up to 500 entries with a four-millisecond target. It indexes exact variant series and retains at most 500 results. Watch checks handle up to 20 targets per step and publish together. Both reuse saved prices; neither sends auction queries. A player click delegates live listing navigation to the native Buy UI.
+Market analysis runs only while visible. Each frame handles up to 2,000 preparation/evaluation steps with a four-millisecond target. It indexes exact variant series and retains at most 500 results. Watch checks handle up to 20 targets per step and publish together. Both reuse saved prices; neither sends auction queries. A player click delegates live listing navigation to the native Buy UI.
 
 Tooltip callbacks decorate accessible public item data, including during combat. Only verified quantity contexts produce stack totals. Primary-tooltip rebuilds wait until combat ends; comparison rebuilds remain native-owned.
 
@@ -89,3 +89,5 @@ Packed references use a source-to-string index with sorted item-ID deltas, integ
 Market/Metadata reads only public name, rarity and item class, independently of vendor/equip metadata. Native replies enqueue bounded deferred checks rather than calling item APIs inside callbacks. Only a changed projected record can invalidate ranking; completed visible rows reuse their metadata. Exact variant links are checked before adopting a native title, and item-ID fallbacks never supply another modifier's name.
 
 Each pass watches at most 256 item IDs and 1,024 exact-link records. Checks process at most eight records per frame with a 1 ms cooperative allowance inside the analysis budget. Duplicate replies coalesce; partial data does not prevent publication. A reply arriving during a multi-frame check is retained, and adding an unresolved variant reopens its item-ID watch. These tables are session-local and do not enlarge SavedVariables.
+
+Verified name/rarity/class fields also live in a snapshot-and-market cache capped at 50,000 identities. Automatic follow-up passes and filter changes retain this cache; a replacement snapshot, market change or clearing analysis resets it. Complete records avoid repeated native lookups. Partial reads accumulate fields instead of clearing known values. Numeric item lookups and exact modifier keys remain separate. At the cap, new uncached watches are refused so their replies cannot repeatedly invalidate an analysis. Cache entries/hits and retained partial reads appear in diagnostics. No metadata cache is persisted.
