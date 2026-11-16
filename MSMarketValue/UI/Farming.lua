@@ -35,11 +35,27 @@ local function Panel(parent)
     panel:SetPoint("TOPLEFT",parent,"TOPLEFT",12,-72);panel:SetSize(656,414);return panel
 end
 
+local function RateText(summary,rate)
+    local state=summary.idlePaused and "  |  Idle" or summary.paused and "  |  Paused" or
+        summary.elapsed<60 and "  |  Starting" or ""
+    return "Rate: " .. U.Coins(rate) .. " / h" .. state
+end
+
+function UI.UpdateHUD(summary)
+    if not UI.hudRate then return end
+    summary=summary or F.Summary()
+    local rate=summary.paused and summary.perHour or (UI.displayRate or 0)
+    local total=summary.paused and summary.total or (UI.displayTotal or 0)
+    local rateText,totalText=RateText(summary,rate),"Session: " .. U.Coins(total)
+    if UI.hudRateText~=rateText then UI.hudRate:SetText(rateText);UI.hudRateText=rateText end
+    if UI.hudTotalText~=totalText then UI.hudTotal:SetText(totalText);UI.hudTotalText=totalText end
+end
+
 function UI.HUD()
     if not D.data or A.disabledReason then return end
     if not UI.hud then
         local frame=CreateFrame("Button","MSMarketValueFarmHUD",UIParent,"BackdropTemplate")
-        frame:SetSize(188,52);frame:SetClampedToScreen(true);frame:SetMovable(true);frame:EnableMouse(true)
+        frame:SetClampedToScreen(true);frame:SetMovable(true);frame:EnableMouse(true)
         frame:RegisterForDrag("LeftButton");frame:RegisterForClicks("LeftButtonUp","RightButtonUp")
         frame:SetBackdrop({bgFile="Interface\\Tooltips\\UI-Tooltip-Background",
             edgeFile="Interface\\Tooltips\\UI-Tooltip-Border",tile=true,tileSize=16,edgeSize=12,
@@ -48,8 +64,8 @@ function UI.HUD()
         local pos=D.data.farmHUD
         if U.Table(pos) and U.Number(pos.x,-10000,10000) and U.Number(pos.y,-10000,10000) then frame:SetPoint("CENTER",UIParent,"CENTER",pos.x,pos.y)
         else frame:SetPoint("TOP",UIParent,"TOP",0,-100) end
-        UI.hudRate=Label(frame,"MS Farming",12,-8,164,true)
-        UI.hudTotal=Label(frame,"Starting session...",12,-29,164)
+        UI.hudRate=Label(frame,"",12,-7,248,true)
+        UI.hudTotal=Label(frame,"",12,-28,248)
         frame:SetScript("OnDragStart",function(self)self.dragging=true;self:StartMoving()end)
         frame:SetScript("OnDragStop",function(self)
             self:StopMovingOrSizing();self.dragging=false
@@ -64,8 +80,11 @@ function UI.HUD()
         end)
         UI.hud=frame
     end
+    UI.hud:SetSize(272,D.Settings().farmShowTotal and 52 or 32)
+    if D.Settings().farmShowTotal then UI.hudTotal:Show() else UI.hudTotal:Hide() end
     if D.Settings().farmShow then UI.hud:Show() else UI.hud:Hide() end
     UI.hud:SetAlpha(D.Settings().farmHover and not UI.hovered and 0 or 1)
+    UI.UpdateHUD()
 end
 
 function UI.Animate(elapsed)
@@ -77,12 +96,12 @@ function UI.Animate(elapsed)
     local dt=UI.animationElapsed;UI.animationElapsed=0
     local summary=F.Summary()
     local factor=1-math.exp(-dt/1.2)
-    UI.displayRate=(UI.displayRate or 0)+(summary.perHour-(UI.displayRate or 0))*factor
-    UI.displayTotal=(UI.displayTotal or 0)+(summary.total-(UI.displayTotal or 0))*factor
-    if UI.hudRate then
-        UI.hudRate:SetText(summary.elapsed<60 and "Farming - first minute" or (U.Coins(UI.displayRate) .. " / hour"))
-        UI.hudTotal:SetText((summary.idlePaused and "Idle | " or summary.paused and "Paused | " or "Est. ") .. U.Coins(UI.displayTotal) .. " | " .. math.floor(summary.elapsed/60) .. "m")
+    if summary.paused then UI.displayRate,UI.displayTotal=summary.perHour,summary.total
+    else
+        UI.displayRate=(UI.displayRate or 0)+(summary.perHour-(UI.displayRate or 0))*factor
+        UI.displayTotal=(UI.displayTotal or 0)+(summary.total-(UI.displayTotal or 0))*factor
     end
+    UI.UpdateHUD(summary)
     UI.refreshElapsed=(UI.refreshElapsed or 0)+dt
     if UI.refreshElapsed>=1 then UI.refreshElapsed=0;if UI.frame and UI.frame:IsShown() then UI.Refresh() end end
 end
@@ -148,7 +167,8 @@ function UI.Create()
     local settings=UI.settings
     Label(settings,"Acquisition value, not sale proceeds or net cash flow.",14,-12,626,true)
     Check(settings,"Track farming sessions","farmTracking",14,-41)
-    Check(settings,"Show the small farming display","farmShow",14,-75)
+    Check(settings,"Show the farming display","farmShow",14,-75,285)
+    Check(settings,"Show session total","farmShowTotal",334,-75,280)
     Check(settings,"Hide the display until the cursor is over it","farmHover",14,-109)
     Check(settings,"Use current AH value after the configured AH cut","farmUseAuction",14,-143)
     Check(settings,"Include quest gold and received reward items","farmIncludeQuest",14,-177)
@@ -184,7 +204,7 @@ function UI.Create()
             for _,entry in ipairs({{"observed","Personal drops"},{"reference","Reference data"}}) do
                 local mode=entry[1]
                 root:CreateRadio(entry[2],function()return D.Settings().dropMode==mode end,function()
-                    D.data.settings.dropMode=mode;P.cache=nil;UI.Refresh()
+                    D.data.settings.dropMode=mode;D.data.settings.dropModeConfigured=true;P.cache=nil;UI.Refresh()
                 end)
             end
         end)
@@ -244,7 +264,7 @@ function UI.Refresh()
     UI.dropStatus:SetText(UI.message or P.reason or ((profile and profile.mobs or 0) .. " source records; " ..
         (profile and profile.cells or 0) .. " item counters. Reset affects this character only."))
     local summary=F.Summary()
-    UI.rate:SetText(summary.elapsed<60 and "First minute - collecting a useful sample" or U.Coins(summary.perHour) .. " per hour")
+    UI.rate:SetText(RateText(summary,summary.perHour))
     UI.total:SetText("Session value: " .. U.Coins(summary.total) .. " | " .. math.floor(summary.elapsed/60) .. "m " .. math.floor(summary.elapsed%60) .. "s")
     UI.categoryTotals[1]:SetText(U.Coins((summary.coins or 0)+(summary.lootValue or 0)))
     UI.categoryTotals[2]:SetText(U.Coins((summary.questCoins or 0)+(summary.questValue or 0)))

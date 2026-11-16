@@ -1,3 +1,4 @@
+-- Personal-mode fixtures; bundled defaults are covered in v13-revision6.lua.
 local fresh,row,link,test,equal,near,truth,secret=...
 local function guid(id,spawn) return "Creature-0-1-1-1-" .. id .. "-" .. (spawn or 1) end
 local function world(saved,wall)
@@ -20,7 +21,7 @@ local function world(saved,wall)
         local r=w.loot[slot]
         return 1,"Item",1,0,1,false,r.questItem or false,r.questID,r.questID~=nil
     end
-    w:load();A.Farm.Tick();return w,A
+    w:load();if saved==nil then A.DB.Settings().dropMode="observed" end;A.Farm.Tick();return w,A
 end
 local function tick(w,A,seconds)w:advance(seconds);A.Farm.Tick()end
 local function enable(A,minutes)truth(A.Farm.ConfigureIdle(true,minutes or 5))end
@@ -114,7 +115,7 @@ test("farming settings expose validated idle minutes and an idle status without 
     ui.idleCheck:SetChecked(true);ui.idleCheck.scripts.OnClick(ui.idleCheck)
     ui.idleMinutes:SetText("4");ui.applyIdle.scripts.OnClick();equal(A.DB.Settings().farmIdleMinutes,5)
     ui.idleMinutes:SetText("8");ui.applyIdle.scripts.OnClick();equal(A.DB.Settings().farmIdleMinutes,8)
-    tick(w,A,500);ui.Refresh();ui.Animate(.1);truth(ui.note.text:find("Idle",1,true));truth(ui.hudTotal.text:find("Idle",1,true))
+    tick(w,A,500);ui.Refresh();ui.Animate(.1);truth(ui.note.text:find("Idle",1,true));truth(ui.hudRate.text:find("Idle",1,true))
     ui.idleCheck:SetChecked(false);ui.idleCheck.scripts.OnClick(ui.idleCheck);equal(A.Farm.Summary().idlePaused,false)
 end)
 

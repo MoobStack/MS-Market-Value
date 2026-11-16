@@ -143,8 +143,11 @@ function UI.DiagnosticsText()
     lines[#lines+1]="Loot API: sources=" .. tostring(type(GetLootSourceInfo)=="function") ..
         "; slots=" .. tostring(type(GetLootSlotLink)=="function") .. "; recent_sources=" .. #A.Drops.ring .. "/2048"
     lines[#lines+1]="Drop observations: " .. (drops and drops.mobs or 0) .. " source records; " ..
-        (drops and drops.cells or 0) .. " item counters; mode=" .. D.Settings().dropMode
+        (drops and drops.cells or 0) .. " item counters; mode=" .. D.Settings().dropMode .. "; tracking=" .. tostring(D.Settings().dropTracking)
     lines[#lines+1]="Drop tooltip: " .. tostring(A.Drops.installed==true) .. "; reference=" .. A.LootReference.label
+    local base=A.LootReference.bundled
+    if base then lines[#lines+1]="Bundled reference: Everloot " .. base.version .. "; rates=" .. base.rates ..
+        "; sources/modes=" .. base.sources .. "; snapshot UTC=" .. base.updatedAt end
     lines[#lines+1]="Loot windows read: " .. (A.Drops.readWindows or 0) .. "; skipped source pairs=" .. A.Drops.skipped ..
         "; harvesting tooltips=" .. tostring(D.Settings().showHarvestDrops)
     if A.Drops.reason then lines[#lines+1]="Drop detail: " .. A.Drops.reason end

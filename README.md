@@ -2,13 +2,15 @@
 
 Auction prices, crafting profits, farming estimates and a personal gold ledger for **WoW Forever**.
 
-**1.3.0 beta · Test revision 5** · Client 1.60.1 · Interface 16001 · By MoobStack
+**1.3.0 beta · Test revision 6** · Client 1.60.1 · Interface 16001 · By MoobStack
 
 This is a test build. Version `1.3.0-beta` and build `2026-11-15-beta001` stay fixed until release.
 
 ## Install
 
 Close WoW and extract the **Clean ZIP** into `Interface/AddOns`, so the addon is at `Interface/AddOns/MSMarketValue`. Keep your WTF/SavedVariables folder when updating. Libraries are included; no separate download is needed.
+
+Everloot reference rates are included. Disable any older `MSMarketValueReference` pilot so it does not replace the bundled data.
 
 Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the addon adds **MS Opportunities** and **MS Market Value** tabs.
 
@@ -25,8 +27,8 @@ Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the 
 | **Watchlists** | Add items from the Buy page or Opportunities. Edit buy-price, return and profit targets; receive local alerts after saved scans. |
 | **Personal ledger** | Record AH purchases and mailbox sales, vendor trades, commissions, trade gold, daily loot and expenses such as repairs, training, respecs, postage and flights. |
 | **Reports and filters** | Income, spending, cash flow and separate recorded/estimated profit totals. Filter by local dates and transaction type, combine Other expense categories, edit entries and copy filtered CSV. |
-| **Drop tooltips** | Personal observations for creatures, herbs, ore and skinning, including visible group loot. Needed quest items come first. Reference packs use personal rates for missing items, with separate sample counts. Reset by source, zone, dungeon or character. |
-| **Farming sessions** | Estimated value per hour from your own loot, quest rewards and harvesting. Separate category totals; mail and trades are excluded. Movable display, hover-only option, idle pause enabled by default, item breakdown and five recent session summaries. |
+| **Drop tooltips** | Bundled Everloot rates for creatures and harvesting, with personal rates filling gaps. Personal collection stays on by default, including visible group loot. Needed quest items come first. Reset by source, zone, dungeon or character. |
+| **Farming sessions** | Estimated value per hour and session total from your own loot, quests and harvesting. Mail and trades are excluded. Movable display with an optional session line, hover-only mode, idle pause, category breakdown and five recent summaries. |
 
 ## Getting started
 
@@ -48,7 +50,7 @@ The ledger records observed activity. AH sales appear when completed invoices lo
 
 Disenchant values use an **unverified Classic reference** for Forever. No buying, selling, crafting, mail collection or chat sending is automated.
 
-Drop percentages are observations, not verified server chances. Reference mode accepts optional packs and fills gaps with personal observations. The checked [Everloot baseline](docs/EVERLOOT-DATASET.md) still needs loot-mode classification; it is not loaded into the base addon. The [Wowhead importer](docs/WOWHEAD-DATASET.md) remains available for curated pages. Displayed prices use coin icons; copied quotes and exports stay plain text. See [farming and drops](docs/FARMING-AND-DROPS.md) for counting rules and storage limits.
+Drop percentages are community samples, not verified server chances. **Reference data** is the default and includes **1,848 rates across 238 sources/modes** from [Everloot](docs/EVERLOOT-DATASET.md). Personal collection stays enabled in either display mode, filling missing items without mixing sample counts. Coverage is partial. The [Wowhead importer](docs/WOWHEAD-DATASET.md) remains available for curated packs. Displayed prices use coin icons; copied quotes and exports stay plain text. See [farming and drops](docs/FARMING-AND-DROPS.md) for counting rules and storage limits.
 
 ## Help
 

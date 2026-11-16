@@ -1,9 +1,11 @@
 # Live checks
 
-Test **1.3.0-beta / 2026-11-15-beta001**, revision **5**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
+Test **1.3.0-beta / 2026-11-15-beta001**, revision **6**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
 
 Check the new features first:
 
+- **Bundled data:** disable the old reference pilot and check diagnostics reports 1,848 rates / 238 sources/modes. Reference should be selected initially, with personal tracking on. Inspect a known source, switch to Personal drops, and confirm personal counts are still being collected. Reset a small personal sample and verify the base data remains.
+- **Display:** check the Rate and Session labels. Hide the session total, reload and confirm the compact layout stays selected. Reach idle and verify both figures stop, with Idle beside the rate. Loot to resume; manually pause and confirm incoming loot does not resume it.
 - **Idle:** confirm five minutes is enabled by default; stop looting and check the whole grace period counts. Loot gold or an item to resume. Try 60, reject 61, disable/reload and check the preference. Manual pauses, mail and trades must not resume it.
 - **Prices/colors:** compare green/blue items with Opportunities rows before hovering. Select several Rarity checkboxes, Apply, then try All/None. Check drop tooltip name colors and coin icons at normal UI scale. Copy a quote and CSV; both should remain plain text.
 - **Combat:** first open `/msmv`, ledger, farming and diagnostics during combat. Check periods and ledger filters; verify scans/live AH searches wait until combat ends. Repeat with the AH already open and check for taint errors.

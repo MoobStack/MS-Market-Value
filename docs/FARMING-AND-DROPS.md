@@ -14,11 +14,11 @@ Solo, party and raid samples are stored separately and combined for the tooltip.
 
 Herbalism, mining and skinning keep separate samples. Normal and rare materials appear after they have been observed. Nodes may need one successful harvest before a name-only tooltip can be identified. A skinned corpse keeps its ordinary drops separate. Turn **Include harvesting tooltips** off to hide these lists while keeping collection enabled.
 
-**Personal drops** works without a database. **Reference data** uses an optional local pack and fills missing items or whole sources from your personal records. Fallback rows say **personal** and keep their own hits/sample counts; shared and personal denominators are never combined. Quest and rarity details can also use known personal information. Switching to Personal drops shows only your records.
+**Reference data** is the default. It uses the bundled Everloot rates and fills missing items or whole sources from your personal records. Fallback rows say **personal** and keep their own hits/sample counts; shared and personal denominators are never combined. Personal collection is on by default in either display mode. Switching to **Personal drops** shows only your records, and your choice is remembered.
 
-External samples are not verified server settings. Wowhead pages can include Classic fallback. The [Everloot baseline](EVERLOOT-DATASET.md) contains 2,027 rates across 268 sources, but still needs loot-mode classification before it can become a runtime pack. Without either reference or personal evidence, a rate remains unknown.
+The bundled [Everloot baseline](EVERLOOT-DATASET.md) contains 1,848 usable rates in 238 sources/modes. It is a partial community dataset, not verified server settings. Without either reference or personal evidence, a rate remains unknown.
 
-The test package includes an optional **Mudfin Oracle** reference pack (132 item rows, NPC 258573). It covers that source only. Install its `MSMarketValueReference` folder alongside the main addon, then select Reference data. It does not change your personal samples. Source links and import date are in the pack’s `SOURCES.json`. See [building reference packs](REFERENCE-PACKS.md) for other creatures or nodes.
+No separate reference addon is needed. Disable any older `MSMarketValueReference` pilot; it would replace the bundled database. See [reference packs](REFERENCE-PACKS.md) for other sources.
 
 Reset options affect this character’s observations:
 
@@ -37,15 +37,15 @@ Quest rewards and bound items use vendor value. Other items can use the current 
 
 The estimate values items once when acquired; selling them does not add the proceeds again. Item totals use the current valuation, while Recent pickups keeps the value when received. This is an estimate of acquired value, not realized profit. It excludes deposits, unsold stock and expenses.
 
-The timer includes travel and combat, but excludes offline time, loading screens and pauses. The hourly estimate starts after a minute. The small display eases toward changes; report totals remain exact.
+The timer includes travel and combat, but excludes offline time, loading screens and pauses. The hourly estimate starts after a minute. The small display labels the hourly estimate **Rate** and the acquired session value **Session**. Both ease toward changes while active; report totals remain exact.
 
-Drag the display to move it. Left-click opens the report; right-click pauses or resumes. Farming settings can hide it completely or reveal it only on hover. **Reset session** saves a short summary before starting again.
+Drag the display to move it. Left-click opens the report; right-click pauses or resumes. **Show session total** is enabled by default; turning it off leaves one compact rate line. Other settings hide the whole display or reveal it only on hover. **Reset session** saves a short summary before starting again.
 
 ## Idle pause
 
 **Auto-pause after no loot** is enabled by default at five minutes. In **Farming settings**, enter 5–60 whole minutes and Apply, or uncheck it to disable. The cap applies to the idle timeout; sessions can run longer than an hour.
 
-The full grace period counts toward the session. After that the timer pauses and the display says **Idle**. Your next received loot, harvested item or included quest reward resumes it. Looking at loot, another player’s drops, mail and trades do not resume it. A manual pause stays paused until you resume it yourself. Offline and loading time are excluded.
+The full grace period counts toward the session. After that the timer and figures stop changing, with **Idle** beside the hourly rate. Your next received loot, harvested item or included quest reward resumes it. Looking at loot, another player’s drops, mail and trades do not resume it. A manual pause shows **Paused** and stays paused until you resume it yourself. Offline and loading time are excluded.
 
 ## Storage and processing
 

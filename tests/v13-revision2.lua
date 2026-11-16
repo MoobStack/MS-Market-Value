@@ -1,3 +1,4 @@
+-- Personal-mode fixtures; bundled defaults are covered in v13-revision6.lua.
 local function coin(amount) return _G.MSMarketValue.Util.Coins(amount) end
 local fresh,row,link,test,equal,near,truth,secret=...
 local function guid(id,spawn,kind) return (kind or "Creature") .. "-0-1-1-1-" .. id .. "-" .. (spawn or "1") end
@@ -23,7 +24,7 @@ local function world(saved)
     GetLootSourceInfo=function(slot)return unpack(w.loot[slot].sources)end
     GetLootSlotLink=function(slot)return w.loot[slot].link end
     GetLootSlotInfo=function()return 1,"Item",1,0,1,false,false,nil,false end
-    w:load();A.Farm.Tick();return w,A
+    w:load();if saved==nil then A.DB.Settings().dropMode="observed" end;A.Farm.Tick();return w,A
 end
 local function scan(w,A,entries)
     local s=A.DB.NewSnapshot(A.Util.MarketKey(),#entries,w.wall)

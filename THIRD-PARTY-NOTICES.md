@@ -15,7 +15,7 @@ LibAHTab provides common modern AH tab coordination and explicitly handles Camel
 
 ## Inspected references
 
-The separate Everloot review ZIP retains its own **CC BY-SA 4.0** attribution and data terms in `NOTICE.txt`. It contains normalized community samples, not Everloot application code. This data license does not license the addon code. The review ZIP is not loaded by the Clean addon.
+The addon bundles a packed subset of Everloot community loot samples under **CC BY-SA 4.0**. Credit, source links, the licence URL and adaptation notes are in `MSMarketValue/Data/Everloot-NOTICE.txt`. The full normalized export and provenance are under `datasets/everloot` in the source repository; only the small runtime subset and notice enter the Clean ZIP. No Everloot application code or individual player records are included. These data terms do not license the addon code.
 
 Blizzard UI/API definitions were inspected for compatibility. No extracted Blizzard Lua source, fonts, music or game binaries are bundled. Runtime icon, font and texture paths refer to client-supplied assets.
 

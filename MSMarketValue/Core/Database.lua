@@ -12,8 +12,8 @@ D.defaults = {
     marketMinProfit = 100, marketFee = 5, marketMove = 15,
     marketLowMin = 0, marketLowMax = 0, marketStockMin = 0, marketStockMax = 0,
     marketStockDrop = 0, marketSearch = "", marketQuality = 63,
-    dropTracking = true, showDrops = true, showHarvestDrops = true, dropRows = 4, dropMode = "observed",
-    farmTracking = true, farmShow = true, farmHover = false, farmUseAuction = true,
+    dropTracking = true, showDrops = true, showHarvestDrops = true, dropRows = 4, dropMode = "reference",
+    farmTracking = true, farmShow = true, farmShowTotal = true, farmHover = false, farmUseAuction = true,
     farmIncludeQuest = true, farmThreshold = 10, farmIdle = true, farmIdleMinutes = 5,
     serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
     watchAlerts = true, ledgerDays = 90, trackAH = true, trackVendor = true, trackTrade = true, trackLoot = true, trackOther = true,
@@ -41,6 +41,11 @@ function D.Initialize()
     db.schema = A.SCHEMA
     db.markets = db.markets or {}
     if type(db.settings) ~= "table" then db.settings = {} end
+    -- Adopt reference mode once now that a base dataset ships with the addon.
+    -- Later display choices and disabled collection stay as the player set them.
+    if db.settings.dropModeConfigured~=true then
+        db.settings.dropMode="reference";db.settings.dropModeConfigured=true
+    end
     -- Earlier betas stored an off default without an explicit-choice marker.
     -- Adopt the requested on default once; later choices survive upgrades.
     if db.settings.farmIdleConfigured~=true then db.settings.farmIdle=true end
@@ -56,7 +61,7 @@ function D.Initialize()
             db.settings[key] = value
         end
     end
-    if db.settings.dropMode ~= "observed" and db.settings.dropMode ~= "reference" then db.settings.dropMode = "observed" end
+    if db.settings.dropMode ~= "observed" and db.settings.dropMode ~= "reference" then db.settings.dropMode = "reference" end
     if type(db.excludedItems) ~= "table" then db.excludedItems = {} end
     if not U.Number(db.cooldownUntil, 0) then db.cooldownUntil = 0 end
     db.version = A.VERSION

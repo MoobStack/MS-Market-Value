@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 6 — 2026-11-15
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Bundle 1,848 mode-resolved Everloot rates. Use reference data by default while continuing to collect personal drops and fill gaps.
+- Label the farming display **Rate** and **Session**. Keep the session total visible by default, with a setting to hide that line.
+- Show **Idle** or **Paused** beside the hourly rate. Freeze both figures during a pause; qualifying farming receipts resume an idle session.
+- Include source credit, coverage, the checked export and an offline rebundling tool in the repository. Packed data stays out of SavedVariables.
+
 ## 1.3.0 beta — Test revision 5 — 2026-11-15
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.

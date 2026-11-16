@@ -1,3 +1,4 @@
+-- Personal-mode fixtures; bundled defaults are covered in v13-revision6.lua.
 local fresh, row, link, test, equal, near, truth, secret = ...
 local function guid(npc,spawn) return "Creature-0-1-1-1-" .. npc .. "-" .. (spawn or "000001") end
 local function world(saved,wall)
@@ -25,7 +26,7 @@ local function world(saved,wall)
         return 1,"Item",entry.quantity or 1,0,1,false,entry.questID~=nil,entry.questID,entry.questID~=nil
     end
     GetLootSourceInfo=function(slot)return unpack(w.loot[slot].sources)end
-    w:load();A.Farm.Tick()
+    w:load();if saved==nil then A.DB.Settings().dropMode="observed" end;A.Farm.Tick()
     return w,A
 end
 local function scan(w,A,rows)

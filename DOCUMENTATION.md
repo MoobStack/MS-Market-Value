@@ -45,9 +45,9 @@ Open `/msmv ledger` anywhere, including combat. **Period report** covers all typ
 
 ## Commands and support
 
-Use `/msmv farm` for the farming report, display and pricing options. Use `/msmv drops` for creature/harvesting tooltips, reference/personal mode and resets. The [farming guide](docs/FARMING-AND-DROPS.md) explains what is counted. Idle pause is enabled by default at five minutes. Set 5–60 whole minutes or disable it; the whole grace period counts, and your next farming receipt resumes it. Manual pauses remain manual. Prices use coin icons in displays; copyable quotes, diagnostics and exports use plain text.
+Use `/msmv farm` for the farming report, display and pricing options. The small display labels **Rate** and **Session**; the session total is on by default and can be hidden separately. Use `/msmv drops` for tooltips, reference/personal mode and resets. Bundled reference data is the default; personal collection stays enabled in either mode. The [farming guide](docs/FARMING-AND-DROPS.md) explains counting rules. Idle pause defaults to five minutes, with a 5–60-minute setting or Off. **Idle** appears beside the rate until your next farming receipt; manual pauses stay paused.
 
-The main window, ledger, farming report and diagnostics can open in combat. Scans, live searches and profession controls still wait until combat ends. **Opportunities → Filters → Rarity** offers six colored choices from Poor through Legendary; Apply saves the selection. Drop tooltip names use item-quality colors too. Reference gaps use personal rates with separate counts. See the checked [Everloot baseline and next collection step](docs/EVERLOOT-DATASET.md), or the [Wowhead importer](docs/WOWHEAD-DATASET.md).
+The main window, ledger, farming report and diagnostics can open in combat. Scans, live searches and profession controls still wait until combat ends. **Opportunities → Filters → Rarity** offers six colored choices from Poor through Legendary; Apply saves the selection. Drop tooltip names use item-quality colors too. See the bundled [Everloot baseline](docs/EVERLOOT-DATASET.md), or the [Wowhead importer](docs/WOWHEAD-DATASET.md) for other reference sources.
 
 | Command | Action |
 |---|---|

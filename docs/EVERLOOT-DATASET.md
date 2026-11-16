@@ -1,31 +1,29 @@
 # Everloot baseline
 
-The Windows download succeeded. The supplied November 15 export passed its ZIP, row-count and checksum checks.
+Test revision 6 includes the checked Everloot export from Dataset Builder 0.1.3. No separate reference addon is needed. **Reference data** is the default; personal collection stays on and fills missing items with separately labeled rates.
 
-| Included | Count |
-|---|---|
-| Source/item rates | 2,027 |
-| Creature sources | 230 |
-| Object sources | 38 |
-| Distinct items | 906 |
-| ZIP size | 40,944 bytes, about 40 KiB |
+| Loaded into the addon | Rates | Sources/modes |
+|---|---:|---:|
+| Creature loot | 1,822 | 230 |
+| Skinning | 9 | 3 |
+| Herbalism | 7 | 3 |
+| Mining | 10 | 2 |
+| **Total** | **1,848** | **238** |
 
-The same normalized records occupy 386,063 bytes before compression. Numeric IDs and repeated fields compress well; no icons, artwork or individual player logs are included. The small archive is valid, but it is **not a complete world loot database**.
+The typed snapshot is **2026-11-16 00:20 UTC** (November 15 in Eastern time). These are community loot-window samples, not verified server probabilities. Coverage depends on the source catalog and reporting thresholds; an absent drop is unknown, not 0%.
 
-## What is still missing
+The complete export has 3,875 rows. Its other 2,027 rows lack a loot mode and remain in the review archive; they are never assigned to creature or harvesting tables. The published aggregate feed has its own earlier snapshot date. Those denominators are not combined.
 
-The published feed identifies NPCs and objects but does not separate kills, skinning, herbs, ore and other loot types. Its 2,027 rates therefore have **zero resolved loot modes**. The builder correctly saved the baseline without creating runtime Lua. Assigning those rates to a kill or mining table would mix different sample types.
+## Size and storage
 
-The original export is included separately in the Complete Package for review. It is not loaded into the addon or copied into SavedVariables. Its `NOTICE.txt` contains Everloot's attribution and CC BY-SA 4.0 data terms. These are community samples, not verified server settings.
+The runtime adds about **11 KiB of Lua**, including **8,251 bytes of packed counts**. Only viewed sources are decoded; the cache holds at most eight sources and 4,096 rows. No reference data is copied into SavedVariables, and no API requests or uploads happen in game.
 
-## Next collection step
+The full export and per-source provenance are under `datasets/everloot` in the repository, outside the Clean ZIP. The addon includes its source credit and **CC BY-SA 4.0** data notice in `Data/Everloot-NOTICE.txt`; code licensing is separate.
 
-In the separate **Dataset Builder 0.1.1** folder, run **RESOLVE-LOOT-MODES.cmd**. It requests the public records needed to distinguish loot types. Keep `work` to resume an interrupted or rate-limited download.
+## Refreshing for a release
 
-Check `STATUS.cmd` and `output/last-check.json`. A compatible **Reference.zip** is produced only when the data supports typed rates. If the source refuses the public-records endpoint, keep the existing baseline and share the displayed error or connection report; the aggregate feed alone cannot supply the missing classifications.
+1. In Dataset Builder, run **RESOLVE-LOOT-MODES-WITH-KEY.cmd** and keep its `work` folder for resuming. Never include the key or cache with the addon.
+2. Check the finished export and coverage report. Keep one immutable dataset ZIP for the release.
+3. From the addon repository, run `python3 tools/bundle_everloot.py PATH-TO-DATASET.zip`, then run the normal validation and packaging checks. The bundler verifies hashes, counts and source modes before replacing runtime data.
 
-## Personal gap filling
-
-From addon test revision 5, **Reference data** keeps each available shared rate and fills missing items or whole sources from this character's personal history. Fallback rows say **personal** and retain their own hits/sample counts. Known personal quest/rarity information can also fill missing item details.
-
-Kill, skinning, herbalism and mining samples stay separate. Quest eligibility and the display limit still apply. Personal mode shows only personal rates. Resetting personal history removes its fallback rows without modifying the reference pack; nothing is uploaded.
+Personal rates and reset scopes remain independent. Reference rates win when available; missing items or sources use this character's rates and sample counts. Personal mode shows only personal records. Resetting personal history does not change the base dataset.
