@@ -1,13 +1,15 @@
-# MS Market Value 1.3.0 beta — Test revision 5
+# MS Market Value 1.3.0 beta — Test revision 7
 
-Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+Same testing version and build: `1.3.0-beta / 2026-11-15-beta001`.
 
-- Limit Rarity to Poor, Common, Uncommon, Rare, Epic and Legendary, with matching text colors. Existing supported selections carry forward.
-- Reuse the current variant index when filters change. Check keywords and supply limits before historical pricing, keep only the best 500 results, and finish searches before processing queued item-data refreshes.
-- Keep modifier names accurate when the client initially supplies a generic name. Missing names load without requiring a hover.
-- Fill reference gaps with this character's personal drop rates, including group and harvesting samples. Mark them personal; keep shared rates and sample counts separate.
-- Document the checked Everloot export: 2,027 rates, 268 sources and about 40 KiB compressed. Loot modes remain unresolved, so it is a review dataset rather than an installable reference pack.
+- Add Classic fallback coverage for 4,395 creatures. Forever community rates take priority; personal drops fill remaining gaps. Classic rows are marked as unverified for Forever.
+- Center the farming display, add space between labels and amounts, and add width and position-lock settings.
+- Reorganize the session report around session value, active time, session average, recent rate and a located five-minute farming peak. Quest rewards cannot set the peak.
+- Resume idle sessions on combat entry or your own loot. Keep time active during combat and restart the idle countdown afterward. Manual pauses stay paused.
+- Keep reference data packed and recent rate history bounded. Existing saved data carries forward.
 
-Close WoW and replace the addon folder using the Clean ZIP. Keep SavedVariables. Check `/msmv diagnostics` says **Test revision: 5**.
+Close WoW, replace the addon folder using the Clean ZIP and keep SavedVariables. Disable older reference pilots. `/msmv diagnostics` should show **Test revision: 7**.
 
-Test repeated keyword/rarity changes on the same scan, including `of the`, and compare exact modifiers with the Buy page. In Reference mode, check a source/item absent from the pack and confirm personal counts appear. This remains a beta; no official 1.3 release was published.
+Check the display at your normal UI scale, change its width/lock, let it idle, then resume by combat and by looting. Compare session/recent rates after a longer session and confirm a large quest reward leaves the farming peak unchanged. Hover Elder Mottled Boar to check the new Classic fallback.
+
+This is a test build; no official 1.3 release has been published.

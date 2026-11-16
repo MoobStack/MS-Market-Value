@@ -45,9 +45,11 @@ Open `/msmv ledger` anywhere, including combat. **Period report** covers all typ
 
 ## Commands and support
 
-Use `/msmv farm` for the farming report, display and pricing options. The small display labels **Rate** and **Session**; the session total is on by default and can be hidden separately. Use `/msmv drops` for tooltips, reference/personal mode and resets. Bundled reference data is the default; personal collection stays enabled in either mode. The [farming guide](docs/FARMING-AND-DROPS.md) explains counting rules. Idle pause defaults to five minutes, with a 5–60-minute setting or Off. **Idle** appears beside the rate until your next farming receipt; manual pauses stay paused.
+Use `/msmv farm` for the session report and settings. The centered display shows **Average** for the whole session and an optional **Session** total. Adjust its width, lock its position or show it only on hover. The report adds a recent 60-minute rate and a located five-minute peak with quests excluded.
 
-The main window, ledger, farming report and diagnostics can open in combat. Scans, live searches and profession controls still wait until combat ends. **Opportunities → Filters → Rarity** offers six colored choices from Poor through Legendary; Apply saves the selection. Drop tooltip names use item-quality colors too. See the bundled [Everloot baseline](docs/EVERLOOT-DATASET.md), or the [Wowhead importer](docs/WOWHEAD-DATASET.md) for other reference sources.
+Idle pause defaults to five minutes, adjustable from 5–60 or Off. Combat and your own loot resume it; the timer stays active during combat. Manual pauses stay paused. Use `/msmv drops` for reference/personal mode and resets. Reference data is the default; personal collection stays enabled in either mode. The [farming guide](docs/FARMING-AND-DROPS.md) explains counting and valuation.
+
+The main window, ledger, farming report and diagnostics can open in combat. Scans, live searches and profession controls still wait until combat ends. **Opportunities → Filters → Rarity** offers six colored choices from Poor through Legendary; Apply saves the selection. Drop tooltip names use item-quality colors too. See [reference data](docs/REFERENCE-PACKS.md) for coverage and update instructions.
 
 | Command | Action |
 |---|---|

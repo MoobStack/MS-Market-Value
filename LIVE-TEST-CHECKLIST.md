@@ -1,12 +1,13 @@
 # Live checks
 
-Test **1.3.0-beta / 2026-11-15-beta001**, revision **6**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
+Test **1.3.0-beta / 2026-11-15-beta001**, revision **7**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
 
 Check the new features first:
 
-- **Bundled data:** disable the old reference pilot and check diagnostics reports 1,848 rates / 238 sources/modes. Reference should be selected initially, with personal tracking on. Inspect a known source, switch to Personal drops, and confirm personal counts are still being collected. Reset a small personal sample and verify the base data remains.
-- **Display:** check the Rate and Session labels. Hide the session total, reload and confirm the compact layout stays selected. Reach idle and verify both figures stop, with Idle beside the rate. Loot to resume; manually pause and confirm incoming loot does not resume it.
-- **Idle:** confirm five minutes is enabled by default; stop looting and check the whole grace period counts. Loot gold or an item to resume. Try 60, reject 61, disable/reload and check the preference. Manual pauses, mail and trades must not resume it.
+- **Bundled data:** disable the old pilot. Check diagnostics for 1,876 Everloot rates / 243 sources/modes and 4,395 Classic creatures. Hover Elder Mottled Boar for a marked Classic list. Switch to Personal drops, collect loot and confirm counts grow independently. Reset a small personal sample and verify the base remains.
+- **Display:** check centered Average/Session columns and their spacing. Try widths 240, 320 and 520 at normal UI scale. Lock/unlock and drag; check click actions still work when locked. Hide the total, reload and confirm width, lock and compact layout persist. Check large coin amounts and Idle/Paused text fit.
+- **Session report:** compare session value/active time with the average. Farm for five minutes, check the peak's zone/coordinates/time, then turn in a large quest; it must not raise that peak. Run past an hour to compare recent and session rates. Reset and inspect the saved session's own figures; check the item list remains readable.
+- **Idle:** check five minutes is the default. Let it idle, then resume by combat and separately by looting. A fight longer than the timeout must remain active; the full countdown starts after combat ends. Try 60, reject 61, disable/reload and check the preference. Manual pauses, mail and trades must not resume it.
 - **Prices/colors:** compare green/blue items with Opportunities rows before hovering. Select several Rarity checkboxes, Apply, then try All/None. Check drop tooltip name colors and coin icons at normal UI scale. Copy a quote and CSV; both should remain plain text.
 - **Combat:** first open `/msmv`, ledger, farming and diagnostics during combat. Check periods and ledger filters; verify scans/live AH searches wait until combat ends. Repeat with the AH already open and check for taint errors.
 - **Quest loot:** open a corpse, leave an item, close/reopen and compare counts. Pick up only one item and verify farming values only that receipt. Check an active quest item, then abandon/complete the quest and rehover; ordinary trade goods should remain visible.

@@ -66,6 +66,8 @@ Optional source packs can call `MSMarketValue.LootReference.Register(label, quer
 
 Reference views fill absent IDs from the current character/area's personal counters. Each row retains its origin and denominator; personal metadata may supply missing quest/rarity fields. The merged tooltip view has one cache and never writes shared counts into SavedVariables. Unclassified Everloot NPC/object rollups are not guessed into a loot mode.
 
+The bundled priority is Everloot, Classic, then personal gaps. Classic uses a separate curated codec with pooled item-ID lists and rate groups; it never invents hit/sample counts. Shared loot tables expand offline. Only the requested source decodes, sharing the eight-source / 4,096-row budget with Everloot. Source SQL and rebuild tools stay outside the install.
+
 Opportunities keeps one current variant index, reused across filter changes. Modern scans do not walk daily variant maps during preparation. Legacy scans retain the historical safeguards. Keyword/supply filters precede valuation; a bounded heap retains the best 500 before sorting for publication. Metadata arriving during a job queues a follow-up instead of resetting its cursor. Work checks the existing 4 ms cooperative budget.
 
 Gathering casts and exposed loot-source GUIDs separate harvesting from corpse loot. Up to 128 spell-name decisions are cached. Visible object tooltips have a 0.25-second fallback check when typed callbacks are unavailable. The session keeps exact category counters and reuses cached valuations; HUD interpolation changes only the display.
@@ -75,6 +77,8 @@ Standalone portrait windows use separate 1,024-level bands for their native chil
 ## Revision 3 details
 
 Farming persists online inactivity and a separate automatic-pause flag. Updates stop exactly at the configured boundary; receipts resume an automatic pause without backfilling the idle gap. Manual pauses stay independent. Old sessions gain the two optional fields without clearing totals.
+
+Combat entry also resumes automatic idle. Combat keeps time active; exit starts a new inactivity period. FarmMetrics adds at most 61 one-minute receipt-value buckets. Recent rates use up to 60 active minutes; peaks compare complete five-minute windows with quests excluded. Only the last farming location in a bucket is retained, and old locations are discarded. Session averages retain current valuations; recent/peak values do not change with later repricing. Older sessions start rate coverage at their upgrade time.
 
 `Util.Coins` is for display; `Util.Money` remains plain for chat/clipboard/diagnostics. Opportunities caches each row’s native link/quality color. Quest-only filtering changes the displayed candidates, not saved hit counts.
 

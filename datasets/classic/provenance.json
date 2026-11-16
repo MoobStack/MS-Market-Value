@@ -1,0 +1,25 @@
+{
+  "label": "Classic 1.12 reference",
+  "npcs": 4395,
+  "lootNPCs": 4289,
+  "skinningNPCs": 924,
+  "sources": 5213,
+  "rates": 1284783,
+  "tables": 4983,
+  "itemLists": 11124,
+  "scale": 100000000,
+  "snapshot": "ClassicDB_1_12_1_z2815.sql.gz",
+  "verified": false,
+  "sourceURL": "https://raw.githubusercontent.com/cmangos/classic-db/e4825cf48176edff313d78de66b0beb14371c8eb/Full_DB/ClassicDB_1_12_1_z2815.sql.gz",
+  "sourceCommit": "e4825cf48176edff313d78de66b0beb14371c8eb",
+  "sourceSHA256": "4f92db520868ab4e566726f68b5b2e380ae781209beaf22237b4f7f04600d0c0",
+  "reviewedLootEngine": "https://github.com/cmangos/mangos-classic/blob/b2bf92e57c97162d59048b030fb8cb1646bc4913/src/game/Loot/LootMgr.cpp",
+  "runtimeSHA256": "976b7ab4b7161bf1abf3f98718c74e7fa46eba232f1424c2a8830a1c16c46219",
+  "runtimeBytes": 840643,
+  "encodedBytes": 708261,
+  "omissions": {
+    "conditionalGroupRows": 710,
+    "conditionalRows": 2047,
+    "overfullGroupRows": 242
+  }
+}

@@ -7,7 +7,8 @@ local function world(saved)
     GetRealZoneText=function()return "Test zone"end
     Enum.TooltipDataType.Unit=2
     TooltipDataProcessor.AddTooltipPostCall=function(kind,callback)if kind==2 then w.unitTip=callback end end
-    w:load();return w,A
+    -- These fixtures exercise the original shared/personal fallback alone.
+    w:load();A.LootReference.classicQuery=nil;return w,A
 end
 local function guid(id,spawn,kind)return (kind or "Creature") .. "-0-1-1-1-" .. id .. "-" .. (spawn or 1)end
 local function named(id,name,suffix)return (link(id,suffix):gsub("%[Test%]",function()return "[" .. name .. "]"end))end

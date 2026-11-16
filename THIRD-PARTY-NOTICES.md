@@ -19,7 +19,7 @@ The addon bundles a packed subset of Everloot community loot samples under **CC 
 
 Blizzard UI/API definitions were inspected for compatibility. No extracted Blizzard Lua source, fonts, music or game binaries are bundled. Runtime icon, font and texture paths refer to client-supplied assets.
 
-CMaNGOS Classic data was consulted for material IDs, probabilities and quantity facts. The package uses an original compact representation of those observations, labeled as unverified Classic estimates for Forever. It does not redistribute the SQL database, its executable code or its license as the addon's license.
+The Classic fallback is derived from **CMaNGOS ClassicDB**, distributed under **GPL-3.0**. `MSMarketValue/Data/Classic.lua` is a packed adaptation; its source notice and full license are beside it. The full repository includes the pinned SQL snapshot, license, provenance and rebuild utility under `datasets/classic` and `tools/bundle_classic.py`. Source: [ClassicDB commit e4825cf4](https://github.com/cmangos/classic-db/tree/e4825cf48176edff313d78de66b0beb14371c8eb). No server executable code is bundled. These data terms are separate from the original addon code; Classic chances remain unverified for Forever.
 
 The separately compiled development Lua interpreter and research downloads are not release assets. The addon requires no external executable or separately installed dependency addon.
 

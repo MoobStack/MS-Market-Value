@@ -1,19 +1,19 @@
 # Upgrade and rollback
 
-Test **1.3.0-beta**, build `2026-11-15-beta001`, revision **6**.
+Test **1.3.0-beta**, build `2026-11-15-beta001`, revision **7**.
 
 1. Finish or discard incomplete scans, then close WoW normally.
 2. Back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak`.
 3. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP’s addon folder. Keep WTF/SavedVariables.
-4. Disable any older `MSMarketValueReference` pilot, then restart. Check `/msmv diagnostics` shows test revision **6** and the bundled Everloot reference.
+4. Disable any older `MSMarketValueReference` pilot, then restart. Check `/msmv diagnostics` shows test revision **7** and the bundled Everloot reference.
 
 Existing prices, history, watches, ledger entries and beta farming/drop samples carry forward. From revision 2 onward, scans already have precise modifiers; a fresh scan adds native names and rarity. Older item-wide history stays saved but cannot identify a modifier's movement. All items shows current variants immediately; signals need enough earlier precise priced days. Missed drops cannot be reconstructed.
 
-This update selects Reference data once to enable the bundled baseline. Later display choices are remembered. Personal tracking remains on by default; an explicitly disabled tracker stays off. Existing personal samples and unrelated settings are preserved. Rarity choices still run from Poor through Legendary.
+Profiles predating bundled data select Reference once. Later display choices are remembered. Personal tracking remains on by default; an explicitly disabled tracker stays off. Forever samples take priority over Classic fallback, then personal gap filling. Rarity choices still run from Poor through Legendary.
 
-The farming display labels **Rate** and **Session**. The session total is shown by default; turn **Show session total** off for a single-line display. Idle status appears beside the hourly rate.
+The farming display labels the whole-session rate **Average** and the optional total **Session**. Its width and position lock are in Farming settings. The report adds recent and peak rates; older sessions retain totals, with new rate history starting at this update. Peak farming excludes quests.
 
-This update enables idle pause for older beta profiles that have no explicit-choice marker. Your session totals stay intact. Set 5–60 minutes or disable it in Farming settings; that choice is remembered. Older timeouts above 60 minutes are reduced to 60. Compact reference packs need test revision 3 or later; earlier readable packs still work.
+Idle pause defaults to five minutes for profiles without an explicit choice. Set 5–60 minutes or Off; the choice is remembered. Combat entry and your loot resume automatic idle, combat keeps the timer active, and the countdown restarts after combat. Manual pauses stay paused. Older timeouts above 60 minutes are reduced to 60.
 
 Compatible PvP scans still saved under earlier host names are used automatically. No new scan is required for recovery. Unfinished, deleted or overwritten scans cannot be recreated. If 1.2.0 saved more than one profile for the same character or watchlist, the addon keeps using one and leaves the others in SavedVariables.
 

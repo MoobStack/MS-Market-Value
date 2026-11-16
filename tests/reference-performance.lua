@@ -1,5 +1,6 @@
 local fresh,truth,equal=...
 local w,A=fresh();w:load()
+A.LootReference.classicQuery=nil -- Isolate the synthetic counted pack; real layers have separate coverage.
 collectgarbage("collect");local before=collectgarbage("count")
 assert(loadfile("tests/tmp/reference-workload.lua"))()
 collectgarbage("collect");local packed=collectgarbage("count")-before

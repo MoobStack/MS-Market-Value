@@ -15,6 +15,7 @@ D.defaults = {
     dropTracking = true, showDrops = true, showHarvestDrops = true, dropRows = 4, dropMode = "reference",
     farmTracking = true, farmShow = true, farmShowTotal = true, farmHover = false, farmUseAuction = true,
     farmIncludeQuest = true, farmThreshold = 10, farmIdle = true, farmIdleMinutes = 5,
+    farmHUDWidth = 320, farmHUDLocked = false,
     serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
     watchAlerts = true, ledgerDays = 90, trackAH = true, trackVendor = true, trackTrade = true, trackLoot = true, trackOther = true,
 }
@@ -25,7 +26,7 @@ local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, hist
     serviceLabor = { 0, 100000000 }, serviceMinimum = { 0, 100000000 }, ledgerDays = { 1, 365 },
     marketLowMin={0,1000000000},marketLowMax={0,1000000000},
     marketStockMin={0,1000000000},marketStockMax={0,1000000000},marketStockDrop={0,100},
-    dropRows={1,10},farmThreshold={0,1000},farmIdleMinutes={5,60},marketQuality={0,63} }
+    dropRows={1,10},farmThreshold={0,1000},farmIdleMinutes={5,60},farmHUDWidth={240,520},marketQuality={0,63} }
 
 function D.Initialize()
     local db = _G.MSMarketValueDB

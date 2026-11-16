@@ -428,7 +428,7 @@ function P.Rows(npcID,kind)
                 local known=knownItems[row.id]
                 rows[#rows+1]={id=row.id,name=row.name or (known and known.name) or A.Valuation.MaterialName(row.id),rate=row.rate,
                     questID=row.questID or (known and known.questID),questItem=row.questItem or (known and known.questItem),
-                    quality=known and known.quality,samples=row.samples,origin="reference"}
+                    quality=known and known.quality,samples=row.samples,origin=row.origin or "reference"}
                 included[row.id]=true;referenceCount=referenceCount+1
             end
         end
@@ -587,8 +587,14 @@ function P.Tooltip(tooltip,data)
     local reference=D.Settings().dropMode=="reference"
     local unit=kind=="loot" and "corpses" or kind=="skinning" and "skins" or "nodes"
     if samples==1 then unit=kind=="loot" and "corpse" or kind=="skinning" and "skin" or "node" end
+    local label=A.LootReference.DisplayLabel()
+    local classic,other=false,false
+    for _,row in ipairs(rows) do
+        if row.origin=="classic" then classic=true elseif row.origin~="personal" then other=true end
+    end
+    if classic and not other then label="Classic reference" elseif other and not classic then label=A.LootReference.label end
     tooltip:AddDoubleLine("MS Market Value - " .. P.labels[kind],reference and
-        ((P.cache and P.cache.referenceCount==0 and samples>0) and "Personal fallback" or A.LootReference.label) or
+        ((P.cache and P.cache.referenceCount==0 and samples>0) and "Personal fallback" or label) or
         (samples .. " " .. unit .. " checked"),.55,.83,.85,.61,.66,.70)
     if #rows==0 then
         local text=P.cache and P.cache.hidden>0 and "Quest-only drops hidden; no current matches." or
@@ -598,7 +604,7 @@ function P.Tooltip(tooltip,data)
     for index=1,math.min(#rows,D.Settings().dropRows) do
         local row=rows[index]
         local personal=row.origin=="personal"
-        local count=personal and (" (" .. row.hits .. "/" .. row.samples .. (reference and " personal" or "") .. ")") or
+        local count=personal and (" (" .. row.hits .. "/" .. row.samples .. (reference and " personal" or "") .. ")") or row.origin=="classic" and " (Classic)" or
             (row.samples and (" (" .. row.samples .. " samples)") or "")
         local rate=row.rate>0 and row.rate<.01 and "<0.01%" or
             string.format(row.rate>0 and row.rate<1 and "%.2f%%" or "%.1f%%",row.rate)
@@ -606,7 +612,10 @@ function P.Tooltip(tooltip,data)
             rate .. count,row.r or .83,row.g or .86,row.b or .89,.83,.86,.89)
     end
     if #rows>D.Settings().dropRows then tooltip:AddLine("+" .. (#rows-D.Settings().dropRows) .. " more recorded items",.61,.66,.70) end
-    if reference and P.cache and P.cache.referenceCount>0 and not A.LootReference.verified then tooltip:AddLine("Sampled reference; not verified server settings.",.92,.72,.38) end
+    if reference and P.cache and P.cache.referenceCount>0 and not A.LootReference.verified then
+        local classic=false;for _,row in ipairs(rows) do if row.origin=="classic" then classic=true;break end end
+        tooltip:AddLine(classic and "Classic rates are unverified for Forever." or "Community samples; not server settings.",.61,.66,.70)
+    end
     P.tip={key=key,data=data,lines=tooltip:NumLines()};P.tipDirty=false
 end
 function P.CheckTooltip()

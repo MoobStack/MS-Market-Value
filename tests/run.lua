@@ -70,6 +70,13 @@ local function widget(name)
     function w:SetHyperlink(value) self.link = value end
     function w:ClearLines() self.lines = {} end
     function w:SetTextColor(...) self.color = { ... } end
+    function w:SetJustifyH(value) self.justifyH=value end
+    function w:GetStringWidth()
+        local text=(self.text or ""):gsub("|c%x%x%x%x%x%x%x%x",""):gsub("|r",""):gsub("|T.-|t","xx")
+        return #text*6
+    end
+    function w:StartMoving() self.moving=true end
+    function w:StopMovingOrSizing() self.moving=false end
     function w:GetText() return self.text end
     function w:SetChecked(value) self.checked = value end
     function w:GetChecked() return self.checked end
@@ -104,7 +111,7 @@ local function widget(name)
         if self.processor then self.processor(self, self.data) end
     end
     function w:SetFrameLevel(value) self.level = value end
-    for _, method in ipairs({ "SetHitRectInsets", "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "StartMoving", "StopMovingOrSizing", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetJustifyH", "SetFontObject", "SetMultiLine", "SetAutoFocus", "SetStatusBarTexture", "SetStatusBarColor" }) do
+    for _, method in ipairs({ "SetHitRectInsets", "SetClampedToScreen", "EnableMouse", "SetMovable", "RegisterForDrag", "SetBackdrop", "SetBackdropColor", "SetBackdropBorderColor", "SetFontObject", "SetMultiLine", "SetAutoFocus", "SetStatusBarTexture", "SetStatusBarColor" }) do
         w[method] = function() end
     end
     return w
@@ -1456,7 +1463,7 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("release diagnostics identify the stable build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 6",1,true))
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 7",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
     equal(A.VERSION,"1.3.0-beta"); equal(A.BUILD,"2026-11-15-beta001")
 end)
@@ -1718,7 +1725,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 6",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 7",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -2235,7 +2242,7 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 6",1,true)); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.3.0-beta / 2026-11-15-beta001",1,true)); truth(string.find(text,"Test revision: 7",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
@@ -2249,7 +2256,7 @@ test("the 1.1.0-to-1.3.0-beta upgrade keeps prices history preferences and coold
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.3.0-beta"); equal(A2.BUILD,"2026-11-15-beta001"); equal(A2.TEST_REVISION,6)
+    equal(A2.VERSION,"1.3.0-beta"); equal(A2.BUILD,"2026-11-15-beta001"); equal(A2.TEST_REVISION,7)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)
@@ -2276,9 +2283,11 @@ assert(loadfile("tests/v13-revision3.lua"))(fresh, row, link, test, equal, near,
 assert(loadfile("tests/v13-revision4.lua"))(fresh, row, link, test, equal, near, truth, secret)
 assert(loadfile("tests/v13-revision5.lua"))(fresh, row, link, test, equal, near, truth, secret)
 assert(loadfile("tests/v13-revision6.lua"))(fresh, row, link, test, equal, near, truth, secret)
+assert(loadfile("tests/v13-revision7.lua"))(fresh, row, link, test, equal, near, truth, secret)
 
 if os.getenv("MSMV_BENCHMARK") == "1" then
     assert(loadfile("tests/reference-performance.lua"))(fresh,truth,equal)
+    assert(loadfile("tests/farming-performance.lua"))(fresh,truth,equal)
     assert(loadfile("tests/market-performance.lua"))(fresh, row, truth, equal)
     assert(loadfile("tests/market-search-performance.lua"))(fresh, row, truth, equal)
     assert(loadfile("tests/economy-performance.lua"))(fresh, row, truth, equal)

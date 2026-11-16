@@ -1,29 +1,25 @@
 # Everloot baseline
 
-Test revision 6 includes the checked Everloot export from Dataset Builder 0.1.3. No separate reference addon is needed. **Reference data** is the default; personal collection stays on and fills missing items with separately labeled rates.
+Test revision 7 includes the checked export from Dataset Builder **0.1.4**, with typed snapshot **2026-11-16 02:40 UTC** (November 15 in Eastern time). These are Forever community samples, not verified server probabilities.
 
-| Loaded into the addon | Rates | Sources/modes |
+| Loaded data | Rates | Sources/modes |
 |---|---:|---:|
-| Creature loot | 1,822 | 230 |
+| Creature loot | 1,850 | 235 |
 | Skinning | 9 | 3 |
 | Herbalism | 7 | 3 |
 | Mining | 10 | 2 |
-| **Total** | **1,848** | **238** |
+| **Total** | **1,876** | **243** |
 
-The typed snapshot is **2026-11-16 00:20 UTC** (November 15 in Eastern time). These are community loot-window samples, not verified server probabilities. Coverage depends on the source catalog and reporting thresholds; an absent drop is unknown, not 0%.
+Skinning creatures overlap the 235 creature IDs. Gathering covers five nodes. The complete normalized export contains 3,940 rows; its 2,064 unclassified rows stay in the review archive. Modes and denominators are not guessed or combined. Coverage depends on available reports and the source's thresholds.
 
-The complete export has 3,875 rows. Its other 2,027 rows lack a loot mode and remain in the review archive; they are never assigned to creature or harvesting tables. The published aggregate feed has its own earlier snapshot date. Those denominators are not combined.
+The runtime module is about **11 KiB**, including **8,381 bytes** of packed counts. Only viewed sources decode, sharing an eight-source / 4,096-row cache with Classic fallback. Nothing is copied into SavedVariables or downloaded in game.
 
-## Size and storage
+The immutable export and provenance are in `datasets/everloot`. The install includes source credit and the **CC BY-SA 4.0** data notice in `Data/Everloot-NOTICE.txt`; these terms are separate from addon code.
 
-The runtime adds about **11 KiB of Lua**, including **8,251 bytes of packed counts**. Only viewed sources are decoded; the cache holds at most eight sources and 4,096 rows. No reference data is copied into SavedVariables, and no API requests or uploads happen in game.
+## Update the bundled data
 
-The full export and per-source provenance are under `datasets/everloot` in the repository, outside the Clean ZIP. The addon includes its source credit and **CC BY-SA 4.0** data notice in `Data/Everloot-NOTICE.txt`; code licensing is separate.
+1. In Dataset Builder, run **RESOLVE-LOOT-MODES-WITH-KEY.cmd**. Keep its work folder for resuming; keep API keys outside addon packages.
+2. Use the completed normalized **Dataset ZIP**, not the separate reference-addon ZIP. Review its coverage report.
+3. From the full addon repository, run `python3 tools/bundle_everloot.py PATH-TO-DATASET.zip`, then the normal validation and packaging checks. The bundler checks hashes, counts and source modes before replacing runtime data.
 
-## Refreshing for a release
-
-1. In Dataset Builder, run **RESOLVE-LOOT-MODES-WITH-KEY.cmd** and keep its `work` folder for resuming. Never include the key or cache with the addon.
-2. Check the finished export and coverage report. Keep one immutable dataset ZIP for the release.
-3. From the addon repository, run `python3 tools/bundle_everloot.py PATH-TO-DATASET.zip`, then run the normal validation and packaging checks. The bundler verifies hashes, counts and source modes before replacing runtime data.
-
-Personal rates and reset scopes remain independent. Reference rates win when available; missing items or sources use this character's rates and sample counts. Personal mode shows only personal records. Resetting personal history does not change the base dataset.
+This updates the primary layer and retains Classic fallback and personal records. Switch to Personal drops to use your records alone. Resetting personal history never changes either bundled layer.

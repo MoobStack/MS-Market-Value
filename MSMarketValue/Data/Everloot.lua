@@ -119,6 +119,10 @@ local sources={
 [3712]="EG82CBA20CFAhBBAxYBA",
 [3713]="HI1lBBA0RBAp0DEAhBBA3rJBAhwBBACBA",
 [3717]="DIi4BBAwzDHAhBBA",
+[3746]="BEooQBA",
+[3749]="EGgxCFAsgHBA52GBAIBA",
+[3750]="GSz2BBAfBArZBADHAr3NBA8CBA",
+[3765]="LQp1BBAwCBA_IBAoQBA6kBBA4QDAnKBAwaEA0hJBAsPBAjsBBA",
 [3767]="KY1lBBA6SBAXBA6XBAy1BEA3kBJAntJBA2vBBABBACBA",
 [3770]="FPhdBA_zBCA6kBBA4QDA3kBDA",
 [3771]="EPymEFA3kBEA88KCAJBA",
@@ -201,6 +205,7 @@ local sources={
 [11519]="DEvnCBA8roIBAECA",
 [11520]="DHh6NFADBAoMEA",
 [12676]="EEl2FBAzuFBAtTBAslEDA",
+[12856]="GLhdBA8zBBADDA_zMBAvjBBABBA",
 [12876]="BDusQDA",
 [12896]="DF9wCCADBAt3NBA",
 [12897]="FI9wCBADDAtFBA8xNBAGBA",
@@ -248,6 +253,6 @@ local sources={
 [1732]="E3B6lBBA5wB3BAhCZA74wHCA",
 },
 }
-if A.LootReference.RegisterPacked("Everloot reference",sources) then
- A.LootReference.bundled={version="2026-11-15",rates=1848,sources=238,updatedAt="2026-11-16T00:20:16.566Z"}
+if A.LootReference.RegisterPacked("Everloot reference",sources,"everloot") then
+ A.LootReference.bundled={version="2026-11-16",rates=1876,sources=243,updatedAt="2026-11-16T02:40:14.597Z"}
 end

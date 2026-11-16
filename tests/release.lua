@@ -21,7 +21,7 @@ test("saved beta data retains all money tools settings and recorded cost bases",
     local roots={markets=saved.markets,history=saved.history,vendorBuy=saved.vendorBuy,watchlists=saved.watchlists,ledger=saved.ledger}
     local rows=L.Records();local sum=L.Summary();local first=rows[1].time
     local w2,A2=fresh(saved);w2.wall=w.wall;w2:load()
-    equal(A2.VERSION,"1.3.0-beta");equal(A2.BUILD,"2026-11-15-beta001");equal(A2.TEST_REVISION,6)
+    equal(A2.VERSION,"1.3.0-beta");equal(A2.BUILD,"2026-11-15-beta001");equal(A2.TEST_REVISION,7)
     for key,value in pairs(roots)do sameData(A2.DB.data[key],value)end
     equal(#A2.Ledger.Records(),4);equal(A2.Ledger.Records()[1].time,first)
     equal(A2.Ledger.Summary().flow,sum.flow);equal(A2.Ledger.Summary().profit,sum.profit);equal(A2.Ledger.Summary().estimatedProfit,sum.estimatedProfit)

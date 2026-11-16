@@ -1,21 +1,21 @@
 {
   "schema": 1,
-  "archive": "MSMV-Everloot-Dataset-2026-11-15-2510adaa9a8a.zip",
-  "archiveSHA256": "f460e25a61443052d49f5b3f0f9d48fa783746174cd7610f8fc8cf92943edf7f",
+  "archive": "MSMV-Everloot-Dataset-2026-11-16-b569dfe2cbae.zip",
+  "archiveSHA256": "7754d79bf1cfeecb9b545b138ff5f59117e1b96919e434fad3b7574b865a4ecb",
   "manifest": {
-    "builderVersion": "0.1.3",
+    "builderVersion": "0.1.4",
     "coverage": {
-      "addonCompatibleRows": 1848,
+      "addonCompatibleRows": 1876,
       "apiSchemaSHA256": "6f1a147e6dbccccf7d4fbfd86c4d8ef4363b0d0240d11a4bb43b73a72fe54857",
-      "availableRows": 3875,
-      "builderVersion": "0.1.3",
-      "cacheCompressedBytes": 477968,
+      "availableRows": 3940,
+      "builderVersion": "0.1.4",
+      "cacheCompressedBytes": 498896,
       "catalogs": [
         {
           "collection": "npcs",
           "complete": 1,
           "pages": 0,
-          "total": 230
+          "total": 235
         },
         {
           "collection": "objects",
@@ -30,19 +30,19 @@
           "sources": 3
         },
         "loot": {
-          "rows": 1822,
-          "sources": 230
+          "rows": 1850,
+          "sources": 235
         },
         "mining": {
           "rows": 10,
           "sources": 2
         },
         "npc": {
-          "rows": 1816,
-          "sources": 230
+          "rows": 1850,
+          "sources": 235
         },
         "object": {
-          "rows": 211,
+          "rows": 214,
           "sources": 38
         },
         "skinning": {
@@ -50,32 +50,34 @@
           "sources": 3
         }
       },
-      "checkedAt": "2026-11-16T01:00:12Z",
+      "checkedAt": "2026-11-16T02:42:55Z",
       "complete": true,
       "corpusNotes": {
-        "acceptedTypedWindows": 5642,
-        "sourceNotInPublishedRollup": 5341,
-        "typedModesBelowEvidenceThreshold": 67,
-        "untypedOrUnsupportedWindows": 2220
+        "acceptedTypedWindows": 11009,
+        "typedModesBelowEvidenceThreshold": 859,
+        "typedModesExportedOutsidePublishedRollup": 0,
+        "typedWindowsOutsidePublishedRollup": 5312,
+        "untypedOrUnsupportedWindows": 2243
       },
       "curatedRows": 0,
-      "discoveredSources": 268,
-      "downloadedSources": 268,
+      "discoveredSources": 273,
+      "downloadedSources": 273,
       "error": null,
       "largestSupportedSource": 44,
       "notes": {
-        "lootModeNotSpecified": 2027,
-        "typedPublicCorpus": 238
+        "lootModeNotSpecified": 2064,
+        "typedPublicCorpus": 243
       },
-      "playerCountedRows": 3875,
+      "playerCountedRows": 3940,
       "provider": "everloot",
       "remainingSources": 0,
-      "runID": 2,
+      "runID": 4,
       "schema": 1,
       "scope": {
         "feed": "published-rollups",
         "minimumSamples": 1,
         "provider": "everloot",
+        "typedAggregationVersion": 2,
         "typedCorpus": true
       },
       "siteStats": {
@@ -86,65 +88,65 @@
           "source": "https://everloot.app/database/drops",
           "terms": "https://everloot.app/terms#licences"
         },
-        "dataAsOf": "2026-11-15T22:50:15.535Z",
-        "queued": 2525,
+        "dataAsOf": "2026-11-16T02:40:14.597Z",
+        "queued": 2555,
         "totalMeasuredZeros": 0,
-        "totalRates": 2027,
+        "totalRates": 2064,
         "upstreamStats": {
-          "dataAsOf": "2026-11-15T22:50:15.535Z",
-          "lootWindows": 10967,
-          "records": 70449,
+          "dataAsOf": "2026-11-16T02:40:14.597Z",
+          "lootWindows": 11105,
+          "records": 71782,
           "unreachable": false,
-          "uploads": 684
+          "uploads": 695
         }
       },
       "source": "https://everloot.app/api",
-      "sourceModes": 238,
-      "startedAt": "2026-11-15T22:52:12Z",
+      "sourceModes": 243,
+      "startedAt": "2026-11-16T02:42:24Z",
       "status": "complete",
       "supportedCuratedRows": 0,
-      "supportedRows": 1848,
+      "supportedRows": 1876,
       "typedCorpus": {
         "complete": 1,
-        "data_as_of": "2026-11-16T00:20:16.566Z",
-        "offset": 13203,
-        "total": 13203
+        "data_as_of": "2026-11-16T02:40:14.597Z",
+        "offset": 13252,
+        "total": 13252
       },
       "usable": true,
-      "workingDatabaseBytes": 3457024
+      "workingDatabaseBytes": 7950336
     },
-    "datasetSHA256": "2510adaa9a8a3c4d0f1c6ea7de2774beb6992c7520f7bb351330222533fdfdc0",
-    "datasetVersion": "2026-11-15",
-    "encodedBytes": 8251,
+    "datasetSHA256": "b569dfe2cbae69dc56738999b7549330630c46cb8177dfb249c6fa4886abcf36",
+    "datasetVersion": "2026-11-16",
+    "encodedBytes": 8381,
     "files": [
       {
-        "bytes": 10758,
-        "name": "MSMV-Everloot-Dataset-2026-11-15-2510adaa9a8a-Reference.zip",
-        "sha256": "e3816110e8709c0d4642cee5abec683f804ad5462dfc219c1eb9c42daa565509"
+        "bytes": 10913,
+        "name": "MSMV-Everloot-Dataset-2026-11-16-b569dfe2cbae-Reference.zip",
+        "sha256": "fe9d39945d0fd674d3211337401ced9d6798a455c5790d0e16595212909fe1eb"
       },
       {
-        "bytes": 48696,
+        "bytes": 49583,
         "name": "dataset.jsonl.gz",
-        "sha256": "78c4301b4f4d3d3963de6f603d845df3e6385b6906c42af78b119639fb81e474"
+        "sha256": "9cc9ece20a482747d0b172e0c884c5209eeef87062d6eabc36cd74bf75d55d17"
       },
       {
-        "bytes": 223201,
+        "bytes": 227053,
         "name": "dataset.csv",
-        "sha256": "6a8a88638e738fe7eeb94e133d59a5ebe65ce367edb32de9384259aa44fdb027"
+        "sha256": "878d44719af52dc6b0b4aafeee37650055b096da835debf554cc65ab18ab91c4"
       }
     ],
     "format": "packed-v1",
     "minimumAddonTestRevision": 3,
     "referenceOmittedReason": null,
     "referencePackIncluded": true,
-    "runtimeLuaBytes": 11244,
+    "runtimeLuaBytes": 11430,
     "runtimeRowLimit": 4096,
     "schema": 1,
     "source": "https://everloot.app",
     "sourceAPI": "https://everloot.app/api",
-    "unresolvedModeRows": 2027
+    "unresolvedModeRows": 2064
   },
-  "runtimeSHA256": "4fd677e34fb5128c4f4c5c2ff5932b618cd5e908a703229809ac6d779a1796cf",
+  "runtimeSHA256": "fca188a59a1b0fe520ba93afe0ab2408577353d0a800c135ba68b18cdd79aa6e",
   "sources": [
     {
       "kind": "herbalism",
@@ -152,7 +154,7 @@
       "sourceType": "object",
       "name": "Silverleaf",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "herbalism",
@@ -160,7 +162,7 @@
       "sourceType": "object",
       "name": "Peacebloom",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "herbalism",
@@ -168,7 +170,7 @@
       "sourceType": "object",
       "name": "object 1619",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -176,7 +178,7 @@
       "sourceType": "npc",
       "name": "Dire Condor",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -184,7 +186,7 @@
       "sourceType": "npc",
       "name": "Redridge Mystic",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -192,7 +194,7 @@
       "sourceType": "npc",
       "name": "Greater Tarantula",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -200,7 +202,7 @@
       "sourceType": "npc",
       "name": "Great Goretusk",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -208,7 +210,7 @@
       "sourceType": "npc",
       "name": "npc 548",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -216,7 +218,7 @@
       "sourceType": "npc",
       "name": "npc 1083",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -224,7 +226,7 @@
       "sourceType": "npc",
       "name": "Mindless Zombie",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -232,7 +234,7 @@
       "sourceType": "npc",
       "name": "Wretched Zombie",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -240,7 +242,7 @@
       "sourceType": "npc",
       "name": "npc 1504",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -248,7 +250,7 @@
       "sourceType": "npc",
       "name": "npc 1505",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -256,7 +258,7 @@
       "sourceType": "npc",
       "name": "npc 1506",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -264,7 +266,7 @@
       "sourceType": "npc",
       "name": "npc 1507",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -272,7 +274,7 @@
       "sourceType": "npc",
       "name": "npc 1508",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -280,7 +282,7 @@
       "sourceType": "npc",
       "name": "npc 1512",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -288,7 +290,7 @@
       "sourceType": "npc",
       "name": "npc 1529",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -296,7 +298,7 @@
       "sourceType": "npc",
       "name": "npc 1532",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -304,7 +306,7 @@
       "sourceType": "npc",
       "name": "Cursed Darkhound",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -312,7 +314,7 @@
       "sourceType": "npc",
       "name": "Vampiric Duskbat",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -320,15 +322,15 @@
       "sourceType": "npc",
       "name": "Meven Korgal",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
       "sourceID": 1778,
       "sourceType": "npc",
-      "name": "npc 1778",
+      "name": "Ferocious Grizzled Bear",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -336,7 +338,7 @@
       "sourceType": "npc",
       "name": "npc 1779",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -344,7 +346,7 @@
       "sourceType": "npc",
       "name": "npc 1780",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -352,7 +354,7 @@
       "sourceType": "npc",
       "name": "npc 1782",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -360,7 +362,7 @@
       "sourceType": "npc",
       "name": "npc 1797",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -368,7 +370,7 @@
       "sourceType": "npc",
       "name": "Rattlecage Skeleton",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -376,7 +378,7 @@
       "sourceType": "npc",
       "name": "Samuel Fipps",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -384,7 +386,7 @@
       "sourceType": "npc",
       "name": "Giant Moss Creeper",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -392,7 +394,7 @@
       "sourceType": "npc",
       "name": "Vicious Gray Bear",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -400,7 +402,7 @@
       "sourceType": "npc",
       "name": "npc 2529",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -408,7 +410,7 @@
       "sourceType": "npc",
       "name": "npc 2955",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -416,7 +418,7 @@
       "sourceType": "npc",
       "name": "Prairie Wolf",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -424,7 +426,7 @@
       "sourceType": "npc",
       "name": "Prairie Stalker",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -432,7 +434,7 @@
       "sourceType": "npc",
       "name": "Kodo Calf",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -440,7 +442,7 @@
       "sourceType": "npc",
       "name": "Flatland Cougar",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -448,7 +450,7 @@
       "sourceType": "npc",
       "name": "Mottled Boar",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -456,7 +458,7 @@
       "sourceType": "npc",
       "name": "npc 3101",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -464,7 +466,7 @@
       "sourceType": "npc",
       "name": "npc 3102",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -472,7 +474,7 @@
       "sourceType": "npc",
       "name": "Pygmy Surf Crawler",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -480,7 +482,7 @@
       "sourceType": "npc",
       "name": "npc 3111",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -488,7 +490,7 @@
       "sourceType": "npc",
       "name": "npc 3112",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -496,7 +498,7 @@
       "sourceType": "npc",
       "name": "Razormane Dustrunner",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -504,7 +506,7 @@
       "sourceType": "npc",
       "name": "Razormane Battleguard",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -512,7 +514,7 @@
       "sourceType": "npc",
       "name": "npc 3119",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -520,7 +522,7 @@
       "sourceType": "npc",
       "name": "npc 3120",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -528,7 +530,7 @@
       "sourceType": "npc",
       "name": "npc 3124",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -536,7 +538,7 @@
       "sourceType": "npc",
       "name": "Clattering Scorpid",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -544,7 +546,7 @@
       "sourceType": "npc",
       "name": "npc 3129",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -552,7 +554,7 @@
       "sourceType": "npc",
       "name": "npc 3183",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -560,7 +562,7 @@
       "sourceType": "npc",
       "name": "npc 3192",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -568,7 +570,7 @@
       "sourceType": "npc",
       "name": "Burning Blade Fanatic",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -576,7 +578,7 @@
       "sourceType": "npc",
       "name": "Burning Blade Apprentice",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -584,7 +586,7 @@
       "sourceType": "npc",
       "name": "Stormhide",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -592,7 +594,7 @@
       "sourceType": "npc",
       "name": "Thunderhead",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -600,7 +602,7 @@
       "sourceType": "npc",
       "name": "Stormsnout",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -608,7 +610,7 @@
       "sourceType": "npc",
       "name": "npc 3241",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -616,7 +618,7 @@
       "sourceType": "npc",
       "name": "Zhevra Runner",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -624,7 +626,7 @@
       "sourceType": "npc",
       "name": "Greater Plainstrider",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -632,7 +634,7 @@
       "sourceType": "npc",
       "name": "Ornery Plainstrider",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -640,7 +642,7 @@
       "sourceType": "npc",
       "name": "Fleeting Plainstrider",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -648,7 +650,7 @@
       "sourceType": "npc",
       "name": "npc 3249",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -656,7 +658,7 @@
       "sourceType": "npc",
       "name": "Sunscale Lashtail",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -664,7 +666,7 @@
       "sourceType": "npc",
       "name": "Sunscale Screecher",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -672,7 +674,7 @@
       "sourceType": "npc",
       "name": "Sunscale Scytheclaw",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -680,7 +682,7 @@
       "sourceType": "npc",
       "name": "npc 3257",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -688,7 +690,7 @@
       "sourceType": "npc",
       "name": "Bristleback Hunter",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -696,7 +698,7 @@
       "sourceType": "npc",
       "name": "Bristleback Water Seeker",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -704,7 +706,7 @@
       "sourceType": "npc",
       "name": "Bristleback Thornweaver",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -712,7 +714,7 @@
       "sourceType": "npc",
       "name": "npc 3263",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -720,7 +722,7 @@
       "sourceType": "npc",
       "name": "Kolkar Wrangler",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -728,7 +730,7 @@
       "sourceType": "npc",
       "name": "Kolkar Stormer",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -736,15 +738,15 @@
       "sourceType": "npc",
       "name": "Kolkar Pack Runner",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
       "sourceID": 3275,
       "sourceType": "npc",
-      "name": "npc 3275",
+      "name": "Kolkar Marauder",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -752,7 +754,7 @@
       "sourceType": "npc",
       "name": "npc 3282",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -760,7 +762,7 @@
       "sourceType": "npc",
       "name": "Venture Co. Drudger",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -768,7 +770,7 @@
       "sourceType": "npc",
       "name": "Venture Co. Peon",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -776,7 +778,7 @@
       "sourceType": "npc",
       "name": "npc 3295",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -784,7 +786,7 @@
       "sourceType": "npc",
       "name": "npc 3374",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -792,7 +794,7 @@
       "sourceType": "npc",
       "name": "npc 3375",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -800,7 +802,7 @@
       "sourceType": "npc",
       "name": "npc 3376",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -808,7 +810,7 @@
       "sourceType": "npc",
       "name": "npc 3377",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -816,7 +818,7 @@
       "sourceType": "npc",
       "name": "Southsea Brigand",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -824,7 +826,7 @@
       "sourceType": "npc",
       "name": "Southsea Cannoneer",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -832,7 +834,7 @@
       "sourceType": "npc",
       "name": "npc 3392",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -840,7 +842,7 @@
       "sourceType": "npc",
       "name": "npc 3394",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -848,7 +850,7 @@
       "sourceType": "npc",
       "name": "npc 3395",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -856,7 +858,7 @@
       "sourceType": "npc",
       "name": "Kolkar Bloodcharger",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -864,7 +866,7 @@
       "sourceType": "npc",
       "name": "Savannah Matriarch",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -872,7 +874,7 @@
       "sourceType": "npc",
       "name": "npc 3424",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -880,7 +882,7 @@
       "sourceType": "npc",
       "name": "Savannah Prowler",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -888,7 +890,7 @@
       "sourceType": "npc",
       "name": "npc 3445",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -896,7 +898,7 @@
       "sourceType": "npc",
       "name": "npc 3456",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -904,7 +906,7 @@
       "sourceType": "npc",
       "name": "npc 3457",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -912,7 +914,7 @@
       "sourceType": "npc",
       "name": "npc 3458",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -920,7 +922,7 @@
       "sourceType": "npc",
       "name": "Oasis Snapjaw",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -928,7 +930,7 @@
       "sourceType": "npc",
       "name": "Baron Longshore",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -936,7 +938,7 @@
       "sourceType": "npc",
       "name": "npc 3471",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -944,15 +946,15 @@
       "sourceType": "npc",
       "name": "npc 3473",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
       "sourceID": 3474,
       "sourceType": "npc",
-      "name": "npc 3474",
+      "name": "Lakota'mani",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -960,7 +962,7 @@
       "sourceType": "npc",
       "name": "npc 3475",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -968,7 +970,7 @@
       "sourceType": "npc",
       "name": "npc 3476",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -976,7 +978,7 @@
       "sourceType": "npc",
       "name": "npc 3632",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -984,7 +986,7 @@
       "sourceType": "npc",
       "name": "npc 3634",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -992,7 +994,7 @@
       "sourceType": "npc",
       "name": "npc 3636",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1000,7 +1002,7 @@
       "sourceType": "npc",
       "name": "npc 3637",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1008,7 +1010,7 @@
       "sourceType": "npc",
       "name": "npc 3638",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1016,7 +1018,7 @@
       "sourceType": "npc",
       "name": "npc 3640",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1024,7 +1026,7 @@
       "sourceType": "npc",
       "name": "npc 3653",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1032,7 +1034,7 @@
       "sourceType": "npc",
       "name": "npc 3654",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1040,7 +1042,7 @@
       "sourceType": "npc",
       "name": "npc 3655",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1048,7 +1050,7 @@
       "sourceType": "npc",
       "name": "npc 3669",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1056,7 +1058,7 @@
       "sourceType": "npc",
       "name": "npc 3670",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1064,7 +1066,7 @@
       "sourceType": "npc",
       "name": "npc 3671",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1072,7 +1074,7 @@
       "sourceType": "npc",
       "name": "npc 3673",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1080,7 +1082,7 @@
       "sourceType": "npc",
       "name": "npc 3674",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1088,7 +1090,7 @@
       "sourceType": "npc",
       "name": "Wrathtail Razortail",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1096,7 +1098,7 @@
       "sourceType": "npc",
       "name": "Wrathtail Wave Rider",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1104,7 +1106,39 @@
       "sourceType": "npc",
       "name": "Wrathtail Sorceress",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
+    },
+    {
+      "kind": "loot",
+      "sourceID": 3746,
+      "sourceType": "npc",
+      "name": "npc 3746",
+      "url": "https://everloot.app/database/drops",
+      "updatedAt": "2026-11-16T02:40:14.597Z"
+    },
+    {
+      "kind": "loot",
+      "sourceID": 3749,
+      "sourceType": "npc",
+      "name": "npc 3749",
+      "url": "https://everloot.app/database/drops",
+      "updatedAt": "2026-11-16T02:40:14.597Z"
+    },
+    {
+      "kind": "loot",
+      "sourceID": 3750,
+      "sourceType": "npc",
+      "name": "npc 3750",
+      "url": "https://everloot.app/database/drops",
+      "updatedAt": "2026-11-16T02:40:14.597Z"
+    },
+    {
+      "kind": "loot",
+      "sourceID": 3765,
+      "sourceType": "npc",
+      "name": "npc 3765",
+      "url": "https://everloot.app/database/drops",
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1112,7 +1146,7 @@
       "sourceType": "npc",
       "name": "npc 3767",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1120,7 +1154,7 @@
       "sourceType": "npc",
       "name": "npc 3770",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1128,7 +1162,7 @@
       "sourceType": "npc",
       "name": "npc 3771",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1136,7 +1170,7 @@
       "sourceType": "npc",
       "name": "Ashenvale Bear",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1144,7 +1178,7 @@
       "sourceType": "npc",
       "name": "Wildthorn Stalker",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1152,7 +1186,7 @@
       "sourceType": "npc",
       "name": "npc 3840",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1160,7 +1194,7 @@
       "sourceType": "npc",
       "name": "npc 3851",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1168,7 +1202,7 @@
       "sourceType": "npc",
       "name": "npc 3853",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1176,7 +1210,7 @@
       "sourceType": "npc",
       "name": "npc 3855",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1184,7 +1218,7 @@
       "sourceType": "npc",
       "name": "npc 3857",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1192,7 +1226,7 @@
       "sourceType": "npc",
       "name": "npc 3859",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1200,7 +1234,7 @@
       "sourceType": "npc",
       "name": "npc 3862",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1208,7 +1242,7 @@
       "sourceType": "npc",
       "name": "npc 3863",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1216,7 +1250,7 @@
       "sourceType": "npc",
       "name": "npc 3864",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1224,7 +1258,7 @@
       "sourceType": "npc",
       "name": "npc 3873",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1232,7 +1266,7 @@
       "sourceType": "npc",
       "name": "npc 3875",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1240,7 +1274,7 @@
       "sourceType": "npc",
       "name": "npc 3877",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1248,7 +1282,7 @@
       "sourceType": "npc",
       "name": "npc 3886",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1256,7 +1290,7 @@
       "sourceType": "npc",
       "name": "npc 3887",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1264,7 +1298,7 @@
       "sourceType": "npc",
       "name": "npc 3914",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1272,7 +1306,7 @@
       "sourceType": "npc",
       "name": "npc 3917",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1280,7 +1314,7 @@
       "sourceType": "npc",
       "name": "npc 3924",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1288,7 +1322,7 @@
       "sourceType": "npc",
       "name": "Thistlefur Avenger",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1296,7 +1330,7 @@
       "sourceType": "npc",
       "name": "npc 3927",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1304,7 +1338,7 @@
       "sourceType": "npc",
       "name": "Hecklefang Hyena",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1312,7 +1346,7 @@
       "sourceType": "npc",
       "name": "Hecklefang Stalker",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1320,7 +1354,7 @@
       "sourceType": "npc",
       "name": "Hecklefang Snarler",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1328,7 +1362,7 @@
       "sourceType": "npc",
       "name": "npc 4263",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1336,7 +1370,7 @@
       "sourceType": "npc",
       "name": "npc 4275",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1344,7 +1378,7 @@
       "sourceType": "npc",
       "name": "npc 4278",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1352,7 +1386,7 @@
       "sourceType": "npc",
       "name": "npc 4279",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1360,7 +1394,7 @@
       "sourceType": "npc",
       "name": "Kolkar Packhound",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1368,7 +1402,7 @@
       "sourceType": "npc",
       "name": "Fallenroot Rogue",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1376,7 +1410,7 @@
       "sourceType": "npc",
       "name": "npc 4798",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1384,7 +1418,7 @@
       "sourceType": "npc",
       "name": "npc 4799",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1392,7 +1426,7 @@
       "sourceType": "npc",
       "name": "Blackfathom Tide Priestess",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1400,7 +1434,7 @@
       "sourceType": "npc",
       "name": "Blackfathom Oracle",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1408,7 +1442,7 @@
       "sourceType": "npc",
       "name": "npc 4805",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1416,7 +1450,7 @@
       "sourceType": "npc",
       "name": "npc 4807",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1424,7 +1458,7 @@
       "sourceType": "npc",
       "name": "npc 4809",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1432,7 +1466,7 @@
       "sourceType": "npc",
       "name": "npc 4810",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1440,7 +1474,7 @@
       "sourceType": "npc",
       "name": "npc 4811",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1448,7 +1482,7 @@
       "sourceType": "npc",
       "name": "npc 4812",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1456,7 +1490,7 @@
       "sourceType": "npc",
       "name": "npc 4813",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1464,7 +1498,7 @@
       "sourceType": "npc",
       "name": "npc 4814",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1472,7 +1506,7 @@
       "sourceType": "npc",
       "name": "npc 4815",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1480,7 +1514,7 @@
       "sourceType": "npc",
       "name": "npc 4818",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1488,7 +1522,7 @@
       "sourceType": "npc",
       "name": "npc 4819",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1496,7 +1530,7 @@
       "sourceType": "npc",
       "name": "npc 4820",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1504,7 +1538,7 @@
       "sourceType": "npc",
       "name": "npc 4823",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1512,7 +1546,7 @@
       "sourceType": "npc",
       "name": "npc 4825",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1520,7 +1554,7 @@
       "sourceType": "npc",
       "name": "npc 4827",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1528,7 +1562,7 @@
       "sourceType": "npc",
       "name": "npc 4829",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1536,7 +1570,7 @@
       "sourceType": "npc",
       "name": "npc 4830",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1544,7 +1578,7 @@
       "sourceType": "npc",
       "name": "npc 4831",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1552,7 +1586,7 @@
       "sourceType": "npc",
       "name": "npc 4832",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1560,7 +1594,7 @@
       "sourceType": "npc",
       "name": "npc 4887",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1568,7 +1602,7 @@
       "sourceType": "npc",
       "name": "npc 5048",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1576,7 +1610,7 @@
       "sourceType": "npc",
       "name": "npc 5053",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1584,7 +1618,7 @@
       "sourceType": "npc",
       "name": "npc 5055",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1592,7 +1626,7 @@
       "sourceType": "npc",
       "name": "npc 5056",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1600,7 +1634,7 @@
       "sourceType": "npc",
       "name": "npc 5755",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1608,7 +1642,7 @@
       "sourceType": "npc",
       "name": "npc 5756",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1616,7 +1650,7 @@
       "sourceType": "npc",
       "name": "npc 5761",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1624,7 +1658,7 @@
       "sourceType": "npc",
       "name": "npc 5762",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1632,7 +1666,7 @@
       "sourceType": "npc",
       "name": "npc 5763",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1640,7 +1674,7 @@
       "sourceType": "npc",
       "name": "npc 5775",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1648,7 +1682,7 @@
       "sourceType": "npc",
       "name": "npc 6243",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1656,7 +1690,7 @@
       "sourceType": "npc",
       "name": "npc 8886",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1664,7 +1698,7 @@
       "sourceType": "npc",
       "name": "npc 9524",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1672,7 +1706,7 @@
       "sourceType": "npc",
       "name": "npc 11318",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1680,7 +1714,7 @@
       "sourceType": "npc",
       "name": "npc 11319",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1688,7 +1722,7 @@
       "sourceType": "npc",
       "name": "npc 11320",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1696,7 +1730,7 @@
       "sourceType": "npc",
       "name": "npc 11321",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1704,7 +1738,7 @@
       "sourceType": "npc",
       "name": "npc 11322",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1712,7 +1746,7 @@
       "sourceType": "npc",
       "name": "npc 11323",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1720,7 +1754,7 @@
       "sourceType": "npc",
       "name": "npc 11324",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1728,7 +1762,7 @@
       "sourceType": "npc",
       "name": "npc 11517",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1736,7 +1770,7 @@
       "sourceType": "npc",
       "name": "npc 11518",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1744,7 +1778,7 @@
       "sourceType": "npc",
       "name": "npc 11519",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1752,7 +1786,7 @@
       "sourceType": "npc",
       "name": "npc 11520",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1760,7 +1794,15 @@
       "sourceType": "npc",
       "name": "npc 12676",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
+    },
+    {
+      "kind": "loot",
+      "sourceID": 12856,
+      "sourceType": "npc",
+      "name": "npc 12856",
+      "url": "https://everloot.app/database/drops",
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1768,7 +1810,7 @@
       "sourceType": "npc",
       "name": "npc 12876",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1776,7 +1818,7 @@
       "sourceType": "npc",
       "name": "npc 12896",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1784,7 +1826,7 @@
       "sourceType": "npc",
       "name": "npc 12897",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1792,7 +1834,7 @@
       "sourceType": "npc",
       "name": "npc 12902",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1800,7 +1842,7 @@
       "sourceType": "npc",
       "name": "Bruuz",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1808,7 +1850,7 @@
       "sourceType": "npc",
       "name": "npc 250483",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1816,7 +1858,7 @@
       "sourceType": "npc",
       "name": "npc 250484",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1824,7 +1866,7 @@
       "sourceType": "npc",
       "name": "npc 250618",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1832,7 +1874,7 @@
       "sourceType": "npc",
       "name": "npc 250622",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1840,7 +1882,7 @@
       "sourceType": "npc",
       "name": "npc 250624",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1848,7 +1890,7 @@
       "sourceType": "npc",
       "name": "npc 250625",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1856,7 +1898,7 @@
       "sourceType": "npc",
       "name": "npc 250626",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1864,7 +1906,7 @@
       "sourceType": "npc",
       "name": "npc 250627",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1872,7 +1914,7 @@
       "sourceType": "npc",
       "name": "npc 250630",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1880,7 +1922,7 @@
       "sourceType": "npc",
       "name": "npc 250631",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1888,7 +1930,7 @@
       "sourceType": "npc",
       "name": "npc 250657",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1896,7 +1938,7 @@
       "sourceType": "npc",
       "name": "npc 250660",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1904,7 +1946,7 @@
       "sourceType": "npc",
       "name": "npc 255109",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1912,7 +1954,7 @@
       "sourceType": "npc",
       "name": "npc 255964",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1920,7 +1962,7 @@
       "sourceType": "npc",
       "name": "npc 256035",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1928,7 +1970,7 @@
       "sourceType": "npc",
       "name": "npc 256040",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1936,7 +1978,7 @@
       "sourceType": "npc",
       "name": "npc 256097",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1944,7 +1986,7 @@
       "sourceType": "npc",
       "name": "npc 260430",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1952,7 +1994,7 @@
       "sourceType": "npc",
       "name": "npc 266850",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1960,7 +2002,7 @@
       "sourceType": "npc",
       "name": "Chol'aruk",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1968,7 +2010,7 @@
       "sourceType": "npc",
       "name": "Razormane Flesheater",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1976,7 +2018,7 @@
       "sourceType": "npc",
       "name": "Razormane Berserker",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1984,7 +2026,7 @@
       "sourceType": "npc",
       "name": "Razormane Raider",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -1992,7 +2034,7 @@
       "sourceType": "npc",
       "name": "Spitelash Scout",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -2000,7 +2042,7 @@
       "sourceType": "npc",
       "name": "Spitelash Attendant",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "loot",
@@ -2008,7 +2050,7 @@
       "sourceType": "npc",
       "name": "npc 277882",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "mining",
@@ -2016,7 +2058,7 @@
       "sourceType": "object",
       "name": "Copper Vein",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "mining",
@@ -2024,7 +2066,7 @@
       "sourceType": "object",
       "name": "Tin Vein",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "skinning",
@@ -2032,7 +2074,7 @@
       "sourceType": "npc",
       "name": "Prairie Stalker",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "skinning",
@@ -2040,7 +2082,7 @@
       "sourceType": "npc",
       "name": "Stormhide",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     },
     {
       "kind": "skinning",
@@ -2048,7 +2090,7 @@
       "sourceType": "npc",
       "name": "Thunderhead",
       "url": "https://everloot.app/database/drops",
-      "updatedAt": "2026-11-16T00:20:16.566Z"
+      "updatedAt": "2026-11-16T02:40:14.597Z"
     }
   ]
 }

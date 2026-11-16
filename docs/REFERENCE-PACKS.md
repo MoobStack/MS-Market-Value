@@ -1,42 +1,21 @@
 # Reference drop data
 
-Wowhead’s Forever pages contain collected counts and can include **Classic Era fallback rates**. These are reference samples, not verified server settings. Keep their origin, date and sample size with every import.
+The beta includes two reference layers. No extra addon is required; disable older `MSMarketValueReference` pilots.
 
-Test revision 6 bundles **1,848 Everloot rates in 238 sources/modes**. Reference data is the default and personal collection remains on. No extra addon is needed; disable any older `MSMarketValueReference` pilot so it does not replace the bundled data. Missing items use personal rates with separate sample counts.
+| Priority | Source | Coverage |
+|---|---|---|
+| 1 | Forever community samples from Everloot | 1,876 mode-resolved rates; 235 creatures and five gathering nodes. |
+| 2 | ClassicDB nominal base chances | 4,395 creatures, with corpse loot and/or skinning. Unverified for Forever. |
+| 3 | This character's personal drops | Missing items and sources you have inspected locally. |
 
-The [Everloot guide](EVERLOOT-DATASET.md) lists coverage and the release-update process. Only mode-resolved samples are loaded; unclassified rows stay in the source archive. External packs can still replace the reference provider, without changing personal samples.
+Matching items use the highest available layer. Counts stay separate, and Classic rates never receive invented sample sizes. Personal-only mode ignores the reference layers while collection continues by default. Missing data remains unknown.
 
-For exact download, save and build steps, use [Get a Wowhead reference dataset](WOWHEAD-DATASET.md). The starter ZIP includes a ready manifest and Windows build button; the full repository has the same files.
+The [Everloot guide](EVERLOOT-DATASET.md) explains updates from Dataset Builder. The [Classic guide](CLASSIC-DATASET.md) explains coverage, source hashes and offline rebuilding. Full exports, provenance and licenses stay in the repository; only packed runtime data and required notices enter the Clean ZIP.
 
-## Building broader coverage
+## Other packs
 
-1. Obtain a reusable Forever export/feed, or curate saved Forever NPC/object pages. Check IDs against the client. A complete collection has not been acquired for this beta.
-2. Keep Forever samples, Classic fallback and unknown origins distinct. Prefer a matching Forever sample when available; do not average the two sources together. The importer defaults to mixed/unspecified because a URL alone cannot prove the origin.
-3. Compile offline using item IDs, hits and sample totals. Keep all valid rare rows; use `--min-samples 1` when retaining every available sample. Missing data remains unknown.
-4. Bundle a versioned snapshot. Keep source links and hashes outside the runtime, use the game’s item names/icons, and update the pack with addon releases.
+The [Wowhead guide](WOWHEAD-DATASET.md) covers saved Forever pages and the offline importer. Keep each source's origin, date and sample size. Wowhead Forever pages may include Classic Era fallback data, so a page URL alone does not establish Forever-specific rates.
 
-The current compiler packs numeric records and shares repeated sample totals. Only the hovered source is decoded. The cache holds at most eight sources and 4,096 rows, and the data is not copied into SavedVariables. This avoids a large Lua table for every item across the whole world.
+External packs can replace the primary provider. The bundled Classic layer remains available for gaps, followed by personal samples. Use one external provider at a time and review its source/coverage before bundling.
 
-## Build from saved pages
-
-Use Python 3 and the full source repository. Save the desired **Forever** pages as HTML and create a manifest beside them:
-
-```json
-[
-  {
-    "id": 258573,
-    "kind": "loot",
-    "file": "mudfin.html",
-    "url": "https://www.wowhead.com/forever/npc=258573/mudfin-oracle",
-    "origin": "mixed-or-unspecified"
-  }
-]
-```
-
-```bash
-python3 tools/import_reference.py manifest.json --output export/MSMarketValueReference --min-samples 1
-```
-
-Kinds are `loot`, `skinning`, `herbalism` and `mining`; herbs/ore use object pages. Reviewed origins can be `forever` or `classic`. Use one pack at a time. Existing readable packs still work.
-
-The default threshold is 50 samples; lowering it retains smaller samples, whose percentages need caution. Input checks allow up to 65,536 sources, 4,096 rows per source and 2,000,000 rows overall. Oversized sources, duplicate modes and mismatched IDs require review rather than silent truncation. The importer reads embedded tables without running page scripts or making network requests.
+All reference data stays out of SavedVariables. Only queried sources are decoded; the shared cache caps at eight packed sources and 4,096 rows. Names and icons come from the client. No data is downloaded in game.

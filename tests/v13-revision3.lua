@@ -222,6 +222,7 @@ end)
 
 test("packed reference sources decode only on demand with bounded cache rows",function()
     local _,A=world();local R=A.LootReference;local sources={loot={}}
+    R.classicQuery=nil -- Test the counted codec in isolation; layering is covered separately.
     for id=1,100 do sources.loot[id]="BkDkDZA"end
     truth(R.RegisterPacked("Packed",sources));equal(#R.order,0);equal(R.cachedRows,0)
     for id=1,100 do local rows=R.Rows(id);equal(#rows,1);near(rows[1].rate,25)end
@@ -231,6 +232,7 @@ end)
 
 test("decoded reference cache enforces its row budget as well as source count",function()
     local _,A=world();local R=A.LootReference;local sources={loot={}}
+    R.classicQuery=nil
     local code="ggBkD" .. string.rep("BZA",1024)
     for id=1,10 do sources.loot[id]=code end
     truth(R.RegisterPacked("Large sources",sources))

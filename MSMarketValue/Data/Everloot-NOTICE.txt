@@ -15,6 +15,6 @@ Unspecified NPC/object modes stay marked npc/object in the base dataset and are 
 silently assigned to a creature or gathering tooltip. Missing sources remain unknown.
 No comments, screenshots, icons, site artwork or individual player records are included.
 
-Bundled 2026-11-15: 1848 rates in 238 sources/modes.
-Typed snapshot UTC: 2026-11-16T00:20:16.566Z
+Bundled 2026-11-16: 1876 rates in 243 sources/modes.
+Typed snapshot UTC: 2026-11-16T02:40:14.597Z
 Only mode-resolved counts are loaded. Personal samples remain separate.

@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 7 — 2026-11-15
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Add Classic fallback data for 4,395 creatures, including Elder Mottled Boar. Keep Forever samples first, then Classic, then personal gap filling. Update Everloot to 1,876 usable rates.
+- Center the farming display, separate labels from amounts and add width and position-lock settings.
+- Reorganize the session report with neutral labels, session average, recent 60-minute rate and a five-minute farming peak stamped with zone, coordinates and local time. Quest rewards cannot set the peak.
+- Resume automatic idle pauses on combat entry, keep timing during combat and restart the inactivity countdown when combat ends. Manual pauses stay paused.
+- Keep reference data packed and rate history bounded. Existing session totals, personal samples and settings carry forward.
+
 ## 1.3.0 beta — Test revision 6 — 2026-11-15
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.

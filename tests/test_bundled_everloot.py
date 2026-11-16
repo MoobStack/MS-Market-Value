@@ -37,7 +37,7 @@ class BundledReference(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             result = bundler.build(EXPORT, root)
-            self.assertEqual((result["rates"], result["sources"], result["encodedBytes"]), (1848, 238, 8251))
+            self.assertEqual((result["rates"], result["sources"], result["encodedBytes"]), (1876, 243, 8381))
             for relative in ("MSMarketValue/Data/Everloot.lua", "MSMarketValue/Data/Everloot-NOTICE.txt",
                              "datasets/everloot/provenance.json", "datasets/everloot/" + EXPORT.name):
                 self.assertEqual((root / relative).read_bytes(), (ROOT / relative).read_bytes())
@@ -61,7 +61,7 @@ class BundledReference(unittest.TestCase):
         for source in typed:
             script.append('do local t=os.clock();local rows=A.LootReference.Rows(%d,"%s");longest=math.max(longest,(os.clock()-t)*1000);for _,r in ipairs(rows)do print(string.format("%s,%d,%%d,%%d,%%.12f",r.id,r.samples,r.rate))end;assert(#A.LootReference.order<=8 and A.LootReference.cachedRows<=4096)end' %
                           (source["sourceID"], source["kind"], source["kind"], source["sourceID"]))
-        script.append('collectgarbage("collect");print(string.format("BUNDLED_REFERENCE_BENCHMARK sources=238 rows=1848 packed_kib=%.2f with_cache_kib=%.2f cached_sources=%d max_decode_ms=%.3f",packed,collectgarbage("count")-before,#A.LootReference.order,longest))')
+        script.append('collectgarbage("collect");print(string.format("BUNDLED_REFERENCE_BENCHMARK sources=243 rows=1876 packed_kib=%.2f with_cache_kib=%.2f cached_sources=%d max_decode_ms=%.3f",packed,collectgarbage("count")-before,#A.LootReference.order,longest))')
         result = subprocess.run([lua, "-e", "\n".join(script)], cwd=ROOT, check=True, capture_output=True, text=True)
         actual = {}
         for line in result.stdout.splitlines():

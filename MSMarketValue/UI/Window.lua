@@ -148,6 +148,9 @@ function UI.DiagnosticsText()
     local base=A.LootReference.bundled
     if base then lines[#lines+1]="Bundled reference: Everloot " .. base.version .. "; rates=" .. base.rates ..
         "; sources/modes=" .. base.sources .. "; snapshot UTC=" .. base.updatedAt end
+    local classic=A.LootReference.classic
+    if classic then lines[#lines+1]="Classic fallback: NPCs=" .. classic.npcs .. "; creature_loot=" .. classic.lootNPCs ..
+        "; skinning=" .. classic.skinningNPCs .. "; rates=" .. classic.rates .. "; Forever verified=false" end
     lines[#lines+1]="Loot windows read: " .. (A.Drops.readWindows or 0) .. "; skipped source pairs=" .. A.Drops.skipped ..
         "; harvesting tooltips=" .. tostring(D.Settings().showHarvestDrops)
     if A.Drops.reason then lines[#lines+1]="Drop detail: " .. A.Drops.reason end
@@ -156,7 +159,9 @@ function UI.DiagnosticsText()
     lines[#lines+1]="Farming receipts waiting: " .. #A.Farm.pending .. "; threshold=" .. D.Settings().farmThreshold .. "% above vendor after AH cut"
     lines[#lines+1]="Farming exclusions: mail/trade; ignored money messages=" .. (A.Farm.excludedReceipts or 0)
     lines[#lines+1]="Farming idle: enabled=" .. tostring(D.Settings().farmIdle) .. "; minutes=" .. D.Settings().farmIdleMinutes ..
-        "; automatic_pause=" .. tostring(farm.idlePaused==true) .. "; online_no_loot=" .. math.floor(farm.idleSeconds or 0) .. "s"
+        "; automatic_pause=" .. tostring(farm.idlePaused==true) .. "; inactive=" .. math.floor(farm.idleSeconds or 0) .. "s; combat=" .. tostring(A.Farm.combat==true)
+    lines[#lines+1]="Farming rates: session=" .. U.Money(farm.perHour) .. "; recent60m=" .. U.Money(farm.recentRate or 0) ..
+        "; peak5m=" .. U.Money(farm.peak and farm.peak.rate or 0) .. "; unpriced_pickups=" .. (farm.metricMissing or 0)
     lines[#lines+1]="Reference cache: format=" .. (A.LootReference.packed and "packed" or "table") .. "; sources=" ..
         #A.LootReference.order .. "; decoded_rows=" .. A.LootReference.cachedRows .. "/4096"
     lines[#lines+1]="Farming categories: loot=" .. U.Money((farm.coins or 0)+(farm.lootValue or 0)) ..

@@ -87,7 +87,7 @@ def build(path, root):
             if mode == kind:
                 lines.append(f"[{identifier}]={lua_string(code)},")
         lines.append("},")
-    lines.extend(["}", 'if A.LootReference.RegisterPacked("Everloot reference",sources) then',
+    lines.extend(["}", 'if A.LootReference.RegisterPacked("Everloot reference",sources,"everloot") then',
                   " A.LootReference.bundled={" + ",".join(k + "=" + (lua_string(v) if isinstance(v, str) else str(v)) for k, v in meta.items()) + "}",
                   "end", ""])
     module = "\n".join(lines).encode("utf-8")
