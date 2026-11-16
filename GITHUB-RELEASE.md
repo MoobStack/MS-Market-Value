@@ -1,18 +1,38 @@
-# MS Market Value 1.3.0 beta — Test revision 10
+# MS Market Value 1.3.0
 
-Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+### Farming
 
-Open `/msmv drops` for the reorganized **Drop rates** page.
+- Add farming sessions with acquired gold, item value and separate loot, quest and harvesting totals.
+- Show the whole-session hourly average, recent 60-minute rate and best completed five-minute farming rate. Peaks save the zone, available coordinates and time; quest rewards cannot inflate them.
+- Add a centered, movable gold display with adjustable width, position lock, optional session total and hover-only mode.
+- Add automatic idle pause, on by default after five minutes. Choose 5–60 minutes or Off; combat and qualifying loot resume the timer, while manual pauses stay paused.
+- Value acquired items using vendor prices or a qualifying AH estimate. Show unpriced items, exclude mail and trades, and prevent duplicate quest/loot income.
+- Add item/source filters, recent pickups and five saved session summaries. Pauses, loading screens and offline time do not count as active farming.
 
-- Sort drops by rate from high to low (default), low to high, or expected item value.
-- Show/hide Poor, Common, Uncommon, Rare, Epic and Legendary drops using colored checkboxes. These choices are independent of auction filters.
-- Needed quest drops always stay visible and first, even when their rarity is hidden. Rarity filtering applies to other drops before the 1–10-item tooltip limit.
-- Sort and rarity selections apply immediately and survive reload. Use Apply after changing Max items.
+### Drop rates
 
-**Reference mode automatically includes personally observed items missing from both reference layers**, including a whole missing creature/node. Forever entries take priority, then Classic, then personal gaps. Each keeps its own rate and sample count. Personal collection works in either display mode when enabled. Already referenced items keep the reference rate; choose Personal drops to see your own rate for them. Filters, quest eligibility and the item limit can still hide an entry without deleting its observations.
+- Add creature, skinning, herbalism and mining drop tooltips with bundled references and personal observations.
+- Fill missing reference items and sources with personal drops, keeping each source's rates and sample counts separate. Personal-only display is also available.
+- Track visible corpse and group loot once, including items left behind. Protect against reopening, partial looting and reload duplicates; unseen kills do not enter the sample count.
+- Keep needed quest drops visible and first. Hide quest-only items when their quest is absent, without deleting observations.
+- Add high-to-low and low-to-high rate sorting, expected-item-value sorting, six colored rarity choices and a 1–10-item display limit.
+- Add resets by creature/node, zone, dungeon or character, with collection and harvesting-tooltip controls.
 
-The test9 Opportunities loop fix remains. Your supplied test9 diagnostics show ready results, matched build/publication counts and no pending watches.
+### Market and interface
 
-Close WoW, replace Interface/AddOns/MSMarketValue from the Clean ZIP, and keep SavedVariables. Confirm `/msmv diagnostics` shows **Test revision: 10**. No new scan or history reset is required. Try both sort directions, deselect Common while tracking a needed quest drop, and compare Reference/Personal display. Native appearance and event timing still need in-game confirmation.
+- Keep full modifier names, links and separate prices/history for random suffixes and bonus-based variants, including watchlists and live Buy navigation.
+- Add keyword, rarity, low-price quantity, total stock and stock-decline filters. Show units at the lowest price and their combined buyout.
+- Add All items for current prices before enough history exists, a scrolling 12-row list and collapsible filters. Explain missing variant history separately from other signal filters.
+- Use coin icons in displayed money and rarity colors in item names. Quotes, exports and numeric inputs stay plain text.
+- Allow the main window, money tools, farming report and diagnostics to open in combat. Protected actions still wait until combat ends.
 
-This remains a test build; nothing was pushed or officially published.
+### Fixes
+
+- Stop Opportunities from endlessly rebuilding after searches or filter changes. Retain resolved item data when native replies are repeated, partial or temporarily unavailable.
+- Resolve generic modifier names without hovering and prevent one modifier from borrowing another's name, history or Buy listing.
+- Improve creature/node identification and loot-source reading when tooltip data is incomplete. Refresh changed drop tooltips without duplicate sections.
+- Correct idle timing and automatic resume around combat, reloads and loading screens; prevent manual pauses from resuming themselves.
+- Keep overlapping addon windows on separate layers so their titles and controls remain usable.
+- Reduce repeated item lookups and reuse prepared market results so large scans and repeated filter changes do less work.
+
+Existing prices, history, settings, watchlists, ledger entries and personal records carry forward. A new scan adds the newer modifier and supply details; older history remains saved.

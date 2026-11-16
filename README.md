@@ -1,61 +1,41 @@
 # MS Market Value
 
-Auction prices, crafting profits, farming estimates and a personal gold ledger for **WoW Forever**.
+**Version 1.3.0 · WoW Forever · By MoobStack**
 
-**1.3.0 beta · Test revision 10** · Client 1.60.1 · Interface 16001 · By MoobStack
-
-This is a test build. Version `1.3.0-beta` and build `2026-11-15-beta001` stay fixed until release.
+Auction prices, crafting profits, farming estimates, drop rates and a personal gold ledger in one addon.
 
 ## Install
 
-Close WoW and extract the **Clean ZIP** into `Interface/AddOns`, so the addon is at `Interface/AddOns/MSMarketValue`. Keep your WTF/SavedVariables folder when updating. Libraries are included; no separate download is needed.
-
-Forever community rates and a broader Classic fallback are included. Disable any older `MSMarketValueReference` pilot so it does not replace the bundled provider.
-
-Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the addon adds **MS Opportunities** and **MS Market Value** tabs.
+Close WoW and extract the Clean ZIP into `Interface/AddOns`. The folder should be `Interface/AddOns/MSMarketValue`. Enable it on the character-selection screen. When updating, keep your `WTF/SavedVariables` files; they hold your prices, settings and records.
 
 ## What it does
 
-| Tool | Features |
+- **Prices and crafting:** save AH prices, build daily history and see vendor, auction and disenchant values in tooltips. Compare learned recipes by material cost, net profit and return, or prepare a crafting quote.
+- **Market opportunities:** search resale candidates and price movements, filter by rarity and supply, and keep item modifiers separate. Save watchlist targets from Opportunities or the Buy page.
+- **Farming:** track acquired value, session average, recent rate and a located farming peak. Resize or lock the gold display and let idle pause handle breaks.
+- **Drop rates:** view reference rates and personal observations for creatures and harvesting. Personal drops fill missing entries; needed quest items stay first. Choose sorting, rarity and item limits.
+- **Ledger:** review purchases, sales, commissions, tips, loot and expenses by local date. Edit entries, separate known costs from estimates and export CSV.
+
+## First steps
+
+1. At an auctioneer, open **MS Market Value → Scan entire AH**. Keep the AH open until **Local copy** is complete. New full scans have a 15-minute minimum interval.
+2. Open a profession and click **Show profits**. Visit a supplies vendor so crafting calculations can learn your purchase costs.
+3. Use **MS Opportunities → All items** for current prices. Resale signals need three earlier priced UTC days for each exact modifier by default; the market's total saved days may be higher.
+4. Open the farming, drop or ledger tools with the commands below. Settings and display choices are saved automatically.
+
+## Commands
+
+| Command | Opens |
 |---|---|
-| **Auction scans** | Save the full AH’s prices. Pause and resume within the same session, including after closing the AH once its local copy is complete. |
-| **Item tooltips** | Vendor sell price, historic average, recent AH low and applicable disenchant estimates. Prices remain available in combat; known stack quantities show each and stack totals. |
-| **Price history** | Keep 1–30 days of prices, using each UTC day’s latest completed scan. Averages use the days with available prices. |
-| **Crafting profits** | Material costs, net profit after the chosen AH cut, return on cost and break-even prices. Search and rank learned recipes; include unprofitable recipes when needed. Normal vendor materials use your observed purchase price. |
-| **Craft quotes** | Numeric item/service quotes with markup, labor, minimum charges and customer-supplied materials. Native recipe links where available. Copy a quote, open a chat draft or record a completed commission with price, tip and quantity. |
-| **Market opportunities** | Find resale candidates, rising prices and falling prices from saved scans. Filter by movement, profit, rarity and stock. Keep modifier variants separate. Search a scrolling list with 12 rows, then open the exact live Buy listings. |
-| **Watchlists** | Add items from the Buy page or Opportunities. Edit buy-price, return and profit targets; receive local alerts after saved scans. |
-| **Personal ledger** | Record AH purchases and mailbox sales, vendor trades, commissions, trade gold, daily loot and expenses such as repairs, training, respecs, postage and flights. |
-| **Reports and filters** | Income, spending, cash flow and separate recorded/estimated profit totals. Filter by local dates and transaction type, combine Other expense categories, edit entries and copy filtered CSV. |
-| **Drop tooltips** | Forever community rates, Classic fallback and personal gap filling. Personal collection stays on, including visible group loot. Needed quest items come first. Sort by drop rate in either direction or expected value; filter six colored rarities while keeping needed quest drops first. Reset by source, zone, dungeon or character. |
-| **Farming sessions** | Session value, whole-session average, recent rate and a located farming peak that excludes quests. Centered display with adjustable width, position lock, optional total and hover mode. Combat-aware idle pause, category breakdown and five saved summaries. |
+| `/msmv` | Main settings |
+| `/msmv craft` | Crafting profits and quotes |
+| `/msmv market` | Opportunities, at an auctioneer |
+| `/msmv watch` | Watchlists |
+| `/msmv ledger` | Personal ledger |
+| `/msmv farm` | Farming report and display settings |
+| `/msmv drops` | Drop-rate display and observation settings |
+| `/msmv diagnostics` | A copyable support report |
 
-## Getting started
+AH prices are asking prices, and farming value is an estimate rather than realized profit. Some drop and disenchant references come from Classic and may differ in Forever. Buying, selling, crafting and other game actions remain under your control.
 
-1. At an auctioneer, choose **MS Market Value → Scan entire AH**. Keep the AH open until **Local copy** is complete. New full scans have a 15-minute minimum interval; unfinished scans end on reload/logout.
-2. Visit a supplies vendor to learn your discounted material prices. Open a profession and click **Show profits**, or use `/msmv craft`. Automatic opening is optional.
-3. Check **MS Opportunities** after collecting history. Its default needs three earlier priced days per item. Use **Watch item** on the Buy page to save a target.
-4. Open `/msmv ledger` anywhere, including combat. Choose a period, review totals or filter Transactions. **Other** has category checkboxes. Tracking options and 1–365-day ledger retention are in **Ledger settings**.
-5. Use `/msmv farm` for a session report and settings, or `/msmv drops` for the creature tooltip. Complete a fresh AH scan for Opportunities’ new quantity fields.
-
-Use **All items** to see current modifier prices before enough history exists. **Filters** opens the extra controls; applying them restores the larger list. Older item-wide prices cannot identify a modifier’s movement. Use **All items** to browse today’s modifier prices. Signals use each modifier’s earlier priced days, rather than the market’s total saved-day count. **At low** is the number of units at the lowest unit price; **Low buyout** is their combined buyout. Stock movement compares the previous completed scan.
-
-Under **Filters → Rarity**, choose any combination of Poor, Common, Uncommon, Rare, Epic and Legendary, then Apply. Item names use their rarity colors before hover. The main window, ledger and farming report can open in combat; scans and live AH searches wait until combat ends.
-
-## Reading the numbers
-
-AH prices are asking prices, not guaranteed sales. Crafting and resale estimates include the configured AH cut, default 5%, but exclude deposits and unsold stock. Known vendor supplies need a current vendor observation; inflated AH listings are not substituted.
-
-The ledger records observed activity. AH sales appear when completed invoices load in the mailbox. Trade gold starts as tips; reclassify craft payments instead of recording them twice. Unknown costs remain unknown. Cash flow includes recorded spending; profit cards cover income entries with known costs. Unrecognized deductions appear as **Unclassified**.
-
-Disenchant values use an **unverified Classic reference** for Forever. No buying, selling, crafting, mail collection or chat sending is automated.
-
-**Reference data** uses [Everloot](docs/EVERLOOT-DATASET.md) first: 1,876 counted rates across 235 creatures and five harvesting nodes. A [Classic fallback](docs/CLASSIC-DATASET.md) adds coverage for 4,395 creatures; its rates are unverified for Forever. Your personal drops fill remaining gaps without mixing sample counts. Personal-only mode is available. Displayed prices use coin icons; copied quotes and exports stay plain text. See [farming and drops](docs/FARMING-AND-DROPS.md) for counting rules and storage limits.
-
-## Help
-
-Use `/msmv diagnostics` when reporting a problem. Include the client build, what happened and any error text.
-
-[User guide](DOCUMENTATION.md) · [Changelog](CHANGELOG.md) · [Money tools](docs/ECONOMY-TOOLS.md) · [Upgrade](UPGRADE.md) · [Compatibility](COMPATIBILITY.md) · [Validation](VALIDATION.md) · [Source and recovery](GIT-WORKFLOW.md)
-
-MoobStack is an independent community publisher, unaffiliated with Blizzard Entertainment. World of Warcraft and related marks belong to their owners.
+[User guide](DOCUMENTATION.md) · [What's new](CHANGELOG.md) · [Updating](UPGRADE.md) · [Compatibility](COMPATIBILITY.md)

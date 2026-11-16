@@ -42,6 +42,13 @@ def build(output: pathlib.Path) -> list[pathlib.Path]:
     filenames = subprocess.check_output(["git", "ls-files", "-z"], cwd=ROOT).decode().split("\0")
     files = [name for name in filenames if name]
     entries = [(name, (ROOT / name).read_bytes()) for name in files]
+    # The install includes the same user guides as the repository.
+    user_docs = {"README.md", "DOCUMENTATION.md", "CHANGELOG.md", "RELEASE-NOTES-v1.3.0.md",
+        "UPGRADE.md", "COMPATIBILITY.md", "THIRD-PARTY-NOTICES.md"}
+    for name, data in entries:
+        if name in user_docs or (name.startswith("docs/") and name.endswith(".md")):
+            installed = data.replace(b"(MSMarketValue/Libs/)", b"(Libs/)").replace(b"(MSMarketValue/Data/)", b"(Data/)")
+            assert (ROOT / "MSMarketValue" / name).read_bytes() == installed, f"Update the installed guide: {name}"
     clean_entries = [(name, content) for name, content in entries if name.startswith("MSMarketValue/")]
     assert clean_entries and all("/.git/" not in name for name, _ in clean_entries)
     source_entries = [("MS-Market-Value/" + name, data) for name, data in entries]
@@ -54,6 +61,12 @@ def build(output: pathlib.Path) -> list[pathlib.Path]:
         path = output / f"{PREFIX}-{suffix}"
         make_zip(path, content)
         artifacts.append(path)
+    documentation = [(name, data) for name, data in entries if name in user_docs or
+        (name.startswith("docs/") and name.endswith(".md")) or
+        (name.startswith("MSMarketValue/") and name.endswith(".txt"))]
+    documentation_zip = output / f"{PREFIX}-Documentation.zip"
+    make_zip(documentation_zip, documentation)
+    artifacts.append(documentation_zip)
     bundle = output / f"{PREFIX}.bundle"
     subprocess.run(["git", "bundle", "create", str(bundle), "--all"], cwd=ROOT, check=True)
     subprocess.run(["git", "bundle", "verify", str(bundle)], cwd=ROOT, check=True)

@@ -1,9 +1,20 @@
-# Source and testing
+# Release workflow
 
-The Git Repository ZIP includes the source, tests, documentation and Git history. Extract it into a new folder and open `MS-Market-Value`. Install only the Clean ZIP's addon folder in WoW.
+The official release is **1.3.0**, build `2026-11-16-release001`, tag `v1.3.0`. The Git Repository ZIP includes source and history; extract it outside AddOns. Only the Clean ZIP belongs in the game.
 
-Development is on `develop/1.3.0`, tagged `v1.3.0-beta-test10`. The official release remains 1.2.1. Keep `1.3.0-beta / 2026-11-15-beta001` throughout testing and advance only the test revision.
+## Validate and package
 
-Run `python3 tools/validate.py --lua lua5.1 --luac luac5.1` for checks, then `python3 tools/package.py` from the clean checkout at the annotated tag in build.json.
+From a clean checkout at the annotated release tag:
 
-This beta is prepared locally. No changes were pushed and no official 1.3 release was created.
+```bash
+python3 tools/validate.py --lua lua5.1 --luac luac5.1
+python3 tools/package.py --output dist
+```
+
+Keep the TOCs, Bootstrap and build.json consistent. The packaging command produces install, source, repository, documentation and recovery archives with checksums. Earlier history remains in Git.
+
+## Publish
+
+Use the existing origin for `MoobStack/MS-Market-Value`. Fetch before pushing and resolve any remote changes without rewriting published history. Push main and the annotated v1.3.0 tag, then create a GitHub release titled MS Market Value 1.3.0 using `RELEASE-NOTES-v1.3.0.md`.
+
+Attach the Clean ZIP, Source ZIP, Documentation ZIP and matching checksums. GitHub authentication is required. Never overwrite an existing release tag; correct a published release with a new version.

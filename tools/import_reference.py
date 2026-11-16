@@ -173,7 +173,7 @@ def build(manifest, output, minimum=50, stamp=None):
     (output / "SOURCES.json").write_text(json.dumps(provenance, indent=2) + "\n", encoding="utf-8")
     (output / "README.txt").write_text(
         "Optional reference observations\n\n"
-        "Requires MSMarketValue 1.3 beta test revision 3 or later.\n"
+        "Requires MS Market Value 1.3.0 or later.\n"
         "Install this folder alongside MSMarketValue, reload WoW, then choose Reference data in /msmv drops.\n"
         "Only the sources in SOURCES.json are covered. Counts come from saved Wowhead Forever pages; they may include\n"
         "carried-over Classic observations. They are not verified Forever server chances. An absent item is unknown, not 0%.\n"

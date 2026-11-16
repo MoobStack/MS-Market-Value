@@ -1,9 +1,7 @@
 # Vendor material costs
 
-Visit a supplies vendor to learn the price **your character** pays, including the current discount. Normal unlimited-stock, gold-only supplies use that observed unit cost in crafting calculations and quotes. Bundle price is divided by bundle quantity.
+Visit a supplies vendor to learn the price your character pays, including the current discount. Unlimited-stock, gold-only supplies use that observed unit cost in crafting calculations and quotes.
 
-The addon recognizes common vendor materials and learns other eligible supplies when seen. Known vendor supplies without a valid observation say **visit supplier**; marked-up AH listings and guessed buy/sell multipliers are not substituted.
+Known vendor supplies without a valid observation say Visit supplier. Inflated AH listings are not substituted. Observations are separate by character and market, expire after seven days and clear after a detected reputation-tier change. Revisit the supplier after other discount changes.
 
-Observations are separate by character, faction and market. They expire after seven days and clear after a detected reputation-tier change. Revisit the supplier after any other discount change. Limited-stock, extended-cost and unreadable listings do not supply a normal vendor cost.
-
-Tooltip **Vendor sell** is the item’s sell value and remains separate from this crafting purchase cost. Merchant observations do not buy anything. Use `/msmv diagnostics` to see the number of saved vendor purchase prices.
+Limited-stock, currency-cost and unreadable listings do not supply a normal vendor cost. Tooltip Vendor sell is the item's resale value, separate from this crafting purchase cost. Nothing is bought automatically.

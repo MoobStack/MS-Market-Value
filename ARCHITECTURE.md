@@ -1,97 +1,17 @@
 # Architecture
 
-Test **1.3.0-beta** · Interface **16001** · Saved-data schema **1**
+MS Market Value 1.3.0 uses Lua 5.1, Interface 16001 and SavedVariables schema 1.
 
-## Modules
-
-The three identical TOCs load 30 Lua files. Bootstrap creates the addon namespace, then pinned libraries, data/services, the scanner, tooltip integration, UI and event wiring. Original code uses the addon namespace; Blizzard functions are not replaced.
-
-| Module | Responsibility |
+| Area | Responsibility |
 |---|---|
-| `Core/Util.lua`, `Database.lua` | Public-value guards, item/market keys, settings and atomic snapshot replacement |
-| `Core/Vendor.lua`, `History.lua` | Player vendor prices and compact daily market history |
-| `Data/Disenchant.lua`, `Core/Valuation.lua` | Labeled Classic DE model and saved-price valuation |
-| `Crafting/Analysis.lua` | Native recipe adapter, costs, quotes and batched rankings |
-| `Market/Analysis.lua`, `Core/Watchlist.lua` | History comparisons, bounded rankings, saved targets and alerts |
-| `Core/Drops.lua`, `Farming.lua`, `Data/LootReference.lua` | Capped personal loot counters, acquired-value sessions and optional reference queries |
-| `Core/Ledger.lua`, `Transactions.lua`, `Cash.lua` | Scoped records, reports, confirmed transactions, daily loot and expense matching |
-| `Auction/Scanner.lua`, `Integrations/Tooltips.lua` | Full AH copying/processing and guarded tooltip decoration |
-| `UI/*.lua`, `Core/Events.lua` | Native frames, commands, event routing and update budgets |
+| Core | Safe public-value access, settings, prices, history and player records |
+| Auction / Market | Full-scan copying, exact modifier identity and bounded opportunity ranking |
+| Crafting | Learned-recipe costs, profit estimates and quotes |
+| Farming / Drops | Acquired-value sessions, sampled loot and filtered tooltips |
+| UI / Integrations | Native frames, tooltip hooks and event handling |
 
-LibStub minor 2 and LibAHTab minor 5 retain pinned bytes and notices. The shared registry coordinates addon tabs without extending native tab arrays.
+Only a completed scan replaces current prices. Full requests are user-started and cooldown-limited. Market analysis reuses verified item metadata, retains at most 500 results and spreads work across frames. Reference rows and personal counts remain separate; display filtering never rewrites observations.
 
-## Processing
+Persistent records include prices, preferences, cooldowns, history, watchlists, ledger entries, farming summaries and personal drop samples. Runtime caches remain outside SavedVariables. Unsupported saved formats are preserved. Native actions remain under player control.
 
-A new full scan requires an auctioneer, supported APIs, a market key, no combat and an expired persisted cooldown. One replication request starts the 15-minute interval. Copying handles up to 1,000 rows per frame; pricing handles up to 100 per 0.05-second tick, with an approximate four-millisecond budget. Only complete row accounting can replace saved prices. Partial results never merge into a fresh scan.
-
-Pause keeps staging and retry progress. Copying can continue at the AH outside combat. After the local copy completes, resume no longer depends on the native buffer. Before that, count/anchor checks and competing-request observation guard the buffer; the API exposes no generation token. Reload/logout discards unfinished work.
-
-Recipe catalogs run in batches of 20 on 0.25-second ticks while a profession is open. A complete staged catalog publishes atomically; unchanged catalog events reuse it. Selected recipes include readable native allocations. Ranking, search and summaries cache by source and pricing settings. Unknown material shapes stay unavailable; minimum yield drives variable-output ranking.
-
-Market analysis runs only while visible. Each frame handles up to 2,000 preparation/evaluation steps with a four-millisecond target. It indexes exact variant series and retains at most 500 results. Watch checks handle up to 20 targets per step and publish together. Both reuse saved prices; neither sends auction queries. A player click delegates live listing navigation to the native Buy UI.
-
-Tooltip callbacks decorate accessible public item data, including during combat. Only verified quantity contexts produce stack totals. Primary-tooltip rebuilds wait until combat ends; comparison rebuilds remain native-owned.
-
-## Saved data
-
-`MSMarketValueDB` retains current snapshots, settings, exclusions, cooldown and optional schema-1 history/vendor/watch/ledger roots. Known Forever markets use region/ruleset/faction keys; unknown aliases stay isolated.
-
-- For compatible legacy PvP hosts, a session view selects the newest snapshot and the newest record per UTC day. It keeps the original records in place. Profile links reuse one prior profile without merging ledgers or rewriting receipt IDs.
-- History stores the latest complete scan per UTC request day, retaining 1–30 days. Missing prices are skipped; current prices stay separate. Average lookups cache up to 4,096 keys.
-- Vendor observations are per character/faction/market, valid for seven days and invalidated by detected reputation-tier changes. Known vendor supplies have no AH-cost fallback.
-- Watchlists hold up to 200 targets per market.
-- Ledgers hold 10,000 entries per character/market, with 1–365 local-day retention. Receipt/invoice indexes cap at 20,000; confirmed pending records cap at 100. Epoch timestamps remain unchanged. CSV includes both local and UTC time.
-
-Invalid or unsupported roots are preserved and refused. Player SavedVariables never enter code packages.
-
-## Transactions and UI
-
-Secure post-observers capture public intent/context without invoking the action. AH buys require matching success; completed mailbox invoices backfill buys and sales. Invoice signature/expiry matching handles visible multiplicity but cannot resolve every identical replacement. Vendor item values must explain bag and wallet changes.
-
-Trades require captured final gold offers and a native completion message; closure alone does not count. Gold starts as tips. Commissions are explicit writes from the craft button or editor; own-material costs remain labeled estimates.
-
-Loot parses dedicated localized money messages and updates one indexed row per local day. It does not infer loot from wallet increases. Pending loot merges by day without per-award receipts.
-
-Expenses match native details to wallet deductions, or native repair-cost decreases to reconciled merchant changes. Session queues cap at 100 intents and 256 wallet deltas. Known actions settle before vendor reconciliation; unmatched outgoing changes can become Unclassified. Generic handling excludes auction escrow and player trades. These matching windows are policies, not a complete accounting API.
-
-Reports and type/category/date views are cached. The active panel only changes visibility on navigation, preserving mouse clicks during refresh. Native dropdowns select types and multiple expense categories. Manual UI/editing remains outside combat; automatic saved-table writes can run in combat.
-
-For calculations and limits, see the [user guide](DOCUMENTATION.md), [money tools](docs/ECONOMY-TOOLS.md) and [source notes](docs/RESEARCH.md).
-
-## Farming and drops
-
-Loot events feed per-character counters grouped by map/instance, source kind/ID and solo/party/raid context. A 2,048-source session ring prevents normal reopen duplicates; a capped 64-source, five-minute receipt index carries recent protection across reloads. Only verified native source GUIDs are attributed to creatures; ambiguous sources stay unassigned. Farming uses localized self-loot receipts and dedicated quest events, with a short queue to reconcile overlapping quest/chat receipts. Existing ledger tracking remains independent.
-
-Optional source packs can call `MSMarketValue.LootReference.Register(label, query, verified)`. The query receives a source ID and kind (`loot`, `herbalism`, `mining` or `skinning`) and returns up to 200 `{id, rate, name?, questID?, samples?}` rows, with rate expressed as a percentage. Results cache for at most 64 sources. The optional offline importer builds a separate addon; no reference database is copied into player saved data.
-
-Reference views fill absent IDs from the current character/area's personal counters. Each row retains its origin and denominator; personal metadata may supply missing quest/rarity fields. The merged tooltip view has one cache and never writes shared counts into SavedVariables. Unclassified Everloot NPC/object rollups are not guessed into a loot mode.
-
-The bundled priority is Everloot, Classic, then personal gaps. Classic uses a separate curated codec with pooled item-ID lists and rate groups; it never invents hit/sample counts. Shared loot tables expand offline. Only the requested source decodes, sharing the eight-source / 4,096-row budget with Everloot. Source SQL and rebuild tools stay outside the install.
-
-Opportunities keeps one current variant index, reused across filter changes. Modern scans do not walk daily variant maps during preparation. Legacy scans retain the historical safeguards. Keyword/supply filters precede valuation; a bounded heap retains the best 500 before sorting for publication. Metadata arriving during a job queues a follow-up instead of resetting its cursor. Work checks the existing 4 ms cooperative budget.
-
-Gathering casts and exposed loot-source GUIDs separate harvesting from corpse loot. Up to 128 spell-name decisions are cached. Visible object tooltips have a 0.25-second fallback check when typed callbacks are unavailable. The session keeps exact category counters and reuses cached valuations; HUD interpolation changes only the display.
-
-Standalone portrait windows use separate 1,024-level bands for their native children. Focusing a window moves the complete band, including high-level title and border frames.
-
-## Revision 3 details
-
-Farming persists online inactivity and a separate automatic-pause flag. Updates stop exactly at the configured boundary; receipts resume an automatic pause without backfilling the idle gap. Manual pauses stay independent. Old sessions gain the two optional fields without clearing totals.
-
-Combat entry also resumes automatic idle. Combat keeps time active; exit starts a new inactivity period. FarmMetrics adds at most 61 one-minute receipt-value buckets. Recent rates use up to 60 active minutes; peaks compare complete five-minute windows with quests excluded. Only the last farming location in a bucket is retained, and old locations are discarded. Session averages retain current valuations; recent/peak values do not change with later repricing. Older sessions start rate coverage at their upgrade time.
-
-`Util.Coins` is for display; `Util.Money` remains plain for chat/clipboard/diagnostics. Opportunities caches each row’s native link/quality color. Quest-only filtering changes the displayed candidates, not saved hit counts.
-
-Packed references use a source-to-string index with sorted item-ID deltas, integer hits, shared sample totals and optional quest metadata. No global reverse index or full-table expansion is built. The eight-source cache also caps at 4,096 decoded rows. One source may contain up to 4,096 rows; oversized sources are rejected instead of silently truncated. Only a few relevant missing names are requested, with a 128-ID index and a 20-per-10-second request cap.
-
-## Market item replies
-
-Market/Metadata reads only public name, rarity and item class, independently of vendor/equip metadata. Native replies enqueue bounded deferred checks rather than calling item APIs inside callbacks. Only a changed projected record can invalidate ranking; completed visible rows reuse their metadata. Exact variant links are checked before adopting a native title, and item-ID fallbacks never supply another modifier's name.
-
-Each pass watches at most 256 item IDs and 1,024 exact-link records. Checks process at most eight records per frame with a 1 ms cooperative allowance inside the analysis budget. Duplicate replies coalesce; partial data does not prevent publication. A reply arriving during a multi-frame check is retained, and adding an unresolved variant reopens its item-ID watch. These tables are session-local and do not enlarge SavedVariables.
-
-Verified name/rarity/class fields also live in a snapshot-and-market cache capped at 50,000 identities. Automatic follow-up passes and filter changes retain this cache; a replacement snapshot, market change or clearing analysis resets it. Complete records avoid repeated native lookups. Partial reads accumulate fields instead of clearing known values. Numeric item lookups and exact modifier keys remain separate. At the cap, new uncached watches are refused so their replies cannot repeatedly invalidate an analysis. Cache entries/hits and retained partial reads appear in diagnostics. No metadata cache is persisted.
-
-## Drop display choices
-
-Core/Drops caches the merged display by source, area, mode, sort, rarity mask, visible-row limit, observation/reference revision and auction snapshot. Reference priority remains Forever, Classic, then personally observed gaps. Filtering affects copied rows, never source counts. Needed quest rows bypass rarity filtering and remain the first group; rate ascending/descending or expected-value ordering runs within each group. Other rows pass a six-quality bitmask before the tooltip limit. Unknown quality is allowed under All rarities, otherwise it queues at most ten bounded metadata requests per view build. UI changes invalidate the display cache and mark the owned tooltip for guarded native rebuild. Saved settings add dropSort and dropQuality under the existing schema.
+The three TOCs load the same 30 Lua files. Bundled-library hashes and focused behavioral checks are enforced by `tools/validate.py`.

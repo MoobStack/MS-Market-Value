@@ -1,0 +1,33 @@
+# User guide
+
+MS Market Value 1.3.0 for WoW Forever. The [README](README.md) covers installation, commands and first steps.
+
+## Prices and history
+
+Start a full scan at an auctioneer from the MS Market Value tab. A completed scan replaces current prices; a partial or failed scan keeps the previous snapshot. Pause and resume within the same login session. After Local copy is complete, processing can resume without the original server buffer. Reloading or logging out ends unfinished work.
+
+Tooltips can show vendor sell value, historic average, current AH low and disenchant estimates. Known stack quantities show each-item and stack totals. Stale or missing prices are labeled. History keeps 1–30 UTC days; each day uses its latest completed scan. The average's day count is the number of days priced for that item, not every day saved for the market.
+
+## Crafting and quotes
+
+Open a profession and click Show profits, or use `/msmv craft`. Select a learned recipe to inspect its materials, cost, net profit, return and break-even price. Search or sort recipes and choose profitable recipes or all recipes. Automatic opening is optional.
+
+Visit a supplies vendor to learn your discounted material costs. Other materials use market replacement value, including items you already own. Missing prices stay unknown rather than becoming zero. The AH cut defaults to 5%; deposits and unsold stock are excluded.
+
+Pricing settings control markup, labor, minimum charge and customer-supplied materials. Quotes can be copied or placed in a chat draft. Record sale adds a commission to the ledger; leave its price blank to use the quote, and enter quantity and any total tip. Material costs saved from a quote remain estimates until you enter actual cost.
+
+## Opportunities and watchlists
+
+At the AH, open MS Opportunities. All items shows current prices; Resale, Rising and Falling need earlier history for the exact modifier. Apply keywords, rarity and supply filters to narrow the list. Left-click a result for live Buy listings, right-click for details, or use Watch selected to save targets.
+
+Watch item is also available on the Buy page. Zero disables a target; all enabled targets must pass. Alerts use saved scans and do not start background auction searches. See [Opportunities](docs/MARKET-OPPORTUNITIES.md) for the columns and history rules.
+
+## Farming, drops and the ledger
+
+Use `/msmv farm` for session totals, rates and display options. Idle pause is on by default after five minutes; a manual pause stays paused. `/msmv drops` controls collection, reference/personal display, sorting, rarity and resets. See [Farming and drops](docs/FARMING-AND-DROPS.md).
+
+Use `/msmv ledger` for income, spending, cash flow and profit reports. Choose local dates, filter Transactions and click a row to edit it outside combat. Other expenses have category checkboxes; CSV follows the active filters. See [Money tools](docs/ECONOMY-TOOLS.md) for tracking and cost rules.
+
+## Updating and support
+
+Close WoW before replacing the addon or backing up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua`. Keep SavedVariables during updates. If something looks wrong, include `/msmv diagnostics`, your client build and a short description of what happened.
