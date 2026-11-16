@@ -6,3 +6,6 @@
 *.yml text eol=lf
 *.zip binary
 *.bundle binary
+# Keep the upstream notice verbatim.
+MSMarketValue/Data/Classic-COPYRIGHT.txt whitespace=-blank-at-eol
+datasets/classic/COPYRIGHT.md whitespace=-blank-at-eol

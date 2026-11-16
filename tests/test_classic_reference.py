@@ -56,7 +56,8 @@ class ClassicReference(unittest.TestCase):
             root = Path(directory)
             classic.build(source, ROOT / "datasets/classic/COPYING", root)
             for relative in ("MSMarketValue/Data/Classic.lua", "MSMarketValue/Data/Classic-NOTICE.txt",
-                             "MSMarketValue/Data/Classic-COPYING.txt", "datasets/classic/provenance.json"):
+                             "MSMarketValue/Data/Classic-COPYING.txt", "MSMarketValue/Data/Classic-COPYRIGHT.txt",
+                             "datasets/classic/COPYRIGHT.md", "datasets/classic/provenance.json"):
                 self.assertEqual((root / relative).read_bytes(), (ROOT / relative).read_bytes())
         self.assertLess(PROVENANCE["runtimeBytes"], 900000)
 

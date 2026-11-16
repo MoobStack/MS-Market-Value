@@ -176,6 +176,7 @@ def pack(rows, quest_items, lists=None, list_ids=None):
 
 def build(path, license_path, root=ROOT):
     license_bytes = license_path.read_bytes()
+    copyright_bytes = (path.parent / "COPYRIGHT.md").read_bytes()
     if b"GNU GENERAL PUBLIC LICENSE" not in license_bytes or b"Version 3, 29 June 2007" not in license_bytes:
         raise ValueError("Include the upstream GPL-3.0 license unchanged")
     data = read_snapshot(path)
@@ -235,6 +236,8 @@ def build(path, license_path, root=ROOT):
         if original.resolve() != destination.resolve():
             shutil.copyfile(original, destination)
     (target / "Classic-COPYING.txt").write_bytes(license_bytes)
+    (source / "COPYRIGHT.md").write_bytes(copyright_bytes)
+    (target / "Classic-COPYRIGHT.txt").write_bytes(copyright_bytes)
     notice = ("Classic fallback data\n\nDerived from CMaNGOS ClassicDB, Classic 1.12; GPL-3.0.\n"
               f"Source: {URL}\nSource SHA256: {SHA256}\n\n"
               "These are historical nominal Classic chances, not verified Forever rates.\n"
@@ -242,10 +245,12 @@ def build(path, license_path, root=ROOT):
               "Forever samples override matching items; personal data fills remaining gaps.\n"
               "Conditional/overfull groups are omitted. Shared tables are expanded offline;\n"
               "base rates exclude server multipliers, eligibility and duplicate-prevention effects.\n"
-              "The full repository includes the source snapshot, license and rebuild utility.\n")
+              "The full repository includes the source snapshot, license and rebuild utility.\n"
+              "The original game-content copyright notice is in Classic-COPYRIGHT.txt.\n")
     (target / "Classic-NOTICE.txt").write_text(notice)
     provenance = {**meta, "sourceURL": URL, "sourceCommit": COMMIT, "sourceSHA256": SHA256,
                   "reviewedLootEngine": f"https://github.com/cmangos/mangos-classic/blob/{ENGINE}/src/game/Loot/LootMgr.cpp",
+                  "copyrightSHA256": hashlib.sha256(copyright_bytes).hexdigest(),
                   "runtimeSHA256": hashlib.sha256(module).hexdigest(), "runtimeBytes": len(module),
                   "encodedBytes": sum(map(len, pool)) + sum(map(len, item_lists)), "omissions": dict(sorted(compiler.skipped.items()))}
     (source / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")

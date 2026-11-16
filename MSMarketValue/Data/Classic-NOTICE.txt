@@ -10,3 +10,4 @@ Forever samples override matching items; personal data fills remaining gaps.
 Conditional/overfull groups are omitted. Shared tables are expanded offline;
 base rates exclude server multipliers, eligibility and duplicate-prevention effects.
 The full repository includes the source snapshot, license and rebuild utility.
+The original game-content copyright notice is in Classic-COPYRIGHT.txt.

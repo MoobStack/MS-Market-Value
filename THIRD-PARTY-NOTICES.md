@@ -21,6 +21,6 @@ Blizzard UI/API definitions were inspected for compatibility. No extracted Blizz
 
 The Classic fallback is derived from **CMaNGOS ClassicDB**, distributed under **GPL-3.0**. `MSMarketValue/Data/Classic.lua` is a packed adaptation; its source notice and full license are beside it. The full repository includes the pinned SQL snapshot, license, provenance and rebuild utility under `datasets/classic` and `tools/bundle_classic.py`. Source: [ClassicDB commit e4825cf4](https://github.com/cmangos/classic-db/tree/e4825cf48176edff313d78de66b0beb14371c8eb). No server executable code is bundled. These data terms are separate from the original addon code; Classic chances remain unverified for Forever.
 
-The separately compiled development Lua interpreter and research downloads are not release assets. The addon requires no external executable or separately installed dependency addon.
+The upstream game-content copyright notice is retained in `Data/Classic-COPYRIGHT.txt` and `datasets/classic/COPYRIGHT.md`. The development Lua interpreter and other research downloads are not release assets. The addon requires no external executable or separately installed dependency addon.
 
 If a license is selected for original MoobStack code or additional third-party assets are added, update notices and release documentation together. World of Warcraft and related marks belong to their respective owners; MoobStack has no Blizzard endorsement.
