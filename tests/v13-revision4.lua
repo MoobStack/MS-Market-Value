@@ -63,7 +63,7 @@ test("visible rows request missing item data without a hover or auction query",f
     local ui=market(w,A);truth(w.loadRequests>0);local requests=w.loadRequests
     for _=1,30 do ui.Refresh()end
     equal(w.loadRequests,requests);equal(w.requests,0);equal(ui.hovered,nil)
-    w.items[100]={quality=3,name="Rare boots"};w:event("GET_ITEM_INFO_RECEIVED",100,true);ui.Refresh()
+    w.items[100]={quality=3,name="Rare boots"};w:event("GET_ITEM_INFO_RECEIVED",100,true);A.Market.Tick();ui.Refresh()
     blue(ui.rows[1].labels[1]);equal(ui.rows[1].labels[1].text,"Rare boots")
 end)
 
@@ -85,7 +85,7 @@ end)
 
 test("native rarity supersedes an early generic link color when data arrives",function()
     local w,A=world();scan(w,A,{{id=100,link=link(100):gsub("cff1eff00","cffffffff")}})
-    local ui=market(w,A);w.items[100]={quality=3};w:event("GET_ITEM_INFO_RECEIVED",100,true);ui.Refresh()
+    local ui=market(w,A);w.items[100]={quality=3};w:event("GET_ITEM_INFO_RECEIVED",100,true);A.Market.Tick();ui.Refresh()
     blue(ui.rows[1].labels[1]);local r,g,b=A.Util.ItemColor(link(100),3);near(r,0);near(g,112/255);near(b,221/255)
 end)
 
@@ -117,7 +117,7 @@ test("a filtered row with unknown rarity reappears automatically when data loads
     local w,A=world();scan(w,A,{{id=100,link="item:100:0:0:0:0:0:0:0"}});A.DB.Settings().marketQuality=8
     analyze(A);equal(#A.Market.rows,0);truth(A.Market.reason:find("loading",1,true));local ui=market(w,A)
     truth(w.loadRequests>0);local builds=A.Market.builds
-    w.items[100]={quality=3};w:event("GET_ITEM_INFO_RECEIVED",100,true);analyze(A,"listed",false);ui.Refresh()
+    w.items[100]={quality=3};w:event("GET_ITEM_INFO_RECEIVED",100,true);A.Market.Tick();analyze(A,"listed",false);ui.Refresh()
     equal(A.Market.builds,builds+1);equal(#A.Market.rows,1);blue(ui.rows[1].labels[1])
 end)
 

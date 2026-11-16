@@ -106,6 +106,15 @@ function UI.DiagnosticsText()
     lines[#lines + 1] = "Opportunities tab: " .. (A.MarketUI.tabButton and "installed" or "waiting for the auctioneer")
     lines[#lines + 1] = "Market analysis: " .. (A.Market.job and "checking" or (A.Market.ready and "ready" or "not opened")) .. "; builds=" .. A.Market.builds .. "; publications=" .. A.Market.publications .. "; matches=" .. (A.Market.eligible or 0)
     if A.Market.reason then lines[#lines + 1] = "Market analysis detail: " .. A.Market.reason end
+    local index,coverage=A.Market.variantIndex,A.Market.coverage
+    lines[#lines+1]="Market search: view=" .. (A.MarketUI.view or "deals") .. "; keyword=" .. string.format("%q",D.Settings().marketSearch) ..
+        "; min_prior_days=" .. D.Settings().marketMinDays
+    if index then lines[#lines+1]="Market variants: current=" .. (index.count or 0) .. "; modified=" .. (index.modifiers or 0) end
+    if coverage then lines[#lines+1]="Market matches: current=" .. coverage.keywordMatches .. "; modified=" .. coverage.matchingVariants ..
+        "; need_history=" .. coverage.needsHistory .. "; other_signal_filters=" .. coverage.filteredSignals end
+    local info=A.MarketMetadata
+    lines[#lines+1]="Market item replies: received=" .. info.replies .. "; changed=" .. info.changes .. "; unchanged=" .. info.unchanged ..
+        "; watched_ids=" .. #info.order .. "/256; watched_variants=" .. info.count .. "/1024"
     lines[#lines + 1] = "Craft pricing: AH cut=" .. D.Settings().marketFee .. "%; labor=" .. U.Money(D.Settings().serviceLabor) .. "; minimum=" .. U.Money(D.Settings().serviceMinimum) .. "; customer_materials=" .. tostring(D.Settings().serviceCustomerMaterials)
     lines[#lines + 1] = "Watchlists: " .. #A.Watchlist.Entries() .. " this market; " .. (A.Watchlist.job and "checking" or "ready") .. "; publications=" .. A.Watchlist.publications
     if A.Watchlist.reason then lines[#lines + 1] = "Watchlist detail: " .. A.Watchlist.reason end

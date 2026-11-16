@@ -8,7 +8,7 @@
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
 ## X-Build: 2026-11-15-beta001
-## X-Test-Revision: 7
+## X-Test-Revision: 8
 
 Bootstrap.lua
 Libs\LibStub\LibStub.lua
@@ -20,6 +20,7 @@ Core\History.lua
 Data\Disenchant.lua
 Core\Valuation.lua
 Crafting\Analysis.lua
+Market\Metadata.lua
 Market\Analysis.lua
 Core\Watchlist.lua
 Core\Ledger.lua

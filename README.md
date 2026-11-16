@@ -2,7 +2,7 @@
 
 Auction prices, crafting profits, farming estimates and a personal gold ledger for **WoW Forever**.
 
-**1.3.0 beta · Test revision 7** · Client 1.60.1 · Interface 16001 · By MoobStack
+**1.3.0 beta · Test revision 8** · Client 1.60.1 · Interface 16001 · By MoobStack
 
 This is a test build. Version `1.3.0-beta` and build `2026-11-15-beta001` stay fixed until release.
 
@@ -38,7 +38,7 @@ Open `/msmv` for settings, **Ledger** and **Watchlists**. At an auctioneer, the 
 4. Open `/msmv ledger` anywhere, including combat. Choose a period, review totals or filter Transactions. **Other** has category checkboxes. Tracking options and 1–365-day ledger retention are in **Ledger settings**.
 5. Use `/msmv farm` for a session report and settings, or `/msmv drops` for the creature tooltip. Complete a fresh AH scan for Opportunities’ new quantity fields.
 
-Use **All items** to see current modifier prices before enough history exists. **Filters** opens the extra controls; applying them restores the larger list. Older item-wide prices cannot identify a modifier’s movement. Start a new scan to collect precise variant history. **At low** is the number of units at the lowest unit price; **Low buyout** is their combined buyout. Stock movement compares the previous completed scan.
+Use **All items** to see current modifier prices before enough history exists. **Filters** opens the extra controls; applying them restores the larger list. Older item-wide prices cannot identify a modifier’s movement. Use **All items** to browse today’s modifier prices. Signals use each modifier’s earlier priced days, rather than the market’s total saved-day count. **At low** is the number of units at the lowest unit price; **Low buyout** is their combined buyout. Stock movement compares the previous completed scan.
 
 Under **Filters → Rarity**, choose any combination of Poor, Common, Uncommon, Rare, Epic and Legendary, then Apply. Item names use their rarity colors before hover. The main window, ledger and farming report can open in combat; scans and live AH searches wait until combat ends.
 

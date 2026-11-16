@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.0 beta — Test revision 8 — 2026-11-15
+
+Same version and build: `1.3.0-beta / 2026-11-15-beta001`.
+
+- Stop duplicate/partial item replies from continually rebuilding Opportunities. Recheck usable search data before refreshing results.
+- Read market names and rarity independently of vendor metadata, and reuse visible-row data between refreshes.
+- Keep exact modifier names separate when native data is incomplete; never borrow a different modifier's title.
+- Add diagnostics for current modifiers, matching entries, missing history and other signal filters. Clarify why All items can show a variant before Resale has a signal.
+- Preserve completed scans and price history; the scan format is unchanged.
+
 ## 1.3.0 beta — Test revision 7 — 2026-11-15
 
 Same version and build: `1.3.0-beta / 2026-11-15-beta001`.

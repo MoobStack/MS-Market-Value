@@ -96,7 +96,8 @@ end)
 test("item replies do not restart an in-progress search and schedule one refresh",function()
     local w,A=world();scan(w,A,{{id=100,quality=2},{id=101,quality=3}})
     A.Market.Ensure("listed");local job=A.Market.job;local builds=A.Market.builds
-    A.Market.waiting[100]=true;A.Market.OnItemInfo(100)
+    A.MarketMetadata.Await(100,link(100),nil,true);w.items[100]={quality=2}
+    A.Market.OnItemInfo(100);A.MarketMetadata.Tick(A.Market)
     A.Market.Ensure("listed");equal(A.Market.job,job);equal(A.Market.builds,builds)
     finish(A);truth(A.Market.metadataDirty)
     A.Market.Ensure("listed");finish(A);equal(A.Market.builds,builds+1)
@@ -119,7 +120,7 @@ test("generic modified names request missing data and enter the results without 
     equal(#A.Market.rows,0);truth(A.Market.reason:find("loading",1,true))
     A.Market.RequestVisibleInfo({});truth(w.loadRequests>0)
     w.items[100]={name="Imposing Gloves of the Owl",quality=2,classID=4}
-    w:event("GET_ITEM_INFO_RECEIVED",100,true);analyze(A)
+    w:event("GET_ITEM_INFO_RECEIVED",100,true);A.Market.Tick();analyze(A)
     equal(#A.Market.rows,1);equal(A.Market.rows[1].name,"Imposing Gloves of the Owl")
 end)
 

@@ -28,7 +28,7 @@ Under **Filters → Rarity**, check Poor, Common, Uncommon, Rare, Epic or Legend
 
 Matching random-suffix series stay separate. With enough observations, recent-versus-older median context helps show a broader trend. Results are capped at 500 and publish together; unchanged settings reuse cached analysis.
 
-**Updating results** is active preparation. The previous list remains visible until the new list is ready. Work is spread across frames. Current scans reuse their variant index between filter changes, and keyword/supply checks run before historical valuation. Incoming item names queue one refresh instead of repeatedly restarting that work.
+**Updating results** is active preparation. The previous list remains visible until the new list is ready. Work is spread across frames. Current scans reuse their variant index between filter changes, and keyword/supply checks run before historical valuation. Item replies only queue another analysis when usable name, rarity or item-class data changes. Duplicate replies and unrelated missing vendor data do not restart the search. Visible names/colors are reused between refreshes.
 
 Left-click a result to open native live listings; right-click for details. **Watch selected** creates or edits its target. Live navigation requires an auctioneer, no combat and usable current results. Native Buy filters still apply.
 
@@ -40,6 +40,8 @@ Random suffixes and bonus-based variants have independent series. A specific mod
 
 **All items** shows current prices even without enough history. The list shows 12 rows with a scrollbar and mouse wheel, keeping at most 500 matching results. **Filters** opens the extra fields; applying them returns to the larger list. Keyword search is always visible. Select or hover a shortened name to see the full modifier.
 
-With only one precise daily scan, use All items and search the base name or `of the`. The default Resale view needs three earlier priced UTC days **for that exact variant**. No variants were removed; an old item-wide day cannot establish which modifier moved.
+Use **All items** and search `pants` to browse current matching modifiers immediately. This still respects keyword, rarity and supply filters. With only one precise daily scan, signals may be absent. The default Resale view needs three earlier priced UTC days **for that exact variant**. The saved-day count at the top is market-wide. Eleven saved days do not imply eleven prices for every modifier; an old item-wide day cannot establish which modifier moved. Even with enough days, Resale still requires its return, profit and movement targets.
 
 Clicking a bonus-based variant uses the native sample link to find its exact Buy key. If details are still loading, the addon waits briefly rather than guessing a different modifier. You still choose and purchase listings yourself.
+
+If results are missing, diagnostics now show current/modified variant counts, matching variants, entries needing history and entries excluded by the other signal filters. Test revision 8 uses the existing scan format and keeps saved data.

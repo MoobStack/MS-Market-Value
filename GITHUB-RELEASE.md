@@ -1,15 +1,15 @@
-# MS Market Value 1.3.0 beta — Test revision 7
+# MS Market Value 1.3.0 beta — Test revision 8
 
 Same testing version and build: `1.3.0-beta / 2026-11-15-beta001`.
 
-- Add Classic fallback coverage for 4,395 creatures. Forever community rates take priority; personal drops fill remaining gaps. Classic rows are marked as unverified for Forever.
-- Center the farming display, add space between labels and amounts, and add width and position-lock settings.
-- Reorganize the session report around session value, active time, session average, recent rate and a located five-minute farming peak. Quest rewards cannot set the peak.
-- Resume idle sessions on combat entry or your own loot. Keep time active during combat and restart the idle countdown afterward. Manual pauses stay paused.
-- Keep reference data packed and recent rate history bounded. Existing saved data carries forward.
+- Fix repeated Opportunities refreshes after searches and filter changes. Duplicate item replies no longer trigger another full analysis.
+- Use available names and rarity even when vendor metadata is missing. Cache visible-row data and keep background checks bounded.
+- Preserve exact modifier identities and add diagnostics for history gaps and other signal filters.
 
-Close WoW, replace the addon folder using the Clean ZIP and keep SavedVariables. Disable older reference pilots. `/msmv diagnostics` should show **Test revision: 7**.
+Use **All items** with `pants` to browse current matching variants. **Resale** requires three earlier priced UTC days for each exact variant by default, plus its profit and movement targets. The market-wide saved-day count is not each variant’s sample count.
 
-Check the display at your normal UI scale, change its width/lock, let it idle, then resume by combat and by looting. Compare session/recent rates after a longer session and confirm a large quest reward leaves the farming peak unchanged. Hover Elder Mottled Boar to check the new Classic fallback.
+Close WoW and replace the addon folder using the Clean ZIP. Keep SavedVariables. No scan/history reset is needed. `/msmv diagnostics` should show **Test revision: 8**.
 
-This is a test build; no official 1.3 release has been published.
+Apply several keyword/rarity changes, wait for results, and check that build/publication counts settle. Compare All items with Resale. If a variant is still missing, include diagnostics showing the current-modifier and history/filter counts.
+
+This remains a test build; no official 1.3 release was published.

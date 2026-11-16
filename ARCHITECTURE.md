@@ -83,3 +83,9 @@ Combat entry also resumes automatic idle. Combat keeps time active; exit starts 
 `Util.Coins` is for display; `Util.Money` remains plain for chat/clipboard/diagnostics. Opportunities caches each row’s native link/quality color. Quest-only filtering changes the displayed candidates, not saved hit counts.
 
 Packed references use a source-to-string index with sorted item-ID deltas, integer hits, shared sample totals and optional quest metadata. No global reverse index or full-table expansion is built. The eight-source cache also caps at 4,096 decoded rows. One source may contain up to 4,096 rows; oversized sources are rejected instead of silently truncated. Only a few relevant missing names are requested, with a 128-ID index and a 20-per-10-second request cap.
+
+## Market item replies
+
+Market/Metadata reads only public name, rarity and item class, independently of vendor/equip metadata. Native replies enqueue bounded deferred checks rather than calling item APIs inside callbacks. Only a changed projected record can invalidate ranking; completed visible rows reuse their metadata. Exact variant links are checked before adopting a native title, and item-ID fallbacks never supply another modifier's name.
+
+Each pass watches at most 256 item IDs and 1,024 exact-link records. Checks process at most eight records per frame with a 1 ms cooperative allowance inside the analysis budget. Duplicate replies coalesce; partial data does not prevent publication. A reply arriving during a multi-frame check is retained, and adding an unresolved variant reopens its item-ID watch. These tables are session-local and do not enlarge SavedVariables.

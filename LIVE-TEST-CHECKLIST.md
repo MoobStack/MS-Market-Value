@@ -1,8 +1,11 @@
 # Live checks
 
-Test **1.3.0-beta / 2026-11-15-beta001**, revision **7**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
+Test **1.3.0-beta / 2026-11-15-beta001**, revision **8**. Keep SavedVariables when updating. Include `/msmv diagnostics`, the action taken and any error text when reporting a problem.
 
 Check the new features first:
+
+- **Search refresh:** apply `pants`, then another keyword and several rarity filters. Results should finish and build/publication counters settle. Check that scrolling/selection stay stable after completion.
+- **Modifier history:** compare All items and Resale for `pants` or `of the`. All items should show current matching variants immediately. Resale needs each variant's earlier days plus its signal targets. Record the new modifier/history/filter diagnostics if an expected listing is absent.
 
 - **Bundled data:** disable the old pilot. Check diagnostics for 1,876 Everloot rates / 243 sources/modes and 4,395 Classic creatures. Hover Elder Mottled Boar for a marked Classic list. Switch to Personal drops, collect loot and confirm counts grow independently. Reset a small personal sample and verify the base remains.
 - **Display:** check centered Average/Session columns and their spacing. Try widths 240, 320 and 520 at normal UI scale. Lock/unlock and drag; check click actions still work when locked. Hide the total, reload and confirm width, lock and compact layout persist. Check large coin amounts and Idle/Paused text fit.

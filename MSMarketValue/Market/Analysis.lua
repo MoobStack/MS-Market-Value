@@ -1,5 +1,5 @@
 local _, A = ...
-local U, D, H = A.Util, A.DB, A.History
+local U, D, H, I = A.Util, A.DB, A.History, A.MarketMetadata
 local M = { rows = {}, builds = 0, publications = 0 }
 A.Market = M
 local MAX_PRICE, MAX_RESULTS, MAX_ITEMS = 1000000000000, 500, 50000
@@ -60,6 +60,7 @@ function M.Clear(reason)
     M.job, M.rows, M.snapshot, M.reason, M.ready = nil, {}, nil, reason, true
     M.source, M.signature, M.examined, M.eligible = nil, nil, 0, 0
     M.variantIndex=nil
+    M.coverage=nil;I.Begin()
 end
 
 function M.Ensure(view, sort, force)
@@ -82,7 +83,7 @@ function M.Ensure(view, sort, force)
     force=force or M.metadataDirty;M.metadataDirty=nil
     if not force and M.source == snapshot and M.historyRevision == H.revision and M.signature == signature then return end
     M.source, M.historyRevision, M.signature = snapshot, H.revision, signature
-    M.waiting,M.waitOrder,M.waitCursor={},{},1
+    I.Begin()
     local settings = {}
     for name, value in pairs(D.Settings()) do if U.String(name) and string.sub(name, 1, 6) == "market" then settings[name] = value end end
     local day, records = math.floor(snapshot.startedAt / 86400), {}
@@ -103,7 +104,9 @@ function M.Ensure(view, sort, force)
     for word in string.gmatch(string.lower(settings.marketSearch),"%S+") do words[#words+1]=word end
     M.job = { snapshot = snapshot, records = records, settings = settings, maps = maps, vendorKnown = A.Vendor.KnownItems(),
         mapIndex = 1, variants = index and index.variants or {}, currentVariants=index and index.currentVariants or {},
+        currentVariantCount=index and index.count or 0,modifierCount=index and index.modifiers or 0,
         phase = index and "prices" or "variants", words=words, rows = {}, examined = 0, eligible = 0,
+        coverage={keywordMatches=0,matchingVariants=0,needsHistory=0,filteredSignals=0},
         view = view, sort = sort, day = day, started = U.Mono() }
     M.ready, M.reason = false, nil
     M.builds = M.builds + 1
@@ -114,14 +117,13 @@ function M.QualityAllowed(mask,quality)
     return U.Number(mask,0,63,true) and U.Number(quality,0,5,true) and math.floor(mask/2^quality)%2==1
 end
 
-local function WaitForInfo(id)
-    if M.waiting and not M.waiting[id] and #M.waitOrder<256 then
-        M.waiting[id]=true;M.waitOrder[#M.waitOrder+1]=id
-    end
-end
-
 local function DisplayName(row,item)
-    local name=U.ItemName(row.link,item and item.name,row.scannedName) or A.Crafting.MaterialName(row.id)
+    local name=U.ItemName(row.link,item and item.name,row.scannedName)
+    if not name then
+        -- An item-ID lookup can return another random modifier's title.
+        if row.hasBonuses or row.suffix and row.suffix~=0 then return "Item " .. row.id .. " (modifier details unavailable)" end
+        name=A.Crafting.MaterialName(row.id)
+    end
     if row.itemWide then return name .. " (item-wide; rescan)" end
     if row.suffix and row.suffix~=0 and not U.LinkName(row.link) then return name .. " (variant " .. row.suffix .. ")" end
     return name
@@ -129,17 +131,15 @@ end
 
 function M.RequestVisibleInfo(rows)
     for _,row in ipairs(rows) do
-        local item=A.Valuation.ItemInfo(row.link)
-        row.quality=U.ItemQuality(row.link,row.scannedQuality or (item and item.quality))
-        row.r,row.g,row.b=U.ItemColor(row.link,row.quality)
-        if not item or row.quality==nil then A.Drops.RequestName(row.id) end
-        if item then row.name=DisplayName(row,item) end
+        if not row.infoChecked then
+            local item=I.Read(row.link,row.variantKey)
+            row.quality=U.ItemQuality(row.link,row.scannedQuality or (item and item.quality))
+            row.r,row.g,row.b=U.ItemColor(row.link,row.quality)
+            row.name=DisplayName(row,item);row.infoChecked=true
+            if not item or not item.complete or row.quality==nil then I.Await(row.id,row.link,item,false) end
+        end
     end
-    local count=M.waitOrder and #M.waitOrder or 0
-    for _=1,math.min(20,count) do
-        local id=M.waitOrder[M.waitCursor];M.waitCursor=M.waitCursor%count+1
-        if M.waiting[id] then A.Drops.RequestName(id) end
-    end
+    I.Request()
 end
 
 local function Identity(key, variant)
@@ -225,25 +225,25 @@ local function Evaluate(job, key, entry, variant)
     -- can gain its suffix when native data loads, so resolve those first.
     local linkedName=U.LinkName(entry.link)
     if #job.words>0 and variant and suffix==0 and not bonuses and linkedName and not Matches(job.words,linkedName) then return end
-    local item=A.Valuation.ItemInfo(entry.link or id)
+    local item=I.Read(entry.link or id,variant and key or nil)
     local quality=U.ItemQuality(entry.link or id,scannedQuality or (item and item.quality))
-    if not item and scannedQuality==nil and s.marketQuality~=63 then WaitForInfo(id) end
+    if not item and scannedQuality==nil and s.marketQuality~=63 then I.Await(id,entry.link or id,item,true) end
     if quality==nil and s.marketQuality~=63 then
-        WaitForInfo(id);job.qualityMissing=(job.qualityMissing or 0)+1;return
+        I.Await(id,entry.link or id,item,true);job.qualityMissing=(job.qualityMissing or 0)+1;return
     end
     if not M.QualityAllowed(job.settings.marketQuality,quality) then return end
     local scannedName=display and U.String(display[2]) and display[2] or nil
     local name=U.ItemName(entry.link,item and item.name,scannedName)
     if #job.words>0 then
-        if not name then WaitForInfo(id);return end
+        if not name then I.Await(id,entry.link or id,item,true);return end
         if not Matches(job.words,name) then
-            if not item and (variant and (suffix~=0 or bonuses) or not linkedName and not scannedName) then
-                WaitForInfo(id);job.nameMissing=(job.nameMissing or 0)+1
+            if (not item or not item.complete) and (variant and (suffix~=0 or bonuses) or not linkedName and not scannedName) then
+                I.Await(id,entry.link or id,item,true);job.nameMissing=(job.nameMissing or 0)+1
             end
             return
         end
     end
-    local equipment=item and (item.classID==2 or item.classID==4) and item.quality>=2
+    local equipment=item and (item.classID==2 or item.classID==4) and quality and quality>=2
     local legacyEquipment=(equipment and (not U.String(entry.link) or not variant)) or
         (job.snapshot.variantFormat~=2 and not U.String(entry.link))
     local values = {}
@@ -251,9 +251,16 @@ local function Evaluate(job, key, entry, variant)
         local value = (variant and record.variants or record.prices)[key]
         if Price(value) and (not equipment or suffix~=0 or record.variantFormat==2) then values[#values + 1] = value end
     end
+    local coverage=job.coverage
+    coverage.keywordMatches=coverage.keywordMatches+1
+    if variant and (suffix~=0 or bonuses) then coverage.matchingVariants=coverage.matchingVariants+1 end
+    if #values<s.marketMinDays or legacyEquipment then coverage.needsHistory=coverage.needsHistory+1 end
     local row=not legacyEquipment and M.Evaluate(entry.low, values, job.settings) or nil
     if job.view=="listed" and not row then row={current=entry.low,buy=math.ceil(entry.low),days=#values,needsHistory=true} end
-    if not row or not Include(job, row) then return end
+    if not row or not Include(job, row) then
+        if #values>=s.marketMinDays and not legacyEquipment then coverage.filteredSignals=coverage.filteredSignals+1 end
+        return
+    end
     row.id, row.suffix, row.key, row.variantKey, row.hasBonuses = id, suffix, tostring(key), variant and key or nil,bonuses
     row.itemWide=legacyEquipment
     row.link = U.String(entry.link) and U.ItemID(entry.link) == id and entry.link or
@@ -274,27 +281,31 @@ local function Publish(job)
     M.rows, M.snapshot, M.settings = job.rows, job.snapshot, job.settings
     M.examined, M.eligible, M.truncated = job.examined, job.eligible, job.truncated
     M.ready, M.job = true, nil
+    M.coverage=job.coverage
     M.publications = M.publications + 1
     if job.metadataDirty then M.metadataDirty=true end
     M.reason = job.reason or (((job.qualityMissing or 0)>0 or (job.nameMissing or 0)>0) and "Some item names or rarity data is loading. Results update when it arrives.") or
         (#M.rows == 0 and (job.view=="listed" and "No current items match these filters." or
-        ("No matching signals. Use All items for current variants; signals need " .. job.settings.marketMinDays .. " earlier priced UTC days per variant.")) or nil)
+        ("No matching signals. Use All items for current variants; signals need " .. job.settings.marketMinDays .. " earlier priced UTC days per variant.")) or
+        (job.coverage.needsHistory>0 and (job.coverage.needsHistory .. " matches need " .. job.settings.marketMinDays ..
+            " earlier priced UTC days. All items shows current prices.")) or nil)
 end
 
 function M.Tick()
     if U.Combat() or not D.data or A.disabledReason then return end
+    local start = debugprofilestop and debugprofilestop() or 0
+    I.Tick(M)
     local job = M.job
     if not job then return end
     if M.key ~= U.MarketKey() then M.Clear("Market changed; checking the new market."); return end
     if job.snapshot ~= D.Snapshot() or M.historyRevision ~= H.revision then M.job = nil; return end
     if not Fresh(job.snapshot) then M.Clear("The saved scan is stale. Complete a fresh AH scan."); return end
-    local start = debugprofilestop and debugprofilestop() or 0
     for _ = 1, 2000 do
         if job.phase == "variants" then
             local map = job.maps[job.mapIndex]
             if not map then
                 M.variantIndex={snapshot=job.snapshot,historyRevision=M.historyRevision,lookback=job.settings.marketLookback,
-                    variants=job.variants,currentVariants=job.currentVariants}
+                    variants=job.variants,currentVariants=job.currentVariants,count=job.currentVariantCount,modifiers=job.modifierCount}
                 job.phase, job.cursor, job.mapIndex = "prices", nil, 1
             else
                 local key = next(map, job.cursor)
@@ -302,10 +313,13 @@ function M.Tick()
                 if key == nil then job.mapIndex = job.mapIndex + 1
                 else
                     job.prepared = (job.prepared or 0) + 1
-                    local id = Identity(key, true)
+                    local id,suffix,bonuses = Identity(key, true)
                     if id and job.snapshot.prices[id] ~= nil then
                         job.variants[id] = true
-                        if job.mapIndex==1 then job.currentVariants[id]=true end
+                        if job.mapIndex==1 then
+                            job.currentVariants[id]=true;job.currentVariantCount=job.currentVariantCount+1
+                            if suffix~=0 or bonuses then job.modifierCount=job.modifierCount+1 end
+                        end
                     end
                     if job.prepared >= 500000 then
                         job.reason = "History is too large for this analysis. Reduce the lookback window."
@@ -331,17 +345,11 @@ end
 
 function M.Name(row)
     if row.name then return row.name end
-    local value = A.Valuation.ItemInfo(row.link)
+    local value = I.Read(row.link,row.variantKey)
     row.name = DisplayName(row,value)
     return row.name
 end
 
 function M.OnItemInfo(id)
-    if M.waiting and M.waiting[id] then M.waiting[id]=nil;M.metadataDirty=true end
-    for _, row in ipairs(M.rows) do if row.id == id then
-        row.name = nil
-        local item=A.Valuation.ItemInfo(row.link)
-        row.quality=U.ItemQuality(row.link,row.scannedQuality or (item and item.quality))
-        row.r,row.g,row.b=U.ItemColor(row.link,row.quality)
-    end end
+    I.OnItemInfo(id)
 end

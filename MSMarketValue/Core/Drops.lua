@@ -12,7 +12,7 @@ function P.RequestName(id)
     if not ID(id) or not C_Item or type(C_Item.RequestLoadItemDataByID)~="function" then return end
     local now=U.Mono()
     P.nameLoads,P.nameQueue=P.nameLoads or {},P.nameQueue or {}
-    if P.nameLoads[id] and now-P.nameLoads[id]<60 then return end
+    if P.nameLoads[id] and now-P.nameLoads[id]<60 then return true end
     if not P.nameWindow or now-P.nameWindow>=10 then P.nameWindow,P.nameCount=now,0 end
     if P.nameCount>=20 then return end
     if not P.nameLoads[id] then
@@ -21,6 +21,7 @@ function P.RequestName(id)
     end
     P.nameLoads[id]=now;P.nameCount=P.nameCount+1
     U.Call(C_Item.RequestLoadItemDataByID,id)
+    return true
 end
 
 function P.SourceID(guid)
