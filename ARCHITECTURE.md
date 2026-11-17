@@ -1,6 +1,6 @@
 # Architecture
 
-MS Market Value 1.3.1-beta uses Lua 5.1, Interface 16001 and SavedVariables schema 1.
+MS Market Value 1.3.1 uses Lua 5.1, Interface 16001 and SavedVariables schema 1.
 
 | Area | Responsibility |
 |---|---|
