@@ -1,7 +1,17 @@
-# MS Market Value 1.3.1 test distribution
+# Publish MS Market Value 1.3.1
 
-The current checkout is 1.3.1-beta, test revision 7. It is not ready to publish as a final GitHub release.
+Use tag **v1.3.1**, title **MS Market Value 1.3.1**, and [RELEASE-NOTES-v1.3.1.md](RELEASE-NOTES-v1.3.1.md) as the release description. Publish it as a normal release.
 
-Share the Clean ZIP for installation and the Complete Package for source and history. Use [the test notes](RELEASE-NOTES-v1.3.1-beta-test7.md) for changes and in-game checks. Keep the published 1.3.0 release and tag intact.
+The packages are built from the clean, tagged release commit. Installers should use the Clean ZIP; the Complete Package contains source, documentation and Git backups. Keep previous releases and tags intact.
 
-See [the workflow](GIT-WORKFLOW.md) when preparing the next test or the eventual stable release.
+With GitHub CLI authenticated, run from the release checkout:
+
+```bash
+git fetch --no-tags origin main
+git push --atomic origin main refs/tags/v1.3.1
+gh release create v1.3.1 dist/MoobStack-MSMarketValue-v1.3.1-* \
+  --verify-tag --title 'MS Market Value 1.3.1' \
+  --notes-file RELEASE-NOTES-v1.3.1.md --latest
+```
+
+Place the supplied release files in `dist` first. If the release already exists, review its tag and assets before uploading; do not overwrite them blindly.

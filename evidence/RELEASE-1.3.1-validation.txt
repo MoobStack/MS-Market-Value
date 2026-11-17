@@ -1,0 +1,964 @@
+.BUNDLED_REFERENCE_BENCHMARK sources=243 rows=1876 packed_kib=34.12 with_cache_kib=54.11 cached_sources=8 max_decode_ms=0.917
+....CLASSIC_REFERENCE_BENCHMARK rows=1284783 packed_kib=1951.14 with_cache_kib=1957.62 max_source_rows=564 max_decode_ms=720.905
+..................
+----------------------------------------------------------------------
+Ran 23 tests in 72.689s
+
+OK
+PASS saved data is untouched until ADDON_LOADED
+PASS modern startup installs the tooltip callback and scan observer
+PASS scan reads zero-based first and last rows, normalizes stacks and excludes bids and sold auctions
+PASS a complete new scan replaces all previous items without historical carryover
+PASS a completed empty-market response replaces the previous snapshot
+PASS starting and partly processing a scan does not alter the old snapshot
+PASS processing yields within the row budget
+PASS processing also yields on its CPU budget
+PASS delayed item data retries without double-counting or repeated load requests
+PASS unresolved item data timeout keeps the old snapshot
+PASS request timeout and a late response keep the old snapshot
+PASS auction-house close pauses safely
+PASS combat pauses a scan and retains public tooltip prices
+PASS another addon's replication request invalidates the staged snapshot
+PASS changed replication count invalidates the staged snapshot
+PASS same-count replication events continue processing without restarting or double-counting
+PASS replication updates accelerate pending data retries without resetting a partial retry pass
+PASS changed or unreadable counts in additional replication events keep the old snapshot
+PASS late replication events after completion do not reopen or modify the saved scan
+PASS switching realm does not expose a different market's prices
+PASS changing market during a scan prevents commit
+PASS malformed auction quantities fail without replacing the snapshot
+PASS negative buyouts and fractional item IDs are refused
+PASS oversized and restricted replication counts are refused
+PASS restricted auction fields are neither compared nor formatted
+PASS missing auction links retain a labeled item-wide price
+PASS server readiness, combat, and auction availability gate requests
+PASS a client request refusal leaves prices and cooldown intact
+PASS full-scan cooldown persists through an independently loaded addon session
+PASS full saved-data serialization restores prices in a new session
+PASS future schemas remain untouched and disable this build
+PASS unsupported clients are disabled before saved data is initialized
+PASS item-wide and exact signed-suffix prices are distinguishable
+PASS green armor and weapons have distinct probability-weighted values
+PASS a missing possible material prevents a complete DE total
+PASS disenchant estimates use item level rather than required character level
+PASS all green bracket boundaries have exhaustive, normalized outcomes
+PASS rare and epic profiles retain quantity and probability distinctions
+PASS white gear, bags, shirts, fishing poles and excluded items have no DE estimate
+PASS unknown item-level brackets are not extrapolated
+PASS duplicate item-tooltip callbacks append only one section
+PASS restricted item IDs and tooltip data are ignored without inspecting them
+PASS forbidden and unregistered tooltips receive no addon lines
+PASS uncached item tooltips keep AH information and mark vendor/DE as loading
+PASS stale prices are still available and explicitly marked
+PASS UI exposes all settings and generates copyable diagnostics
+PASS slash commands use the loaded addon and unknown commands provide help
+PASS money formatting distinguishes missing, zero, sub-copper, silver and gold values
+PASS empty normalized realm and zero native region use public realm and login portal
+PASS missing or failing normalized realm API falls back without an error
+PASS named regions and modern or legacy portal values identify the same market
+PASS native numeric region and existing normalized realm keys take precedence
+PASS falling back to a matching portal retains build001 snapshots and reload persistence
+PASS named test portals do not share region or other portal prices
+PASS unavailable market identity consumes no request or cooldown and explains the source
+PASS restricted and throwing market APIs are reported without exposing values
+PASS a portal change during a fallback scan preserves the original snapshot
+PASS opening the AH adds two tabs and keeps the native Buy pane selected
+PASS AH tab opens working scan controls and native tabs restore the original pane
+PASS shared tab library coordinates another addon without changing Blizzard tab indices
+PASS delayed AH frame loading installs the tab after the SHOW event
+PASS AH installation retries on a later tick when the native frame becomes visible
+PASS legacy automatic-popup setting is retained but does not open or select settings
+PASS reopening the auction house reuses the same tab and defaults to Buy
+PASS slash menu moves controls between the AH tab and manual window
+PASS combat defers tab creation and hides addon controls until out of combat
+PASS first-hover item-cache refresh never rebuilds comparison or custom tooltips
+PASS getter-backed primary item refresh updates loaded values without duplicate sections
+PASS primary refresh requires readable getter-backed non-append item information
+PASS primary refresh skips combat and forbidden frames and resists recursive refresh
+PASS primary refresh recovers after failing native getters or rebuilds
+PASS Forever beta region 90 and PvP reporting hosts share one ruleset cache
+PASS Normal and PvP rulesets and unqualified faction markets remain isolated
+PASS reporting-host changes during a scan remain valid and ruleset changes preserve previous prices
+PASS ruleset snapshots persist across an independent session and a different reporting host
+PASS legacy realm snapshots are kept but never promoted into detected ruleset caches
+PASS ruleset detection uses the native hardcore API and bounded reporting aliases
+PASS restricted faction blocks a ruleset request and restricted hardcore values are not inspected
+PASS bag totals use the hovered slot count and never total ownership or maximum capacity
+PASS matched item GUIDs identify one actual stack and mismatched GUIDs use a verified bag slot
+PASS owned equipment contexts provide quantities while target and child contexts stay each-only
+PASS generic item links do not acquire an arbitrary owned quantity
+PASS restricted or malformed quantity contexts keep usable each-only prices
+PASS combat permits public quantity reads while forbidden frames stay protected
+PASS same-item stack changes refresh totals after native clear without duplicate addon sections
+PASS stack totals multiply unrounded unit prices and preserve exact suffix selection
+PASS DE expected each and stack values share the price block before spaced per-item materials
+PASS unpriced DE materials keep the full total unavailable and stack-scale only the labeled subtotal
+PASS display options and zero vendor values retain their meaning in a stack price block
+PASS beta upgrade retains the completed beta003 market, settings, exclusions and cooldown without rescanning
+PASS paused processing resumes during cooldown with one request and no duplicate rows
+PASS a response arriving while paused is staged and committed only after resume
+PASS an empty response while paused replaces prices only on resume
+PASS waiting resume makes no duplicate request and later server data completes
+PASS resuming midway through a pending retry preserves its accepted rows
+PASS missing item data can be picked up after the resolution timeout
+PASS combat and AH close require safe reopen before resuming the same buffer
+PASS a paused scan rejects a replaced buffer and retains the full-scan cooldown
+PASS another addon invalidates a paused same-count buffer
+PASS paused same-count readiness events retain cursor and market changes prevent resume
+PASS pause resume and discard commands expose the intended lifecycle
+PASS scan controls enable resume while cooldown is active
+PASS combat item tooltips retain vendor AH and DE values without duplicates
+PASS crafting shows total raw cost profit and return on cost
+PASS crafting losses are negative and percentage uses material cost
+PASS crafting multi-output yield scales sale and unit costs conservatively
+PASS quotes add configurable markup once without rounding material inputs
+PASS missing material prices keep profit and quote unavailable
+PASS missing output price retains a complete material quote
+PASS direct enchants and other services receive material quotes without invented sale values
+PASS required alternative reagents are priced only after complete selection
+PASS selected optional materials are included and unselected slots are omitted
+PASS a fixed reagent is costed in full when only part is owned
+PASS malformed or restricted reagent choices never produce a profit
+PASS currencies and variable reagent quantities are not assigned fictitious market values
+PASS stale and mismatched selected reagent slots are rejected
+PASS quality output recipes require selection for a ranking price
+PASS unlearned recipes and non-fixed salvage or recraft recipes are excluded
+PASS zero material cost has no divided-by-zero return percentage
+PASS profit catalog is batched and ranks only profitable fully priced recipes
+PASS profit and return sorting use separate metrics with deterministic ties
+PASS catalog ignores duplicate and unlearned IDs without changing profession filters
+PASS new complete prices and profession changes rebuild the catalog
+PASS selected recipe and selected optional reagents refresh without changing native state
+PASS native crafting panel displays values and quote markup and preserves close behavior
+PASS profit recipe buttons select through the native API without crafting
+PASS crafting closes with professions and defers combat work
+PASS unsupported native profession APIs report cleanly and keep auction prices
+PASS release diagnostics identify the stable build and crafting support
+PASS filtered native catalog fallback is labeled and leaves the user's filters intact
+PASS public combat prices survive inaccessible quantities as each-only values
+PASS crafting output values outside the exact copper range remain quote-only
+PASS a missing selected output quality cannot substitute a generic recipe output
+PASS native output hyperlinks identify an item when the output ID is not yet cached
+PASS 1.0.0 settings and snapshot survive beta upgrade with a safe quote default
+PASS public auction prices do not wait for cosmetic item information
+PASS closing and reopening after copying resumes with an empty native buffer
+PASS a local copy needs no native auction row getters to resume
+PASS paused copying protects unread rows without changing completed or staged prices
+PASS an early buffer loss keeps the incomplete scan and cooldown
+PASS a temporarily absent buffer can resume without another request
+PASS lost-buffer restart waits for the cooldown and never mixes partial prices
+PASS same-count replacement rows cannot be merged with an incomplete local copy
+PASS a competing scan cannot overwrite a complete local copy
+PASS resolved copied rows survive native buffer loss during a paused retry
+PASS copying respects its row and CPU budgets
+PASS the reported 98455-row scan can copy and resume without loading item names
+PASS item-data event floods do not rebuild or empty a completed profitability list
+PASS a rebuilding profitability list publishes only the complete replacement
+PASS repeated native list updates leave identical recipe valuations and builds stable
+PASS new recipe IDs and newly learned recipes refresh a stable catalog
+PASS loading a material name updates labels without repricing or reordering recipes
+PASS the profit page retains the source timestamp until new valuations publish
+PASS a profession change does not show the previous profession's recipe list
+PASS service quotes use the requested concise ea format
+PASS native recipe hyperlinks are preserved verbatim in quotes
+PASS missing restricted malformed or failing recipe links use a plain name
+PASS fixed multi-item output quotes charge per item and round only the displayed total
+PASS variable or unknown output keeps an unambiguous per-craft quote
+PASS Insert in chat opens a native linked draft without sending it
+PASS the legacy native chat opener remains supported when available
+PASS a recipe or markup change cannot leave a focused old quote in the UI
+PASS missing material prices disable the chat draft button
+PASS diagnostics distinguish copied progress and stable catalog publications
+PASS copying checks the retained row before a lost partial buffer returns
+PASS a changed signed suffix is rejected before resuming an incomplete copy
+PASS a new market clears the previous profitability list while rebuilding
+PASS a synchronous item-name event cannot recurse or restart the catalog
+PASS a competing request during item loading safely abandons the native copy
+PASS history defaults to thirty days with manual crafting and profitable-only views
+PASS one completed scan provides a one-day unit-price average
+PASS the latest same-day scan replaces prices rather than accumulating samples
+PASS a same-day replacement removes items absent from the final scan
+PASS an older completed scan cannot overwrite the latest history for a day
+PASS daily averages weight each available day once despite different auction counts
+PASS missing listings and missing calendar days are not zero-valued samples
+PASS a previous daily price stays historical when the item disappears from current prices
+PASS a completed empty daily scan is retained without inventing prices
+PASS a same-day empty scan removes that day's earlier sample
+PASS bid-only and sold rows never supply historical buyout values
+PASS partial and paused scans do not replace historical prices
+PASS failed scans and invalid commits keep history unchanged
+PASS history uses the scan request's UTC day when completion crosses midnight
+PASS thirty-day retention keeps today plus the preceding twenty-nine days
+PASS shortening retention prunes older days immediately and keeps current prices
+PASS increasing retention cannot restore pruned daily history
+PASS retention rejects zero fractions out-of-range and restricted inputs
+PASS UTC day rollover prunes expired history without another scan
+PASS history keeps factions regions and Forever rulesets separate
+PASS daily history pruning refreshes an already visible primary tooltip
+PASS history pruning defers primary tooltip rebuilds until combat ends
+PASS random suffix averages never blend other variants into a matching series
+PASS mismatched item links cannot choose another item's historical variant
+PASS historical unit prices retain fractions and stack multiplication precedes rounding
+PASS large valid historical prices average without an overflowing sum
+PASS upgrading imports only the last existing complete snapshot without a server request
+PASS migration skips incomplete expired and differently keyed saved snapshots
+PASS history survives a saved-table serialization and independent addon load
+PASS invalid saved retention values use the thirty-day default
+PASS malformed and future history roots are preserved without disabling current prices
+PASS malformed daily records and future timestamps do not enter the average
+PASS saved historical prices discard restricted invalid and noncanonical keys
+PASS history stores numeric lows without retaining auction rows sellers or mutable price records
+PASS average cache invalidates on completed replacement and retention change
+PASS average caching stays bounded when many different missing items are queried
+PASS tooltips order vendor history recent scan and disenchant in the price block
+PASS the historic-average display can be disabled without deleting collected data
+PASS history-only tooltips remain useful while unpriced items have no empty section
+PASS historical averages decorate public combat item tooltips once
+PASS item-wide history fallback is visibly labeled
+PASS settings expose retention and auto-open with working category buttons
+PASS retention Apply validates entries prunes data and preserves focused input
+PASS new profession sessions stay closed by default and expose a top toggle
+PASS auto-open settings survive loading and enable opening on the next profession session
+PASS the profession toggle stays above Forever's raised crafting page
+PASS the manual toggle clears Forever's level 500 border and level 510 title
+PASS the profession toggle follows changes to header levels and strata
+PASS manual opening needs neither an auto-open setting nor a selected priced recipe
+PASS switching to the profession book immediately hides the profits window and toggle
+PASS replacing the native page reuses and reanchors the toggle without stale hide hooks
+PASS unchanged profession refreshes do not create more controls or anchors
+PASS a missing native close button uses a guarded title-bar anchor
+PASS crafting diagnostics report manual visibility and actual header levels
+PASS restricted header values are neither compared nor formatted by controls or diagnostics
+PASS a forbidden profession page cannot create a manual toggle
+PASS direct crafting updates in combat cannot create manual controls
+PASS manual close stays closed through refreshes even when auto-open is enabled
+PASS the crafting slash command opens a manually configured window on first use
+PASS craft toggling in combat cannot show or change native UI
+PASS all-recipes ranking includes losses break-even and unknown values last
+PASS all-recipes return sorting places undefined percentages after known losses
+PASS unknown recipe values sort deterministically by name and ID
+PASS all-recipes mode shows service quotes without inventing auction profitability
+PASS show-all button updates row counts pages and red negative values without a rebuild
+PASS unpriced all-recipes rows display unavailable rather than zero or no cost
+PASS all-recipes setting persists and ranking caches both filter modes independently
+PASS the all-recipes list keeps its completed snapshot during staged refreshes
+PASS history diagnostics report the release retention dates and crafting preferences
+PASS the 1.1.0-to-1.3.1 upgrade keeps prices history preferences and cooldown without scanning
+PASS normal vendor supplies are never silently priced from inflated auctions
+PASS vendor bundles use actual player cost per unit in crafts profits and quotes
+PASS vendor costing learns unlimited materials outside the common supplies list
+PASS vendor pricing remains fixed even when the current AH material price is cheaper
+PASS vendor material costs do not require any completed auction scan
+PASS limited stock barter and unavailable vendor items cannot understate craft costs
+PASS malformed and restricted merchant fields are rejected without arithmetic
+PASS legacy merchant tuples retain bundle quantities and player discounts
+PASS merchant updates invalidate completed recipe rankings only when prices change
+PASS vendor observations survive a save-table reload for the same player
+PASS vendor observations never transfer another character's discount
+PASS vendor observations remain isolated by market and faction
+PASS a changed reputation tier requires the player's refreshed vendor cost
+PASS week-old vendor observations are unavailable rather than falling back to AH
+PASS unknown vendor schemas are preserved without disabling existing market data
+PASS merchant learning is deferred in combat and stops when the merchant closes
+PASS crafting material rows visibly identify the vendor source
+PASS market targets include the configured AH cut and return on purchase cost
+PASS market analysis excludes today's repeat scans from the historical benchmark
+PASS one inflated historical day cannot manufacture a resale opportunity
+PASS missing days and missing listings do not count as zero-price observations
+PASS rising and falling views use significant moves from the prior median
+PASS minimum gain and return thresholds both govern resale filtering
+PASS fee changes can remove a thin spread rather than advertising a gross gain
+PASS target buy prices meet both user thresholds after conservative copper rounding
+PASS fractional unit prices round purchase cost upward and proceeds downward
+PASS stale saved scans cannot present current resale or trend signals
+PASS future-dated snapshots are unavailable rather than fresh market signals
+PASS matching suffix series are kept separate from cheaper variants
+PASS an unobserved suffix never borrows an item-wide historical price
+PASS the ordinary zero-suffix series is not mixed with randomized equipment
+PASS known vendor materials are excluded from inflated AH resale comparisons
+PASS market data and results never leak into another region or faction
+PASS market analyses publish once and do not rebuild on unchanged UI refreshes
+PASS history retention changes invalidate the market analysis cache
+PASS market filters rerun atomically while the prior complete list remains visible
+PASS a changed source snapshot interrupts unpublished work without partial publication
+PASS market processing respects the frame time budget and pauses in combat
+PASS ranked market results retain the best 500 rather than allocating every signal
+PASS a recent three-point median can expose a sustained shift separately from one ask
+PASS restricted invalid and zero prices never create market opportunities
+PASS opportunities register immediately before settings without changing native AH tabs
+PASS the market slash command opens at an auctioneer and makes no scan request
+PASS opportunities hide on combat and auction closure without duplicate tabs
+PASS market controls apply all validated targets together and display selected details
+PASS invalid market filters preserve existing settings and do not begin a rebuild
+PASS market inputs reject minimum history exceeding the chosen window
+PASS market filters survive reloads and invalid saved bounds restore clean defaults
+PASS diagnostics identify release vendor coverage and the market analysis
+PASS newly learned vendor materials keep their source when a discount changes
+PASS loading faction data late preserves valid saved vendor observations
+PASS tooltip average-cache eviction does not restart unchanged market analysis
+PASS resale applies price movement even when return and profit targets pass
+PASS exact movement thresholds include the boundary and reject smaller changes
+PASS zero disables the resale movement requirement without treating flat prices as trends
+PASS all signals respects movement while keeping directional alerts independent of resale profit
+PASS gold decimal parsing converts silver and copper exactly
+PASS gold entry rejects malformed fractional overprecision and out of bounds values
+PASS all copper settings round trip through the gold display at representative boundaries
+PASS saved silver-era profit targets retain their copper value and display as gold
+PASS typed filters survive focus changes and periodic refreshes until applied
+PASS escape restores only the focused unapplied field
+PASS invalid gold does not apply any settings or restart analysis
+PASS applying unchanged filters reuses the completed analysis
+PASS a left click opens one exact native item lookup without a full scan
+PASS equipment live lookups preserve the signed random suffix and item level
+PASS commodities open their native listings and use the commodity search context
+PASS right click and hover show details without issuing any item search
+PASS analysis refresh sorting and rechecking never launch live searches
+PASS throttled lookups wait for another player click without queuing a search
+PASS a repeated click cannot immediately duplicate the item lookup
+PASS combat and a closed or forbidden auction frame block item lookups
+PASS pending analysis unapplied filters and nonpublished rows cannot open stale listings
+PASS a stale scan changed market or replaced snapshot requires current published results
+PASS missing exact item APIs fall back to the native Buy name search on click
+PASS uncached items do not search using invented item names or guessed keys
+PASS restricted item keys are not forwarded into native search calls
+PASS native search errors are handled once without an automatic retry
+PASS live lookups wait until an incomplete full scan has its complete local copy
+PASS service view shows material cost and quote instead of inapplicable auction profits
+PASS switching from a service restores item sale profit and return fields
+PASS catalog totals distinguish quoted services from missing price data
+PASS all-recipes service rows show numeric quotes and still select the native recipe
+PASS recipe search is case insensitive literal text with trimmed whitespace
+PASS search and sorting reuse published recipe valuations without pricing calls
+PASS search honors the profitable-only filter and does not mutate ranked rows
+PASS search results invalidate when a complete recipe catalog is published
+PASS a profession change clears its local recipe search without changing saved filters
+PASS catalog count summaries remain on the complete published list while rebuilding
+PASS material columns retain full quantities sources and missing-price state
+PASS unknown vendor cost remains visit supplier in the aligned material table
+PASS markup changes update the service quote without inventing resale profit
+PASS service hover quotes use the current markup without revaluing the catalog
+PASS a service-only profession has a useful profitable-view empty message
+PASS net crafting values deduct AH cut while retaining gross values
+PASS net profit filtering removes recipes whose spread is consumed by fees
+PASS fee changes invalidate ranked views without new schematic or auction calls
+PASS break-even bounds cover variable yield and zero material costs
+PASS service quotes include markup labor and minimum without auction fees
+PASS customer-material quotes work with missing prices and do not treat materials as free
+PASS service charges round up to copper and reject restricted settings
+PASS service pricing never adds labor charges to item quotes
+PASS pricing screen validates all fields before applying and preserves an unfinished draft
+PASS service catalog rows display current numeric quotes without a catalog rebuild
+PASS buy-price watches work without earlier history and make no auction request
+PASS return and profit watch targets require matching prior history
+PASS a return watch with insufficient days stays untriggered
+PASS zero targets track an item without producing an alert
+PASS optional watch chat summaries are local and survive reload deduplication
+PASS alert preference suppresses notices while retaining matched rows
+PASS exact-suffix watches never borrow an item-wide or another suffix price
+PASS stale and future scans cannot trigger watch targets
+PASS watch edits or source changes cancel unpublished work
+PASS watch computation pauses in combat and respects the frame budget
+PASS watchlists remain isolated by market and survive saved data reloads
+PASS invalid watch targets do not change saved entries
+PASS watch limits bound saved data and removal frees a slot
+PASS unknown economy schemas are preserved without disabling current prices
+PASS ledger distinguishes net sales spending recorded flow and known profit
+PASS unknown sale costs do not become zero-cost profits
+PASS a deliberate zero cost is distinct from an unknown cost
+PASS ledger edits preserve identity and date while recomputing costed profit
+PASS ledger delete and undo are scoped to the current character
+PASS ledger retention prunes calendar days without changing price history
+PASS ledger records survive reload but remain character and market scoped
+PASS invalid and restricted ledger data never produce a transaction
+PASS ledger entry caps refuse growth rather than dropping retained transactions
+PASS invoice imports use actual totals and keep returned deposits out of profit
+PASS reimported invoices are rejected across read time and reload
+PASS separate identical invoices outside the ambiguity window remain importable
+PASS pending sales ordinary mail and incomplete invoices are not imported
+PASS purchase invoice imports ignore seller-only fee and refund fields
+PASS invoice previews require an open mailbox invoice and remain read-only
+PASS ledger CSV retains missing costs and escapes manual text for spreadsheets
+PASS money-tool slash commands open without an auctioneer or extra requests
+PASS ledger UI keeps a blank cost unknown and updates an existing row
+PASS craft record-sale action records a commission directly with an estimated cost
+PASS watchlist UI saves gold and return thresholds without scanning
+PASS economy diagnostics report pricing watches and ledger cost gaps
+PASS invoice identity survives ledger pruning and deliberate entry deletion
+PASS editing an imported invoice cost does not trip its duplicate guard
+PASS expired deleted entries cannot be restored outside retention
+PASS an any-suffix watch opens the native broad name search
+PASS an exact-suffix watch opens the matching native item listings
+PASS invoice preview populates UI without committing until Record entry
+PASS CSV copy opens an explicit local edit field without sending chat
+PASS native invoice imports leave counterparty and subject data out of saved records
+PASS turning off customer materials immediately invalidates an uncosted service quote
+PASS service count summaries follow quote mode without a catalog rebuild
+PASS item purchase intents wait for a matching server completion
+PASS bids cancelled purchases and unknown auction completions do not count as buys
+PASS repeated item completion events and deleted receipt rows cannot duplicate a buy
+PASS purchase observers can read the selected native row without controlling it
+PASS commodity purchases use the last server total and require confirmation plus success
+PASS commodity failures expired quotes and mismatched quantities cannot produce purchases
+PASS restricted purchase identities and quotes are ignored without arithmetic
+PASS mailbox invoices automatically record sales with exact fees and excluded deposits
+PASS pending sale mail does not record a completed transaction
+PASS automatic purchase invoices reconcile a live purchase instead of counting it twice
+PASS unobserved purchase invoices backfill purchases without inventing market prices
+PASS several identical simultaneous invoices retain their multiplicity on every revisit
+PASS manual invoice imports from the previous revision are recognised by automatic tracking
+PASS mail reorder and collected invoices do not inflate saved sales
+PASS mail changes during a read cancel the unfinished inbox snapshot
+PASS closing the mailbox cancels its reader without collecting any attachments
+PASS automatic ledger writes remain safe while combat hides the UI
+PASS vendor purchases require the observed bag gain and matching wallet cost
+PASS vendor sales use observed stack losses and the item sell value
+PASS vendor batch reconciliation handles multiple items and mixed buys and sales
+PASS wallet-only changes bag moves and failed vendor buys are not transactions
+PASS unmatched vendor value changes stay unrecorded and report a diagnostic reason
+PASS late vendor money and inventory events can reconcile after the merchant closes
+PASS disabled tracking stops new AH and vendor records
+PASS reinstalling observers does not multiply callbacks or native actions
+PASS recorded purchases survive reload and reconcile later invoice delivery
+PASS commission inputs use a unit price quantity and one total tip
+PASS fixed-yield quote defaults and material estimates use per-item quantities
+PASS service customer-material commissions have zero own material cost
+PASS missing material costs never turn an explicit commission into free materials
+PASS commission input validation is atomic and respects combat
+PASS blank optional tip and quantity fields use their defaults
+PASS ledger cost edits replace craft estimates with actual cost without losing the tip
+PASS editing other commission details preserves the existing estimate if cost stays blank
+PASS local date validation handles leap years and rejects impossible dates
+PASS transaction and local date filters affect rows reports and CSV together
+PASS custom dates include both full local days without changing saved timestamps
+PASS date report caches are stable between updates and refresh at the local day boundary
+PASS ledger UI supports commission filters dates and filtered CSV without new auctions
+PASS legacy expenses survive upgrade but new entries cycle through commissions and vendors
+PASS Buy-page watch buttons capture item suffixes and open editable targets
+PASS opening an existing buy-page watch preserves saved targets
+PASS commodity Buy-page watches use item-wide keys and never start a market request
+PASS repeated Buy-page refreshes create one button per native header
+PASS restricted Buy-page item keys cannot become watchlist entries
+PASS identical automatic invoice rows can each receive their actual cost
+PASS restricted invoice contents leave the automatic ledger untouched
+PASS confirmation queue retries after ledger capacity is made available
+PASS transaction diagnostics identify enabled observers buttons and queued records
+PASS a fast native mail collection is captured before the batched reader finishes
+PASS rapid collection and a later inbox scan cannot duplicate the same invoice
+PASS vendor buyback uses its observed whole-stack price
+PASS ledger tracking work is idle away from merchants and mailboxes
+PASS fast collection preserves several identical invoice transactions
+PASS a merchant's buyback stock cannot replace its normal purchase price
+PASS queued confirmed transactions survive reload with their original timestamp
+PASS Buy-page watch actions reject a restricted suffix before formatting it
+PASS delayed confirmations still obey the selected local retention period
+PASS msmv exposes a Ledger shortcut away from an auctioneer
+PASS Ledger and Watchlists can return to settings without opening an auctioneer
+PASS closing the AH leaves the portable ledger accessible
+PASS the report separates income spending cash flow and each activity source
+PASS the supplied quote-and-ledger example reports estimates without inventing recorded profit
+PASS all six type choices select their own rows directly
+PASS an activity total opens transactions with the same type and period
+PASS report totals cover the whole period after a transaction type was selected
+PASS CSV follows the period in reports and the selected type in transactions
+PASS period buttons update source totals without resetting the transaction type
+PASS negative recorded profit and cash flow have distinct loss amounts
+PASS empty periods show no-cost coverage instead of a fabricated profit result
+PASS new and edit actions use a separate transaction editor
+PASS manual entry rejects an invalid tip and preserves the editor draft
+PASS ledger settings retain independent tracking controls and retention
+PASS legacy expense rows remain reachable from the period report
+PASS reports reuse cached data and do not request auctions or item metadata
+PASS combat keeps the ledger readable and hides the transaction editor
+PASS the compact ledger pages keep report and transaction regions separate
+PASS received trade gold is recorded only after the completed trade message
+PASS given trade gold is spending with the exact offered amount
+PASS both trade directions remain separate and cash flow uses their difference
+PASS a success message before the closed event records the trade once
+PASS repeated success and closure events do not duplicate a completed trade
+PASS closing or cancelling an accepted trade creates no ledger transfer
+PASS a zero gold completed trade does not create empty ledger entries
+PASS native success can complete the last accepted offers without a separate final acceptance update
+PASS money changes invalidate accepted offers until the new amounts are accepted
+PASS clearing acceptance or changing an item invalidates the captured trade agreement
+PASS restricted and invalid trade gold cannot become ledger entries
+PASS missing native trade money readers keep automatic tips unavailable
+PASS typed completion names work independently of the localized message text
+PASS native trade failures discard the context before any later success message
+PASS unrelated UI messages do not consume a valid trade
+PASS native close clearing money after hiding the frame preserves final accepted offers
+PASS late completion without a current closed trade context is rejected
+PASS a player scope change cannot credit another character's trade
+PASS disabling trade tracking discards active offers and leaves AH and vendor settings alone
+PASS confirmed tips persist while an unconfirmed offer does not survive reload
+PASS both confirmed trade directions queue at capacity and retain their timestamps
+PASS idle trade tracking reads no offers and calls no trade action
+PASS a confirmed trade may record during combat without opening addon frames
+PASS trade payments can be reclassified without adding a second transaction
+PASS periodic ledger refresh never hides the active transaction panel
+PASS all eight type filters replace displayed rows immediately without waiting for a tick
+PASS trade tip report totals drill down without mixing received and given gold
+PASS the native Type dropdown selects a distant choice in one menu selection
+PASS refresh does not rebuild or close the open Type menu
+PASS legacy expense remains selectable while editing an existing legacy row
+PASS local date labels and CSV preserve both local and UTC representations of the same epoch
+PASS Today starts at local midnight and ends at the next local midnight
+PASS custom local periods include the final second of both full calendar days
+PASS spring DST periods follow local calendar boundaries rather than a fixed 24 hours
+PASS fall DST periods include both repeated local hours
+PASS ledger retention prunes at the local midnight without changing remaining timestamps
+PASS a local date rollover invalidates Today while same-day refreshes reuse its rows
+PASS combat closes the Type menu and blocks direct type selection
+PASS diagnostics identify local time and trade observation capability
+PASS release defaults enable loot and other spending independently
+PASS only the dedicated loot-money event creates loot income
+PASS successive loot awards aggregate in one local daily row without receipts
+PASS a new loot award invalidates the cached daily total report
+PASS loot day boundaries follow local midnight rather than UTC midnight
+PASS loot survives a reload and adds to the same day's existing row
+PASS loot profile is isolated by character and market
+PASS local retention removes an old daily loot row and its cached day index
+PASS loot aggregation works automatically while in combat
+PASS a full ledger queues and merges loot instead of one pending row per award
+PASS queued daily loot survives reload and retains its first local day
+PASS a disabled loot option leaves existing totals intact
+PASS deleted daily loot can be undone before another award replaces it
+PASS duplicate manual daily loot rows are rejected
+PASS native coin parser accepts 1 Gold 2 Silver 3 Copper
+PASS native coin parser accepts 1,234 Gold
+PASS native coin parser accepts 9 Copper
+PASS native coin parser accepts |cffffffff2 Silver|r
+PASS native coin parser accepts 3 |TInterface\MoneyFrame\UI-SilverIcon:0:0:2:0|t
+PASS native coin parser refuses ambiguous value: 5 Silver unknown
+PASS native coin parser refuses ambiguous value: 0 Copper
+PASS native coin parser refuses ambiguous value: -5 Gold
+PASS native coin parser refuses ambiguous value: 1 Gold 1 Gold
+PASS native coin parser refuses ambiguous value:
+PASS native coin parser refuses ambiguous value: a Gold
+PASS restricted loot text and wallet values are never inspected
+PASS localized positional guild loot uses only the player's first money argument
+PASS guild bank loot deposits are not added to the player's income
+PASS repair all records the paid personal amount once despite duplicate update events
+PASS guild-funded repairs do not become personal expenses
+PASS failed repair attempts create no entry
+PASS individual repair cursor actions use the actual repair-cost drop
+PASS two identical individual repair costs are separate paid actions
+PASS repair mode alone cannot label an unrelated wallet deduction as repairs
+PASS vendor purchase plus repairs in one interval both reconcile without duplication
+PASS training expense includes the selected service name and actual price
+PASS failed training and free training do not create gold expenses
+PASS talent-reset dialog cancellation does not create an expense
+PASS confirmed talent resets require a wallet deduction
+PASS flight is classified even when the map closes before the wallet event
+PASS successful mail separates postage from mailed gold
+PASS mail draft changes and a failed send create no postage entry
+PASS mail success before delayed money updates still uses the frozen send totals
+PASS unrecognized outgoing mail costs are retained as unclassified spending
+PASS native bank slot is observed as paid spending
+PASS native guild bank tab is observed as paid spending
+PASS native guild deposit is observed as paid spending
+PASS native stable slot is observed as paid spending
+PASS native charter is observed as paid spending
+PASS confirmed gossip services use their native quoted cost
+PASS other wallet expenditures remain visible as unclassified and can be edited
+PASS unclassified spending is kept out of AH escrow and player trades
+PASS confirmed vendor purchases claim their wallet deduction exactly once
+PASS disabled other spending does not reclassify wallet deductions
+PASS disabled vendor tracking is not bypassed by the other-spending fallback
+PASS automatic other expenses are saved in combat and retain their event timestamp
+PASS queued other expenses preserve category through reload
+PASS stale unsuccessful intents expire even when no money changed
+PASS restricted expense quotes never cause arithmetic on restricted values
+PASS another character's pending wallet context cannot be attributed to this character
+PASS Other displays all expense categories including legacy rows initially
+PASS Other checkboxes immediately combine selected categories and stay open
+PASS changing a filter deactivates Other while All includes every category and loot
+PASS the Other menu remains stable during periodic refresh and closes when leaving
+PASS category filtering caches equivalent masks but responds immediately to changes
+PASS Other categories do not narrow the whole-period report or All CSV
+PASS filtered CSV names expense categories and excludes unchecked ones
+PASS the native transaction editor supports new Other entries and category selection
+PASS editing an expense as an AH purchase clears its category
+PASS daily loot rows display a total date and their report total has a direct filter
+PASS daily loot edits retain their day and future awards still aggregate
+PASS unknown categories and restricted category edits are rejected
+PASS old expense rows retain their readable legacy category after upgrade
+PASS loot and other controls are independent and diagnostic totals are available
+PASS a combined vendor sale and repairs record both even when the wallet rises
+PASS guild repairs while the repair cursor is active cannot consume a vendor buy
+PASS cash observation uses a short AH-close grace period for delayed purchase money
+PASS turning off loot tracking does not discard a pending expense
+PASS saved beta data retains all money tools settings and recorded cost bases
+PASS accepted 1.3.1 saved data upgrades to the final identity without resetting preferences or records
+PASS beta pending loot and expense confirmations settle once after the upgrade
+PASS the 1.3.1 upgrade preserves farming drop settings and all existing money records
+PASS completed scans on different live reporting hosts add days to one market
+PASS live reporting names recognize rulesets without guessing unknown names
+PASS upgrading recovers retained PvP host days and keeps only the latest scan on each day
+PASS legacy price recovery excludes other regions rulesets and beta markets
+PASS conflicting legacy PvP faction observations block inferred price recovery
+PASS opportunities and watchlists use the same recovered days as tooltips
+PASS the live host upgrade retains character records and queued transactions across reload
+PASS 1.3 preserves full scanned modifier names links and lowest-price stack totals
+PASS opportunity quantity search and scarcity filters apply before the result cap
+PASS supply history stores only one compact prior scan and old low quantities remain unknown
+PASS drop reads deduplicate reopen events and count stack hits per observed corpse
+PASS area loot attributes each source quantity and party raid cohorts without crediting player income
+PASS quest drops outrank more valuable items and creature tooltips enforce the item limit
+PASS drop resets are character and selected area specific
+PASS drop reset by dungeon removes all floors without affecting outdoor data
+PASS unknown or restricted loot sources are skipped without guessing their NPC
+PASS reference mode stays separate from personal samples and validates external rows
+PASS observations and farming sessions reload for the same character without counting offline time
+PASS farming applies the AH cut and vendor threshold inclusively using exact variants
+PASS unseen variants and missing item data cannot inflate farming estimates
+PASS self loot chat counts acquired quantities once while party loot and purchases do not
+PASS quest reward receipts do not count again through generic loot chat
+PASS farming loot gold works independently of ledger collection
+PASS pauses session reset and bounded recent history preserve exact reports
+PASS farming HUD interpolates without changing accounting and hover mode stays mouse accessible
+PASS live loot events never cause auction requests or automated game actions
+PASS disabling quest income excludes both reward events and their generic loot messages
+PASS unsupported farming and drop roots are preserved while other money tools work
+PASS stock filters with unavailable prior scans never invent a scarcity signal
+PASS the exact modifier search never falls back to a broad base item search
+PASS localized reordered loot messages and restricted identifiers stay safe
+PASS reference queries are cached and do not retain an unbounded creature index
+PASS confirmed loot settles across a pause and is flushed before logout
+PASS a corpse reopened after reload is not a new drop sample
+PASS resetting one creature preserves another creature's duplicate protection
+TRACKING_BENCHMARK npcs=200 item_counters=12800 receipts=2600 source_ring=2048 session_types=500 retained_lua_kib=4764 cpu_ms=784.42 requests=0
+PASS modern bonus signatures are canonical and exclude player applied changes
+PASS each modern modifier keeps its own current history stock and movement
+PASS legacy suffix-zero history is never used as a precise equipment baseline
+PASS old item-wide equipment is labeled and cannot open misleading precise listings
+PASS exact bonus watches persist and edit independently including Buy-page additions
+PASS bonus navigation resolves a matching native sample rather than inventing a suffix key
+PASS pending modifier searches resolve once and cancel when the player's search changes
+PASS Opportunities reuses twelve rows with scrolling and collapsible filters
+PASS native alternating source pairs count corpse loot without a count prefix
+PASS personal creature tooltip resolves native unit tokens missing a data GUID
+PASS empty personal tooltips explain missing samples and never attach to players or items
+PASS harvest casts capture normal and rare node materials and categorize only personal receipts
+PASS skinning and creature loot from the same corpse use independent denominators
+PASS failed or stale harvesting casts never turn unrelated corpse loot into node samples
+PASS harvest observations survive reload and node resets retain other sources
+PASS mail trade and wallet increases never become farming gold or item income
+PASS categorized reports and saved summaries reconcile loot quests and harvesting
+PASS standalone windows occupy whole frame-level bands and focus as complete windows
+PASS reference samples stay scoped to creature versus harvesting data
+PASS reference node tooltips do not require an existing personal area record
+PASS combat spell name checks are cached with a bounded index
+PASS idle pause is optional and validates whole minutes with a five-minute minimum
+PASS the complete idle grace period counts and the timer stops at its precise boundary
+PASS a delayed update cannot backfill a long idle gap before a loot event
+PASS own item loot resumes at receipt time and settlement does not reset the idle clock
+PASS repeated duplicate loot messages cannot keep an idle session awake
+PASS manual pauses never resume automatically on loot or quest rewards
+PASS disabling idle pause resumes its timer without changing a manual pause
+PASS loot activity restarts the full grace period including unpriced pickups
+PASS quest rewards keep an idle session idle while harvested items resume it
+PASS mail trade wallet changes and other players' visible loot cannot resume farming
+PASS idle state survives reload and excludes offline and loading time
+PASS farming settings expose validated idle minutes and an idle status without clearing the session
+PASS coin rendering uses native assets with exact denominations and omits zero components
+PASS quotes CSV diagnostics and numeric gold inputs stay free of texture tags
+PASS opportunity item colors match the link including while selected
+PASS quest-only drops are hidden when their quest is absent and return without losing samples
+PASS quest log text identifies active quest items when no quest ID is exposed
+PASS normal trade materials remain visible after an associated quest ends
+PASS reference quest items obey the same active quest filter
+PASS visible uncollected drops count once across partial looting reopening and reload
+PASS late quest metadata is captured without counting a drop again
+PASS drop headers describe checked corpses without calling them kills or observed
+PASS packed reference counts decode exact rare rates and quest flags
+PASS malformed packed sources are rejected without partial data or excessive work
+PASS packed reference sources decode only on demand with bounded cache rows
+PASS decoded reference cache enforces its row budget as well as source count
+PASS quest and item-data changes refresh owned tooltips without duplicate sections
+PASS name lookups are throttled bounded and never become auction requests
+PASS new profiles idle after five minutes by default without limiting session length
+PASS unmarked beta profiles adopt enabled idle pause and clamp the old upper limit
+PASS an explicit disabled idle preference survives reload
+PASS the sixty-minute idle boundary counts once and still auto resumes
+PASS auction scans retain native rarity and full modifier names before hover
+PASS visible rows request missing item data without a hover or auction query
+PASS shared price metadata never gives a different modifier its name
+PASS quick native rarity colors a row while the full item metadata is unavailable
+PASS native rarity supersedes an early generic link color when data arrives
+PASS rarity menu permits multiple checked qualities and applies them together
+PASS no selected rarities means no rows and All restores every quality
+PASS rarity filtering runs before the five hundred result cap
+PASS a filtered row with unknown rarity reappears automatically when data loads
+PASS one-day All items shows each of-the modifier while resale awaits precise history
+PASS metadata refresh preserves the warning on legacy item-wide equipment
+PASS personal creature tooltip names use their green and blue item qualities
+PASS reference tooltip colors use native item quality without changing percentages
+PASS main settings can first open toggle and stay open in combat
+PASS combat opens a standalone view without changing the native AH display
+PASS ledger farming and diagnostics open in combat and cached ledger filters work
+PASS combat window focusing leaves a protected root untouched
+PASS rarity choices contain exactly six colored qualities and a select-all checkbox
+PASS older rarity masks retain supported choices and remove unsupported bits
+PASS select all never includes artifact heirloom or token qualities
+PASS modern keyword filters do not walk daily variant maps and reuse the current index
+PASS an empty keyword match does not price unrelated history or use pattern matching
+PASS item replies do not restart an in-progress search and schedule one refresh
+PASS keyword searches resolve modified names when an early item link is still generic
+PASS generic modified names request missing data and enter the results without hovering
+PASS the bounded heap retains the same best five hundred and stable ties for every sort
+PASS reference gaps use personal rows while shared rates and denominators stay separate
+PASS entire missing sources fall back to local solo party and raid samples
+PASS fallback labels distinguish counts without changing reference tooltip precision
+PASS personal gap filling respects quest eligibility source mode and current area
+PASS reset clears personal gap fillers while leaving reference rates intact
+PASS personal quest and rarity metadata can fill reference gaps without replacing the rate
+PASS new personal items invalidate only the view and survive character reload
+PASS the bundled base is ready by default without decoding sources or seeding personal counts
+PASS bundled herb rates work before a personal harvest and preserve their own denominators
+PASS reference display continues collecting personal rates and fills only missing drops
+PASS personal display choice survives reload while the bundled data stays available
+PASS the first bundled-data upgrade preserves personal counters and explicitly disabled tracking
+PASS resetting personal data cannot erase or copy the bundled reference
+PASS farming display labels the hourly rate and session total separately by default
+PASS idle appears beside one hourly rate and both figures remain frozen until own loot
+PASS hiding session value compacts the display without altering tracking and survives reload
+PASS manual pause has its own rate status and cannot be resumed by incoming loot
+PASS drop diagnostics identify the bundled snapshot and independent personal tracker
+PASS Classic fills the missing Elder Mottled Boar without inventing samples
+PASS Forever overrides matching Classic rows and personal data fills the final gap
+PASS curated packed input rejects corruption without returning partial tables
+PASS combat resumes automatic idle and stays active through a slow fight
+PASS combat restarts the inactivity grace period but never resumes a manual pause
+PASS five complete minutes establish a located peak and quest spikes cannot raise it
+PASS an early receipt cannot set a peak until a five-minute window completes
+PASS a long delayed tick still evaluates the earlier completed peak window
+PASS invalid saved minute history is preserved rather than used as income
+PASS logging in during combat resumes automatic idle without charging offline time
+PASS recent income expires while whole-session income remains and rate history is bounded
+PASS late price changes revalue the session without manufacturing a historical peak
+PASS unpriced pickups do not become invented recent income and report their omission
+PASS upgrades preserve old session totals and start recent coverage at the actual upgrade
+PASS reload retains the bounded rate history and saved sessions retain their own peak
+PASS HUD columns form one centered group with spacing and a saved adjustable width
+PASS locking the HUD prevents dragging while retaining click actions and resizing
+PASS session summary uses neutral text and keeps the item list inside the report
+PASS successful partial replies cannot keep an Opportunities search rebuilding
+PASS unchanged unresolved replies leave published results ready and requests bounded
+PASS real name progress refreshes the result once and duplicate replies then settle
+PASS one item reply resolves its exact variants independently without sharing modifier names
+PASS base-item metadata cannot rename an exact modifier as a different variant
+PASS an unresolved modifier never borrows a different modifier title through the item-ID fallback
+PASS a real reply during a multi-frame metadata check is not lost
+PASS a later unresolved modifier reopens an already resolved item-ID watch
+PASS restricted or unrelated metadata never enters a search title or rarity
+PASS stable visible rows do not requery item metadata on every quarter-second refresh
+PASS pending exact-link lookups stay bounded even under a large missing-data search
+PASS a changed search cancels stale pending names and unrelated replies cannot restart it
+PASS All items immediately shows pants modifiers while Resale waits for their own earlier days
+PASS three earlier exact days allow each qualifying pants modifier into Resale
+PASS same-day rescan adds no historical days and signal filters remain separate from browsing
+PASS diagnostics distinguish current modifier coverage history gaps and unchanged replies
+EVICTION_REPLAY frames=300 builds=2 publications=2 checking=false
+PASS filtered search retains resolved names when native reads alternate full and incomplete data
+PASS learned modifier data survives keyword rarity and view changes after native eviction
+PASS partial or throwing replies retain verified fields without manufacturing metadata changes
+PASS partial native fields merge into one complete exact metadata record
+PASS cached names and rarity still admit a later item class for history safeguards
+PASS metadata cache resets for a replacement snapshot or market and never enters saved variables
+PASS cached names stay separate for bonus variants legacy suffixes and numeric item lookups
+PASS metadata cache has a hard bound and excess pending records cannot create an uncached rebuild loop
+PASS incomplete item fields can arrive separately without repeatedly undoing prior progress
+PASS drop display defaults to descending rates with all rarities and preserves observation tracking
+PASS needed quests precede rate-high rate-low and expected-value orderings
+PASS all 64 rarity masks filter only other drops and always retain a needed quest
+PASS sorting and rarity changes invalidate cached views without changing source records
+PASS rate sorting has stable item-ID ties when drop rates and values are equal
+PASS rarity filtering happens before the visible item limit so common items cannot displace rare ones
+PASS unknown rarity stays visible only with all selected and resolves after a bounded metadata request
+PASS unknown-rarity requests stay bounded on a large filtered source
+PASS reference mode fills missing items after Forever and Classic without combining sample counts
+PASS a new personal gap appears while reference mode is active and survives reload with display choices
+PASS personal-only and whole-source fallback obey display choices without crossing harvesting modes
+PASS inactive quest-only entries remain hidden and completed quests no longer bypass rarity choices
+PASS filtered-empty tooltips explain rarity selection without claiming the source has no data
+PASS drop rarity menu has six colored checkboxes and operates independently of auction rarity
+PASS drop sort menu exposes both rate directions and expected-value sorting
+PASS tooltip item-limit editing validates its range and refreshes owned drop sections
+PASS changing sort and rarity rebuilds a currently owned tooltip without duplicate sections
+PASS invalid display settings repair safely and explicit none or expected-value choices survive upgrades
+PASS restricted or unsupported item rarities cannot break display filtering
+PASS drop diagnostics expose sort rarity limit quest priority and personal-gap behavior
+PASS empty inspected corpses lower personal drop rates without creating item income
+PASS reopening an empty corpse and repeated ready events count one inspection
+PASS a previously looted corpse is not a second empty sample
+PASS empty corpse deduplication survives reload without resetting existing observations
+PASS an empty-ready interaction can finish without an opened window
+PASS the inspected corpse identity survives the loot frame hiding mouseover
+PASS hovering a dead body alone never counts an inspected corpse
+PASS ambiguous alive foreign and restricted empty-loot sources never fabricate samples
+PASS item containers and an expired corpse candidate do not enter empty-corpse counts
+PASS empty sampling respects disabled collection and keeps skinning samples separate
+PASS empty-only personal sources show their inspection count and a truthful empty message
+PASS quest rewards are session-only by default while hourly and peak stay farming-only
+PASS quest interaction receipts cannot inflate peak or duplicate native quest rewards
+PASS native quest item events before generic chat count once in either event order
+PASS a quest chat receipt without a dedicated item event still stays out of farming rates
+PASS actual corpse receipts during a quest interaction remain farming income
+PASS a real corpse drop cannot consume the matching quest reward credit
+PASS reset waits for delayed quest confirmation and becomes available after settlement
+PASS vendor sales and buybacks do not count acquired items a second time
+PASS wallet changes quest exclusions and manual pauses cannot create new farming value
+PASS new rate history starts at upgrade while existing session totals and observations survive
+PASS session dropdown lists saved sessions and returns directly to the live session
+PASS saved-session selection survives a new history insertion and falls back if it is evicted
+PASS opening the farming report again goes to current without losing archived sessions
+PASS invalid saved-session choices safely return to current without reporting success
+PASS older archived rates are not replaced with live values or unverifiable peaks
+PASS quest rate choices update live and archived hourly figures without changing session totals
+PASS skinning loot overlays cannot append a second corpse block or escape the tooltip layout
+PASS tooltip source changes replace an owned section instead of appending to it
+PASS an extra addon line and unavailable rebuild API cannot duplicate drop blocks
+PASS a native tooltip rebuild with the same row count still gets exactly one fresh section
+PASS hiding a tooltip with retained rows cannot append another section when shown again
+PASS rate and empty-corpse choices persist while manual pauses stay manual
+PASS login idle excludes all waiting time even with inactivity pause disabled
+PASS entering combat starts a login-idle timer at the combat event
+PASS received item loot starts a login-idle timer without charging earlier waiting
+PASS received gold starts login idle while wallet vendor and mail changes do not
+PASS quest totals can be recorded during login idle without starting farming time
+PASS login idle preserves metrics and manual pauses through reload
+PASS ordinary loading screens do not rearm login idle or add loading time
+PASS death and ghost time pause farming and resurrection alone does not resume
+PASS post-resurrection combat and loot resume a death pause at the new activity
+PASS combat and loot while dead cannot restart the death-paused calculator
+PASS manual pause survives death resurrection and subsequent combat
+PASS death pause is optional and disabling it retains all elapsed time
+PASS logging in dead waits through resurrection and already active combat resumes login idle
+PASS session retention defaults to five and can keep the newest fifty
+PASS retention zero stops saving and reductions keep only the newest records
+PASS invalid retention choices cannot erase saved sessions
+PASS session limits and deletion stay local to the current character and market
+PASS deleting an exact saved session preserves other records and the current session
+PASS new saved sessions retain full item detail and recent receipts as independent snapshots
+PASS older saved top-item summaries remain readable without invented item detail
+PASS corrupt or oversized saved item detail is preserved instead of silently discarded
+PASS session limit reduction requires confirmation and preserves the running session
+PASS a changed retention request or new saved session invalidates the old confirmation
+PASS individual deletion confirms the selected record even after its index shifts
+PASS closing session management cancels pending deletion and current cannot be deleted
+PASS saved session menus are scrollable and retain direct current-session access
+PASS farming items scroll to every row with aligned quantity and value details
+PASS scrolling recent pickups and source filters never loses the session context
+PASS session layout fits twelve rows and retains all summary and management controls
+PASS recipe list scrolls by wheel and scrollbar without page buttons
+PASS scrolling recipes reuses valuations and clicking selects the visible recipe
+PASS recipe searches filters and sorting reset and clamp the scroll position
+PASS both scrolling lists ignore unreadable offsets and keep rows inside their tables
+PASS a missing quest close cannot discard all nineteen later combat loot awards
+PASS a missing merchant close recovers from the hidden native frame
+PASS native mail and trade windows recover when hidden but retain close protection
+PASS a world transition retires transaction flags without their missing close event
+PASS missing native frame data never pretends an active transaction has closed
+PASS quest context expires if both the close event and native window are unavailable
+PASS a visible quest reward window can stay open while the player chooses a reward
+PASS a hidden quest window recovers before later ordinary receipts
+PASS real corpse loot closes stale quest context even if its chat arrives after loot closes
+PASS quest gold echoes remain excluded after a real loot interaction
+PASS an unreadable loot reply cannot reuse an old world source to clear quest context
+PASS context recovery cannot undo manual pause or death pause
+PASS farming diagnostics identify each exclusion and recovered native window
+PASS November seventeen has only two earlier exact dates after November fifteen tracking
+PASS a fourth date supplies three earlier exact dates and permits qualifying resale
+PASS twelve market-wide dates do not invent earlier days for new bonus variants
+PASS same-day rescans do not advance exact history coverage
+PASS exact modifier history survives reload and level or unique-id link changes
+PASS a different modifier cannot fill an Owl variant's missing priced dates
+PASS sufficient exact history remains separate from profit and movement failures
+PASS legacy nonzero-suffix history stays usable before the bonus format was introduced
+PASS the player's explicit two-day filter works without changing the default
+PASS history diagnostics work before opening Opportunities and make no auction requests
+PASS missing baselines display priced-day progress and dated details in All items
+PASS diagnostic samples remain bounded and selected variants get their own exact key
+PASS a later scan cannot erase an exact modifier priced earlier on the same UTC date
+PASS three sold-out intraday observations can supply a later exact resale baseline
+PASS the latest observed price replaces a modifier price without adding another day
+PASS retained exact observations never fill an unobserved UTC date
+PASS daily retention cannot relabel legacy zero-suffix history as exact bonus data
+PASS daily modifier retention stays bounded and newer observations take priority
+PASS sell arrows change the displayed unit price by one copper and preserve quantity
+PASS sell arrows normalize silver and gold carry and borrow
+PASS sell arrows stop at zero and at the gold field's representable limit
+PASS both sell modes have their own primary price arrows and do not edit bid inputs
+PASS sell controls use larger red panel buttons beside copper and retain the warning below
+PASS manual price edits refresh arrow limits and keep native text-change callbacks
+PASS reopening or refreshing the auction house reuses sell buttons and hooks
+PASS sell arrows remain inert for hidden pages, closed auctions and absent items
+PASS sell arrows respect native disabled or hidden money fields and forbidden frames
+PASS combat defers sell installation and blocks adjustments until combat ends
+PASS late native sell frames install on the normal UI update without changing the selected page
+PASS sell arrows reject malformed or restricted prices without replacing native values
+PASS sell arrows ignore right clicks and report both native installations
+PASS sell price help follows the interface switch while one-copper edits keep working
+PASS watchlists show ten reusable scrolling rows and reach all two hundred watches
+PASS watchlist mouse scrolling clamps at both ends and hides unused rows
+PASS watchlist sorts target status first and reverses numeric headers with unknowns last
+PASS watchlist search and target-only filters narrow names and reset scrolling
+PASS watchlist rarity colors stay on names while target status has its own highlight
+PASS left-clicking a watched item opens its native Buy page exactly once
+PASS right-click and Edit open target editing without searches or a visible item id
+PASS watch target edits retain their scope and use gold amounts per item
+PASS new watches accept item links instead of asking for numeric ids
+PASS dragging a linked item fills the new-watch field and consumes only a valid cursor
+PASS watch settings stay in the watchlist while ledger settings keep their existing destination
+PASS quiet default alerts open one grouped watchlist with no chat or auction searches
+PASS unchanged matches stay quiet through later scans and repeat AH visits
+PASS a lower matched price produces one new grouped review
+PASS missing or out-of-target listings rearm a watch before a later target hit
+PASS reviewed watch matches remain quiet after saved-data reload
+PASS disabled watch alerts keep visible target matches and a passive badge
+PASS optional chat-only alerts emit one summary without opening the watch window
+PASS watch alerts wait for a real AH and never open during combat
+PASS stale and future snapshots cannot display target alerts
+PASS automatic reviews wait while selling and use the latest eligible results
+PASS automatic reviews defer while typing and resume after the field is released
+PASS automatic reviews do not interrupt ledger or watch target editing
+PASS manually dismissing a watchlist prevents its unfinished batch from reopening it
+PASS AH-entry-only alerts do not turn into after-scan alerts
+PASS scan-only alerts leave AH entry quiet and react to a completed scan
+PASS watch editor cannot save into another market and combat blocks edits
+PASS late item metadata updates names and rarity without restarting watch analysis
+PASS repeated item replies cannot recursively enqueue more watch metadata reads
+PASS older saved watch entries and an explicitly disabled alert preference survive upgrade
+PASS watch editor removal updates the list and never starts a native search
+PASS watch diagnostics report quiet preferences matched counts and popup totals
+PASS automatic reviews wait for a native purchase confirmation to close
+PASS automatic reviews reveal a new match hidden by an older search
+PASS interface help defaults on and an explicit off choice survives reload
+PASS main tooltip controls fit seven rows and opt-out hides help immediately
+PASS interface opt-out leaves item-value and world-drop preferences intact
+PASS item-price tooltip content remains available when interface help is off
+PASS help hooks preserve native input clicks focus and prior hover scripts
+PASS repeated help bindings replace text without stacking handlers or frames
+PASS help hides only the tooltip owned by the departing control
+PASS turning help off never hides an unrelated native tooltip
+PASS quarter-second refresh handles external interface preference changes
+PASS all interface sections bind concise explanations to their less obvious controls
+PASS craft help explains draft chat and money fields without submitting actions
+PASS recipe and material hover details respect opt-out while selection stays usable
+PASS market row details are gated without changing hover selection or inline details
+PASS farming item hover retains highlighting with interface help disabled
+PASS watchlist row help can be disabled without breaking target editing or search
+PASS ledger row help opt-out preserves click-to-edit and whole-lot field explanations
+PASS small farming display keeps its hover behavior when help is disabled
+WATCHLIST_UI_BENCHMARK watches=200 visible_rows=10 scrolls=200 searches=200 new_frames=0 new_publications=0 metadata_reads_during_scroll=0 cpu_ms=2933.27 max_scroll_ms=500.98 requests=0
+REFERENCE_BENCHMARK sources=1000 rows=500000 packed_lua_kib=1861 retained_with_cache_kib=3426 decoded_cache_rows=4000 max_decode_ms=4.74 total_decode_ms=70.29 requests=0
+FARMING_BENCHMARK active_minutes=600 receipts=12000 minute_buckets=60 saved_locations=5 retained_kib=24.51 cpu_ms=3727.89 requests=0
+SESSION_STORAGE_BENCHMARK saved=50 items=25000 recent_receipts=1000 retained_kib=10511.27 cpu_ms=17896.33 reload_ms=2425.54 reduced_to=5
+BENCHMARK items=5000 days=15 ticks=154 cpu_ms=634.16 max_tick_ms=5.53 results=500 heap_lua_kib=50864 retained_lua_kib=17779
+SEARCH_BENCHMARK items=16000 days=10 cold_cpu_ms=1980.42 cold_ticks=345 cold_max_ms=417.29 warm_cpu_ms=271.42 warm_ticks=70 warm_max_ms=5.35 warm_metadata_calls=0 empty_cpu_ms=358.65 empty_ticks=74 empty_max_ms=24.91 analysis_retained_kib=5423 requests=0
+MARKET_EVENT_BENCHMARK items=16000 days=10 queries=4 builds=4 publications=4 replies=160 frames=657 cpu_ms=6149.06 max_step_ms=484.58 requests=0
+MARKET_CACHE_BENCHMARK items=16000 queries=4 builds=5 publications=5 native_reads_after_eviction=0 cache_entries=16000 cache_hits=640 replies=18464 frames=1154 cpu_ms=15815.18 max_step_ms=1174.44
+ECONOMY_BENCHMARK watches=200 history_days=15 steps=11 watch_cpu_ms=11.16 max_step_ms=2.10 ledger_entries=2000 cached_view_cpu_ms=15.77 csv_bytes=237146 requests=0
+TRANSACTION_BENCHMARK invoices=500 steps=100 mail_cpu_ms=96.82 max_step_ms=3.35 ledger_entries=10000 cached_filtered_view_cpu_ms=27.05 filtered_entries=5250 csv_bytes=1165430 requests=0
+RESULT: 943/943 behavioral tests passed (Lua Lua 5.1). Native evidence and remaining checks: VALIDATION.md.
+PASS TOC/load order, release identity, Lua 5.1, and runtime operation checks.

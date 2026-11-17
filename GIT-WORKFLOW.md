@@ -1,14 +1,15 @@
-# Test build workflow
+# Release workflow
 
-The active build is **1.3.1-beta, test revision 7**, tag `v1.3.1-beta-test7`, on `develop/1.3.1`. Version 1.3.0 remains the published release. Do not publish this test build as the final 1.3.1 release.
+The release is **1.3.1**, build `2026-11-17-release001`, tagged `v1.3.1`. The release commit belongs on `main`; keep previous tags unchanged.
 
-Keep `build.json`, Bootstrap and all three TOCs consistent. Advance the test revision for each distributed build and use an annotated, immutable test tag. Do not overwrite published history.
+Update `build.json`, Bootstrap, all three TOCs and the user guides together. Validate before creating an annotated release tag:
 
 ```bash
-python3 tools/validate.py --lua lua5.1 --luac luac5.1
+TZ=America/New_York MSMV_BENCHMARK=1 MSMV_REPLAY=1 python3 tools/validate.py --lua lua5.1 --luac luac5.1
+git diff --check
 python3 tools/package.py --output dist
 ```
 
-Package only a clean tagged checkout. The command creates install, source, repository, documentation and recovery archives with checksums. Only the Clean ZIP belongs in AddOns; keep repository files elsewhere.
+Packaging requires a clean checkout at the exact release tag. It creates the install, source, Git repository, documentation and recovery files with checksums. Fetch `main` without replacing existing tags before publishing, and preserve remote changes. Push only the intended branch and new release tag.
 
-After the test cycle is accepted, prepare a separate stable identity, update the release notes, validate again and publish a new stable tag. Fetch the existing origin before any push and preserve remote changes.
+See [GitHub release](GITHUB-RELEASE.md) for distribution.

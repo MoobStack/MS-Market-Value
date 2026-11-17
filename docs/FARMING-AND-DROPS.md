@@ -1,45 +1,43 @@
 # Farming and drops
 
-## Farming sessions
+## Session figures
 
 Open `/msmv farm` for the report and display settings.
 
 | Figure | Meaning |
 |---|---|
-| Session value | Acquired gold and current estimated item value |
+| Session value | Acquired gold plus current estimated item value |
 | Active time | Time after a start trigger, excluding idle, pauses and loading |
-| Hourly average | Eligible farming value divided by active time; quest rewards are optional |
+| Hourly average | Eligible value divided by active time; quest rewards are optional |
 | Recent 60m | Receipt value over the latest 60 active minutes, or available coverage |
-| Peak farming | Best completed five-minute window, expressed per hour, with quests excluded |
+| Peak farming | Best completed five-minute window, expressed per hour, excluding quests |
 
-The peak saves its zone, available coordinates and time. The report separates loot, quests and harvesting, with item/source filters and recent pickups. Use the session menu to choose saved sessions by date, duration and value. Current session returns to the live report. Scroll Items or Recent pickups with the mouse wheel or scrollbar. Columns show quantity, unit value and total; hover a row for item or receipt details.
+The peak saves its zone, available coordinates and time. Loot, quests and harvesting have separate totals. Scroll **Items** or **Recent pickups** with the mouse wheel or scrollbar; use the source filter to narrow the list.
 
-**Manage** controls the saved-session limit for this character and market: five by default, adjustable from 0–50. Reset saves the finished session and starts a new one, replacing the oldest save when the limit is reached. A limit of 0 stops saving. Delete selected removes one saved session; reducing the limit removes the oldest saves. Both removals require confirmation and leave the current session intact.
+Select past sessions from the dated menu. **Current session** returns to the live report. **Manage** keeps 0–50 saves per character and market, five by default, or deletes the selected save. Reset archives the session and starts another, replacing the oldest at the limit. A limit of 0 stops archiving. Deleting saves or reducing their limit requires confirmation.
 
-New saves retain all tracked item rows, up to the existing 500-item limit, and the last 20 receipts. Earlier saves contain only their original top ten items; those missing details cannot be restored. Their totals and rates remain available.
+New saves retain up to 500 tracked item rows and the last 20 receipts. Older summaries keep their original top ten items; missing details cannot be recovered.
 
-In Farming settings, Quest rewards defaults to **Session total only**. Choose **Session total and hourly rates** to include rewards in the display average and recent rate, or **Do not record new quest rewards** to stop adding them. Peaks always exclude quest gold and items. These choices do not erase previously recorded rewards.
+## Timing and valuation
 
-The display can be resized, locked, shown only on hover or reduced to the hourly average. Drag it when unlocked; left-click opens the report and right-click pauses or resumes.
+Timing starts idle after login. Resume, combat or received loot starts it. **Pause on death** is enabled by default; death/ghost time is excluded and resurrection alone leaves it idle. Inactivity pause defaults to five minutes, adjustable from 5–60 minutes or Off. Combat keeps time active. Manual pauses stay paused until you resume them. Offline and loading time are excluded.
 
-The calculator starts idle after login. Click Resume, enter combat or receive loot to start timing. **Pause on death** is on by default and can be switched off in Farming settings. With it on, death and ghost time are excluded; resurrection alone leaves the calculator idle until the next trigger or Resume.
+**Quest rewards** defaults to Session total only. You can include new rewards in hourly rates or stop recording them. Peaks always exclude quest gold and items. Quest rewards do not start an idle timer, and changing this option does not erase earlier rewards.
 
-Inactivity pause defaults to five minutes. Choose 5–60 minutes or Off. Combat keeps time active. A manual pause stays paused through combat, loot and death until you resume it. Quest rewards can still add to an idle session total, but do not start its timer. Offline and loading time are excluded.
+Quest rewards, bound items and poor items use vendor value. Other items can use a fresh AH estimate after the AH cut when it beats vendor value by the chosen threshold, 10% by default. Unpriced items are counted separately. Purchases, mail, trades and sale proceeds are excluded; later sales do not add the item again.
 
-Quest rewards, bound items and poor items use vendor value. Other items can use a fresh AH estimate after the AH cut when it beats vendor value by your threshold, 10% by default. Unpriced items are counted separately. Purchases, mail, trades and sale proceeds are excluded; later sales do not add the item again. Native window closure and world transitions recover stale transaction state. Quest classification ends after turn-in, combat or real world loot, so a missing quest-close event cannot classify an entire login as quest rewards.
+Resize or lock the small display in Farming settings. Drag it when unlocked; left-click opens the report and right-click pauses or resumes. Session total and hover-only display are optional.
 
 ## Drop display
 
-Open `/msmv drops`. Sort by rate high to low, rate low to high, or expected item value. Expected value ranks drop chance times one item's saved AH low, or vendor value when no AH price is available; it does not include stack size.
+Open `/msmv drops`. Sort by chance high to low, chance low to high, or **Expected item value**: drop chance multiplied by one item's saved AH low, or vendor value if no AH price exists. Stack size is excluded.
 
-Choose any of six colored rarities. Needed quest drops stay visible and first even when their rarity is unchecked. With no rarities selected, only needed quest drops remain. Filtering happens before the 1–10-item limit. Unknown rarity stays visible with All selected. Sort and rarity changes apply immediately; press Apply after editing Max items.
+Choose any of six rarities. Needed quest drops stay visible and first, even when their rarity is unchecked. With no rarities selected, only needed quest drops remain. Filtering happens before the 1–10-item limit; unknown rarity stays visible with All selected. Sort and rarity apply immediately; press Apply after editing Max items.
 
-Reference mode uses bundled entries and automatically fills missing items or sources from your personal observations. Each keeps its own rate and sample count. Choose Personal drops to see only your own records, including your rate for an already referenced item. Collection can remain enabled in either mode.
+**Reference data** fills missing items or sources from personal observations, keeping each rate and sample count separate. **Personal drops** shows only your own records. Collection can stay enabled in either mode.
 
-Personal rates count inspected corpses, skins or nodes. An item on three of ten corpses shows 30% (3/10); a stack counts as one successful drop. Visible items count even when left behind. Reliably identified empty corpses also count as inspections, lowering the rate when no item dropped. Reopening the same body does not count twice. Hovering, unseen kills and ambiguous sources do not count. Current-area records and harvesting types stay separate. Custom drop sections are hidden while loot is open, then restored on the next tooltip refresh. Quest-only drops are hidden when their quest is absent.
+Personal rates count inspected corpses, skins or nodes. An item on three of ten corpses shows 30% (3/10); a stack counts as one successful drop. Visible items count even if left behind. Reliably identified empty corpses count once; reopening does not add a sample. Unseen kills, unopened corpses and ambiguous sources do not count. Harvesting types and current-area records stay separate.
 
-Reset by creature/node, zone, dungeon or all this character's observations. This does not erase reference rates, prices, ledger entries or farming sessions. Reference chances can differ from Forever and are not guaranteed outcomes.
+Custom drop sections hide during looting to prevent overlap. Quest-only drops hide when the quest is absent. Reset personal observations by creature/node, current zone, dungeon or character without erasing reference data or other addon records. Reference chances may differ in Forever.
 
-## Upgrading from 1.3.0
-
-Session totals, time and personal observations are kept. Upgrading from 1.3.0 starts recent-rate and peak coverage fresh because older receipts may include misclassified quest rewards. Moving between 1.3.1 test builds keeps the newer rate history. Older saved summaries keep totals and averages, but unverifiable recent rates and peaks show Not recorded. Start a new session for a clean whole-session comparison. Previously missed empty bodies cannot be reconstructed; only new inspections adjust personal rates.
+For older session data and rate coverage, see [Updating](../UPGRADE.md).
