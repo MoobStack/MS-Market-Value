@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "archive": "MSMV-Everloot-Dataset-2026-11-16-b569dfe2cbae.zip",
-  "archiveSHA256": "7754d79bf1cfeecb9b545b138ff5f59117e1b96919e434fad3b7574b865a4ecb",
+  "archiveSHA256": "801472079b2af54df2beb6a1e4e19863fac5c4493e6e26131e092485e6303d45",
   "manifest": {
     "builderVersion": "0.1.4",
     "coverage": {
@@ -120,9 +120,9 @@
     "encodedBytes": 8381,
     "files": [
       {
-        "bytes": 10913,
+        "bytes": 10852,
         "name": "MSMV-Everloot-Dataset-2026-11-16-b569dfe2cbae-Reference.zip",
-        "sha256": "fe9d39945d0fd674d3211337401ced9d6798a455c5790d0e16595212909fe1eb"
+        "sha256": "daeacdb47ecb8a627477cc33d0986390ab0b81145bf29f56b8e61b36e92eefd6"
       },
       {
         "bytes": 49583,

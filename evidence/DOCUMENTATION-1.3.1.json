@@ -60,5 +60,7 @@
   "installedCodeAndDataMatchReleaseTag": true,
   "runtimeLuaFilesUnchanged": 33,
   "releaseTag": "v1.3.1",
-  "runtimeTests": "Previously validated release runtime: 943 Lua cases and 23 Python checks; no runtime changes in this documentation correction."
+  "runtimeTests": "Previously validated release runtime: 943 Lua cases and 23 Python checks; no runtime changes in this documentation correction.",
+  "nestedCompatibilityNoteCorrected": true,
+  "referenceDataAndCodeUnchanged": true
 }
