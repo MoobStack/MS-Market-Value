@@ -112,6 +112,7 @@ function UI.DiagnosticsText()
     if index then lines[#lines+1]="Market variants: current=" .. (index.count or 0) .. "; modified=" .. (index.modifiers or 0) end
     if coverage then lines[#lines+1]="Market matches: current=" .. coverage.keywordMatches .. "; modified=" .. coverage.matchingVariants ..
         "; need_history=" .. coverage.needsHistory .. "; other_signal_filters=" .. coverage.filteredSignals end
+    for _,line in ipairs(A.Market.HistoryDiagnostics())do lines[#lines+1]=line end
     local info=A.MarketMetadata
     lines[#lines+1]="Market item replies: received=" .. info.replies .. "; changed=" .. info.changes .. "; unchanged=" .. info.unchanged ..
         "; watched_ids=" .. #info.order .. "/256; watched_variants=" .. info.count .. "/1024"
@@ -174,6 +175,10 @@ function UI.DiagnosticsText()
     lines[#lines+1]="Farming receipts waiting: " .. #A.Farm.pending .. "; quest confirmations=" .. #A.Farm.receipts ..
         "; threshold=" .. D.Settings().farmThreshold .. "% above vendor after AH cut"
     lines[#lines+1]="Farming exclusions: mail/trade/vendor; ignored money messages=" .. (A.Farm.excludedReceipts or 0)
+    lines[#lines+1]="Farming receipt context: quest="..tostring(A.Farm.QuestContext()==true).."; vendor="..tostring(A.Farm.merchantOpen==true)..
+        "; mail="..tostring(A.Farm.mailOpen==true).."; trade="..tostring(A.Farm.tradeOpen==true).."; recovered_windows="..(A.Farm.recoveredWindows or 0)
+    local ignored={};for reason,count in pairs(A.Farm.ignoredMoney)do ignored[#ignored+1]=reason.."="..count end;table.sort(ignored)
+    lines[#lines+1]="Farming ignored money reasons: "..(#ignored>0 and table.concat(ignored,"; ") or "none")
     lines[#lines+1]="Farming quest rewards: " .. (not D.Settings().farmIncludeQuest and "new rewards excluded" or
         D.Settings().farmQuestInRate and "session and hourly" or "session only") .. "; peak=always_excluded"
     lines[#lines+1]="Farming idle: enabled=" .. tostring(D.Settings().farmIdle) .. "; minutes=" .. D.Settings().farmIdleMinutes ..

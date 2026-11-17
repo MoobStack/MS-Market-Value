@@ -6,7 +6,7 @@ MS Market Value 1.3.1-beta for WoW Forever. The [README](README.md) covers insta
 
 Start a full scan at an auctioneer from the MS Market Value tab. A completed scan replaces current prices; a partial or failed scan keeps the previous snapshot. Pause and resume within the same login session. After Local copy is complete, processing can resume without the original server buffer. Reloading or logging out ends unfinished work.
 
-Tooltips can show vendor sell value, historic average, current AH low and disenchant estimates. Known stack quantities show each-item and stack totals. Stale or missing prices are labeled. History keeps 1–30 UTC days; each day uses its latest completed scan. The average's day count is the number of days priced for that item, not every day saved for the market.
+Tooltips can show vendor sell value, historic average, current AH low and disenchant estimates. Known stack quantities show each-item and stack totals. Stale or missing prices are labeled. History keeps 1–30 UTC days; ordinary item prices use the latest completed scan for each day. Exact modifiers retain their latest priced observation within that UTC day, even when a later scan no longer lists them. The average's day count is the number of days priced for that item, not every day saved for the market.
 
 ## Crafting and quotes
 
@@ -18,7 +18,7 @@ Pricing settings control markup, labor, minimum charge and customer-supplied mat
 
 ## Opportunities and watchlists
 
-At the AH, open MS Opportunities. All items shows current prices; Resale, Rising and Falling need earlier history for the exact modifier. Apply keywords, rarity and supply filters to narrow the list. Left-click a result for live Buy listings, right-click for details, or use Watch selected to save targets.
+At the AH, open MS Opportunities. All items shows current prices; Resale, Rising and Falling need earlier history for the exact modifier. Apply keywords, rarity and supply filters to narrow the list. Missing baselines show a priced-day count such as 2/3 days; hover or right-click to see the UTC dates. Left-click a result for live Buy listings, right-click for details, or use Watch selected to save targets.
 
 Watch item is also available on the Buy page. Zero disables a target; all enabled targets must pass. Alerts use saved scans and do not start background auction searches. See [Opportunities](docs/MARKET-OPPORTUNITIES.md) for the columns and history rules.
 

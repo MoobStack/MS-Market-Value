@@ -1,10 +1,11 @@
 local _, A = ...
 local U, D, Metrics = A.Util, A.DB, A.FarmMetrics
-local F={revision=0,historyRevision=0,pending={},questCredits={},receipts={},messages={},messageRing={},serial=0}
+local F={revision=0,historyRevision=0,pending={},questCredits={},receipts={},messages={},messageRing={},serial=0,ignoredMoney={}}
 A.Farm=F
 local MAX_ITEMS, MAX_RECENT, MAX_HISTORY = 500, 20, 50
 F.limits={items=MAX_ITEMS,recent=MAX_RECENT,history=MAX_HISTORY}
 local MAX=1000000000000
+local interactions={{"merchant","MerchantFrame"},{"mail","MailFrame"},{"trade","TradeFrame"}}
 F.sources={loot="Loot",quest="Quests",herbalism="Herbalism",mining="Mining",skinning="Skinning"}
 function F.Harvest(kind) return kind=="herbalism" or kind=="mining" or kind=="skinning" end
 local function Amount(v) return U.Number(v,0,MAX,true) end
@@ -342,7 +343,7 @@ function F.Reset()
         F.historyRevision=F.historyRevision+1
     end
     profile.current=New();F.last=U.Mono();F.pending,F.questCredits,F.receipts,F.messages,F.messageRing={},{},{},{},{}
-    F.questWindow,F.questFinished,F.lastQuest=nil,nil,nil
+    F.ClearQuestContext();F.realLootAt=nil
     F.summary,F.reason=nil,nil;F.revision=F.revision+1;return true
 end
 
@@ -390,6 +391,7 @@ end
 function F.QuestLoot(questID,itemLink,quantity)
     if not U.Number(questID,1,2147483647,true) or not U.ItemID(itemLink) or
        not U.Number(quantity,1,1000000,true) then return end
+    F.realLootAt=nil;F.lastQuestReceipt=U.Mono()
     -- Keep a short credit even when quest income is switched off: its generic
     -- loot chat must not reclassify the reward as a monster drop.
     local key=U.VariantKey(itemLink) or tostring(U.ItemID(itemLink))
@@ -412,6 +414,7 @@ end
 
 function F.Tick(flush)
     local now=U.Mono()
+    F.SyncWindows()
     local profile,key=F.Profile()
     F.Advance(profile,key,now)
     local remaining={}
@@ -441,20 +444,57 @@ function F.Tick(flush)
     for key,credit in pairs(F.questCredits) do if now-credit.at>6 then F.questCredits[key]=nil end end
 end
 
-function F.QuestContext()
-    local now=U.Mono()
-    return F.questWindow==true or (F.questFinished and now-F.questFinished<=3) or
-        (F.lastQuest and now-F.lastQuest<=3)
+function F.ClearQuestContext()
+    F.questWindow,F.questOpenedAt,F.questFinished,F.lastQuest,F.lastQuestReceipt=nil,nil,nil,nil,nil
 end
 
+local function Shown(frame)
+    if U.Accessible(frame) and frame and (type(frame)=="table" or type(frame)=="userdata") then return U.Call(frame.IsShown,frame) end
+end
+
+function F.SyncWindows()
+    local now=U.Mono()
+    for _,context in ipairs(interactions) do
+        local key=context[1]
+        if F[key.."Open"] and F[key.."OpenedAt"] and now-F[key.."OpenedAt"]>=.25 and Shown(_G[context[2]])==false then
+            F[key.."Open"],F[key.."Closed"]=false,now
+            F.recoveredWindows=(F.recoveredWindows or 0)+1
+        end
+    end
+    if F.questWindow and F.questOpenedAt and now-F.questOpenedAt>=.25 and Shown(QuestFrame)==false then
+        F.questWindow,F.questOpenedAt,F.questFinished=nil,nil,now
+        F.recoveredWindows=(F.recoveredWindows or 0)+1
+    end
+end
+
+function F.WorldReceipt()
+    if A.Drops.lootOpen==true then return true end
+    return F.realLootAt~=nil and U.Mono()-F.realLootAt<=3
+end
+
+function F.QuestContext()
+    local now=U.Mono()
+    -- A missing close event must not label the rest of a login as quest loot.
+    local open=F.questWindow==true and F.questOpenedAt and
+        (now-F.questOpenedAt<=60 or Shown(QuestFrame)==true)
+    return open or (F.questFinished and now-F.questFinished<=3) or
+        (F.lastQuest and now-F.lastQuest<=3) or (F.lastQuestReceipt and now-F.lastQuestReceipt<=3)
+end
+
+function F.ReceiptBlockReason()
+    for _,key in ipairs({"mail","trade","merchant"})do
+        if F[key.."Open"] then return key end
+        if F[key.."Closed"] and U.Mono()-F[key.."Closed"]<=2 then return key.."_cooldown" end
+    end
+end
 function F.ReceiptAllowed()
-    return not F.mailOpen and not F.tradeOpen and not F.merchantOpen and
-        (not F.merchantClosed or U.Mono()-F.merchantClosed>2) and
-        (not F.mailClosed or U.Mono()-F.mailClosed>2) and (not F.tradeClosed or U.Mono()-F.tradeClosed>2)
+    return F.ReceiptBlockReason()==nil
 end
 function F.Event(event,...)
     local a,b,c=...
     if event=="PLAYER_LOGIN" or event=="PLAYER_ENTERING_WORLD" then
+        for _,key in ipairs({"mail","trade","merchant"})do F[key.."Open"],F[key.."Closed"],F[key.."OpenedAt"]=false,nil,nil end
+        F.ClearQuestContext();F.realLootAt=nil
         F.inWorld=true;F.last=U.Mono();F.combat=U.Combat()
         F.dead=F.IsDead()
         if event=="PLAYER_LOGIN" then F.waiting="login" end
@@ -467,26 +507,33 @@ function F.Event(event,...)
     elseif event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST" then
         F.Tick();F.dead=F.IsDead();F.last=U.Mono()
     elseif event=="PLAYER_REGEN_DISABLED" then
-        F.Tick();F.combat=true;F.Activity()
+        F.Tick();F.ClearQuestContext();F.combat=true;F.Activity()
     elseif event=="PLAYER_REGEN_ENABLED" then
         F.Tick();F.combat=false
         local profile=F.Profile()
         if profile then profile.current.idleElapsed=0;profile.current.idlePaused=false end
-    elseif event=="MAIL_SHOW" then F.mailOpen=true;F.mailClosed=nil
+    elseif event=="MAIL_SHOW" then F.mailOpen=true;F.mailClosed=nil;F.mailOpenedAt=U.Mono()
     elseif event=="MAIL_CLOSED" then F.mailOpen=false;F.mailClosed=U.Mono()
-    elseif event=="TRADE_SHOW" then F.tradeOpen=true;F.tradeClosed=nil
+    elseif event=="TRADE_SHOW" then F.tradeOpen=true;F.tradeClosed=nil;F.tradeOpenedAt=U.Mono()
     elseif event=="TRADE_CLOSED" or event=="TRADE_REQUEST_CANCEL" then F.tradeOpen=false;F.tradeClosed=U.Mono()
-    elseif event=="MERCHANT_SHOW" then F.merchantOpen=true;F.merchantClosed=nil
+    elseif event=="MERCHANT_SHOW" then F.merchantOpen=true;F.merchantClosed=nil;F.merchantOpenedAt=U.Mono()
     elseif event=="MERCHANT_CLOSED" then F.merchantOpen=false;F.merchantClosed=U.Mono()
-    elseif event=="QUEST_COMPLETE" then F.questWindow=true;F.questFinished=nil
-    elseif event=="QUEST_FINISHED" then F.questWindow=false;F.questFinished=U.Mono()
+    elseif event=="QUEST_COMPLETE" then F.realLootAt=nil;F.questWindow=true;F.questOpenedAt=U.Mono();F.questFinished=nil
+    elseif event=="QUEST_FINISHED" then F.questWindow,F.questOpenedAt=nil,nil;F.questFinished=U.Mono()
+    elseif event=="LOOT_READY" or event=="LOOT_OPENED" or event=="LOOT_SLOT_CHANGED" then
+        if A.Drops.readWindows and A.Drops.worldLootRead==A.Drops.readWindows then F.ClearQuestContext();F.realLootAt=U.Mono() end
     elseif event=="PLAYER_LEAVING_WORLD" or event=="PLAYER_LOGOUT" then
-        F.Tick(true);F.inWorld=false;F.last=nil;F.questWindow,F.questFinished,F.lastQuest=nil,nil,nil
+        F.Tick(true);F.inWorld=false;F.last=nil;F.ClearQuestContext();F.realLootAt=nil
+        for _,key in ipairs({"mail","trade","merchant"})do F[key.."Open"],F[key.."Closed"],F[key.."OpenedAt"]=false,nil,nil end
     elseif event=="CHAT_MSG_LOOT" then F.LootMessage(a,select(11,...))
     elseif event=="CHAT_MSG_MONEY" then
-        if F.ReceiptAllowed() and (not F.QuestContext() or A.Drops.lootOpen==true) then local amount=A.Cash.ParseLootMessage(a);if amount then F.AddMoney(amount,false) end
-        else F.excludedReceipts=(F.excludedReceipts or 0)+1 end
-    elseif event=="QUEST_TURNED_IN" then F.lastQuest=U.Mono();F.AddMoney(c,true)
+        local amount=A.Cash.ParseLootMessage(a)
+        if amount then
+            local reason=F.ReceiptBlockReason() or (F.QuestContext() and not F.WorldReceipt() and "quest")
+            if reason then F.excludedReceipts=(F.excludedReceipts or 0)+1;F.ignoredMoney[reason]=(F.ignoredMoney[reason] or 0)+1
+            else F.AddMoney(amount,false) end
+        end
+    elseif event=="QUEST_TURNED_IN" then F.realLootAt=nil;F.questWindow,F.questOpenedAt=nil,nil;F.lastQuest=U.Mono();F.AddMoney(c,true)
     elseif event=="QUEST_LOOT_RECEIVED" then F.QuestLoot(a,b,c)
     elseif event=="GET_ITEM_INFO_RECEIVED" then F.summary=nil end
 end

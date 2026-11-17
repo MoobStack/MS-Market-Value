@@ -26,7 +26,7 @@ end
 
 local function CopyPrices(source, keyCheck, records)
     local result, count = {}, 0
-    if not U.Table(source) then return result end
+    if not U.Table(source) then return result,count end
     for key, entry in pairs(source) do
         if keyCheck(key) then
             local value = records and (U.Table(entry) and entry.low or nil) or entry
@@ -36,7 +36,7 @@ local function CopyPrices(source, keyCheck, records)
             end
         end
     end
-    return result
+    return result,count
 end
 
 function H.Prune()
@@ -104,8 +104,22 @@ function H.Record(snapshot)
     local days = H.data.markets[snapshot.marketKey] or {}
     local previous = days[day]
     if previous and previous.startedAt > snapshot.startedAt then return false end
-    days[day] = { startedAt = snapshot.startedAt, variantFormat=snapshot.variantFormat==2 and 2 or nil,
-        prices = CopyPrices(snapshot.prices, ItemKey, true), variants = CopyPrices(snapshot.variants, VariantKey, true) }
+    local format=snapshot.variantFormat==2 and 2 or nil
+    local variants,count=CopyPrices(snapshot.variants,VariantKey,true)
+    -- A modifier priced earlier today remains a valid observation even if
+    -- sold out before a later scan. Keep current listings separate, never
+    -- carry a sample across UTC dates, or promote legacy data to a new format.
+    if previous and previous.variantFormat==format and U.Table(previous.variants) then
+        for key,value in pairs(previous.variants) do
+            if count>=A.MAX_ROWS then break end
+            if U.String(key) and variants[key]==nil and Price(value) then
+                local id,suffix,bonuses=U.SplitVariant(key)
+                if id and (suffix~=0 or bonuses) then variants[key]=value;count=count+1 end
+            end
+        end
+    end
+    days[day] = { startedAt = snapshot.startedAt, variantFormat=format,
+        prices = CopyPrices(snapshot.prices, ItemKey, true), variants = variants }
     H.data.markets[snapshot.marketKey] = days
     ResetCache(true)
     A.refreshTooltips = true
@@ -157,6 +171,26 @@ function H.Status(market)
     end
     return { days = count, firstDay = firstDay, lastDay = lastDay, retention = D.Settings().historyDays, reason = H.reason,
         legacyDays = legacyDays, legacyHosts = legacyHosts, legacyReason = legacyReason }
+end
+
+-- Price signals use completed dates before the current scan's UTC date.
+-- This is separate from the market-wide count shown beside the scan age.
+function H.PriorRecords(snapshot,lookback,market)
+    local records={}
+    if not U.Table(snapshot) or not U.Number(snapshot.startedAt,0,U.Now()) or not U.Number(lookback,1,30,true) then return records end
+    local day=Day(snapshot.startedAt)
+    local info={scanDay=day,priorDays=0,exactDays=0}
+    local days=H.Days(market or U.MarketInfo()) or {}
+    for date=day-lookback,day-1 do
+        local record=days[date]
+        if record and record.startedAt<snapshot.startedAt then
+            records[#records+1]=record;info.priorDays=info.priorDays+1
+            if record.variantFormat==2 then
+                info.exactDays=info.exactDays+1;info.firstExact=info.firstExact or date;info.lastExact=date
+            end
+        end
+    end
+    return records,info
 end
 
 function H.Average(itemID, link)

@@ -383,7 +383,8 @@ function UI.Create(parent)
         button:SetScript("OnEnter", function(self)
             self.hovered = true; UI.hovered = self.row; Highlight(self); UI.RefreshDetails()
             if self.row and GameTooltip and type(GameTooltip.SetHyperlink) == "function" then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetHyperlink(self.row.link); GameTooltip:Show()
+                GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetHyperlink(self.row.link)
+                GameTooltip:AddLine(M.HistoryDescription(self.row),.61,.66,.70);GameTooltip:Show()
             end
         end)
         button:SetScript("OnLeave", function(self)
@@ -416,8 +417,7 @@ function UI.RefreshDetails()
     local row = UI.hovered or UI.selected
     if row then
         if row.needsHistory then
-            UI.detail:SetText(M.Name(row) .. ". " .. (row.itemWide and "Saved prices are item-wide. Complete a new scan for exact variants." or
-                (row.days .. " precise priced days; " .. D.Settings().marketMinDays .. " needed for price movement.")))
+            UI.detail:SetText(M.Name(row)..". "..M.HistoryDescription(row))
             return
         end
         local target = row.maxBuy and row.maxBuy > 0 and ("Buy at " .. U.Coins(row.maxBuy) .. " or less.") or "No positive target buy price."
@@ -468,11 +468,13 @@ function UI.Refresh()
         if row then
             local texts = { M.Name(row), U.Coins(row.current), row.lowUnits and tostring(row.lowUnits) or "-",
                 row.lowBuyout and U.Coins(row.lowBuyout) or "-", row.units and tostring(row.units) or "-",
-                row.profit and A.CraftingUI.SignedMoney(row.profit) or "-", row.roi and string.format("%+.0f%%", row.roi) or "-",
+                row.profit and A.CraftingUI.SignedMoney(row.profit) or row.itemWide and "Rescan" or
+                    row.needsHistory and ((row.days or 0).."/"..(row.minDays or D.Settings().marketMinDays).." days") or "-", row.roi and string.format("%+.0f%%", row.roi) or "-",
                 row.movement and string.format("%+.0f%%", row.movement) or "-" }
             for column, value in ipairs(texts) do button.labels[column]:SetText(value) end
             for _, column in ipairs({6,7}) do button.labels[column]:SetTextColor(row.profit and row.profit>0 and 0.35 or 1, row.profit and row.profit>0 and 0.87 or 0.38, 0.38) end
             button.labels[8]:SetTextColor(row.movement and row.movement>0 and 0.35 or 1, row.movement and row.movement>0 and 0.87 or 0.65, 0.38)
+            if row.needsHistory then for _,column in ipairs({6,7,8})do button.labels[column]:SetTextColor(.61,.66,.70) end end
             button.labels[1]:SetTextColor(row.r or .90,row.g or .89,row.b or .84)
             Highlight(button); button:Show()
         else button:Hide() end

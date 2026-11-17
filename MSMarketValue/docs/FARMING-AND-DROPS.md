@@ -26,7 +26,7 @@ The calculator starts idle after login. Click Resume, enter combat or receive lo
 
 Inactivity pause defaults to five minutes. Choose 5–60 minutes or Off. Combat keeps time active. A manual pause stays paused through combat, loot and death until you resume it. Quest rewards can still add to an idle session total, but do not start its timer. Offline and loading time are excluded.
 
-Quest rewards, bound items and poor items use vendor value. Other items can use a fresh AH estimate after the AH cut when it beats vendor value by your threshold, 10% by default. Unpriced items are counted separately. Purchases, mail, trades and sale proceeds are excluded; later sales do not add the item again.
+Quest rewards, bound items and poor items use vendor value. Other items can use a fresh AH estimate after the AH cut when it beats vendor value by your threshold, 10% by default. Unpriced items are counted separately. Purchases, mail, trades and sale proceeds are excluded; later sales do not add the item again. Native window closure and world transitions recover stale transaction state. Quest classification ends after turn-in, combat or real world loot, so a missing quest-close event cannot classify an entire login as quest rewards.
 
 ## Drop display
 

@@ -1,8 +1,8 @@
 # MS Market Value
 
-**Version 1.3.1-beta · Test revision 2 · WoW Forever · By MoobStack**
+**Version 1.3.1-beta · Test revision 3 · WoW Forever · By MoobStack**
 
-This is a test build. See [test notes](RELEASE-NOTES-v1.3.1-beta-test2.md) for the changes and checks to try.
+This is a test build. See [test notes](RELEASE-NOTES-v1.3.1-beta-test3.md) for the changes and checks to try.
 
 Auction prices, crafting profits, farming estimates, drop rates and a personal gold ledger in one addon.
 

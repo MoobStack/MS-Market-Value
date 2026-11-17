@@ -125,6 +125,7 @@ local function fresh(saved)
         "LOOT_ITEM_SELF","LOOT_ITEM_SELF_MULTIPLE"}) do _G[name]=nil end
     for index=1,200 do _G["GameTooltipTextLeft"..index]=nil;_G["GameTooltipTextRight"..index]=nil end
     _G.UnitIsTapDenied,_G.UnitIsDeadOrGhost=nil,nil
+    _G.MerchantFrame,_G.MailFrame,_G.QuestFrame=nil,nil,nil
     _G.issecretvalue = function(v) return rawequal(v, secret) end
     _G.canaccessvalue = function(v) return not rawequal(v, secret) end
     _G.GetServerTime = function() return world.wall end
@@ -1470,7 +1471,7 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("release diagnostics identify the stable build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 2",1,true))
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 3",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
     equal(A.VERSION,"1.3.1-beta"); equal(A.BUILD,"2026-11-16-beta001")
 end)
@@ -1732,7 +1733,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 2",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 3",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -2249,7 +2250,7 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 2",1,true)); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 3",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
@@ -2263,7 +2264,7 @@ test("the 1.1.0-to-1.3.1 upgrade keeps prices history preferences and cooldown w
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.3.1-beta"); equal(A2.BUILD,"2026-11-16-beta001"); equal(A2.TEST_REVISION,2)
+    equal(A2.VERSION,"1.3.1-beta"); equal(A2.BUILD,"2026-11-16-beta001"); equal(A2.TEST_REVISION,3)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)
@@ -2296,6 +2297,7 @@ assert(loadfile("tests/v13-revision9.lua"))(fresh, row, link, test, equal, near,
 assert(loadfile("tests/v13-revision10.lua"))(fresh, row, link, test, equal, near, truth, secret)
 assert(loadfile("tests/v131-test1.lua"))(fresh, row, link, test, equal, near, truth, secret)
 assert(loadfile("tests/v131-test2.lua"))(fresh,craftingWorld,craftRecipe,row,link,test,equal,near,truth,secret)
+assert(loadfile("tests/v131-test3.lua"))(fresh,row,link,test,equal,near,truth,secret)
 
 if os.getenv("MSMV_BENCHMARK") == "1" then
     assert(loadfile("tests/reference-performance.lua"))(fresh,truth,equal)

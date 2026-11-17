@@ -324,6 +324,7 @@ function P.ReadEmptyLoot(fromItem)
 end
 
 function P.ReadLoot(event,fromItem)
+    P.worldLootRead=nil
     if not D.Settings().dropTracking and not D.Settings().farmTracking then return end
     P.Remember("target");P.Remember("mouseover")
     local count=U.Call(GetNumLootItems)
@@ -356,6 +357,7 @@ function P.ReadLoot(event,fromItem)
                     gather.kind~="skinning" and sourceType=="GameObject") and
                     (not gather.guid or gather.guid==guid) then kind=gather.kind end
                 if id and (sourceType~="GameObject" or kind~="loot") and U.Number(quantity,0,1000000,true) then
+                    P.worldLootRead=P.readWindows
                     local receipt=ReceiptKey(guid,kind)
                     local items=sources[receipt] or {};sources[receipt]=items;kinds[receipt]={guid=guid,kind=kind}
                     if kind~="loot" and gather and U.String(gather.name) then RememberName(P.SourceKey(id,kind),gather.name) end

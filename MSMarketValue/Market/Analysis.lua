@@ -60,7 +60,7 @@ function M.Clear(reason)
     M.job, M.rows, M.snapshot, M.reason, M.ready = nil, {}, nil, reason, true
     M.source, M.signature, M.examined, M.eligible = nil, nil, 0, 0
     M.variantIndex=nil
-    M.coverage=nil;I.Begin()
+    M.coverage,M.historyInfo,M.historyRecords=nil,nil,nil;I.Begin()
 end
 
 function M.Ensure(view, sort, force)
@@ -86,12 +86,8 @@ function M.Ensure(view, sort, force)
     I.Begin(snapshot,key)
     local settings = {}
     for name, value in pairs(D.Settings()) do if U.String(name) and string.sub(name, 1, 6) == "market" then settings[name] = value end end
-    local day, records = math.floor(snapshot.startedAt / 86400), {}
-    local days = H.Days(market) or {}
-    for date = day - settings.marketLookback, day - 1 do
-        local record = days[date]
-        if record and record.startedAt < snapshot.startedAt then records[#records + 1] = record end
-    end
+    local day=math.floor(snapshot.startedAt/86400)
+    local records,historyInfo=H.PriorRecords(snapshot,settings.marketLookback,market)
     local modern=snapshot.variantFormat==2
     local index=M.variantIndex
     if index and (index.snapshot~=snapshot or not modern and
@@ -106,7 +102,7 @@ function M.Ensure(view, sort, force)
         mapIndex = 1, variants = index and index.variants or {}, currentVariants=index and index.currentVariants or {},
         currentVariantCount=index and index.count or 0,modifierCount=index and index.modifiers or 0,
         phase = index and "prices" or "variants", words=words, rows = {}, examined = 0, eligible = 0,
-        coverage={keywordMatches=0,matchingVariants=0,needsHistory=0,filteredSignals=0},
+        coverage={keywordMatches=0,matchingVariants=0,needsHistory=0,filteredSignals=0,modifiedPrior={},modifiedRescan=0,samples={}},historyInfo=historyInfo,
         view = view, sort = sort, day = day, started = U.Mono() }
     M.ready, M.reason = false, nil
     M.builds = M.builds + 1
@@ -246,14 +242,28 @@ local function Evaluate(job, key, entry, variant)
     local equipment=item and (item.classID==2 or item.classID==4) and quality and quality>=2
     local legacyEquipment=(equipment and (not U.String(entry.link) or not variant)) or
         (job.snapshot.variantFormat~=2 and not U.String(entry.link))
-    local values = {}
+    local values,firstDay,lastDay = {},nil,nil
     for _, record in ipairs(job.records) do
         local value = (variant and record.variants or record.prices)[key]
-        if Price(value) and (not equipment or suffix~=0 or record.variantFormat==2) then values[#values + 1] = value end
+        if Price(value) and (not equipment or suffix~=0 or record.variantFormat==2) then
+            values[#values+1]=value
+            local day=math.floor(record.startedAt/86400);firstDay=firstDay or day;lastDay=day
+        end
     end
     local coverage=job.coverage
     coverage.keywordMatches=coverage.keywordMatches+1
-    if variant and (suffix~=0 or bonuses) then coverage.matchingVariants=coverage.matchingVariants+1 end
+    if variant and (suffix~=0 or bonuses) then
+        coverage.matchingVariants=coverage.matchingVariants+1
+        local bucket=math.min(#values,s.marketMinDays)
+        coverage.modifiedPrior[bucket]=(coverage.modifiedPrior[bucket] or 0)+1
+        if legacyEquipment then coverage.modifiedRescan=coverage.modifiedRescan+1 end
+        local samples=coverage.samples
+        if #samples<3 or key<samples[#samples].key then
+            samples[#samples+1]={key=key,name=name or linkedName or ("Item "..id),days=#values,minDays=s.marketMinDays,formatRequired=equipment and suffix==0}
+            table.sort(samples,function(a,b)return a.key<b.key end)
+            if #samples>3 then table.remove(samples) end
+        end
+    end
     if #values<s.marketMinDays or legacyEquipment then coverage.needsHistory=coverage.needsHistory+1 end
     local row=not legacyEquipment and M.Evaluate(entry.low, values, job.settings) or nil
     if job.view=="listed" and not row then row={current=entry.low,buy=math.ceil(entry.low),days=#values,needsHistory=true} end
@@ -263,6 +273,8 @@ local function Evaluate(job, key, entry, variant)
     end
     row.id, row.suffix, row.key, row.variantKey, row.hasBonuses = id, suffix, tostring(key), variant and key or nil,bonuses
     row.itemWide=legacyEquipment
+    row.minDays,row.historyFirstDay,row.historyLastDay=s.marketMinDays,firstDay,lastDay
+    row.historyFormatRequired=equipment and suffix==0
     row.link = U.String(entry.link) and U.ItemID(entry.link) == id and entry.link or
         ("item:" .. id .. ":0:0:0:0:0:" .. (suffix or 0) .. ":0")
     row.scannedName=scannedName
@@ -282,6 +294,7 @@ local function Publish(job)
     M.examined, M.eligible, M.truncated = job.examined, job.eligible, job.truncated
     M.ready, M.job = true, nil
     M.coverage=job.coverage
+    M.historyInfo,M.historyRecords=job.historyInfo,job.records
     M.publications = M.publications + 1
     if job.metadataDirty then M.metadataDirty=true end
     M.reason = job.reason or (((job.qualityMissing or 0)>0 or (job.nameMissing or 0)>0) and "Some item names or rarity data is loading. Results update when it arrives.") or
@@ -289,6 +302,53 @@ local function Publish(job)
         ("No matching signals. Use All items for current variants; signals need " .. job.settings.marketMinDays .. " earlier priced UTC days per variant.")) or
         (job.coverage.needsHistory>0 and (job.coverage.needsHistory .. " matches need " .. job.settings.marketMinDays ..
             " earlier priced UTC days. All items shows current prices.")) or nil)
+end
+
+local function UTC(day)return day and date("!%Y-%m-%d",day*86400) or "none" end
+
+function M.HistoryDescription(row)
+    if row.itemWide then return "Saved prices are item-wide. Complete a new scan for exact variants." end
+    local text=(row.days or 0).."/"..(row.minDays or D.Settings().marketMinDays).." earlier priced UTC days; current scan date excluded."
+    if row.historyFirstDay then text=text.." Seen "..UTC(row.historyFirstDay).." to "..UTC(row.historyLastDay).."." end
+    return text
+end
+
+function M.HistoryDiagnostics()
+    local snapshot=D.Snapshot()
+    local records,info=H.PriorRecords(snapshot,D.Settings().marketLookback)
+    if not info then return {} end
+    local lines={"Market history window: scan_UTC="..UTC(info.scanDay).."; current_format="..(snapshot.variantFormat==2 and "2" or "legacy").."; prior_dates="..info.priorDays..
+        "; exact_format_dates="..info.exactDays.."; exact_UTC="..UTC(info.firstExact).." to "..UTC(info.lastExact).."; current_date_excluded=true"}
+    if M.snapshot~=snapshot or M.key~=U.MarketKey() or not M.coverage then return lines end
+    records=M.historyRecords or records
+    local required=M.settings.marketMinDays
+    local counts={}
+    for n=0,required-1 do counts[#counts+1]=n.."="..(M.coverage.modifiedPrior[n] or 0) end
+    counts[#counts+1]=">="..required.."="..(M.coverage.modifiedPrior[required] or 0)
+    lines[#lines+1]="Market modified prior days: "..table.concat(counts,"; ").."; needs_rescan="..M.coverage.modifiedRescan
+    local samples={}
+    local selected=A.MarketUI and A.MarketUI.selected
+    if selected and selected.variantKey then
+        samples[#samples+1]={key=selected.variantKey,name=M.Name(selected),days=selected.days,minDays=selected.minDays or required,
+            formatRequired=selected.historyFormatRequired}
+    end
+    for _,sample in ipairs(M.coverage.samples)do
+        if #samples>=3 then break end
+        if not selected or sample.key~=selected.variantKey then samples[#samples+1]=sample end
+    end
+    for _,sample in ipairs(samples)do
+        local prices={}
+        for index=#records,1,-1 do
+            local record=records[index];local value=record.variants[sample.key]
+            if Price(value) and (not sample.formatRequired or record.variantFormat==2) then
+                table.insert(prices,1,UTC(math.floor(record.startedAt/86400))..":"..string.format("%.2fc",value))
+                if #prices>=4 then break end
+            end
+        end
+        lines[#lines+1]="Market history sample: "..sample.name.."; key="..sample.key.."; prior="..sample.days.."/"..sample.minDays..
+            "; exact_UTC_prices="..(#prices>0 and table.concat(prices,",") or "none")
+    end
+    return lines
 end
 
 function M.Tick()

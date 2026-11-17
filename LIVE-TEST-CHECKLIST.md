@@ -1,7 +1,7 @@
 # In-game test check
 
-This checkout is **1.3.1-beta, test revision 2**. Work through the [test notes](RELEASE-NOTES-v1.3.1-beta-test2.md) for saved-session management, scrolling lists, login/death idle and the earlier receipt fixes.
+This checkout is **1.3.1-beta, test revision 3**. Follow the [test notes](RELEASE-NOTES-v1.3.1-beta-test3.md) for exact-variant date coverage and farming after quest/vendor/mail/trade windows close.
 
-Also confirm that saved prices, history and player records remain after updating, and briefly check a completed AH scan, Opportunities search/filter changes, a crafting quote and a ledger export. Check idle/manual pause, combat resume, window overlap and saved display preferences.
+Also confirm the earlier session-management, scrolling, login/death idle, empty-corpse and tooltip fixes. Include diagnostics with a representative market variant selected when reporting missing history.
 
-Include diagnostics and a short reproduction for any failure. Native event timing and appearance need confirmation before a final release.
+Native event timing and appearance still need confirmation before a final release.

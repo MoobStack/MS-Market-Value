@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.3.1-beta — Test revision 3 · 2026-11-17
+
+- Preserve exact-modifier observations when a later scan on the same UTC day no longer lists them. Keep current listings fresh and never carry samples across dates.
+- Replace blank missing-baseline net values with exact-history progress; show priced UTC dates in row details and tooltips.
+- Add scan-date, compatible-history and per-variant coverage diagnostics with sample keys and daily prices. Keep signal thresholds and existing history unchanged.
+- Recover stale quest/transaction-window state so missing close events cannot keep rejecting or misclassifying later farming receipts.
+- Preserve quest echo deduplication, vendor/mail/trade exclusions, manual/death pause and quest-free peaks. Report money exclusion reasons.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test3.md) for the November 17 coverage explanation and in-game checks.
+
 ## 1.3.1-beta — Test revision 2 · 2026-11-17
 
 - Add a 0–50 saved-session limit and confirmed deletion of individual saves. Limits and records stay separate by character and market.

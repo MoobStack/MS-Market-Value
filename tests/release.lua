@@ -21,7 +21,7 @@ test("saved beta data retains all money tools settings and recorded cost bases",
     local roots={markets=saved.markets,history=saved.history,vendorBuy=saved.vendorBuy,watchlists=saved.watchlists,ledger=saved.ledger}
     local rows=L.Records();local sum=L.Summary();local first=rows[1].time
     local w2,A2=fresh(saved);w2.wall=w.wall;w2:load()
-    equal(A2.VERSION,"1.3.1-beta");equal(A2.BUILD,"2026-11-16-beta001");equal(A2.TEST_REVISION,2)
+    equal(A2.VERSION,"1.3.1-beta");equal(A2.BUILD,"2026-11-16-beta001");equal(A2.TEST_REVISION,3)
     for key,value in pairs(roots)do sameData(A2.DB.data[key],value)end
     equal(#A2.Ledger.Records(),4);equal(A2.Ledger.Records()[1].time,first)
     equal(A2.Ledger.Summary().flow,sum.flow);equal(A2.Ledger.Summary().profit,sum.profit);equal(A2.Ledger.Summary().estimatedProfit,sum.estimatedProfit)
@@ -59,12 +59,12 @@ test("the 1.3.1 test upgrade preserves farming drop settings and all existing mo
         watchlists=saved.watchlists,ledger=saved.ledger,drops=saved.drops}
     local total=A.Farm.Summary().total;local elapsed=A.Farm.Elapsed()
     local w2,B=fresh(saved);w2.wall=w.wall;w2:load()
-    equal(B.VERSION,"1.3.1-beta");equal(B.BUILD,"2026-11-16-beta001");equal(B.TEST_REVISION,2)
+    equal(B.VERSION,"1.3.1-beta");equal(B.BUILD,"2026-11-16-beta001");equal(B.TEST_REVISION,3)
     for key,value in pairs(expected)do sameData(B.DB.data[key],value)end
     equal(B.Farm.Summary().total,total);equal(B.Farm.Elapsed(),elapsed);truth(B.Farm.Summary().paused)
     equal(B.Drops.Profile().mobs,1);equal(B.Drops.Profile().cells,1)
     equal(B.DB.Settings().dropSort,"rate_asc");equal(B.DB.Settings().dropQuality,8)
     equal(B.DB.Settings().farmHUDWidth,400);truth(B.DB.Settings().farmHUDLocked)
     equal(B.DB.data.version,"1.3.1-beta");equal(B.DB.data.build,"2026-11-16-beta001")
-    truth(B.UI.DiagnosticsText():find("Test revision: 2",1,true));equal(w2.requests,0)
+    truth(B.UI.DiagnosticsText():find("Test revision: 3",1,true));equal(w2.requests,0)
 end)
