@@ -1,13 +1,11 @@
 # Validation
 
-MS Market Value **1.3.1-beta, test revision 5** passed **924 Lua cases and 23 Python checks/workloads** using Lua 5.1 API/frame fixtures. Thirty-four new cases cover the watchlist revision.
+MS Market Value **1.3.1-beta, test revision 6** passed **924 Lua cases and 23 Python checks/workloads** using Lua 5.1 API/frame fixtures. The 47 focused Sell/watchlist cases also passed before the complete run.
 
-Coverage includes search, header sorting, target-only filtering, ten reusable scrolling rows, rarity colors and separate target indicators, native Buy navigation, link-based creation, preserved watch scope, editing/removal and watch-specific settings.
+Updated Sell checks cover the 28×24 panel-button hit areas, native arrow atlas and orientation, centered 1×2 placement and the price warning below copper. Existing cases retain one-copper changes, silver/gold rollover, zero/input limits, native total callbacks, manual edits and repeated AH opening.
 
-Alert replays cover grouped reviews, optional chat, unchanged scans, repeat AH visits, saved-data reloads, price improvements, out-of-target/unlisted rearming and explicit dismissal. They also cover deferred delivery during combat, selling, purchase confirmation, typing and editing. An open watchlist updates without another foreground open. Alerts make no native auction search requests; explicit row clicks do.
+Watchlist search is retained and still filters saved watches. Its 200-watch workload passed 200 scrolls and 200 searches with no new frames, price-analysis publications or metadata reads during scrolling. Alerts, editing and native Buy navigation remain covered.
 
-The 200-watch UI workload performed 200 scrolls and 200 searches with no new frames, pricing publications or metadata reads during scrolling. Its largest measured scroll step was 2.23 ms in this run. These are fixture component timings, not native FPS or whole-addon memory measurements.
+All 32 runtime Lua files pass syntax, load-order, identity and operation checks. Earlier market, farming, session, crafting, ledger and drop coverage remains included. Results and runtime hashes are in `evidence/TEST-1.3.1-6.json`; the local log is `evidence/TEST-1.3.1-6-validation.txt`.
 
-All 32 runtime Lua files pass syntax, load-order, identity and operation checks. Prior market, farming, session, crafting, ledger and Sell-arrow coverage remains included. Evidence and runtime hashes are in `evidence/TEST-1.3.1-5.json`; the complete local log is `evidence/TEST-1.3.1-5-validation.txt`.
-
-The supplied test revision 4 diagnostics report installed Sell arrows, active farming rates with no ignored money messages, and two earlier exact-variant dates. The new watchlist appearance, direct navigation and alert timing on client 1.60.1 / 70959 still need native confirmation. Follow the [test notes](RELEASE-NOTES-v1.3.1-beta-test5.md).
+The native AH source was checked for the sort-arrow atlas and direction. Fixtures do not render game textures or prove live-client spacing, FPS or event timing. Confirm the red buttons, arrow size and price-warning placement in game using the [test notes](RELEASE-NOTES-v1.3.1-beta-test6.md).

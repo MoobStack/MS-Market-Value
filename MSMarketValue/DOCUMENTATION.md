@@ -8,7 +8,7 @@ Start a full scan at an auctioneer from the MS Market Value tab. A completed sca
 
 Tooltips can show vendor sell value, historic average, current AH low and disenchant estimates. Known stack quantities show each-item and stack totals. Stale or missing prices are labeled. History keeps 1–30 UTC days; ordinary item prices use the latest completed scan for each day. Exact modifiers retain their latest priced observation within that UTC day, even when a later scan no longer lists them. The average's day count is the number of days priced for that item, not every day saved for the market.
 
-On the AH Sell page, the stacked arrows beside the copper field increase or decrease the unit price by one copper. Silver and gold roll over automatically, and the total updates as usual. Prices stop at zero.
+On the AH Sell page, the larger red arrow buttons beside the copper field increase or decrease the unit price by one copper. Silver and gold roll over automatically, and the total updates as usual. Prices stop at zero.
 
 ## Crafting and quotes
 
@@ -22,7 +22,7 @@ Pricing settings control markup, labor, minimum charge and customer-supplied mat
 
 At the AH, open MS Opportunities. All items shows current prices; Resale, Rising and Falling need earlier history for the exact modifier. Apply keywords, rarity and supply filters to narrow the list. Missing baselines show a priced-day count such as 2/3 days; hover or right-click to see the UTC dates. Left-click a result for live Buy listings, right-click for details, or use Watch selected to save targets.
 
-Use Watch item on the Buy page or Watch selected on Opportunities to save targets. The watchlist scrolls, supports search and target-only filtering, and sorts by clickable headers. Target status is separate from item-name rarity. Left-click an item for its Buy page; right-click or Edit changes its targets. Zero disables a target; all enabled targets must pass. Watch settings controls quiet reviews after scans or AH visits and an optional chat summary. Unchanged prices stay quiet, and reviews wait while you sell or edit. See [Money tools](docs/ECONOMY-TOOLS.md) for watchlist details and [Opportunities](docs/MARKET-OPPORTUNITIES.md) for history rules.
+Use Watch item on the Buy page or Watch selected on Opportunities to save targets. The watchlist scrolls, supports search and target-only filtering, and sorts by clickable headers. Search filters items already on the watchlist; use the AH Buy page to find other items. Target status is separate from item-name rarity. Left-click an item for its Buy page; right-click or Edit changes its targets. Zero disables a target; all enabled targets must pass. Watch settings controls quiet reviews after scans or AH visits and an optional chat summary. Unchanged prices stay quiet, and reviews wait while you sell or edit. See [Money tools](docs/ECONOMY-TOOLS.md) for watchlist details and [Opportunities](docs/MARKET-OPPORTUNITIES.md) for history rules.
 
 ## Farming, drops and the ledger
 

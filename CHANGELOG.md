@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1-beta — Test revision 6 · 2026-11-17
+
+- Enlarge the Sell-page arrow buttons from 18×16 to 28×24 each. Use red game-style panel buttons and clearer native AH arrow icons.
+- Center the pair beside copper and place the native price warning below the field so the wider controls fit. Keep one-copper steps, rollover and native total updates.
+- Retain watchlist search as a filter for items already watched. Add a tooltip explaining its scope and point users to the Buy page for new items.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test6.md) for appearance and price-entry checks.
+
 ## 1.3.1-beta — Test revision 5 · 2026-11-17
 
 - Replace watchlist pages with ten scrolling rows, name search, a target-only filter and clickable sort headings. Put target status first by default and show estimated net profit alongside return.

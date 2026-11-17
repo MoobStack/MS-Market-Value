@@ -4,7 +4,7 @@
 
 Use Watch item on the AH Buy page, Watch selected on Opportunities, or `/msmv watch`. Add watch also accepts a pasted or dragged item link. Item IDs are not needed. Existing broader watches still follow the lowest item-wide price; equipment choices and pasted links retain their exact modifier.
 
-Search by name, enable Targets met only or click a column heading to sort. The list scrolls with the mouse wheel or native scrollbar. Target status comes first by default, with the largest discount to the buy target first among matching rows. Item names use rarity colors; a separate TARGET MET marker and subtle row highlight identify matches.
+Search filters the items already on your watchlist by name. Use the AH Buy page to find new items, then Watch item to add one. Enable Targets met only or click a column heading to sort. The list scrolls with the mouse wheel or native scrollbar. Target status comes first by default, with the largest discount to the buy target first among matching rows. Item names use rarity colors; a separate TARGET MET marker and subtle row highlight identify matches.
 
 Left-click a row to open its native Buy page. Broader equipment watches open a name search so you can choose the modifier. Right-click or Edit opens the target dialog, which also contains Remove watch. Set a maximum buy price, minimum return or minimum profit, all per item. Price/profit inputs are gold amounts. Zero turns a target off, and all enabled targets must pass. All zero means tracking only.
 

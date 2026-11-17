@@ -1,6 +1,6 @@
 # Test build workflow
 
-The active build is **1.3.1-beta, test revision 5**, tag `v1.3.1-beta-test5`, on `develop/1.3.1`. Version 1.3.0 remains the published release. Do not publish this test build as the final 1.3.1 release.
+The active build is **1.3.1-beta, test revision 6**, tag `v1.3.1-beta-test6`, on `develop/1.3.1`. Version 1.3.0 remains the published release. Do not publish this test build as the final 1.3.1 release.
 
 Keep `build.json`, Bootstrap and all three TOCs consistent. Advance the test revision for each distributed build and use an annotated, immutable test tag. Do not overwrite published history.
 

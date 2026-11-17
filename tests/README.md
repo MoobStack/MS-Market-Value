@@ -16,3 +16,5 @@ Variant coverage checks use explicit November UTC dates and saved-data reloads. 
 Sell-page coverage checks both price fields, one-copper steps, silver/gold rollover, native callback preservation, limits, manual edits, lazy installation and AH reopening.
 
 Watchlist regressions cover virtual scrolling, cached search/sort views, native Buy navigation, hidden item IDs, target editing, settings, grouped alerts, unchanged-scan/reload deduplication, rearming and deferred delivery. The optional 200-watch UI workload checks frame reuse and avoids metadata or pricing rebuilds while scrolling.
+
+Sell styling coverage checks the larger panel-button hit area, native AH arrow orientation and warning placement. Watchlist search remains scoped to saved watches.
