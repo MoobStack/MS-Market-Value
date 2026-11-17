@@ -1,6 +1,6 @@
 # Compatibility
 
-MS Market Value 1.3.1 targets **WoW Forever 1.60.1 / Interface 16001**. Other clients need a separate API review. The standard, Camelot and Forever TOCs load the same addon.
+MS Market Value 1.3.1-beta targets **WoW Forever 1.60.1 / Interface 16001**. Other clients need a separate API review. The standard, Camelot and Forever TOCs load the same addon.
 
 - Use one full AH scanner at a time. Prices are kept separate by region, ruleset and faction.
 - Public tooltip prices and read-only reports can remain available in combat. Scans, live Buy navigation, profession controls and transaction editing wait until combat ends.

@@ -318,10 +318,10 @@ test("market filters survive reloads and invalid saved bounds restore clean defa
     local w2,A2=fresh(A.DB.data); w2:load()
     equal(A2.DB.Settings().marketFee,15); equal(A2.DB.Settings().marketMinDays,3)
 end)
-test("diagnostics identify release vendor coverage and the market analysis", function()
+test("diagnostics identify beta revision vendor coverage and the market analysis", function()
     local w,A=fresh(); w:load(); merchant(w,{supply(2320,20)})
     local text=A.UI.DiagnosticsText()
-    equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"Vendor purchase prices: 1",1,true))
+    truth(string.find(text,"Test revision: 7",1,true)); truth(string.find(text,"Vendor purchase prices: 1",1,true))
     truth(string.find(text,"Market analysis:",1,true))
 end)
 

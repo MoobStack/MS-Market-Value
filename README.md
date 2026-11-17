@@ -1,30 +1,30 @@
 # MS Market Value
 
-**Version 1.3.1 · WoW Forever · By MoobStack**
+**Version 1.3.1-beta · Test revision 7 · WoW Forever · By MoobStack**
+
+This is a test build. See [test notes](RELEASE-NOTES-v1.3.1-beta-test7.md) for the changes and checks to try.
 
 Auction prices, crafting profits, farming estimates, drop rates and a personal gold ledger in one addon.
 
 ## Install
 
-Close WoW and extract the Clean ZIP into `Interface/AddOns`. The addon folder should be `Interface/AddOns/MSMarketValue`. Enable it on the character-selection screen. When updating, keep your SavedVariables; they hold prices, settings and personal records.
+Close WoW and extract the Clean ZIP into `Interface/AddOns`. The folder should be `Interface/AddOns/MSMarketValue`. Enable it on the character-selection screen. When updating, keep your `WTF/SavedVariables` files; they hold your prices, settings and records.
 
 ## What it does
 
-- **Prices and crafting:** save AH prices, build daily history and add vendor, auction and disenchant values to item tooltips. Compare learned recipes or prepare a crafting quote.
-- **Opportunities:** find resale candidates and price movements, with separate item modifiers and rarity/supply filters. Sell-page arrows adjust unit price by one copper.
-- **Watchlists:** save buying targets, search and sort your watches, then click an item for its Buy page. Quiet alerts highlight new or improved matches.
-- **Farming:** track acquired value, hourly rates and a located farming peak. Scroll item details, manage saved sessions and resize or lock the small display.
-- **Drop rates:** view reference rates or personal observations for creatures and harvesting. Needed quest drops come first; choose sorting, rarity and item limits.
-- **Ledger:** review purchases, sales, commissions, tips, loot and expenses by local date. Edit entries and export CSV.
+- **Prices and crafting:** save AH prices, build daily history and see vendor, auction and disenchant values in tooltips. Compare learned recipes by material cost, net profit and return, or prepare a crafting quote.
+- **Market opportunities:** search resale candidates and price movements, filter by rarity and supply, and keep item modifiers separate. Adjust the Sell-page price by one copper with stacked red arrow buttons beside the copper field.
+- **Watchlists:** save targets from Opportunities or the Buy page. Search your saved watches, sort and scroll the list, spot target-met rows and click an item for its Buy page. Quiet alerts can open the watchlist for new or improved matches.
+- **Farming:** track acquired value, hourly average, recent rate and a located farming peak. Keep quest rewards in the total or include them in hourly rates. Scroll through item details, manage saved sessions and pause automatically on death. Resize or lock the gold display. Timing starts idle at login; combat, received loot or Resume starts it.
+- **Drop rates:** view reference rates and personal observations for creatures and harvesting. Personal drops fill missing entries; needed quest items stay first. Choose sorting, rarity and item limits.
+- **Ledger:** review purchases, sales, commissions, tips, loot and expenses by local date. Edit entries, separate known costs from estimates and export CSV.
 
 ## First steps
 
-1. At an auctioneer, open **MS Market Value → Scan entire AH**. Keep the AH open until **Local copy** is complete. Full scans have a 15-minute minimum interval.
-2. Open a profession and click **Show profits**. Visit a supplies vendor to learn your discounted material costs.
-3. Use **MS Opportunities → All items** for current prices. Resale needs three earlier priced UTC days for each exact modifier by default.
-4. Open Farming to review your session. Timing starts idle at login; Resume, combat or received loot starts it. Quest rewards default to session totals only, and death pause is on by default.
-
-Hover unfamiliar controls for help. Turn this off under **Tooltips → Addon interface tooltips**. Display preferences are saved automatically.
+1. At an auctioneer, open **MS Market Value → Scan entire AH**. Keep the AH open until **Local copy** is complete. New full scans have a 15-minute minimum interval.
+2. Open a profession and click **Show profits**. Visit a supplies vendor so crafting calculations can learn your purchase costs.
+3. Use **MS Opportunities → All items** for current prices. Resale signals need three earlier priced UTC days for each exact modifier by default; the market's total saved days may be higher.
+4. Open the farming, drop or ledger tools with the commands below. Hover unfamiliar controls for help; switch it off under **Tooltips → Addon interface tooltips**. Settings are saved automatically.
 
 ## Commands
 
@@ -39,6 +39,6 @@ Hover unfamiliar controls for help. Turn this off under **Tooltips → Addon int
 | `/msmv drops` | Drop-rate display and observation settings |
 | `/msmv diagnostics` | A copyable support report |
 
-AH prices are asking prices, and farming value is an estimate rather than realized profit. Classic drop and disenchant references may differ in Forever. Buying, selling and crafting remain under your control.
+AH prices are asking prices, and farming value is an estimate rather than realized profit. Some drop and disenchant references come from Classic and may differ in Forever. Buying, selling, crafting and other game actions remain under your control.
 
-[User guide](DOCUMENTATION.md) · [What's new in 1.3.1](RELEASE-NOTES-v1.3.1.md) · [Changelog](CHANGELOG.md) · [Updating](UPGRADE.md) · [Compatibility](COMPATIBILITY.md)
+[User guide](DOCUMENTATION.md) · [What's new](CHANGELOG.md) · [Updating](UPGRADE.md) · [Compatibility](COMPATIBILITY.md)

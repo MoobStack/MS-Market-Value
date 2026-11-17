@@ -2,8 +2,9 @@ local addonName, A = ...
 
 A.NAME = addonName or "MSMarketValue"
 A.TITLE = "MS Market Value"
-A.VERSION = "1.3.1"
-A.BUILD = "2026-11-17-release001"
+A.VERSION = "1.3.1-beta"
+A.BUILD = "2026-11-16-beta001"
+A.TEST_REVISION = 7
 A.SCHEMA = 1
 A.INTERFACE = 16001
 A.SCAN_COOLDOWN = 900

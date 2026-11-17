@@ -1,36 +1,72 @@
 # Changelog
 
-## 1.3.1 — 2026-11-17
+## 1.3.1-beta — Test revision 7 · 2026-11-17
 
-### Farming and drops
+- Add short hover explanations for unfamiliar controls, filters and inputs across scanning, crafting, opportunities, watchlists, ledger, farming and drop settings.
+- Add **Addon interface tooltips** under Tooltips, enabled by default. Disabling it hides control help and list hover details immediately while retaining clicks, row highlights and input behavior. Item-value and world-drop displays keep their existing controls.
+- Trim each red Sell-page arrow to 26×22, keeping one-copper changes, rollover and native total updates.
 
-- Choose saved sessions from a dated menu and return directly to the current session.
-- Manage saves per character and market: keep 0–50 sessions, five by default, or delete one. Deletions and reductions that remove saves require confirmation.
-- Scroll through session items and recent pickups, with quantity, unit value and total columns. New saves retain the full tracked item list and recent receipts; older summaries remain readable.
-- Start the calculator idle at login. Optional death pause is enabled by default; combat, received loot or Resume restarts timing. Manual pauses stay paused.
-- Keep quest rewards in the session total by default, with options to include them in hourly rates or stop recording new rewards. Peaks always exclude quest gold and items.
-- Prevent duplicate quest gold/items and exclude vendor sales and buyback receipts from farming. Selling a previously counted item does not add its value again.
-- Recover from missing quest, vendor, mail and trade close events so later farming receipts are classified correctly. Add diagnostics for ignored money and recovered windows.
-- Count reliably identified empty corpses once when calculating personal drop rates. Reopening the same body does not add another sample.
-- Prevent creature and skinning drop sections from stacking outside the tooltip. Custom sections stay hidden during looting and return on refresh.
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test7.md) for the switch and layout checks.
 
-### Watchlists
+## 1.3.1-beta — Test revision 6 · 2026-11-17
 
-- Replace pages with scrolling, name search, a target-only filter and sortable columns. Show estimated net profit alongside return; keep target highlights separate from item-name rarity colors.
-- Open the item's Buy page on left-click. Right-click or Edit changes targets in a separate dialog; add items from Buy, Opportunities or pasted/dragged links without visible item IDs.
-- Add watchlist-specific settings and a passive target count. New matches or lower matched prices can open one grouped review after a scan or an AH visit; chat summaries are optional and off by default.
-- Remember reviewed matches across reloads and unchanged scans. Rearm after a fresh scan shows an item outside its targets or no longer listed; defer reviews during combat, selling, purchases, typing or editing.
-- Reuse visible rows and cached results for larger watchlists. Late item names and rarity updates no longer require another price analysis.
+- Enlarge the Sell-page arrow buttons from 18×16 to 28×24 each. Use red game-style panel buttons and clearer native AH arrow icons.
+- Center the pair beside copper and place the native price warning below the field so the wider controls fit. Keep one-copper steps, rollover and native total updates.
+- Retain watchlist search as a filter for items already watched. Add a tooltip explaining its scope and point users to the Buy page for new items.
 
-### Market, crafting and interface
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test6.md) for appearance and price-entry checks.
 
-- Preserve an exact modifier's earlier price when a later scan on the same UTC day no longer lists it. Keep current listings separate and never carry a sample into another date.
-- Show missing-history progress and exact priced dates instead of unexplained blank estimates. Diagnostics now distinguish market-wide history from each modifier's usable earlier days.
-- Replace crafting recipe pages with native scrolling while retaining search, sorting, profitability filters and recipe selection.
-- Add stacked red arrows beside the Sell-page copper field. Each click adjusts unit price by one copper, with denomination rollover, price limits and native total updates.
-- Add short help for unfamiliar buttons, filters and settings. **Addon interface tooltips** is enabled by default under Tooltips; switching it off hides control help and list hover details. Item-value and world-drop settings remain separate.
+## 1.3.1-beta — Test revision 5 · 2026-11-17
 
-Prices, history, watches, targets, ledger entries, settings and personal observations carry forward. See [Updating](UPGRADE.md) for older farming-session details.
+- Replace watchlist pages with ten scrolling rows, name search, a target-only filter and clickable sort headings. Put target status first by default and show estimated net profit alongside return.
+- Use rarity colors for item names and a separate target-met marker/highlight for buying signals. Add a passive target count to the Watchlists button.
+- Open the native Buy page on left-click; use right-click or Edit for a separate target dialog. Remove visible item IDs and accept item links or items added from Buy/Opportunities.
+- Give the watchlist its own settings. Add quiet grouped reviews after scans or AH entry, with optional chat summaries off by default.
+- Remember reviewed matches across reloads and unchanged scans. Alert again for a new match or lower matched price; defer reviews during combat, selling, purchase confirmation, typing or editing.
+- Keep existing watches, thresholds and exact-modifier choices. Refresh late names/rarity without restarting price analysis, and keep the 200-watch limit.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test5.md) for the new layout and in-game alert checks.
+
+## 1.3.1-beta — Test revision 4 · 2026-11-17
+
+- Add stacked up/down arrows beside the copper field on the native AH Sell page. Each click changes the primary unit/buyout price by one copper.
+- Handle silver/gold rollover, stop at zero and respect the gold field's limit. Keep native quantity, totals, validation and keyboard editing.
+- Use the game's arrow textures, retain the native price warning and reuse controls when the AH reopens. Report their installation in diagnostics.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test4.md) for the Sell-page checks and the latest market/farming diagnostics.
+
+## 1.3.1-beta — Test revision 3 · 2026-11-17
+
+- Preserve exact-modifier observations when a later scan on the same UTC day no longer lists them. Keep current listings fresh and never carry samples across dates.
+- Replace blank missing-baseline net values with exact-history progress; show priced UTC dates in row details and tooltips.
+- Add scan-date, compatible-history and per-variant coverage diagnostics with sample keys and daily prices. Keep signal thresholds and existing history unchanged.
+- Recover stale quest/transaction-window state so missing close events cannot keep rejecting or misclassifying later farming receipts.
+- Preserve quest echo deduplication, vendor/mail/trade exclusions, manual/death pause and quest-free peaks. Report money exclusion reasons.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test3.md) for the November 17 coverage explanation and in-game checks.
+
+## 1.3.1-beta — Test revision 2 · 2026-11-17
+
+- Add a 0–50 saved-session limit and confirmed deletion of individual saves. Limits and records stay separate by character and market.
+- Retain complete item breakdowns and recent receipts in new saves while preserving older summaries.
+- Expand the session item area, add quantity/unit/total columns and replace page buttons with native scrolling.
+- Replace crafting recipe pagination with an eleven-row scrolling list; preserve search, sorting, filters, hover details and recipe selection.
+- Start timing idle at login until manual resume, combat or received loot. Quest rewards alone do not resume an idle timer.
+- Add optional death pause, enabled by default. Exclude death/ghost time and wait for a trigger after resurrection; keep manual pauses paused.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test2.md) for in-game checks.
+
+## 1.3.1-beta — Test revision 1 · 2026-11-16
+
+- Include reliably identified empty corpses in personal drop-rate denominators without counting reopened bodies twice.
+- Replace session cycling with a dated session menu and a direct Current session button.
+- Default quest rewards to session totals only, with optional hourly inclusion. Five-minute peaks always exclude quest gold and items.
+- Prevent generic loot messages and dedicated quest events from counting the same reward twice, including delayed event order.
+- Exclude vendor and buyback receipts from farming; sale proceeds stay separate in the ledger.
+- Prevent corpse and skinning drop sections from stacking outside the tooltip during looting.
+- Keep totals and observations on upgrade, but restart recent/peak coverage and hide unverifiable older saved rates.
+
+This is a test build. See the [test notes](RELEASE-NOTES-v1.3.1-beta-test1.md) for in-game checks.
 
 ## 1.3.0 — 2026-11-16
 
