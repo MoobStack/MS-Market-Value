@@ -16,4 +16,4 @@ Useful build-70450 files include the generated AuctionHouse/TradeSkillUI API def
 
 Daily grouping, history averages, conservative resale baselines, expense matching windows and invoice deduplication are addon policies. No reviewed API supplies guaranteed sale demand, original invoice dates or a complete durable transaction identity. Generic wallet increases are not called loot, and quotes alone do not create expenses.
 
-See the [changelog](../CHANGELOG.md) for release history. Earlier implementation records remain in Git history. [Validation](../VALIDATION.md) describes the release checks.
+See the [changelog](../CHANGELOG.md) for release history and [validation](../VALIDATION.md) for release checks.

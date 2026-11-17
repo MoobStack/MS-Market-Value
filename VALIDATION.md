@@ -1,13 +1,9 @@
 # Release validation
 
-MS Market Value **1.3.1 / 2026-11-17-release001** passed **943 Lua cases and 23 Python checks/workloads** using Lua 5.1 API/frame fixtures. All 33 runtime Lua files pass syntax, load-order, identity and operation checks.
+MS Market Value **1.3.1 / 2026-11-17-release001** passed 943 Lua cases and 23 Python checks. All 33 runtime Lua files passed syntax, load order and release identity checks.
 
-Coverage includes saved-data upgrades, scans and exact modifiers, crafting, ledger records, farming receipts/rates, empty-corpse samples, scrolling, watchlist alerts, price arrows and interface help. The final-version upgrade check preserves saved records, farming totals and user preferences. Runtime behavior matches the accepted candidate; only the release identity changed.
+The suite covers saved data, auction scans, crafting, ledger records, farming, watchlists, price arrows and interface tooltips. Larger workloads include 16,000 market items, 200 watches and 50 saved sessions.
 
-Larger workloads cover 16,000 market items, 200 watches, 50 saved sessions, 12,000 farming receipts and 10,000 ledger entries. Scrolling reuses frames and cached results without new price-analysis publications or background auction requests. Fixture timings do not establish native FPS or total addon memory use.
+In-game testing on Forever client 1.60.1 build 70959 recorded a completed scan of 200,368 auction rows and 6,505 priced items.
 
-The user accepted 1.3.1 for distribution after in-game testing on client 1.60.1 / 70959 / Interface 16001. The supplied report shows a complete 200,368-row scan, 6,505 priced items and ready market analysis with 141 results. This does not claim automated coverage of every native event sequence.
-
-Runtime hashes and release results are in `evidence/RELEASE-1.3.1.json`. The documentation review is recorded in `evidence/DOCUMENTATION-1.3.1.json`; detailed execution records remain in Git history.
-
-This documentation correction keeps the 1.3.1 version and build unchanged. Every installed code and data file matches the release tag.
+See [release results](evidence/RELEASE-1.3.1.json) for the checks and runtime hashes.
