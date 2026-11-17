@@ -115,7 +115,7 @@ test("quest drops outrank more valuable items and creature tooltips enforce the 
     w.loot={{link=one,sources={guid(1000),1},questID=42},{link=two,sources={guid(1000),1}}}
     w:event("LOOT_READY")
     local rows=A.Drops.Rows(1000);equal(rows[1].id,100);truth(rows[1].wanted)
-    A.DB.Settings().dropRows=1
+    A.DB.Settings().dropRows=1;w:event("LOOT_CLOSED")
     local data={guid=guid(1000)}
     w.unitTooltipCallback(GameTooltip,data)
     equal(#GameTooltip.lines,4);truth(GameTooltip.lines[3].left:find("Quest",1,true))

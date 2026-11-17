@@ -43,10 +43,12 @@ def build(output: pathlib.Path) -> list[pathlib.Path]:
     files = [name for name in filenames if name]
     entries = [(name, (ROOT / name).read_bytes()) for name in files]
     # The install includes the same user guides as the repository.
-    user_docs = {"README.md", "DOCUMENTATION.md", "CHANGELOG.md", "RELEASE-NOTES-v1.3.0.md",
-        "UPGRADE.md", "COMPATIBILITY.md", "THIRD-PARTY-NOTICES.md"}
+    user_docs = {"README.md", "DOCUMENTATION.md", "CHANGELOG.md",
+        "UPGRADE.md", "COMPATIBILITY.md", "THIRD-PARTY-NOTICES.md", META["releaseNotes"],
+        "docs/FARMING-AND-DROPS.md", "docs/MARKET-OPPORTUNITIES.md", "docs/ECONOMY-TOOLS.md",
+        "docs/VENDOR-COSTS.md", "docs/DISENCHANT-MODEL.md"}
     for name, data in entries:
-        if name in user_docs or (name.startswith("docs/") and name.endswith(".md")):
+        if name in user_docs:
             installed = data.replace(b"(MSMarketValue/Libs/)", b"(Libs/)").replace(b"(MSMarketValue/Data/)", b"(Data/)")
             assert (ROOT / "MSMarketValue" / name).read_bytes() == installed, f"Update the installed guide: {name}"
     clean_entries = [(name, content) for name, content in entries if name.startswith("MSMarketValue/")]
@@ -62,7 +64,6 @@ def build(output: pathlib.Path) -> list[pathlib.Path]:
         make_zip(path, content)
         artifacts.append(path)
     documentation = [(name, data) for name, data in entries if name in user_docs or
-        (name.startswith("docs/") and name.endswith(".md")) or
         (name.startswith("MSMarketValue/") and name.endswith(".txt"))]
     documentation_zip = output / f"{PREFIX}-Documentation.zip"
     make_zip(documentation_zip, documentation)

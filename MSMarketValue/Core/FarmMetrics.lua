@@ -5,7 +5,7 @@ A.FarmMetrics=M
 local MAX=1000000000000
 
 function M.New(elapsed)
-    return {schema=1,startedElapsed=elapsed,closedMinute=math.floor(elapsed/60)-1,buckets={},missing=0,peak={rate=0}}
+    return {schema=2,startedElapsed=elapsed,closedMinute=math.floor(elapsed/60)-1,buckets={},missing=0,peak={rate=0}}
 end
 
 function M.ValidLocation(location)
@@ -20,7 +20,7 @@ function M.Validate(session)
     if not U.Accessible(session.metrics) then return false end
     if session.metrics==nil then session.metrics=M.New(session.elapsed) end
     local data=session.metrics
-    if not U.Table(data) or not U.Number(data.schema,1,1,true) or not U.Table(data.buckets) or
+    if not U.Table(data) or not U.Number(data.schema,1,2,true) or not U.Table(data.buckets) or
        not U.Number(data.startedElapsed,0,session.elapsed) or
        not U.Number(data.closedMinute,-1,5256000,true) or
        not U.Number(data.missing,0,1000000000,true) or not U.Table(data.peak) or
@@ -33,6 +33,9 @@ function M.Validate(session)
         if bucket.location and not M.ValidLocation(bucket.location) then return false end
     end
     if data.peak.location and not M.ValidLocation(data.peak.location) then return false end
+    -- Earlier rate history cannot prove whether a generic quest receipt was
+    -- classified correctly. Keep session totals/time and start fresh coverage.
+    if data.schema==1 then session.metrics=M.New(session.elapsed) end
     return true
 end
 
@@ -92,17 +95,20 @@ function M.Record(session,amount,quest)
     end
 end
 
-function M.Summary(session,result)
+function M.Summary(session,result,includeQuest)
     local data=session.metrics
     if not data then return end
-    local value,cutoff=0,session.elapsed-3600
+    local value,farm,cutoff=0,0,session.elapsed-3600
     for minute,bucket in pairs(data.buckets) do
         local fraction=math.max(0,math.min(1,(minute*60+60-cutoff)/60))
         value=value+bucket.total*fraction
+        farm=farm+bucket.farm*fraction
     end
     local duration=math.min(3600,session.elapsed-data.startedElapsed)
     result.recentDuration=duration
-    result.recentRate=duration>=60 and value/duration*3600 or 0
+    result.recentTotalRate=duration>=60 and value/duration*3600 or 0
+    result.recentFarmRate=duration>=60 and farm/duration*3600 or 0
+    result.recentRate=includeQuest and result.recentTotalRate or result.recentFarmRate
     result.peak=data.peak
     result.metricMissing=data.missing
     result.metricsSince=data.startedElapsed

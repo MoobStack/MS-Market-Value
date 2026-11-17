@@ -294,13 +294,48 @@ function P.ReceiptKind(itemID)
     local entry=P.acquisitions and P.acquisitions[itemID]
     return entry and U.Mono()-entry.at<=3 and entry.kind or "loot"
 end
-function P.ReadLoot()
+function P.CaptureLootUnit()
+    local guid=U.Call(UnitGUID,"mouseover")
+    if not P.NPC(guid) or U.Call(UnitIsDead,"mouseover")~=true then return nil end
+    if U.Call(UnitIsTapDenied,"mouseover")==true then return nil end
+    return {guid=guid,at=U.Mono(),context=P.Context(),group=P.Group(),player=U.PlayerKey()}
+end
+
+function P.ReadEmptyLoot(fromItem)
+    if not D.Settings().dropTracking or P.emptyAttempt then return end
+    P.emptyAttempt=true
+    if not U.Accessible(fromItem) or fromItem==true then return end
+    local candidate=P.lootCandidate
+    if not candidate or U.Mono()-candidate.at>3 or candidate.player~=U.PlayerKey() or
+       candidate.context.key~=P.Context().key or candidate.group~=P.Group() then
+        P.emptyUnattributed=(P.emptyUnattributed or 0)+1;return
+    end
+    local gather=P.gather
+    local kind="loot"
+    if gather and U.Mono()-(gather.confirmed or gather.at)<=10 then
+        if gather.kind~="skinning" or (gather.guid and gather.guid~=candidate.guid) then return end
+        kind="skinning"
+    end
+    if not P.Profile() then return end
+    local existed=P.seen[ReceiptKey(candidate.guid,kind)]~=nil
+    if P.Observe(candidate.guid,{},candidate.context,candidate.group,kind) and not existed then
+        P.emptyChecks=(P.emptyChecks or 0)+1
+    end
+end
+
+function P.ReadLoot(event,fromItem)
     if not D.Settings().dropTracking and not D.Settings().farmTracking then return end
     P.Remember("target");P.Remember("mouseover")
     local count=U.Call(GetNumLootItems)
     if not U.Number(count,0,256,true) then return end
-    if type(GetLootSourceInfo)~="function" then P.reason="Loot source API unavailable; no sources were guessed.";return end
     P.readWindows=(P.readWindows or 0)+1
+    if count==0 then
+        if event=="LOOT_READY" then P.readyEmpty=true end
+        if event=="LOOT_OPENED" then P.ReadEmptyLoot(fromItem) end
+        return
+    end
+    P.readyEmpty=false
+    if type(GetLootSourceInfo)~="function" then P.reason="Loot source API unavailable; no sources were guessed.";return end
     local sources,kinds,acquisitions,context,group={},{},{},P.Context(),P.Group()
     local gather=P.gather
     -- Some clients open loot before the success event. A recent, matching
@@ -585,26 +620,76 @@ function P.ResolveTooltip(tooltip,data)
     if not id and types.Unit and data.type==types.Unit and ID(data.id) then id,sourceType=data.id,"Creature" end
     if name or id then P.hover={id=id,guid=guid,name=name or (id and P.names[id]),at=U.Mono()} end
     if sourceType=="Creature" or sourceType=="Vehicle" then
-        local dead=U.Call(UnitIsDead,"mouseover")
+        local unit
+        local over=U.Call(UnitGUID,"mouseover")
+        if U.String(over) and (guid and over==guid or not guid and P.NPC(over)==id) then unit="mouseover"
+        elseif guid then local target=U.Call(UnitGUID,"target");if U.String(target) and target==guid then unit="target" end end
+        local dead=unit and U.Call(UnitIsDead,unit)
+        local gather=P.gather
+        if D.Settings().showHarvestDrops and gather and gather.kind=="skinning" and U.Mono()-(gather.confirmed or gather.at)<=10 and
+           (not gather.guid or gather.guid==guid) then return id,"skinning",name,guid end
+        if dead==nil and P.tip and P.tip.guid==guid and P.tip.id==id and
+           (P.tip.kind=="loot" or D.Settings().showHarvestDrops) then return id,P.tip.kind,name,guid end
         if dead==true and D.Settings().showHarvestDrops then
             local rows,n=P.Rows(id,"skinning")
-            if n>0 or (D.Settings().dropMode=="reference" and #rows>0) then return id,"skinning",name end
+            if n>0 or (D.Settings().dropMode=="reference" and #rows>0) then return id,"skinning",name,guid end
         end
-        return id,"loot",name
+        return id,"loot",name,guid
     end
     local node,kind=KnownNode(name,id)
-    return node,kind,name
+    return node,kind,name,guid
 end
 
-function P.Tooltip(tooltip,data)
+local function OwnsSection(tooltip,data)
+    local tip=P.tip
+    if not tip then return false end
+    local count=U.Call(tooltip.NumLines,tooltip)
+    if not U.Number(count,0,1000,true) then return nil end
+    if count<tip.headerLine then return false end
+    local label=_G["GameTooltipTextLeft"..tip.headerLine]
+    if U.Accessible(label) and label and type(label.GetText)=="function" then
+        local text=U.Call(label.GetText,label)
+        if U.String(text) then return text==tip.header end
+    end
+    if count>=tip.lines and (tip.data==data or (U.String(data.guid) and data.guid==tip.guid)) then return true end
+    return nil
+end
+
+local function RebuildOwned(tooltip,data)
+    if P.rebuilding or U.Combat() or type(tooltip.RebuildFromTooltipInfo)~="function" then return false end
+    local owned=OwnsSection(tooltip,data)
+    if owned==false then P.tip=nil;return false end
+    local info=U.Call(tooltip.GetPrimaryTooltipInfo,tooltip)
+    if not U.Table(info) or not U.String(info.getterName) or not U.Table(info.getterArgs) then return false end
+    local previous=P.tip
+    P.tip,P.tipDirty,P.rebuilding=nil,false,true
+    local ok=pcall(tooltip.RebuildFromTooltipInfo,tooltip)
+    P.rebuilding=false
+    if not ok then P.tip,P.tipDirty=previous,true;return false end
+    U.Call(tooltip.Show,tooltip)
+    return true
+end
+
+function P.Tooltip(tooltip,data,native)
     if not D.data or A.disabledReason or not D.Settings().showDrops or not U.Accessible(tooltip) or
-       not U.Table(data) or tooltip~=GameTooltip or (tooltip.IsForbidden and tooltip:IsForbidden()) then return end
-    local id,kind,name=P.ResolveTooltip(tooltip,data)
+       not U.Table(data) or tooltip~=GameTooltip or P.drawing or (tooltip.IsForbidden and tooltip:IsForbidden()) then return end
+    if P.lootOpen then if P.tip then P.tipDirty=true end;return end
+    local id,kind,name,guid=P.ResolveTooltip(tooltip,data)
     if not id then return end
     if kind~="loot" and not D.Settings().showHarvestDrops then return end
     local key=tostring(P.SourceKey(id,kind)) .. (name or "")
-    if P.tip and P.tip.key==key and P.tip.data==data and P.tip.lines==tooltip:NumLines() then return end
+    if P.tip then
+        local owned=OwnsSection(tooltip,data)
+        if owned==true or (owned==nil and not native) then
+            if P.tip.key~=key then P.tipDirty=true end
+            return
+        end
+        P.tip=nil
+    end
     local rows,samples=P.Rows(id,kind)
+    local header="MS Market Value - "..P.labels[kind]
+    local headerLine=tooltip:NumLines()+2
+    P.drawing=true
     tooltip:AddLine(" ")
     local reference=D.Settings().dropMode=="reference"
     local unit=kind=="loot" and "corpses" or kind=="skinning" and "skins" or "nodes"
@@ -615,13 +700,13 @@ function P.Tooltip(tooltip,data)
         if row.origin=="classic" then classic=true elseif row.origin~="personal" then other=true end
     end
     if classic and not other then label="Classic reference" elseif other and not classic then label=A.LootReference.label end
-    tooltip:AddDoubleLine("MS Market Value - " .. P.labels[kind],reference and
+    tooltip:AddDoubleLine(header,reference and
         ((P.cache and P.cache.referenceCount==0 and samples>0) and "Personal fallback" or label) or
         (samples .. " " .. unit .. " checked"),.55,.83,.85,.61,.66,.70)
     if #rows==0 then
         local text=P.cache and P.cache.qualityHidden>0 and "No drops match the selected rarities." or
             P.cache and P.cache.hidden>0 and "Quest-only drops hidden; no current matches." or
-            reference and "No reference data for this source." or samples>0 and "No item drops recorded yet." or "No personal samples yet."
+            samples>0 and "No item drops recorded yet." or reference and "No reference data for this source." or "No personal samples yet."
         tooltip:AddLine(text,.61,.66,.70)
     end
     for index=1,math.min(#rows,D.Settings().dropRows) do
@@ -639,37 +724,54 @@ function P.Tooltip(tooltip,data)
         local classic=false;for _,row in ipairs(rows) do if row.origin=="classic" then classic=true;break end end
         tooltip:AddLine(classic and "Classic rates are unverified for Forever." or "Community samples; not server settings.",.61,.66,.70)
     end
-    P.tip={key=key,data=data,lines=tooltip:NumLines()};P.tipDirty=false
+    P.tip={key=key,data=data,lines=tooltip:NumLines(),header=header,headerLine=headerLine,id=id,guid=guid,kind=kind};P.tipDirty=false
+    if not U.Combat() then U.Call(tooltip.Show,tooltip) end
+    P.drawing=false
+    if P.tip then P.tip.lines=tooltip:NumLines() end
 end
 function P.CheckTooltip()
+    -- Auto-loot can finish an empty interaction without showing its window.
+    if P.lootOpen and P.readyEmpty and P.lootOpenedAt and U.Mono()-P.lootOpenedAt>=1 and U.Call(GetNumLootItems)==0 then
+        P.ReadEmptyLoot(P.lootFromItem)
+        P.lootOpen,P.tipDirty=false,true
+        P.lootCandidate,P.readyEmpty=nil,nil
+    end
     local tooltip=GameTooltip
     if not P.installed or not tooltip or not tooltip:IsShown() or (tooltip.IsForbidden and tooltip:IsForbidden()) then return end
     local data=U.Call(tooltip.GetPrimaryTooltipData,tooltip)
     if not U.Table(data) then P.fallbackData=P.fallbackData or {};data=P.fallbackData end
-    if P.tipDirty and P.tip and P.tip.lines==tooltip:NumLines() and not U.Combat() and type(tooltip.RebuildFromTooltipInfo)=="function" then
-        local info=U.Call(tooltip.GetPrimaryTooltipInfo,tooltip)
-        local id=P.ResolveTooltip(tooltip,data)
-        if id and U.Table(info) and U.String(info.getterName) and U.Table(info.getterArgs) then
-            local previous=P.tip
-            P.tip,P.tipDirty=nil,false
-            local ok=pcall(tooltip.RebuildFromTooltipInfo,tooltip)
-            if not ok then P.tip=previous end
-            return
-        end
-    end
+    if P.tipDirty and P.tip and RebuildOwned(tooltip,data) then return end
     P.Tooltip(tooltip,data)
+    if P.tipDirty and P.tip then RebuildOwned(tooltip,data) end
 end
 function P.Install()
     if P.installed or not GameTooltip or type(GameTooltip.HookScript)~="function" or
        not TooltipDataProcessor or not Enum or not Enum.TooltipDataType or Enum.TooltipDataType.Unit==nil then return end
-    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit,P.Tooltip)
-    if Enum.TooltipDataType.Object~=nil then TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object,P.Tooltip) end
-    GameTooltip:HookScript("OnHide",function()P.tip,P.fallbackData,P.tipDirty=nil,nil,false end);P.installed=true
+    local function Native(tooltip,data)P.Tooltip(tooltip,data,true)end
+    TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Unit,Native)
+    if Enum.TooltipDataType.Object~=nil then TooltipDataProcessor.AddTooltipPostCall(Enum.TooltipDataType.Object,Native) end
+    -- Hiding can retain native font strings. Keep ownership until a rebuilt
+    -- base proves the section is gone, so showing it again cannot append twice.
+    GameTooltip:HookScript("OnHide",function()P.fallbackData=nil;P.tipDirty=P.tip~=nil end);P.installed=true
 end
 function P.Event(event,...)
     local unit,a,b,c=...
-    if event=="LOOT_READY" or event=="LOOT_OPENED" or event=="LOOT_SLOT_CHANGED" then P.ReadLoot()
-    elseif event=="LOOT_CLOSED" then P.gather=nil
+    if event=="LOOT_READY" or event=="LOOT_OPENED" then
+        if not P.lootOpen then
+            P.lootCandidate=P.CaptureLootUnit();P.emptyAttempt=nil
+            P.lootOpenedAt,P.lootFromItem=U.Mono(),nil
+        end
+        if event=="LOOT_OPENED" then P.lootFromItem=a end
+        P.lootOpen,P.tipDirty=true,true
+        P.ReadLoot(event,a)
+    elseif event=="LOOT_SLOT_CHANGED" then P.ReadLoot(event)
+    elseif event=="LOOT_CLOSED" then
+        if P.readyEmpty then P.ReadEmptyLoot(P.lootFromItem) end
+        P.gather,P.lootCandidate,P.emptyAttempt=nil,nil,nil;P.lootOpen,P.tipDirty=false,true
+        P.readyEmpty,P.lootFromItem,P.lootOpenedAt=nil,nil,nil
+    elseif event=="PLAYER_LEAVING_WORLD" or event=="PLAYER_LOGOUT" then
+        P.gather,P.lootCandidate,P.emptyAttempt=nil,nil,nil;P.lootOpen=false
+        P.readyEmpty,P.lootFromItem,P.lootOpenedAt=nil,nil,nil
     elseif event=="UNIT_SPELLCAST_SENT" then P.BeginGather(unit,b,c,a)
     elseif event=="UNIT_SPELLCAST_START" then P.BeginGather(unit,a,b)
     elseif event=="UNIT_SPELLCAST_SUCCEEDED" then P.FinishGather(unit,a,b)

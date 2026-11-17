@@ -1,6 +1,6 @@
 # Future improvements
 
-These are follow-up ideas, outside the 1.2.0 release:
+These are follow-up ideas, outside the 1.3.1 maintenance work:
 
 - Inventory cost allocation, with an explicit policy for purchased, crafted and looted items, to improve realized-profit reporting.
 - A crafting batch planner and shared shopping list, separating replacement value from cash needed for missing materials.

@@ -15,7 +15,7 @@ D.defaults = {
     dropTracking = true, showDrops = true, showHarvestDrops = true, dropRows = 4, dropMode = "reference",
     dropSort = "rate_desc", dropQuality = 63,
     farmTracking = true, farmShow = true, farmShowTotal = true, farmHover = false, farmUseAuction = true,
-    farmIncludeQuest = true, farmThreshold = 10, farmIdle = true, farmIdleMinutes = 5,
+    farmIncludeQuest = true, farmQuestInRate = false, farmThreshold = 10, farmIdle = true, farmIdleMinutes = 5,
     farmHUDWidth = 320, farmHUDLocked = false,
     serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
     watchAlerts = true, ledgerDays = 90, trackAH = true, trackVendor = true, trackTrade = true, trackLoot = true, trackOther = true,

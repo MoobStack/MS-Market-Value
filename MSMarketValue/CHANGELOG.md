@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.3.1-beta — Test revision 1 · 2026-11-16
+
+- Include reliably identified empty corpses in personal drop-rate denominators without counting reopened bodies twice.
+- Replace session cycling with a dated session menu and a direct Current session button.
+- Default quest rewards to session totals only, with optional hourly inclusion. Five-minute peaks always exclude quest gold and items.
+- Prevent generic loot messages and dedicated quest events from counting the same reward twice, including delayed event order.
+- Exclude vendor and buyback receipts from farming; sale proceeds stay separate in the ledger.
+- Prevent corpse and skinning drop sections from stacking outside the tooltip during looting.
+- Keep totals and observations on upgrade, but restart recent/peak coverage and hide unverifiable older saved rates.
+
+This is a test build. See the [test notes](RELEASE-NOTES-v1.3.1-beta-test1.md) for in-game checks.
+
 ## 1.3.0 — 2026-11-16
 
 ### Farming

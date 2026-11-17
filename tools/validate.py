@@ -20,8 +20,8 @@ def run(lua: str, luac: str | None = None) -> None:
     meta = json.loads((ROOT / "build.json").read_text(encoding="utf-8"))
     channel = meta.get("releaseChannel", "beta")
     if channel == "beta":
-        assert meta["version"] == "1.3.0-beta", "Keep one testing version until the 1.3.0 release"
-        assert meta["build"] == "2026-11-15-beta001", "Hold the testing build; advance testRevision"
+        assert re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+-beta", meta["version"]), "Use a beta semantic version"
+        assert re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}-beta[0-9]{3}", meta["build"]), "Use a beta build identity"
         assert isinstance(meta["testRevision"], int) and meta["testRevision"] >= 1
         assert meta["gitTag"] == f'v{meta["version"]}-test{meta["testRevision"]}'
     else:

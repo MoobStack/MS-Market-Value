@@ -195,6 +195,7 @@ test("skinning and creature loot from the same corpse use independent denominato
     w.loot={{link=link(101),sources={guid(1000),2}}};w:event("LOOT_READY");w:event("LOOT_OPENED")
     equal(select(2,A.Drops.Rows(1000)),1);local rows,n=A.Drops.Rows(1000,"skinning")
     equal(n,1);equal(rows[1].id,101)
+    w:event("LOOT_CLOSED")
     w.unitTip(GameTooltip,{type=2,guid=guid(1000)})
     truth(GameTooltip.lines[2].left:find("Skinning",1,true))
     A.DB.Settings().showHarvestDrops=false;GameTooltip:ClearLines()

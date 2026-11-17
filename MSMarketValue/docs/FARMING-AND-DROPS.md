@@ -8,11 +8,13 @@ Open `/msmv farm` for the report and display settings.
 |---|---|
 | Session value | Acquired gold and current estimated item value |
 | Active time | Online session time, excluding pauses and loading |
-| Session average | Session value divided by active time |
+| Hourly average | Eligible farming value divided by active time; quest rewards are optional |
 | Recent 60m | Receipt value over the latest 60 active minutes, or available coverage |
 | Peak farming | Best completed five-minute window, expressed per hour, with quests excluded |
 
-The peak saves its zone, available coordinates and time. The report separates loot, quests and harvesting, with item/source filters, recent pickups and five saved summaries. Reset starts a new session and saves the previous summary.
+The peak saves its zone, available coordinates and time. The report separates loot, quests and harvesting, with item/source filters and recent pickups. Use the session menu to choose among five saved summaries by date, duration and value. Current session returns to the live report. Reset saves the previous summary and starts a new one.
+
+In Farming settings, Quest rewards defaults to **Session total only**. Choose **Session total and hourly rates** to include rewards in the display average and recent rate, or **Do not record new quest rewards** to stop adding them. Peaks always exclude quest gold and items. These choices do not erase previously recorded rewards.
 
 The display can be resized, locked, shown only on hover or reduced to the hourly average. Drag it when unlocked; left-click opens the report and right-click pauses or resumes.
 
@@ -28,6 +30,10 @@ Choose any of six colored rarities. Needed quest drops stay visible and first ev
 
 Reference mode uses bundled entries and automatically fills missing items or sources from your personal observations. Each keeps its own rate and sample count. Choose Personal drops to see only your own records, including your rate for an already referenced item. Collection can remain enabled in either mode.
 
-Personal rates count inspected corpses, skins or nodes. An item on three of ten corpses shows 30% (3/10); a stack counts as one successful drop. Visible items count even when left behind. Unseen kills do not count. Current-area records and harvesting types stay separate. Quest-only drops are hidden when their quest is absent.
+Personal rates count inspected corpses, skins or nodes. An item on three of ten corpses shows 30% (3/10); a stack counts as one successful drop. Visible items count even when left behind. Reliably identified empty corpses also count as inspections, lowering the rate when no item dropped. Reopening the same body does not count twice. Hovering, unseen kills and ambiguous sources do not count. Current-area records and harvesting types stay separate. Custom drop sections are hidden while loot is open, then restored on the next tooltip refresh. Quest-only drops are hidden when their quest is absent.
 
 Reset by creature/node, zone, dungeon or all this character's observations. This does not erase reference rates, prices, ledger entries or farming sessions. Reference chances can differ from Forever and are not guaranteed outcomes.
+
+## Upgrading from 1.3.0
+
+Session totals, time and personal observations are kept. Recent-rate and peak coverage starts fresh because older receipts may include misclassified quest rewards. Older saved summaries keep totals and averages, but unverifiable recent rates and peaks show Not recorded. Start a new session for a clean whole-session comparison. Previously missed empty bodies cannot be reconstructed; only new inspections adjust personal rates.

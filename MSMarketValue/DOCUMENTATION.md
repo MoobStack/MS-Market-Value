@@ -1,6 +1,6 @@
 # User guide
 
-MS Market Value 1.3.0 for WoW Forever. The [README](README.md) covers installation, commands and first steps.
+MS Market Value 1.3.1-beta for WoW Forever. The [README](README.md) covers installation, commands and first steps.
 
 ## Prices and history
 
@@ -24,7 +24,7 @@ Watch item is also available on the Buy page. Zero disables a target; all enable
 
 ## Farming, drops and the ledger
 
-Use `/msmv farm` for session totals, rates and display options. Idle pause is on by default after five minutes; a manual pause stays paused. `/msmv drops` controls collection, reference/personal display, sorting, rarity and resets. See [Farming and drops](docs/FARMING-AND-DROPS.md).
+Use `/msmv farm` for session totals, rates and display options. Select a saved session from the menu; Current session returns to the live report. Quest rewards default to the session total only, with an option to include them in hourly rates; peaks always exclude quests. Idle pause is on by default after five minutes; a manual pause stays paused. `/msmv drops` controls collection, reference/personal display, sorting, rarity and resets. See [Farming and drops](docs/FARMING-AND-DROPS.md).
 
 Use `/msmv ledger` for income, spending, cash flow and profit reports. Choose local dates, filter Transactions and click a row to edit it outside combat. Other expenses have category checkboxes; CSV follows the active filters. See [Money tools](docs/ECONOMY-TOOLS.md) for tracking and cost rules.
 

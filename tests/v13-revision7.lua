@@ -61,6 +61,7 @@ test("five complete minutes establish a located peak and quest spikes cannot rai
     local s=A.Farm.Summary();near(s.perHour,6000);near(s.recentRate,6000);near(s.peak.rate,6000)
     equal(s.peak.location.zone,"Riverglades");near(s.peak.location.x,43.2);near(s.peak.location.y,60.9)
     equal(s.peak.location.time,w.wall-60)
+    A.DB.Settings().farmQuestInRate=true
     truth(A.Farm.AddMoney(1000000,true));tick(w,A,300)
     s=A.Farm.Summary();near(s.peak.rate,6000);truth(s.perHour>6000);truth(s.recentRate>6000)
 end)
@@ -125,10 +126,10 @@ test("reload retains the bounded rate history and saved sessions retain their ow
     local w,A=world();A.Farm.ConfigureIdle(false,5);A.Farm.AddMoney(100,false);tick(w,A,300)
     local w2,B=world(A.DB.data,w.wall);near(B.Farm.Summary().peak.rate,1200)
     truth(B.Farm.Reset());near(B.Farm.Summary().peak.rate,0)
-    B.FarmingUI.Show("session");local ui=B.FarmingUI;ui.historyButton.scripts.OnClick()
+    B.FarmingUI.Show("session");local ui=B.FarmingUI;ui.sessionMenu:Pick(1)
     truth(ui.sessionTitle.text:find("Saved session",1,true));equal(ui.total.text,B.Util.Coins(100));equal(ui.pause.enabled,false)
     truth(ui.peakLocation.text:find("Riverglades",1,true));truth(ui.peakLocation.text:find("43.2, 60.9",1,true))
-    ui.itemsButton.scripts.OnClick();equal(ui.pause.enabled,true);equal(ui.total.text,B.Util.Coins(0))
+    ui.currentButton.scripts.OnClick();equal(ui.pause.enabled,true);equal(ui.total.text,B.Util.Coins(0))
 end)
 
 test("HUD columns form one centered group with spacing and a saved adjustable width",function()

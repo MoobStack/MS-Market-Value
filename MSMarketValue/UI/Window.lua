@@ -166,11 +166,16 @@ function UI.DiagnosticsText()
         "; skinning=" .. classic.skinningNPCs .. "; rates=" .. classic.rates .. "; Forever verified=false" end
     lines[#lines+1]="Loot windows read: " .. (A.Drops.readWindows or 0) .. "; skipped source pairs=" .. A.Drops.skipped ..
         "; harvesting tooltips=" .. tostring(D.Settings().showHarvestDrops)
+    lines[#lines+1]="Empty loot checks: counted=" .. (A.Drops.emptyChecks or 0) ..
+        "; unattributed=" .. (A.Drops.emptyUnattributed or 0) .. "; loot_open=" .. tostring(A.Drops.lootOpen==true)
     if A.Drops.reason then lines[#lines+1]="Drop detail: " .. A.Drops.reason end
     local farm=A.Farm.Summary()
     lines[#lines+1]=string.format("Farming: %.0fs; value=%s; unpriced=%d; paused=%s",farm.elapsed,U.Money(farm.total),farm.unknown,tostring(farm.paused))
-    lines[#lines+1]="Farming receipts waiting: " .. #A.Farm.pending .. "; threshold=" .. D.Settings().farmThreshold .. "% above vendor after AH cut"
-    lines[#lines+1]="Farming exclusions: mail/trade; ignored money messages=" .. (A.Farm.excludedReceipts or 0)
+    lines[#lines+1]="Farming receipts waiting: " .. #A.Farm.pending .. "; quest confirmations=" .. #A.Farm.receipts ..
+        "; threshold=" .. D.Settings().farmThreshold .. "% above vendor after AH cut"
+    lines[#lines+1]="Farming exclusions: mail/trade/vendor; ignored money messages=" .. (A.Farm.excludedReceipts or 0)
+    lines[#lines+1]="Farming quest rewards: " .. (not D.Settings().farmIncludeQuest and "new rewards excluded" or
+        D.Settings().farmQuestInRate and "session and hourly" or "session only") .. "; peak=always_excluded"
     lines[#lines+1]="Farming idle: enabled=" .. tostring(D.Settings().farmIdle) .. "; minutes=" .. D.Settings().farmIdleMinutes ..
         "; automatic_pause=" .. tostring(farm.idlePaused==true) .. "; inactive=" .. math.floor(farm.idleSeconds or 0) .. "s; combat=" .. tostring(A.Farm.combat==true)
     lines[#lines+1]="Farming rates: session=" .. U.Money(farm.perHour) .. "; recent60m=" .. U.Money(farm.recentRate or 0) ..

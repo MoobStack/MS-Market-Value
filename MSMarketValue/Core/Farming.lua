@@ -1,6 +1,6 @@
 local _, A = ...
 local U, D, Metrics = A.Util, A.DB, A.FarmMetrics
-local F={revision=0,pending={},questCredits={},messages={},messageRing={},serial=0}
+local F={revision=0,pending={},questCredits={},receipts={},messages={},messageRing={},serial=0}
 A.Farm=F
 local MAX_ITEMS, MAX_RECENT, MAX_HISTORY = 500, 20, 5
 F.limits={items=MAX_ITEMS,recent=MAX_RECENT,history=MAX_HISTORY}
@@ -189,7 +189,7 @@ function F.Summary()
     local session=profile.current
     local snapshot=D.Snapshot()
     local signature=table.concat({F.revision,D.Settings().farmThreshold,D.Settings().marketFee,tostring(D.Settings().farmUseAuction),
-        tostring(snapshot and D.IsStale(snapshot))},"|")
+        tostring(snapshot and D.IsStale(snapshot)),tostring(D.Settings().farmQuestInRate)},"|")
     local result=F.summary
     if not result or result.signature~=signature or result.snapshot~=snapshot or result.session~=session then
         result={total=session.coins+session.questCoins,coins=session.coins,questCoins=session.questCoins,
@@ -217,12 +217,22 @@ function F.Summary()
         F.summary=result
     end
     result.elapsed=session.elapsed
-    result.perHour=session.elapsed>=60 and result.total/session.elapsed*3600 or 0
-    Metrics.Summary(session,result)
+    result.rateValue=F.HourlyValue(result)
+    result.perHour=session.elapsed>=60 and result.rateValue and result.rateValue/session.elapsed*3600 or 0
+    Metrics.Summary(session,result,D.Settings().farmQuestInRate)
     result.idlePaused=D.Settings().farmIdle and session.idlePaused
     result.idleSeconds=session.idleElapsed
     result.paused=session.paused or result.idlePaused or not D.Settings().farmTracking or F.inWorld==false
     return result
+end
+
+function F.HourlyValue(summary)
+    if not U.Table(summary) or not U.Number(summary.total,0) then return nil end
+    if D.Settings().farmQuestInRate then return summary.total end
+    local gold,value=summary.questCoins,summary.questValue
+    if not U.Accessible(gold) or not U.Accessible(value) then return nil end
+    if gold~=nil and not Amount(gold) or value~=nil and not U.Number(value,0) then return nil end
+    return math.max(0,summary.total-(gold or 0)-(value or 0))
 end
 
 function F.Pause(paused)
@@ -238,7 +248,7 @@ function F.Reset()
     local profile=F.Profile()
     if not profile then return false,F.reason end
     F.Tick()
-    if #F.pending>0 then return false,"Recent loot is settling. Try again in a moment." end
+    if #F.pending>0 or #F.receipts>0 then return false,"Recent loot is settling. Try again in a moment." end
     local summary=F.Summary()
     if summary.elapsed>0 then
         local top={};for index=1,math.min(#summary.items,10) do
@@ -249,10 +259,12 @@ function F.Reset()
             lootValue=summary.lootValue,questValue=summary.questValue,harvestValue=summary.harvestValue,
             categories=summary.categories,unknown=summary.unknown,top=top,
             recentRate=summary.recentRate,recentDuration=summary.recentDuration,peak=summary.peak,
+            recentFarmRate=summary.recentFarmRate,recentTotalRate=summary.recentTotalRate,ratePolicy=2,
             metricMissing=summary.metricMissing,metricsSince=summary.metricsSince})
         if #profile.history>MAX_HISTORY then table.remove(profile.history) end
     end
-    profile.current=New();F.last=U.Mono();F.pending,F.questCredits,F.messages,F.messageRing={},{},{},{}
+    profile.current=New();F.last=U.Mono();F.pending,F.questCredits,F.receipts,F.messages,F.messageRing={},{},{},{},{}
+    F.questWindow,F.questFinished,F.lastQuest=nil,nil,nil
     F.summary,F.reason=nil,nil;F.revision=F.revision+1;return true
 end
 
@@ -288,8 +300,10 @@ function F.LootMessage(message,lineID)
         if U.ItemID(itemLink) and U.Number(quantity,1,1000000,true) then
             if #F.pending>=64 then F.reason="Loot receipt queue full; review the session.";return end
             F.Activity()
-            F.pending[#F.pending+1]={link=itemLink,quantity=quantity,at=U.Mono(),session=F.Profile().current,
-                source=A.Drops.ReceiptKind(U.ItemID(itemLink))}
+            local source=A.Drops.ReceiptKind(U.ItemID(itemLink))
+            local worldLoot=A.Drops.lootOpen==true
+            if not worldLoot and F.QuestContext() then source="quest" end
+            F.pending[#F.pending+1]={link=itemLink,quantity=quantity,at=U.Mono(),session=F.Profile().current,source=source,worldLoot=worldLoot}
             return
         end
     end
@@ -301,8 +315,19 @@ function F.QuestLoot(questID,itemLink,quantity)
     -- Keep a short credit even when quest income is switched off: its generic
     -- loot chat must not reclassify the reward as a monster drop.
     local key=U.VariantKey(itemLink) or tostring(U.ItemID(itemLink))
+    -- A generic quest receipt can settle before the dedicated event arrives.
+    -- Confirm its counted quantity rather than adding the reward a second time.
+    local profile=F.Profile()
+    for _,receipt in ipairs(F.receipts) do
+        if profile and receipt.session==profile.current and receipt.variant==key and
+           U.Mono()-receipt.at<=5 and receipt.quantity>0 then
+            local used=math.min(quantity,receipt.quantity)
+            receipt.quantity=receipt.quantity-used;quantity=quantity-used
+            if quantity==0 then return end
+        end
+    end
     local credit=F.questCredits[key]
-    if credit and U.Mono()-credit.at<1 then credit.quantity=credit.quantity+quantity
+    if credit and U.Mono()-credit.at<5 then credit.quantity=credit.quantity+quantity
     else F.questCredits[key]={at=U.Mono(),quantity=quantity} end
     F.AddItem(itemLink,quantity,"quest")
 end
@@ -315,18 +340,38 @@ function F.Tick(flush)
     for _,item in ipairs(F.pending) do
         if flush or now-item.at>=1 then
             local variant=U.VariantKey(item.link) or tostring(U.ItemID(item.link))
-            local credit=F.questCredits[variant]
-            local skip=credit and math.abs(item.at-credit.at)<=1 and math.min(item.quantity,credit.quantity) or 0
+            local credit=not item.worldLoot and F.questCredits[variant]
+            local skip=credit and math.abs(item.at-credit.at)<=5 and math.min(item.quantity,credit.quantity) or 0
             if skip>0 then credit.quantity=credit.quantity-skip end
-            if item.quantity>skip and profile and profile.current==item.session then F.AddItem(item.link,item.quantity-skip,item.source or "loot",item.session) end
+            if item.quantity>skip and profile and profile.current==item.session then
+                local source=item.source or "loot"
+                if not item.worldLoot and F.QuestContext() and
+                   (not F.lastQuest or math.abs(item.at-F.lastQuest)<=3) then source="quest" end
+                if F.AddItem(item.link,item.quantity-skip,source,item.session) and source=="quest" then
+                    F.receipts[#F.receipts+1]={variant=variant,quantity=item.quantity-skip,at=item.at,session=item.session}
+                    if #F.receipts>64 then table.remove(F.receipts,1) end
+                end
+            end
         else remaining[#remaining+1]=item end
     end
     F.pending=remaining
-    for key,credit in pairs(F.questCredits) do if now-credit.at>3 then F.questCredits[key]=nil end end
+    local receipts={}
+    for _,receipt in ipairs(F.receipts) do
+        if receipt.quantity>0 and now-receipt.at<=5 then receipts[#receipts+1]=receipt end
+    end
+    F.receipts=receipts
+    for key,credit in pairs(F.questCredits) do if now-credit.at>6 then F.questCredits[key]=nil end end
+end
+
+function F.QuestContext()
+    local now=U.Mono()
+    return F.questWindow==true or (F.questFinished and now-F.questFinished<=3) or
+        (F.lastQuest and now-F.lastQuest<=3)
 end
 
 function F.ReceiptAllowed()
-    return not F.mailOpen and not F.tradeOpen and
+    return not F.mailOpen and not F.tradeOpen and not F.merchantOpen and
+        (not F.merchantClosed or U.Mono()-F.merchantClosed>2) and
         (not F.mailClosed or U.Mono()-F.mailClosed>2) and (not F.tradeClosed or U.Mono()-F.tradeClosed>2)
 end
 function F.Event(event,...)
@@ -344,12 +389,17 @@ function F.Event(event,...)
     elseif event=="MAIL_CLOSED" then F.mailOpen=false;F.mailClosed=U.Mono()
     elseif event=="TRADE_SHOW" then F.tradeOpen=true;F.tradeClosed=nil
     elseif event=="TRADE_CLOSED" or event=="TRADE_REQUEST_CANCEL" then F.tradeOpen=false;F.tradeClosed=U.Mono()
-    elseif event=="PLAYER_LEAVING_WORLD" or event=="PLAYER_LOGOUT" then F.Tick(true);F.inWorld=false;F.last=nil
+    elseif event=="MERCHANT_SHOW" then F.merchantOpen=true;F.merchantClosed=nil
+    elseif event=="MERCHANT_CLOSED" then F.merchantOpen=false;F.merchantClosed=U.Mono()
+    elseif event=="QUEST_COMPLETE" then F.questWindow=true;F.questFinished=nil
+    elseif event=="QUEST_FINISHED" then F.questWindow=false;F.questFinished=U.Mono()
+    elseif event=="PLAYER_LEAVING_WORLD" or event=="PLAYER_LOGOUT" then
+        F.Tick(true);F.inWorld=false;F.last=nil;F.questWindow,F.questFinished,F.lastQuest=nil,nil,nil
     elseif event=="CHAT_MSG_LOOT" then F.LootMessage(a,select(11,...))
     elseif event=="CHAT_MSG_MONEY" then
-        if F.ReceiptAllowed() then local amount=A.Cash.ParseLootMessage(a);if amount then F.AddMoney(amount,false) end
+        if F.ReceiptAllowed() and (not F.QuestContext() or A.Drops.lootOpen==true) then local amount=A.Cash.ParseLootMessage(a);if amount then F.AddMoney(amount,false) end
         else F.excludedReceipts=(F.excludedReceipts or 0)+1 end
-    elseif event=="QUEST_TURNED_IN" then F.AddMoney(c,true)
+    elseif event=="QUEST_TURNED_IN" then F.lastQuest=U.Mono();F.AddMoney(c,true)
     elseif event=="QUEST_LOOT_RECEIVED" then F.QuestLoot(a,b,c)
     elseif event=="GET_ITEM_INFO_RECEIVED" then F.summary=nil end
 end
