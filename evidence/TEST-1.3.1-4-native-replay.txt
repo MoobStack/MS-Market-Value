@@ -1,0 +1,16 @@
+PASS sell arrows change the displayed unit price by one copper and preserve quantity
+PASS sell arrows normalize silver and gold carry and borrow
+PASS sell arrows stop at zero and at the gold field's representable limit
+PASS both sell modes have their own primary price arrows and do not edit bid inputs
+PASS sell controls use a vertical native arrow pair beside copper and retain the warning
+PASS manual price edits refresh arrow limits and keep native text-change callbacks
+PASS reopening or refreshing the auction house reuses sell buttons and hooks
+PASS sell arrows remain inert for hidden pages, closed auctions and absent items
+PASS sell arrows respect native disabled or hidden money fields and forbidden frames
+PASS combat defers sell installation and blocks adjustments until combat ends
+PASS late native sell frames install on the normal UI update without changing the selected page
+PASS sell arrows reject malformed or restricted prices without replacing native values
+PASS sell arrows ignore right clicks and report both native installations
+NATIVE_SELL_REPLAY rollover=passed zero_clear=passed totals=passed
+PASS native shared price and money setters normalize arrow clicks and keep totals live
+RESULT: 14/14 behavioral tests passed (Lua Lua 5.1). Native evidence and remaining checks: VALIDATION.md.

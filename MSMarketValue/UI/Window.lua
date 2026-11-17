@@ -132,6 +132,7 @@ function UI.DiagnosticsText()
     lines[#lines+1]="Ledger time: local; "..date("%Y-%m-%d %H:%M:%S %Z",U.Now())
     lines[#lines+1]="Purchase observers: item="..tostring(tracking.purchaseHook==true).."; commodity="..tostring(tracking.commodityHook==true).."; mailbox="..tostring(tracking.mailOpen==true)
     lines[#lines+1]="Buy-page watch buttons: item="..tostring(A.EconomyUI.buyButtons and U.Table(AuctionHouseFrame)and A.EconomyUI.buyButtons[AuctionHouseFrame.ItemBuyFrame]~=nil or false).."; commodity="..tostring(A.EconomyUI.buyButtons and U.Table(AuctionHouseFrame)and A.EconomyUI.buyButtons[AuctionHouseFrame.CommoditiesBuyFrame]~=nil or false)
+    lines[#lines+1]=A.SellUI.Diagnostics()
     if tracking.reason then lines[#lines+1]="Transaction detail: "..tracking.reason end
     local history = A.History.Status(market)
     lines[#lines + 1] = "Historic pricing: " .. (history.reason or string.format("%d UTC day%s for this market; retention=%d days",

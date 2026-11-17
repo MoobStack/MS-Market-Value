@@ -12,3 +12,5 @@ The suite loads the actual addon modules against native API/frame fixtures and c
 Set `MSMV_BENCHMARK=1` to include larger synthetic workloads. Their CPU/memory figures describe fixture components, not native FPS or total addon memory. See [Validation](../VALIDATION.md) for release evidence.
 
 Variant coverage checks use explicit November UTC dates and saved-data reloads. Farming replays cover missing close events, native visibility recovery, exclusions and the 19-award pattern from the supplied report.
+
+Sell-page coverage checks both price fields, one-copper steps, silver/gold rollover, native callback preservation, limits, manual edits, lazy installation and AH reopening.

@@ -321,7 +321,7 @@ end)
 test("diagnostics identify beta revision vendor coverage and the market analysis", function()
     local w,A=fresh(); w:load(); merchant(w,{supply(2320,20)})
     local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 3",1,true)); truth(string.find(text,"Vendor purchase prices: 1",1,true))
+    truth(string.find(text,"Test revision: 4",1,true)); truth(string.find(text,"Vendor purchase prices: 1",1,true))
     truth(string.find(text,"Market analysis:",1,true))
 end)
 

@@ -1,13 +1,13 @@
 # Validation
 
-MS Market Value **1.3.1-beta, test revision 3** passed **877 Lua cases and 23 Python checks/workloads** with Lua 5.1 API/frame fixtures. The 31 new cases cover exact-date history, intraday modifier retention, persistence, missing close events, transaction exclusions and farming peaks.
+MS Market Value **1.3.1-beta, test revision 4** passed **890 Lua cases and 23 Python checks/workloads** with Lua 5.1 API/frame fixtures. Thirteen new cases cover the Sell-page arrow controls.
 
-A replay against test revision 2 erased an exact modifier price when a later scan omitted it on the same UTC day. The fix retains its last observed price for that day, preserves fresh current listings, never carries samples into another date and keeps incompatible formats separate. Normal item-wide daily behavior remains covered.
+The checks cover one-copper changes in both sell modes, silver/gold carry and borrow, zero and gold-field limits, quantity preservation, updated totals, keyboard edits, lazy frame creation and AH reopening without duplicate controls. Hidden, disabled, forbidden or unreadable fields remain unchanged. The runtime operation check confirms no auction-posting calls were added.
 
-The November 15–17 calendar replay has two earlier exact dates; the fourth date permits a qualifying three-day baseline. Reloads and link level/unique-ID changes keep the exact key stable in the fixtures. Different modifiers cannot supply one another's missing samples. The user's actual saved keys/daily prices were not available; the new diagnostic report exposes those values for native confirmation.
+A separate replay used the actual shared price/money setter functions from the native UI source. It passed denomination rollover, clearing zero and callback-driven total updates. That replay adds one integration check; its other thirteen cases repeat the new regressions. It does not render the game or establish compatibility with every native UI build.
 
-A missing quest-close replay ignored 19 subsequent loot-money awards on test revision 2. The fix counted all 19, left quest gold separate and kept it out of the farming peak. Merchant, mail, trade and native-frame recovery checks passed, including cooldowns and manual/death pause.
+All 31 runtime Lua files pass syntax, load-order and identity checks. Larger market, session-storage, farming, crafting and ledger workloads passed. Earlier price-history and farming fixes remain covered. Results, source URLs and runtime hashes are in `evidence/TEST-1.3.1-4.json`; logs are alongside it.
 
-All 30 runtime Lua files pass syntax, load-order, identity and operation checks. Repeated market searches still settle; the prior session-storage, scrolling, farming, drop, crafting and ledger coverage remains included. Results and hashes are in `evidence/TEST-1.3.1-3.json`; the local log is `evidence/TEST-1.3.1-3-validation.txt`.
+The supplied test revision 3 diagnostics report two earlier exact-variant dates and no modified matches with three earlier dates. The combat report shows recent/peak rates and zero ignored money messages. These are reported in-game observations, separate from the local test results.
 
-Local fixtures do not prove native event timing, total addon memory or FPS. Follow the [test notes](RELEASE-NOTES-v1.3.1-beta-test3.md) and include a representative selected variant in the next diagnostic report.
+Native arrow appearance, warning placement and behavior on client 1.60.1 / 70959 still need confirmation. Follow the [test notes](RELEASE-NOTES-v1.3.1-beta-test4.md).

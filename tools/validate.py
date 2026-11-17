@@ -47,7 +47,7 @@ def run(lua: str, luac: str | None = None) -> None:
     for suffix in ("Camelot", "Forever"):
         assert (RUNTIME / f"MSMarketValue_{suffix}.toc").read_bytes() == toc.read_bytes()
     paths = [line.replace("\\", "/") for line in text.splitlines() if line and not line.startswith("#")]
-    assert len(paths) == len(set(paths)) == 30
+    assert len(paths) == len(set(paths)) == 31
     assert paths[0] == "Bootstrap.lua" and paths[-1] == "Core/Events.lua"
     assert paths[1:3] == ["Libs/LibStub/LibStub.lua", "Libs/LibAHTab/LibAHTab.lua"]
     assert paths.index("Market/Metadata.lua") < paths.index("Market/Analysis.lua")

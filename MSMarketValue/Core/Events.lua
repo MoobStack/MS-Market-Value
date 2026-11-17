@@ -67,7 +67,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if U.String(arg1) and arg1 == A.NAME then Initialize() end
         if U.String(arg1) and arg1 == "Blizzard_AuctionHouseUI" and A.auctionOpen then
             A.UI.OnAuctionShow()
-            A.Transactions.Install(); A.EconomyUI.InstallBuyButtons()
+            A.Transactions.Install(); A.EconomyUI.InstallBuyButtons(); A.SellUI.Install()
         end
     elseif event == "PLAYER_LOGIN" then
         Login()
@@ -75,6 +75,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         A.auctionOpen = true
         A.UI.OnAuctionShow()
         A.EconomyUI.InstallBuyButtons()
+        A.SellUI.Install()
         U.Notify()
     elseif event == "AUCTION_HOUSE_CLOSED" then
         A.MarketUI.pendingVariant=nil
@@ -109,6 +110,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
             A.Market.OnItemInfo(arg1)
         end
     elseif event == "PLAYER_REGEN_DISABLED" then
+        A.SellUI.Install()
         A.MarketUI.pendingVariant=nil
         S.Stop("Combat started.")
         if A.UI.panel then A.UI.panel:Hide() end
@@ -153,6 +155,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
         end
         if A.auctionOpen and not A.UI.tabInstalled and not U.Combat() then A.UI.InstallAuctionTab() end
         if A.auctionOpen and not U.Combat() then A.EconomyUI.InstallBuyButtons() end
+        if A.auctionOpen then A.SellUI.Install() end
         if A.EconomyUI.frame and A.EconomyUI.frame:IsShown() then A.EconomyUI.Refresh() end
         if (A.UI.frame and A.UI.frame:IsShown()) or (A.UI.panel and A.UI.panel:IsShown()) then A.UI.Refresh() end
         if A.refreshTooltips and not U.Combat() then

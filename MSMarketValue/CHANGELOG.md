@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1-beta — Test revision 4 · 2026-11-17
+
+- Add stacked up/down arrows beside the copper field on the native AH Sell page. Each click changes the primary unit/buyout price by one copper.
+- Handle silver/gold rollover, stop at zero and respect the gold field's limit. Keep native quantity, totals, validation and keyboard editing.
+- Use the game's arrow textures, retain the native price warning and reuse controls when the AH reopens. Report their installation in diagnostics.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test4.md) for the Sell-page checks and the latest market/farming diagnostics.
+
 ## 1.3.1-beta — Test revision 3 · 2026-11-17
 
 - Preserve exact-modifier observations when a later scan on the same UTC day no longer lists them. Keep current listings fresh and never carry samples across dates.
