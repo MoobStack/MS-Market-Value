@@ -8,7 +8,7 @@
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
 ## X-Build: 2026-11-16-beta001
-## X-Test-Revision: 4
+## X-Test-Revision: 5
 
 Bootstrap.lua
 Libs\LibStub\LibStub.lua
@@ -38,6 +38,7 @@ UI\Window.lua
 UI\Crafting.lua
 UI\Market.lua
 UI\Economy.lua
+UI\Watchlist.lua
 UI\Farming.lua
 UI\Sell.lua
 Core\Events.lua

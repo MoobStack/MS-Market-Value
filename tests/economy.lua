@@ -111,10 +111,11 @@ test("zero targets track an item without producing an alert",function()
     local w,A=watchWorld();truth(A.Watchlist.Save(100,0,0,0));local count=#w.messages;watchDrain(A)
     equal(A.Watchlist.rows[1].status,"Tracking only");equal(#w.messages,count)
 end)
-test("watch alerts are local once per saved scan and survive reload deduplication",function()
-    local w,A=watchWorld();truth(A.Watchlist.Save(100,600,0,0));local count=#w.messages;watchDrain(A)
+test("optional watch chat summaries are local and survive reload deduplication",function()
+    local w,A=watchWorld();local s=A.DB.Settings();s.watchChatAlerts=true;s.watchOpenOnScan=false;s.watchOpenOnAH=false
+    w:openAH();truth(A.Watchlist.Save(100,600,0,0));local count=#w.messages;watchDrain(A);A.Watchlist.AlertTick()
     equal(#w.messages,count+1);for _=1,20 do watchDrain(A)end;equal(#w.messages,count+1)
-    local saved=A.DB.data;local w2,A2=fresh(saved);w2.wall=w.wall;w2:load();count=#w2.messages;watchDrain(A2);equal(#w2.messages,count)
+    local saved=A.DB.data;local w2,A2=fresh(saved);w2.wall=w.wall;w2:load();w2:openAH();count=#w2.messages;watchDrain(A2);A2.Watchlist.AlertTick();equal(#w2.messages,count)
 end)
 test("alert preference suppresses notices while retaining matched rows",function()
     local w,A=watchWorld();A.DB.data.settings.watchAlerts=false;truth(A.Watchlist.Save(100,600,0,0));local count=#w.messages;watchDrain(A)
@@ -265,13 +266,13 @@ test("craft record-sale action records a commission directly with an estimated c
 end)
 
 test("watchlist UI saves gold and return thresholds without scanning",function()
-    local w,A=watchWorld();A.EconomyUI.Show("watch");local E=A.EconomyUI;local v=E.watchInputs
-    v.item:SetText("100");v.itemPrice:SetText("0.06");v.roi:SetText("20");v.profit:SetText("0.01")
+    local w,A=watchWorld();A.EconomyUI.WatchDraft({id=100,name="Test item",buy=600},"buy");local E=A.EconomyUI;local v=E.watchInputs
+    v.itemPrice:SetText("0.06");v.roi:SetText("20");v.profit:SetText("0.01")
     truth(E.SaveWatch());watchDrain(A);E.Refresh();equal(E.watchRows[1].row.watch.maxBuy,600);equal(w.requests,0)
 end)
 test("economy diagnostics report pricing watches and ledger cost gaps",function()
     local w,A=watchWorld();truth(A.Watchlist.Save(100,600,0,0));truth(A.Ledger.Record(transaction()));local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"Test revision: 4",1,true));truth(string.find(text,"Watchlists: 1",1,true));truth(string.find(text,"sales_needing_cost=1",1,true))
+    truth(string.find(text,"Test revision: 5",1,true));truth(string.find(text,"Watchlists: 1",1,true));truth(string.find(text,"sales_needing_cost=1",1,true))
 end)
 
 test("invoice identity survives ledger pruning and deliberate entry deletion",function()

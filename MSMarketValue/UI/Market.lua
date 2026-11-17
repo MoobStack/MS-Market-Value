@@ -284,7 +284,7 @@ function UI.Create(parent)
     UI.panel = panel
     Label(panel, "Market opportunities", 14, -10, 400):SetFontObject("GameFontNormal")
     UI.age = Label(panel, "", 14, -31, 746)
-    Button(panel, "Watchlists", 510, -7, 120, function() A.EconomyUI.Show("watch") end)
+    UI.watchButton=Button(panel, "Watchlists", 510, -7, 120, function() A.EconomyUI.Show("watch") end)
     Button(panel, "Ledger", 640, -7, 120, function() A.EconomyUI.Show("ledger") end)
     UI.views = {}
     local names = { { "deals", "Resale" }, { "rising", "Rising" }, { "falling", "Falling" }, { "all", "All signals" }, {"listed","All items"} }

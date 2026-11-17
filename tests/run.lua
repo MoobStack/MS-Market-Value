@@ -165,6 +165,7 @@ local function fresh(saved)
     _G.C_MerchantFrame = { GetItemInfo = function(index) return world.vendorItems[index] end }
     _G.GetMerchantItemInfo = nil
     _G.ChatFrameUtil, _G.ChatFrame_OpenChat = nil, nil
+    _G.GetCursorInfo,_G.ClearCursor,_G.GetCurrentKeyBoardFocus=nil,nil,nil
     for _,key in ipairs({"GetRepairAllCost","InRepairMode","RepairAllItems","GetNumTrainerServices","GetTrainerServiceCost","GetTrainerServiceInfo","BuyTrainerService","ConfirmTalentWipeDialog_Show","ConfirmTalentWipe","NumTaxiNodes","TaxiNodeCost","TaxiNodeName","TakeTaxiNode","GetSendMailPrice","SetSendMailMoney","SendMail","PurchaseSlot","BuyGuildBankTab","DepositGuildBankMoney","GuildRegistrar_PurchaseCharter","GossipConfirmDialog_Show","C_GossipInfo","C_StableInfo","YOU_LOOT_MONEY","LOOT_MONEY_SPLIT","YOU_LOOT_MONEY_GUILD","LOOT_MONEY_SPLIT_GUILD","GOLD_AMOUNT","SILVER_AMOUNT","COPPER_AMOUNT","BuyMerchantItem","BuybackItem","SellCursorItem","PickupMerchantItem","GetMoney","GetInboxNumItems","GetNumBuybackItems","GetBuybackItemInfo","GetBuybackItemLink","NUM_BAG_SLOTS","TakeInboxMoney","TakeInboxItem","DeleteInboxItem"})do _G[key]=nil end
     _G.GetPlayerTradeMoney, _G.GetTargetTradeMoney, _G.GetGameMessageInfo = nil, nil, nil
     _G.TradeFrame, _G.AcceptTrade, _G.CancelTrade, _G.CloseTrade = nil, nil, nil, nil
@@ -1477,7 +1478,7 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("release diagnostics identify the stable build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 4",1,true))
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 5",1,true))
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
     equal(A.VERSION,"1.3.1-beta"); equal(A.BUILD,"2026-11-16-beta001")
 end)
@@ -1739,7 +1740,7 @@ test("missing material prices disable the chat draft button", function()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 4",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 5",1,true)); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -2256,7 +2257,7 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 4",1,true)); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.3.1-beta / 2026-11-16-beta001",1,true)); truth(string.find(text,"Test revision: 5",1,true)); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
@@ -2270,7 +2271,7 @@ test("the 1.1.0-to-1.3.1 upgrade keeps prices history preferences and cooldown w
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.3.1-beta"); equal(A2.BUILD,"2026-11-16-beta001"); equal(A2.TEST_REVISION,4)
+    equal(A2.VERSION,"1.3.1-beta"); equal(A2.BUILD,"2026-11-16-beta001"); equal(A2.TEST_REVISION,5)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)
@@ -2305,8 +2306,10 @@ assert(loadfile("tests/v131-test1.lua"))(fresh, row, link, test, equal, near, tr
 assert(loadfile("tests/v131-test2.lua"))(fresh,craftingWorld,craftRecipe,row,link,test,equal,near,truth,secret)
 assert(loadfile("tests/v131-test3.lua"))(fresh,row,link,test,equal,near,truth,secret)
 assert(loadfile("tests/v131-test4.lua"))(fresh,test,equal,truth,secret)
+assert(loadfile("tests/v131-test5.lua"))(fresh,row,link,test,equal,near,truth,secret)
 
 if os.getenv("MSMV_BENCHMARK") == "1" then
+    assert(loadfile("tests/watchlist-ui-performance.lua"))(fresh,link,truth,equal)
     assert(loadfile("tests/reference-performance.lua"))(fresh,truth,equal)
     assert(loadfile("tests/farming-performance.lua"))(fresh,truth,equal)
     assert(loadfile("tests/session-management-performance.lua"))(fresh,link,truth,equal)

@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1-beta — Test revision 5 · 2026-11-17
+
+- Replace watchlist pages with ten scrolling rows, name search, a target-only filter and clickable sort headings. Put target status first by default and show estimated net profit alongside return.
+- Use rarity colors for item names and a separate target-met marker/highlight for buying signals. Add a passive target count to the Watchlists button.
+- Open the native Buy page on left-click; use right-click or Edit for a separate target dialog. Remove visible item IDs and accept item links or items added from Buy/Opportunities.
+- Give the watchlist its own settings. Add quiet grouped reviews after scans or AH entry, with optional chat summaries off by default.
+- Remember reviewed matches across reloads and unchanged scans. Alert again for a new match or lower matched price; defer reviews during combat, selling, purchase confirmation, typing or editing.
+- Keep existing watches, thresholds and exact-modifier choices. Refresh late names/rarity without restarting price analysis, and keep the 200-watch limit.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test5.md) for the new layout and in-game alert checks.
+
 ## 1.3.1-beta — Test revision 4 · 2026-11-17
 
 - Add stacked up/down arrows beside the copper field on the native AH Sell page. Each click changes the primary unit/buyout price by one copper.

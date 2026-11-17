@@ -22,7 +22,7 @@ Pricing settings control markup, labor, minimum charge and customer-supplied mat
 
 At the AH, open MS Opportunities. All items shows current prices; Resale, Rising and Falling need earlier history for the exact modifier. Apply keywords, rarity and supply filters to narrow the list. Missing baselines show a priced-day count such as 2/3 days; hover or right-click to see the UTC dates. Left-click a result for live Buy listings, right-click for details, or use Watch selected to save targets.
 
-Watch item is also available on the Buy page. Zero disables a target; all enabled targets must pass. Alerts use saved scans and do not start background auction searches. See [Opportunities](docs/MARKET-OPPORTUNITIES.md) for the columns and history rules.
+Use Watch item on the Buy page or Watch selected on Opportunities to save targets. The watchlist scrolls, supports search and target-only filtering, and sorts by clickable headers. Target status is separate from item-name rarity. Left-click an item for its Buy page; right-click or Edit changes its targets. Zero disables a target; all enabled targets must pass. Watch settings controls quiet reviews after scans or AH visits and an optional chat summary. Unchanged prices stay quiet, and reviews wait while you sell or edit. See [Money tools](docs/ECONOMY-TOOLS.md) for watchlist details and [Opportunities](docs/MARKET-OPPORTUNITIES.md) for history rules.
 
 ## Farming, drops and the ledger
 

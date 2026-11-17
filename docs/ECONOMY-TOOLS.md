@@ -2,9 +2,25 @@
 
 ## Watchlists
 
-Use Watch item on the AH Buy page, Watch selected on Opportunities, or `/msmv watch`. Set a maximum buy price, minimum return or minimum profit. Zero disables a target; all enabled targets must pass. Item links track the exact modifier, while a numeric ID uses item-wide prices.
+Use Watch item on the AH Buy page, Watch selected on Opportunities, or `/msmv watch`. Add watch also accepts a pasted or dragged item link. Item IDs are not needed. Existing broader watches still follow the lowest item-wide price; equipment choices and pasted links retain their exact modifier.
 
-Targets use saved scans. Profit and return also need earlier history. Alerts are local and do not request another auction search. View listings requires an auctioneer and usable current prices.
+Search by name, enable Targets met only or click a column heading to sort. The list scrolls with the mouse wheel or native scrollbar. Target status comes first by default, with the largest discount to the buy target first among matching rows. Item names use rarity colors; a separate TARGET MET marker and subtle row highlight identify matches.
+
+Left-click a row to open its native Buy page. Broader equipment watches open a name search so you can choose the modifier. Right-click or Edit opens the target dialog, which also contains Remove watch. Set a maximum buy price, minimum return or minimum profit, all per item. Price/profit inputs are gold amounts. Zero turns a target off, and all enabled targets must pass. All zero means tracking only.
+
+| Column | Meaning |
+|---|---|
+| Scan each | Lowest unit asking price in the saved scan |
+| Buy target | Your maximum unit purchase price, or Off |
+| Net / item | Estimated resale proceeds after the AH cut, less the scan price |
+| Return | Estimated net profit divided by the scan price |
+| Status | Target met, watching, tracking, missing history or a scan/listing gap |
+
+Profit/return need earlier history; a buy-price-only target can match immediately. Hover for enabled targets, exact-history days, listed units and the difference from your buy target. Saved asking prices can change; review live listings before buying. Keep up to 200 watches per market.
+
+Watch settings stays within the watchlist. By default, new matches or lower matched prices can open one grouped review after a scan or on an AH visit. Reviewed results stay quiet across repeat visits, unchanged scans and reloads. A fresh scan showing a watch out of target or unlisted rearms it for a later match. An already-open watchlist updates in place.
+
+Reviews wait during combat, selling, purchase confirmation, typing or editing. They use saved scans without background auction searches. Chat summaries are optional and off by default. Turn off Watchlist alerts to keep just the passive target count and row highlights. Existing disabled-alert choices are preserved.
 
 ## Recorded activity
 

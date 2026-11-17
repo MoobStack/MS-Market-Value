@@ -18,7 +18,9 @@ D.defaults = {
     farmIncludeQuest = true, farmQuestInRate = false, farmThreshold = 10, farmIdle = true, farmIdleMinutes = 5,
     farmHUDWidth = 320, farmHUDLocked = false, farmPauseOnDeath = true,
     serviceLabor = 0, serviceMinimum = 0, serviceCustomerMaterials = false,
-    watchAlerts = true, ledgerDays = 90, trackAH = true, trackVendor = true, trackTrade = true, trackLoot = true, trackOther = true,
+    watchAlerts = true, watchOpenOnScan = true, watchOpenOnAH = true, watchChatAlerts = false,
+    watchReadyOnly = false, watchSort = "status", watchSortDesc = false,
+    ledgerDays = 90, trackAH = true, trackVendor = true, trackTrade = true, trackLoot = true, trackOther = true,
 }
 
 local settingBounds = { staleHours = { 1, 168 }, quoteMarkup = { 0, 1000 }, historyDays = { 1, 30 },
@@ -65,6 +67,7 @@ function D.Initialize()
     end
     if db.settings.dropMode ~= "observed" and db.settings.dropMode ~= "reference" then db.settings.dropMode = "reference" end
     if db.settings.dropSort~="rate_desc" and db.settings.dropSort~="rate_asc" and db.settings.dropSort~="value" then db.settings.dropSort="rate_desc" end
+    if not ({status=true,name=true,current=true,target=true,profit=true,roi=true})[db.settings.watchSort] then db.settings.watchSort="status" end
     if type(db.excludedItems) ~= "table" then db.excludedItems = {} end
     if not U.Number(db.cooldownUntil, 0) then db.cooldownUntil = 0 end
     db.version = A.VERSION
@@ -314,6 +317,7 @@ function D.Commit(snapshot)
     -- completed snapshot and never fills gaps in current prices.
     D.data.markets[key] = snapshot
     A.History.Record(snapshot)
+    if A.Watchlist then A.Watchlist.scanRequested=snapshot end
     return true
 end
 

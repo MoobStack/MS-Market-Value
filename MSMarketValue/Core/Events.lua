@@ -76,8 +76,10 @@ frame:SetScript("OnEvent", function(_, event, ...)
         A.UI.OnAuctionShow()
         A.EconomyUI.InstallBuyButtons()
         A.SellUI.Install()
+        A.Watchlist.OnAuctionShow()
         U.Notify()
     elseif event == "AUCTION_HOUSE_CLOSED" then
+        A.Watchlist.arrivalRequested,A.Watchlist.scanRequested=nil,nil
         A.MarketUI.pendingVariant=nil
         A.auctionOpen = false
         S.Stop("The auction house closed.")
@@ -108,6 +110,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
             A.refreshTooltips = true
             A.Crafting.OnItemInfo(arg1)
             A.Market.OnItemInfo(arg1)
+            A.Watchlist.OnItemInfo(arg1)
         end
     elseif event == "PLAYER_REGEN_DISABLED" then
         A.SellUI.Install()
@@ -147,6 +150,8 @@ frame:SetScript("OnUpdate", function(_, elapsed)
         if A.MarketUI.pendingVariant then A.MarketUI.ResolvePendingVariant() end
         A.History.Maintain()
         A.Watchlist.Ensure()
+        A.Watchlist.AlertTick()
+        A.WatchUI.UpdateBadge()
         A.Crafting.Tick()
         if A.Vendor.pending and A.Vendor.open then A.Vendor.Capture() end
         if A.MarketUI.panel and A.MarketUI.panel:IsVisible() and not U.Combat() then

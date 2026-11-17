@@ -1,6 +1,6 @@
 local _, A = ...
 local U, D, H, M = A.Util, A.DB, A.History, A.Market
-local W = { rows = {}, revision = 0, publications = 0 }
+local W = { rows = {}, revision = 0, publications = 0, metadataPending={}, metadataRevision=0, alertBatches=0, alertOpens=0 }
 A.Watchlist = W
 local MAX_ITEMS = 200
 
@@ -69,7 +69,13 @@ function W.Save(input, maxBuy, minReturn, minProfit)
     local info = A.Valuation.ItemInfo(suffix ~= nil and input or id)
     row.name = U.LinkName(row.link) or (info and info.name) or ("Item " .. id)
     local old = profile.entries[key]
-    if Valid(old) then row.lastAlertAt = old.lastAlertAt end
+    row.quality=U.ItemQuality(row.link or id,info and info.quality)
+    if Valid(old) then
+        row.lastAlertAt=old.lastAlertAt
+        if old.maxBuy==maxBuy and old.minReturn==minReturn and old.minProfit==minProfit then
+            row.alertActive,row.lastAlertPrice=old.alertActive,old.lastAlertPrice
+        end
+    end
     profile.entries[key] = row; W.revision = W.revision + 1
     return true, key
 end
@@ -81,12 +87,33 @@ function W.Remove(key)
     profile.entries[key] = nil; W.revision = W.revision + 1; return true
 end
 
+function W.Metadata(row)
+    W.metadataReading=true
+    local info=A.Valuation.ItemInfo(row.suffix~=nil and row.link or row.id)
+    local previous=not row.name:match("^Item %d+$")and row.name or nil
+    local name=U.ItemName(row.link,info and info.name,previous)
+    local quality=U.ItemQuality(row.link,row.quality or (info and info.quality))
+    if name~=row.name or quality~=row.quality then
+        row.name,row.quality=name or row.name,quality
+        row.watch.name,row.watch.quality=row.name,quality
+        W.metadataRevision=W.metadataRevision+1
+    end
+    W.metadataReading=false;return info
+end
+
+function W.OnItemInfo(id)
+    if W.metadataReading then return end
+    for _,row in ipairs(W.rows)do if row.id==id then W.metadataPending[id]=true;return end end
+end
+
 local function Evaluate(job, watch)
     local entry = watch.entry
     local row = { id = entry.id, suffix = entry.suffix, variantKey=entry.variantKey,
         hasBonuses=entry.variantKey and select(3,U.SplitVariant(entry.variantKey)), key = watch.key, watch = entry,
-        name = U.String(entry.name) and entry.name or ("Item " .. entry.id), days = 0, matched = false }
+        name = U.String(entry.name) and entry.name or ("Item " .. entry.id), days = 0, matched = false,
+        quality=U.Number(entry.quality,0,8,true) and entry.quality or nil }
     row.link = entry.link or ("item:" .. row.id .. ":0:0:0:0:0:" .. (row.suffix or 0) .. ":0")
+    local item=W.Metadata(row)
     if not job.fresh then row.status = "Fresh scan needed"; return row end
     local series = row.suffix ~= nil and job.snapshot.variants or job.snapshot.prices
     local index = row.variantKey or (row.suffix ~= nil and (row.id .. ":" .. row.suffix) or row.id)
@@ -95,9 +122,10 @@ local function Evaluate(job, watch)
         row.status = "Not listed"; return row
     end
     row.current, row.buy = price.low, math.ceil(price.low)
+    row.units=U.Number(price.units,0,1000000000,true) and price.units or nil
+    row.targetGap=entry.maxBuy>0 and (entry.maxBuy-row.buy)/entry.maxBuy*100 or nil
     local samples, day = {}, math.floor(job.snapshot.startedAt / 86400)
     local history = job.history
-    local item=A.Valuation.ItemInfo(row.link)
     local preciseEquipment=row.suffix==0 and item and (item.classID==2 or item.classID==4) and item.quality>=2
     for date = day - job.lookback, day - 1 do
         local record = history[date]
@@ -130,7 +158,7 @@ function W.Ensure()
     local fresh = snapshot ~= nil and U.Number(snapshot.startedAt, 0, U.Now()) and not D.IsStale(snapshot)
     local s = D.Settings()
     local signature = table.concat({ W.revision, H.revision or 0, s.marketLookback, s.marketMinDays, s.marketFee, tostring(fresh) }, "|")
-    if W.key ~= key then W.rows, W.snapshot = {}, nil end
+    if W.key ~= key then W.rows, W.snapshot, W.arrivalRequested = {}, nil, nil end
     W.key = key
     if W.source == snapshot and W.signature == signature then return end
     W.source, W.signature = snapshot, signature
@@ -141,7 +169,22 @@ end
 function W.Tick()
     if U.Combat() then return end
     local job = W.job
-    if not job then return end
+    if not job then
+        local start=debugprofilestop and debugprofilestop()or 0
+        for _=1,20 do
+            if not W.metadataJob then
+                local id=next(W.metadataPending);if not id then return end
+                W.metadataPending[id]=nil;W.metadataJob={id=id,cursor=1}
+            end
+            local check=W.metadataJob;local row=W.rows[check.cursor]
+            if row then
+                if row.id==check.id then W.Metadata(row)end
+                check.cursor=check.cursor+1
+            else W.metadataJob=nil end
+            if debugprofilestop and debugprofilestop()-start>=A.FRAME_BUDGET_MS then return end
+        end
+        return
+    end
     local settings = D.Settings()
     if job.key ~= U.MarketKey() or job.snapshot ~= D.Snapshot() or job.historyRevision ~= H.revision or job.signature ~= W.signature or
        job.revision ~= W.revision or job.fee ~= settings.marketFee or job.lookback ~= settings.marketLookback or job.minDays ~= settings.marketMinDays or
@@ -151,17 +194,75 @@ function W.Tick()
         local watch = job.entries[job.cursor]
         if not watch then
             W.rows, W.snapshot, W.job = job.rows, job.snapshot, nil
+            W.metadataJob=nil
+            W.publishedRevision=job.revision
             W.publications = W.publications + 1
-            local alerts = 0
             for _, row in ipairs(W.rows) do
-                if row.matched and D.Settings().watchAlerts and (not U.Number(row.watch.lastAlertAt,0,U.Now()) or row.watch.lastAlertAt ~= job.snapshot.startedAt) then
-                    row.watch.lastAlertAt = job.snapshot.startedAt; alerts = alerts + 1
+                local entry=row.watch
+                if job.fresh and not row.matched then entry.alertActive=false end
+                -- Adopt an already-delivered legacy notice without repeating
+                -- it. Future alerts compare prices as well as the match state.
+                if row.matched and entry.lastAlertPrice==nil and U.Number(entry.lastAlertAt,0,U.Now()) and entry.lastAlertAt==job.snapshot.startedAt then
+                    entry.alertActive,entry.lastAlertPrice=true,row.buy
                 end
             end
-            if alerts > 0 then U.Print(alerts .. " watchlist target(s) met. Type /msmv watch to review.") end
             return
         end
         job.rows[#job.rows + 1] = Evaluate(job, watch); job.cursor = job.cursor + 1
         if debugprofilestop and debugprofilestop() - start >= A.FRAME_BUDGET_MS then return end
     end
+end
+
+function W.Current()
+    local snapshot=D.Snapshot()
+    return not W.job and W.key==U.MarketKey() and W.snapshot==snapshot and snapshot~=nil and
+        W.publishedRevision==W.revision and U.Number(snapshot.startedAt,0,U.Now()) and not D.IsStale(snapshot)
+end
+
+function W.MatchCount()
+    local count=0
+    if W.Current() then for _,row in ipairs(W.rows)do if row.matched then count=count+1 end end end
+    return count
+end
+
+function W.Acknowledge()
+    if not W.Current() then return end
+    for _,row in ipairs(W.rows)do if row.matched then
+        row.watch.alertActive,row.watch.lastAlertPrice,row.watch.lastAlertAt=true,row.buy,W.snapshot.startedAt
+    end end
+end
+
+function W.Dismiss()
+    W.Acknowledge();W.arrivalRequested,W.scanRequested=nil,nil
+end
+
+function W.OnAuctionShow()
+    W.Ensure()
+    local snapshot=D.Snapshot()
+    W.arrivalRequested=snapshot and U.Number(snapshot.startedAt,0,U.Now())and not D.IsStale(snapshot)and snapshot or nil
+end
+
+function W.AlertTick()
+    if U.Combat() or not A.auctionOpen or not W.Current() then return end
+    local settings=D.Settings()
+    local scan=W.scanRequested==W.snapshot
+    local arrival=W.arrivalRequested==W.snapshot
+    if not scan and not arrival then W.scanRequested,W.arrivalRequested=nil,nil;return end
+    if not settings.watchAlerts then W.scanRequested,W.arrivalRequested=nil,nil;return end
+    local open=scan and settings.watchOpenOnScan or arrival and settings.watchOpenOnAH
+    if not open and not settings.watchChatAlerts then W.scanRequested,W.arrivalRequested=nil,nil;return end
+    local matches={}
+    for _,row in ipairs(W.rows)do if row.matched then
+        local entry=row.watch
+        local active=U.Accessible(entry.alertActive)and entry.alertActive==true
+        if not active or not U.Number(entry.lastAlertPrice,0,1000000000000,true) or row.buy<entry.lastAlertPrice then
+            matches[#matches+1]=row
+        end
+    end end
+    if #matches==0 then W.scanRequested,W.arrivalRequested=nil,nil;return end
+    if not A.WatchUI.CanAlert(open==true) then return end
+    if open and A.WatchUI.OpenAlert(matches)then W.alertOpens=W.alertOpens+1 end
+    if settings.watchChatAlerts then U.Print(#matches.." new or improved watchlist target(s) met. Type /msmv watch to review.")end
+    W.Acknowledge();W.scanRequested,W.arrivalRequested=nil,nil
+    W.alertBatches=W.alertBatches+1;W.lastAlertCount=#matches
 end

@@ -120,6 +120,10 @@ function UI.DiagnosticsText()
         "; retained_partial=" .. info.retained
     lines[#lines + 1] = "Craft pricing: AH cut=" .. D.Settings().marketFee .. "%; labor=" .. U.Money(D.Settings().serviceLabor) .. "; minimum=" .. U.Money(D.Settings().serviceMinimum) .. "; customer_materials=" .. tostring(D.Settings().serviceCustomerMaterials)
     lines[#lines + 1] = "Watchlists: " .. #A.Watchlist.Entries() .. " this market; " .. (A.Watchlist.job and "checking" or "ready") .. "; publications=" .. A.Watchlist.publications
+    local watches=D.Settings()
+    lines[#lines+1]="Watchlist alerts: enabled="..tostring(watches.watchAlerts).."; after_scan="..tostring(watches.watchOpenOnScan)..
+        "; AH_entry="..tostring(watches.watchOpenOnAH).."; chat="..tostring(watches.watchChatAlerts).."; matched="..A.Watchlist.MatchCount()..
+        "; batches="..A.Watchlist.alertBatches.."; opened="..A.Watchlist.alertOpens
     if A.Watchlist.reason then lines[#lines + 1] = "Watchlist detail: " .. A.Watchlist.reason end
     local ledger = A.Ledger.Summary()
     lines[#lines + 1] = "Ledger: " .. #ledger.rows .. " this character/market; retention=" .. D.Settings().ledgerDays .. " days; sales_needing_cost=" .. ledger.unknown

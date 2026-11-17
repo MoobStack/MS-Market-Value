@@ -1,6 +1,6 @@
 local _, A = ...
 local U,D,W,L = A.Util,A.DB,A.Watchlist,A.Ledger
-local E = { mode = "watch", watchPage = 1, ledgerPage = 1, kind = "sale", messages = {} }
+local E = { mode = "watch", ledgerPage = 1, kind = "sale", messages = {} }
 A.EconomyUI = E
 local kinds, titles = {"sale","buy","commission","vendor_sale","vendor_buy","tip_received","tip_given","expense"}, {sale="AH sale",buy="AH buy",commission="Commission",vendor_sale="Vendor sale",vendor_buy="Vendor buy",tip_received="Tip received",tip_given="Tip given",expense="Other spending",loot="Loot"}
 local function Label(parent,text,x,y,width,right)
@@ -44,35 +44,9 @@ local function TableRows(parent,columns,count,step,click,enter)
     return result
 end
 
-function E.SaveWatch()
-    local v=E.watchInputs
-    local buy,roi,profit=U.ParseGold(v.itemPrice:GetText()),tonumber(v.roi:GetText()),U.ParseGold(v.profit:GetText())
-    local ok,why=W.Save(v.item:GetText(),buy,roi,profit)
-    if not ok then return Message(why)end
-    E.selectedWatch=why;E.messages.watch="Watch saved. All enabled targets must be met.";W.Ensure();E.Refresh();return true
-end
-function E.SelectWatch(row)
-    E.selectedWatch=row.key
-    E.watchItemLabel:SetText(row.name)
-    local v=E.watchInputs
-    v.item:SetText(row.suffix~=nil and row.link or tostring(row.id))
-    v.itemPrice:SetText(U.GoldText(row.watch.maxBuy));v.roi:SetText(tostring(row.watch.minReturn));v.profit:SetText(U.GoldText(row.watch.minProfit))
-    E.Refresh()
-end
-function E.WatchDraft(row,source)
-    if not row or U.Combat() then return end
-    E.Show("watch")
-    local key=row.variantKey or (row.suffix~=nil and U.VariantKey(row.link)) or (row.id..":"..(row.suffix~=nil and row.suffix or "*"))
-    local existing
-    for _,watch in ipairs(W.Entries())do if watch.key==key then existing=watch.entry;break end end
-    E.watchInputs.item:SetText(row.suffix~=nil and row.link or tostring(row.id))
-    E.watchItemLabel:SetText(row.name or ("Selected item "..row.id))
-    E.watchInputs.itemPrice:SetText(U.GoldText(existing and existing.maxBuy or math.min(100000000,math.floor(row.maxBuy or row.buy or 0))))
-    E.watchInputs.roi:SetText(tostring(existing and existing.minReturn or(source=="buy"and 0 or D.Settings().marketMinReturn)))
-    E.watchInputs.profit:SetText(U.GoldText(existing and existing.minProfit or(source=="buy"and 0 or D.Settings().marketMinProfit)))
-    E.selectedWatch=existing and key or nil
-    E.messages.watch=existing and"Edit this item's saved targets, then Save watch."or"Item selected. Set your targets and click Save watch.";E.Refresh()
-end
+function E.SaveWatch()return A.WatchUI.Save()end
+function E.SelectWatch(row)return A.WatchUI.Edit(row)end
+function E.WatchDraft(row,source)return A.WatchUI.Draft(row,source)end
 
 function E.WatchFromBuy(frame,commodity)
     if U.Combat()or not A.auctionOpen or not U.Table(frame)then return end
@@ -124,10 +98,8 @@ function E.InstallBuyButtons()
     end
 end
 function E.ViewWatch()
-    for _,row in ipairs(W.rows)do if row.key==E.selectedWatch then
-        if A.MarketUI.OpenListings(row,"watch")then E.frame:Hide()else Message(A.MarketUI.message)end;return
-    end end
-    Message("Select a current watchlist row first.")
+    for _,row in ipairs(W.rows)do if row.key==E.selectedWatch then return A.WatchUI.Open(row)end end
+    return Message("Choose a watched item first.")
 end
 
 function E.SyncKind()
@@ -511,38 +483,10 @@ function E.Create()
     E.scope=Label(f,"",72,-39,700)
     E.ledgerTab=Button(f,"Ledger",16,-63,164,function()E.mode="ledger";E.Refresh()end)
     E.watchTab=Button(f,"Watchlists",190,-63,140,function()E.mode="watch";E.Refresh()end)
-    E.settingsTab=Button(f,"Settings",340,-63,140,function()A.UI.OpenSettings()end)
-    f:SetScript("OnHide",function()if E.editorFrame then E.editorFrame:Hide()end;if GameTooltip then GameTooltip:Hide()end end)
+    E.settingsTab=Button(f,"Watch settings",340,-63,140,function()if E.mode=="watch"then A.WatchUI.ShowSettings()else A.UI.OpenSettings()end end)
+    f:SetScript("OnHide",function()if E.editorFrame then E.editorFrame:Hide()end;A.WatchUI.HideChildren();if E.mode=="watch"and E.wasShown then W.Dismiss()end;E.wasShown=false;if GameTooltip then GameTooltip:Hide()end end)
     E.status=Label(f,"",16,-573,756);E.status:SetHeight(30);E.status:SetWordWrap(true)
-    local watch=CreateFrame("Frame",nil,f);watch:SetAllPoints(f);E.watchPanel=watch
-    local filters=Inset(watch,-98,105)
-    E.watchItemLabel=Label(filters,"Item ID / pasted item link",14,-10,278);Label(filters,"Buy at or below " .. U.coin.gold,310,-10,110)
-    Label(filters,"Min return %",430,-10,90);Label(filters,"Min profit " .. U.coin.gold,534,-10,100)
-    E.watchInputs={item=Box(filters,20,-31,272),itemPrice=Box(filters,315,-31,98),roi=Box(filters,435,-31,80,true),profit=Box(filters,539,-31,95)}
-    E.watchInputs.itemPrice:SetText("0");E.watchInputs.roi:SetText("0");E.watchInputs.profit:SetText("0")
-    Button(filters,"Save watch",650,-31,100,E.SaveWatch)
-    E.alerts=CreateFrame("CheckButton",nil,filters,"UICheckButtonTemplate")
-    E.alerts:SetPoint("TOPLEFT",filters,"TOPLEFT",10,-69);E.alerts:SetSize(26,26)
-    E.alerts:SetScript("OnClick",function(self)if not U.Combat()then D.data.settings.watchAlerts=self:GetChecked()==true end end)
-    Label(filters,"Local alerts after saved scans. A 0 target is off; all 0 means tracking only.",43,-76,700)
-    local tableFrame=Inset(watch,-212,264)
-    local columns={{"Item",0,230},{"Scan low",234,100,true},{"Buy target",338,100,true},{"Return",442,72,true},{"Days",518,40,true},{"Status",562,178}}
-    E.watchRows=TableRows(tableFrame,columns,7,29,E.SelectWatch,function(button,row)
-        if not GameTooltip then return end
-        GameTooltip:SetOwner(button,"ANCHOR_RIGHT");GameTooltip:ClearLines();GameTooltip:AddLine(row.name,1,.82,0)
-        GameTooltip:AddLine(row.suffix~=nil and "Exact modifier series" or "Any modifier / item-wide series")
-        GameTooltip:AddDoubleLine("Min return",row.watch.minReturn.."%");GameTooltip:AddDoubleLine("Min profit",U.Coins(row.watch.minProfit))
-        if row.profit then GameTooltip:AddDoubleLine("Estimated net / item",Signed(row.profit))end
-        GameTooltip:AddLine(row.status);GameTooltip:Show()
-    end)
-    E.watchPrevious=Button(watch,"Previous",14,-488,100,function()E.watchPage=math.max(1,E.watchPage-1);E.Refresh()end)
-    E.watchPageText=Label(watch,"",126,-493,255)
-    E.watchNext=Button(watch,"Next",680,-488,90,function()E.watchPage=E.watchPage+1;E.Refresh()end)
-    E.watchView=Button(watch,"View listings",388,-488,140,E.ViewWatch)
-    E.watchRemove=Button(watch,"Remove watch",538,-488,132,function()
-        if W.Remove(E.selectedWatch)then E.selectedWatch=nil;W.Ensure();E.Refresh()end
-    end)
-    E.watchDetail=Label(watch,"",16,-532,754);E.watchDetail:SetHeight(30);E.watchDetail:SetWordWrap(true)
+    A.WatchUI.Create(f)
 
     E.CreateLedger(f)
     E.NewManual();f:Hide()
@@ -552,7 +496,7 @@ function E.Refresh()
     if not E.frame then return end
     local market,player=U.MarketKey(),U.PlayerKey()
     if E.market~=market or E.player~=player then
-        E.market,E.player,E.selectedWatch=market,player,nil;E.watchPage,E.ledgerPage=1,1;E.NewManual()
+        E.market,E.player,E.selectedWatch=market,player,nil;E.ledgerPage=1;A.WatchUI.viewKey=nil;A.WatchUI.HideChildren();E.NewManual()
     end
     local identity=U.MarketInfo()
     local label=identity.label or "Market unavailable"
@@ -562,36 +506,21 @@ function E.Refresh()
         local snapshot = W.snapshot or D.Snapshot()
         E.scope:SetText(label .. "  |  Scan: " .. (snapshot and U.Age(snapshot.startedAt) or "none") .. (W.job and " (checking targets)" or ""))
     end
-    E.watchTab:SetText(E.mode=="watch"and"|cffffd100Watchlists|r"or"Watchlists")
+    local count=W.MatchCount();local watchTitle=count>0 and("Watchlists ("..count..")")or"Watchlists"
+    E.watchTab:SetText(E.mode=="watch"and("|cffffd100"..watchTitle.."|r")or watchTitle)
+    E.settingsTab:SetText(E.mode=="watch"and"Watch settings"or"Settings")
     E.ledgerTab:SetText(E.mode=="ledger"and"|cffffd100Ledger|r"or"Ledger")
     E.frame:SetHeight(E.mode=="watch"and 610 or 720)
     E.status:ClearAllPoints();E.status:SetPoint("TOPLEFT",E.frame,"TOPLEFT",16,E.mode=="watch"and -573 or -683)
     if E.mode=="watch"then
-        E.watchPanel:Show();E.ledgerPanel:Hide();E.alerts:SetChecked(D.Settings().watchAlerts)
-        local pages=math.max(1,math.ceil(#W.rows/7));E.watchPage=math.max(1,math.min(E.watchPage,pages))
-        local selected
-        for _,row in ipairs(W.rows)do if row.key==E.selectedWatch then selected=row;break end end
-        for index,b in ipairs(E.watchRows)do
-            local row=W.rows[(E.watchPage-1)*7+index];b.row=row
-            if row then
-                local values={row.name,row.current and U.Coins(row.current)or"Unavailable",row.watch.maxBuy>0 and U.Coins(row.watch.maxBuy)or"Off",row.roi and string.format("%+.0f%%",row.roi)or"--",tostring(row.days),row.status}
-                for n,value in ipairs(values)do b.labels[n]:SetText(value)end
-                b.labels[6]:SetTextColor(row.matched and .35 or .83,row.matched and .87 or .86,.38);b:Show()
-            else b:Hide()end
-        end
-        E.watchPageText:SetText(#W.rows.." watched | Page "..E.watchPage.." / "..pages)
-        E.watchPrevious:SetEnabled(E.watchPage>1);E.watchNext:SetEnabled(E.watchPage<pages)
-        E.watchView:SetEnabled(selected~=nil and selected.current~=nil and not W.job and not U.Combat())
-        E.watchRemove:SetEnabled(selected~=nil and not U.Combat())
-    E.watchDetail:SetText(selected and (selected.name..": "..selected.status..". "..selected.days.." earlier priced days. Targets use per-item prices and the configured AH cut.")or"Select a row to edit its targets. Item IDs track any modifier; item links track the exact variant. Buy/return/profit targets combine.")
-        E.status:SetText(W.reason or E.messages.watch or (W.job and"Checking watchlist targets from saved data..."or"Watchlists reuse saved scans and prior history. No background auction search is started."))
+        E.watchPanel:Show();E.ledgerPanel:Hide();A.WatchUI.Refresh()
     else
-        E.watchPanel:Hide();E.ledgerPanel:Show()
+        E.watchPanel:Hide();A.WatchUI.HideChildren();E.ledgerPanel:Show()
         E.RefreshLedger()
     end
 end
 function E.Show(mode)
     if not D.data or A.disabledReason then return end
     if A.UI.frame then A.UI.frame:Hide()end
-    E.Create();E.mode=mode=="ledger"and"ledger"or"watch";W.Ensure();E.frame:Show();U.FocusWindow(E.frame);E.Refresh()
+    E.mode=mode=="ledger"and"ledger"or"watch";E.Create();W.Ensure();E.wasShown=true;E.frame:Show();U.FocusWindow(E.frame);E.Refresh()
 end
