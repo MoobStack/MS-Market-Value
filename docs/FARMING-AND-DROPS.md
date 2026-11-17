@@ -7,18 +7,24 @@ Open `/msmv farm` for the report and display settings.
 | Figure | Meaning |
 |---|---|
 | Session value | Acquired gold and current estimated item value |
-| Active time | Online session time, excluding pauses and loading |
+| Active time | Time after a start trigger, excluding idle, pauses and loading |
 | Hourly average | Eligible farming value divided by active time; quest rewards are optional |
 | Recent 60m | Receipt value over the latest 60 active minutes, or available coverage |
 | Peak farming | Best completed five-minute window, expressed per hour, with quests excluded |
 
-The peak saves its zone, available coordinates and time. The report separates loot, quests and harvesting, with item/source filters and recent pickups. Use the session menu to choose among five saved summaries by date, duration and value. Current session returns to the live report. Reset saves the previous summary and starts a new one.
+The peak saves its zone, available coordinates and time. The report separates loot, quests and harvesting, with item/source filters and recent pickups. Use the session menu to choose saved sessions by date, duration and value. Current session returns to the live report. Scroll Items or Recent pickups with the mouse wheel or scrollbar. Columns show quantity, unit value and total; hover a row for item or receipt details.
+
+**Manage** controls the saved-session limit for this character and market: five by default, adjustable from 0–50. Reset saves the finished session and starts a new one, replacing the oldest save when the limit is reached. A limit of 0 stops saving. Delete selected removes one saved session; reducing the limit removes the oldest saves. Both removals require confirmation and leave the current session intact.
+
+New saves retain all tracked item rows, up to the existing 500-item limit, and the last 20 receipts. Earlier saves contain only their original top ten items; those missing details cannot be restored. Their totals and rates remain available.
 
 In Farming settings, Quest rewards defaults to **Session total only**. Choose **Session total and hourly rates** to include rewards in the display average and recent rate, or **Do not record new quest rewards** to stop adding them. Peaks always exclude quest gold and items. These choices do not erase previously recorded rewards.
 
 The display can be resized, locked, shown only on hover or reduced to the hourly average. Drag it when unlocked; left-click opens the report and right-click pauses or resumes.
 
-Idle pause starts after five minutes by default. Choose 5–60 minutes or Off. Combat keeps time active; combat entry or qualifying loot resumes an automatic pause. A manual pause stays paused. Offline and loading time are excluded.
+The calculator starts idle after login. Click Resume, enter combat or receive loot to start timing. **Pause on death** is on by default and can be switched off in Farming settings. With it on, death and ghost time are excluded; resurrection alone leaves the calculator idle until the next trigger or Resume.
+
+Inactivity pause defaults to five minutes. Choose 5–60 minutes or Off. Combat keeps time active. A manual pause stays paused through combat, loot and death until you resume it. Quest rewards can still add to an idle session total, but do not start its timer. Offline and loading time are excluded.
 
 Quest rewards, bound items and poor items use vendor value. Other items can use a fresh AH estimate after the AH cut when it beats vendor value by your threshold, 10% by default. Unpriced items are counted separately. Purchases, mail, trades and sale proceeds are excluded; later sales do not add the item again.
 
@@ -36,4 +42,4 @@ Reset by creature/node, zone, dungeon or all this character's observations. This
 
 ## Upgrading from 1.3.0
 
-Session totals, time and personal observations are kept. Recent-rate and peak coverage starts fresh because older receipts may include misclassified quest rewards. Older saved summaries keep totals and averages, but unverifiable recent rates and peaks show Not recorded. Start a new session for a clean whole-session comparison. Previously missed empty bodies cannot be reconstructed; only new inspections adjust personal rates.
+Session totals, time and personal observations are kept. Upgrading from 1.3.0 starts recent-rate and peak coverage fresh because older receipts may include misclassified quest rewards. Moving between 1.3.1 test builds keeps the newer rate history. Older saved summaries keep totals and averages, but unverifiable recent rates and peaks show Not recorded. Start a new session for a clean whole-session comparison. Previously missed empty bodies cannot be reconstructed; only new inspections adjust personal rates.

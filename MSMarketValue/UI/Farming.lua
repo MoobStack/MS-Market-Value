@@ -1,6 +1,6 @@
 local _, A = ...
 local U, D, F, P = A.Util, A.DB, A.Farm, A.Drops
-local UI={page="session",view="items",historyIndex=0,listPage=1,source="all"}
+local UI={page="session",view="items",historyIndex=0,offset=0,source="all"}
 A.FarmingUI=UI
 local sourceLabels={all="All sources",loot="Loot",quest="Quests",harvesting="Harvesting",
     herbalism="Herbalism",mining="Mining",skinning="Skinning"}
@@ -28,6 +28,7 @@ local function Check(parent,text,key,x,y,width)
     Label(parent,text,x+29,y-5,width or 530)
     b:SetScript("OnClick",function(self)
         if key=="farmIdle" then F.ConfigureIdle(self:GetChecked()==true,D.Settings().farmIdleMinutes)
+        elseif key=="farmPauseOnDeath" then F.ConfigureDeath(self:GetChecked()==true)
         else D.data.settings[key]=self:GetChecked()==true end
         F.summary=nil;UI.Refresh();UI.HUD()
     end)
@@ -40,7 +41,7 @@ local function Box(parent,x,y,width)
 end
 local function Panel(parent)
     local panel=CreateFrame("Frame",nil,parent,"InsetFrameTemplate")
-    panel:SetPoint("TOPLEFT",parent,"TOPLEFT",12,-72);panel:SetSize(736,524);return panel
+    panel:SetPoint("TOPLEFT",parent,"TOPLEFT",12,-72);panel:SetSize(736,584);return panel
 end
 
 local function RateText(summary,rate)
@@ -65,10 +66,82 @@ function UI.SelectSession(index)
     local record
     if profile and U.Number(index,1,#profile.history,true) then record=profile.history[index] end
     UI.historyRecord,UI.historyIndex=record,record and index or 0
-    UI.view,UI.listPage=record and "history" or "items",1
+    UI.view,UI.offset=record and "history" or "items",0
+    UI.confirmDelete,UI.manageMessage=nil,nil
     UI.confirmSession,UI.message=false,nil
     if UI.frame then UI.Refresh() end
     return U.Number(index,0,0,true) or record~=nil
+end
+
+function UI.Scroll(offset)
+    if not U.Number(offset) or not UI.rows then return end
+    UI.offset=math.max(0,math.min(math.floor(offset),math.max(0,#(UI.visibleItems or {})-#UI.rows)))
+    if GameTooltip then GameTooltip:Hide() end
+    UI.Refresh()
+end
+
+function UI.RefreshManagement()
+    if not UI.manager or not UI.manager:IsShown() then return end
+    local profile=F.Profile();local count=profile and #profile.history or 0
+    local record=UI.historyRecord
+    if UI.managerTarget~=record then UI.confirmDelete,UI.manageMessage=nil,nil;UI.managerTarget=record end
+    UI.managerCount:SetText(count.." saved sessions · limit "..F.HistoryLimit())
+    if not UI.historyLimit:HasFocus() then UI.historyLimit:SetText(tostring(F.HistoryLimit())) end
+    UI.managerSelected:SetText(record and SessionLabel(record,UI.historyIndex) or "Current session selected. Choose a saved session to delete it.")
+    UI.deleteSession:SetEnabled(record~=nil)
+    UI.deleteSession:SetText(UI.confirmDelete==record and record~=nil and "Confirm delete" or "Delete selected")
+    UI.applyHistory:SetText(UI.confirmLimit and "Confirm limit" or "Apply")
+    UI.managerStatus:SetText(UI.manageMessage or "Keep 0-50 for this character and market. Oldest saves are replaced first; 0 stops saving. The current session stays.")
+end
+
+function UI.ApplyHistoryLimit()
+    local value=tonumber(UI.historyLimit:GetText())
+    local profile=F.Profile()
+    if not U.Number(value,0,50,true) or not profile then UI.manageMessage="Choose a whole number from 0 to 50.";UI.confirmLimit=nil;UI.RefreshManagement();return end
+    local removed=math.max(0,#profile.history-value)
+    local confirm=UI.confirmLimit
+    if removed>0 and not (confirm and confirm.value==value and confirm.profile==profile and confirm.revision==F.historyRevision) then
+        UI.confirmLimit={value=value,profile=profile,revision=F.historyRevision}
+        UI.manageMessage="This removes "..removed.." oldest saved session(s). Click Confirm limit to apply."
+        UI.RefreshManagement();return
+    end
+    local ok,reason=F.SetHistoryLimit(value)
+    UI.confirmLimit=nil;UI.manageMessage=ok and "Session limit saved." or reason
+    UI.historyLimit:ClearFocus();UI.Refresh()
+end
+
+function UI.ManageSessions()
+    UI.Create()
+    if not UI.manager then
+        local frame=CreateFrame("Frame","MSMarketValueFarmSessions",UI.frame,"BasicFrameTemplateWithInset")
+        frame:SetSize(440,250);frame:SetPoint("CENTER");frame:SetFrameStrata("DIALOG");frame:SetClampedToScreen(true)
+        Label(frame,"Manage farming sessions",16,-5,386,true)
+        UI.manager=frame
+        UI.managerCount=Label(frame,"",18,-38,400)
+        Label(frame,"Keep saved sessions",18,-73,188)
+        UI.historyLimit=Box(frame,210,-66,62);UI.historyLimit:SetNumeric(true);UI.historyLimit:SetMaxLetters(2)
+        UI.historyLimit:SetScript("OnEnterPressed",UI.ApplyHistoryLimit)
+        UI.historyLimit:SetScript("OnTextChanged",function(_,user)if user then UI.confirmLimit=nil;UI.manageMessage=nil;UI.RefreshManagement() end end)
+        UI.applyHistory=Button(frame,"Apply",286,-66,130,UI.ApplyHistoryLimit)
+        UI.managerSelected=Muted(Label(frame,"",18,-107,400));UI.managerSelected:SetHeight(36);UI.managerSelected:SetWordWrap(true)
+        UI.deleteSession=Button(frame,"Delete selected",18,-150,184,function()
+            local record=UI.historyRecord
+            if not record then return end
+            if UI.confirmDelete~=record then
+                UI.confirmDelete=record;UI.manageMessage="Delete only this saved session? Click Confirm delete to remove it."
+            else
+                local ok,reason=F.DeleteSession(record);UI.confirmDelete=nil
+                if ok then UI.SelectSession(0);UI.manageMessage="Saved session deleted." else UI.manageMessage=reason end
+            end
+            UI.RefreshManagement()
+        end)
+        Button(frame,"Done",286,-150,130,function()frame:Hide()end)
+        UI.managerStatus=Muted(Label(frame,"",18,-190,400));UI.managerStatus:SetHeight(48);UI.managerStatus:SetWordWrap(true)
+        frame:SetScript("OnHide",function()UI.confirmDelete,UI.confirmLimit,UI.manageMessage=nil,nil,nil end)
+        U.ManageWindow(frame);UISpecialFrames[#UISpecialFrames+1]="MSMarketValueFarmSessions"
+        frame:Hide()
+    end
+    UI.manager:Show();UI.RefreshManagement();U.FocusWindow(UI.manager)
 end
 
 function UI.LayoutHUD()
@@ -168,7 +241,7 @@ end
 function UI.Create()
     if UI.frame then return end
     local frame=CreateFrame("Frame","MSMarketValueFarming",UIParent,"PortraitFrameTemplate")
-    frame:SetSize(760,620);frame:SetPoint("CENTER");frame:SetClampedToScreen(true)
+    frame:SetSize(760,680);frame:SetPoint("CENTER");frame:SetClampedToScreen(true)
     frame:SetFrameStrata("DIALOG")
     if frame.PortraitContainer and frame.PortraitContainer.portrait then
         frame.PortraitContainer.portrait:SetTexture("Interface\\Icons\\INV_Misc_Coin_01")
@@ -177,6 +250,7 @@ function UI.Create()
     frame:SetMovable(true);frame:EnableMouse(true);frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart",function(self)self:StartMoving()end);frame:SetScript("OnDragStop",function(self)self:StopMovingOrSizing()end)
     if frame.CloseButton then frame.CloseButton:SetScript("OnClick",function()frame:Hide()end) end
+    frame:SetScript("OnHide",function()if UI.manager then UI.manager:Hide() end;if GameTooltip then GameTooltip:Hide() end end)
     UISpecialFrames[#UISpecialFrames+1]="MSMarketValueFarming"
     UI.frame=frame;UI.tabs={}
     for i,entry in ipairs({{"session","Session"},{"settings","Farming settings"},{"drops","Drop rates"}}) do
@@ -186,9 +260,10 @@ function UI.Create()
     UI.session=Panel(frame);UI.settings=Panel(frame);UI.drops=Panel(frame)
     local session=UI.session
     UI.sessionMenu=CreateFrame("DropdownButton",nil,session,"WowStyle1DropdownTemplate")
-    UI.sessionMenu:SetPoint("TOPLEFT",session,"TOPLEFT",16,-8);UI.sessionMenu:SetSize(466,25)
+    UI.sessionMenu:SetPoint("TOPLEFT",session,"TOPLEFT",16,-8);UI.sessionMenu:SetSize(390,25)
     UI.sessionMenu:SetDefaultText("Current session")
     UI.sessionMenu:SetupMenu(function(_,root)
+        if root.SetScrollMode then root:SetScrollMode(300) end
         root:CreateRadio("Current session",function()return UI.historyRecord==nil end,function()UI.SelectSession(0)end,0)
         local profile=F.Profile()
         for index,record in ipairs(profile and profile.history or {}) do
@@ -201,50 +276,85 @@ function UI.Create()
         end
     end)
     UI.sessionTitle=UI.sessionMenu
+    UI.manageButton=Button(session,"Manage",416,-10,66,UI.ManageSessions)
     UI.metricValues={}
     for i,title in ipairs({"Session value","Active time","Hourly average","Recent · 60m"}) do
         local x=16+(i-1)*178
-        Muted(Label(session,title,x,-53,170))
-        UI.metricValues[i]=Label(session,"",x,-76,170)
+        Muted(Label(session,title,x,-45,170))
+        UI.metricValues[i]=Label(session,"",x,-66,170)
     end
     UI.total,UI.rate=UI.metricValues[1],UI.metricValues[3]
-    Muted(Label(session,"Peak farming · best 5 active minutes",16,-112,390))
-    UI.peakValue=Label(session,"",444,-112,274);UI.peakValue:SetJustifyH("RIGHT")
-    UI.peakLocation=Muted(Label(session,"",16,-135,702))
-    UI.rateNote=Muted(Label(session,"",16,-157,702))
+    Muted(Label(session,"Peak farming · best 5 active minutes",16,-99,238))
+    UI.peakValue=Label(session,"",260,-99,152);UI.peakValue:SetJustifyH("RIGHT")
+    UI.peakLocation=Muted(Label(session,"",430,-96,288));UI.peakLocation:SetHeight(36);UI.peakLocation:SetWordWrap(true)
+    UI.rateNote=Muted(Label(session,"",16,-134,702))
     UI.rateNote:SetHeight(30);UI.rateNote:SetWordWrap(true)
     UI.categoryTotals={};UI.categoryNotes={}
     for i,title in ipairs({"Loot","Quests","Harvesting"}) do
         local x=16+(i-1)*238
-        Muted(Label(session,title,x,-192,228))
-        UI.categoryTotals[i]=Label(session,"",x,-214,228)
-        UI.categoryNotes[i]=Muted(Label(session,"",x,-235,228))
+        Muted(Label(session,title,x,-173,86))
+        UI.categoryTotals[i]=Label(session,"",x+88,-173,140)
+        UI.categoryNotes[i]=Muted(Label(session,"",x,-196,228))
     end
-    UI.pause=Button(session,"Pause",492,-10,98,function()F.Pause(not F.Summary().paused);UI.Refresh()end)
+    UI.pause=Button(session,"Pause",492,-10,98,function()local _,reason=F.Pause(not F.Summary().paused);UI.message=reason;UI.Refresh()end)
     UI.reset=Button(session,"Reset session",600,-10,118,function()
         if not UI.confirmSession then UI.confirmSession=true;UI.reset:SetText("Confirm reset");return end
         UI.confirmSession=false;local ok,reason=F.Reset();UI.message=reason;UI.displayRate,UI.displayTotal=0,0;UI.Refresh()
     end)
-    UI.itemsButton=Button(session,"Items",16,-269,98,function()UI.view=UI.historyRecord and "history" or "items";UI.listPage=1;UI.Refresh()end)
-    UI.recentButton=Button(session,"Recent pickups",122,-269,130,function()UI.SelectSession(0);UI.view="recent";UI.Refresh()end)
-    UI.currentButton=Button(session,"Current session",260,-269,142,function()UI.SelectSession(0)end)
+    UI.itemsButton=Button(session,"Items",16,-226,98,function()UI.view=UI.historyRecord and "history" or "items";UI.offset=0;UI.Refresh()end)
+    UI.recentButton=Button(session,"Recent pickups",122,-226,130,function()UI.view="recent";UI.offset=0;UI.Refresh()end)
+    UI.currentButton=Button(session,"Current session",260,-226,142,function()UI.SelectSession(0)end)
     UI.sourceMenu=CreateFrame("DropdownButton",nil,session,"WowStyle1DropdownTemplate")
-    UI.sourceMenu:SetPoint("TOPLEFT",session,"TOPLEFT",414,-269);UI.sourceMenu:SetSize(304,24)
+    UI.sourceMenu:SetPoint("TOPLEFT",session,"TOPLEFT",414,-226);UI.sourceMenu:SetSize(304,24)
     if UI.sourceMenu.SetupMenu then UI.sourceMenu:SetupMenu(function(_,root)
         for _,key in ipairs({"all","loot","quest","harvesting","herbalism","mining","skinning"}) do
             local source=key
             root:CreateRadio(sourceLabels[source],function()return UI.source==source end,function()
-                UI.source=source;UI.listPage=1;UI.Refresh()
+                UI.source=source;UI.offset=0;UI.Refresh()
             end)
         end
     end) end
-    UI.breakdownTitle=Muted(Label(session,"",16,-303,702))
-    UI.lines={}
-    for i=1,7 do UI.lines[i]=Label(session,"",16,-326-(i-1)*19,702) end
-    UI.prev=Button(session,"Previous",16,-467,98,function()UI.listPage=UI.listPage-1;UI.Refresh()end)
-    UI.pageText=Muted(Label(session,"",130,-473,460))
-    UI.next=Button(session,"Next",620,-467,98,function()UI.listPage=UI.listPage+1;UI.Refresh()end)
-    UI.note=Muted(Label(session,"",16,-498,702));UI.note:SetHeight(22);UI.note:SetWordWrap(true)
+    UI.breakdownTitle=Muted(Label(session,"",16,-258,440))
+    UI.listCount=Muted(Label(session,"",462,-258,256));UI.listCount:SetJustifyH("RIGHT")
+    local list=CreateFrame("Frame",nil,session,"InsetFrameTemplate");UI.list=list
+    list:SetPoint("TOPLEFT",session,"TOPLEFT",12,-282);list:SetSize(712,274)
+    local function Wheel(_,delta)if U.Number(delta) then UI.Scroll(UI.offset-delta*3) end end
+    list:EnableMouseWheel(true);list:SetScript("OnMouseWheel",Wheel)
+    local header=CreateFrame("Frame",nil,list);header:SetPoint("TOPLEFT",list,"TOPLEFT",4,-4);header:SetSize(680,20)
+    local backdrop=header:CreateTexture(nil,"BACKGROUND");backdrop:SetAllPoints(header);backdrop:SetColorTexture(.22,.18,.09,.45)
+    for _,entry in ipairs({{"Item / receipt",8,285},{"Source",300,90},{"Qty",396,50},{"Each",454,100},{"Total",561,105}}) do
+        local label=Muted(Label(header,entry[1],entry[2],-2,entry[3]));if entry[2]>=396 then label:SetJustifyH("RIGHT") end
+    end
+    UI.rows={}
+    for i=1,12 do
+        local button=CreateFrame("Button",nil,list);button:SetPoint("TOPLEFT",list,"TOPLEFT",6,-28-(i-1)*20);button:SetSize(678,20)
+        local shade=button:CreateTexture(nil,"BACKGROUND");shade:SetAllPoints(button);shade:SetColorTexture(.12,.13,.15,i%2==0 and .50 or .15)
+        button.highlight=button:CreateTexture(nil,"BACKGROUND");button.highlight:SetAllPoints(button);button.highlight:SetColorTexture(.72,.55,.20,.18);button.highlight:Hide()
+        button.name=Label(button,"",8,-2,285);button.source=Muted(Label(button,"",300,-2,90))
+        button.quantity=Label(button,"",396,-2,50);button.quantity:SetJustifyH("RIGHT")
+        button.unit=Label(button,"",454,-2,100);button.unit:SetJustifyH("RIGHT")
+        button.total=Label(button,"",561,-2,105);button.total:SetJustifyH("RIGHT")
+        button:EnableMouseWheel(true);button:SetScript("OnMouseWheel",Wheel)
+        button:SetScript("OnEnter",function(self)
+            local item=self.item
+            if item and GameTooltip then
+                self.highlight:Show()
+                GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+                if U.String(item.link) then GameTooltip:SetHyperlink(item.link) else GameTooltip:ClearLines();GameTooltip:AddLine(item.name) end
+                if item.mode then GameTooltip:AddDoubleLine("Session valuation",item.mode) end
+                if item.time then GameTooltip:AddDoubleLine("Received",date("%b %d %H:%M:%S",item.time)) end
+                GameTooltip:Show()
+            end
+        end)
+        button:SetScript("OnLeave",function(self)self.highlight:Hide();if GameTooltip then GameTooltip:Hide() end end)
+        UI.rows[i]=button
+    end
+    UI.empty=Muted(Label(list,"No recorded income yet.",16,-42,620))
+    UI.scrollbar=CreateFrame("Slider",nil,list,"UIPanelScrollBarTemplate")
+    UI.scrollbar:SetPoint("TOPRIGHT",list,"TOPRIGHT",-4,-43);UI.scrollbar:SetPoint("BOTTOMRIGHT",list,"BOTTOMRIGHT",-4,22)
+    UI.scrollbar:SetWidth(16);UI.scrollbar:SetValueStep(1);UI.scrollbar:SetObeyStepOnDrag(true)
+    UI.scrollbar:SetScript("OnValueChanged",function(_,value)if not UI.syncScroll then UI.Scroll(value) end end)
+    UI.note=Muted(Label(session,"",16,-562,702));UI.note:SetHeight(20);UI.note:SetWordWrap(true)
     UI.checks={}
     local settings=UI.settings
     Muted(Label(settings,"Acquisition value; sales and cash flow stay in the ledger.",14,-12,706))
@@ -294,9 +404,10 @@ function UI.Create()
         else D.data.settings.farmHUDWidth=width;UI.hudWidth:ClearFocus();UI.message=nil;UI.HUD() end
         UI.Refresh()
     end)
-    local help=Muted(Label(settings,"Idle time starts after combat or your last loot. Combat, loot and harvesting resume an automatic pause; a manual pause stays paused.\n\nDrag the unlocked display to move it. Right-click to pause or resume. Hourly figures follow the quest choice above; the five-minute peak always excludes quests.\n\nItems count when acquired; selling them does not add value again. Quest rewards and bound items use vendor value. Stale AH data falls back to vendor value.",18,-354,700))
-    help:SetHeight(124);help:SetWordWrap(true)
-    UI.settingsStatus=Label(settings,"",18,-492,700)
+    UI.deathCheck=Check(settings,"Pause on death until combat, loot or manual resume","farmPauseOnDeath",14,-342,660)
+    local help=Muted(Label(settings,"The calculator starts idle after login. Combat, received loot or Resume starts it; resurrection alone does not. A manual pause stays paused.\n\nIdle time starts after combat or your last loot. Drag the unlocked display to move it; right-click pauses or resumes.\n\nHourly figures follow the quest choice above; peaks always exclude quests. Items count when acquired, and sales are separate. Quest rewards and bound items use vendor value; stale AH data also falls back to vendor value.",18,-387,700))
+    help:SetHeight(146);help:SetWordWrap(true)
+    UI.settingsStatus=Label(settings,"",18,-557,700)
     local drops=UI.drops
     Check(drops,"Collect personal loot observations","dropTracking",14,-10)
     Check(drops,"Show drop tooltips","showDrops",14,-44,265)
@@ -411,9 +522,9 @@ function UI.Refresh()
     if history then
         local found=false
         for index,record in ipairs(farming and farming.history or {})do if record==history then UI.historyIndex=index;found=true;break end end
-        if not found then UI.historyRecord,UI.historyIndex,UI.view=nil,0,"items";history=nil end
+        if not found then UI.historyRecord,UI.historyIndex,UI.view,UI.offset=nil,0,"items",0;history=nil end
     end
-    UI.currentButton:SetEnabled(history~=nil);UI.recentButton:SetEnabled(history==nil)
+    UI.currentButton:SetEnabled(history~=nil);UI.recentButton:SetEnabled(history==nil or history.recent~=nil)
     local summary=history or live
     local rateValue=history and F.HourlyValue(history)
     local average=history and (history.elapsed>=60 and rateValue and rateValue/history.elapsed*3600 or 0) or live.perHour
@@ -429,9 +540,9 @@ function UI.Refresh()
     UI.metricValues[2]:SetText(Duration(summary.elapsed))
     UI.rate:SetText(summary.elapsed>=60 and (U.Coins(average) .. " / h") or "Starting")
     UI.metricValues[4]:SetText(recent and ((summary.recentDuration or summary.elapsed)>=60 and
-        (U.Coins(recent) .. " / h") or "Starting") or "Not recorded")
+        (U.Coins(recent) .. " / h") or (not history and live.idlePaused and "Waiting" or "Starting")) or "Not recorded")
     local peak=U.Table(savedPeak) and U.Number(savedPeak.rate,0,1000000000000) and savedPeak
-    UI.peakValue:SetText(peak and peak.rate>0 and (U.Coins(peak.rate) .. " / h") or history and "Not recorded" or "Building · 5m")
+    UI.peakValue:SetText(peak and peak.rate>0 and (U.Coins(peak.rate) .. " / h") or history and "Not recorded" or live.idlePaused and "Waiting · 5m" or "Building · 5m")
     local location=peak and peak.location
     UI.peakLocation:SetText(A.FarmMetrics.ValidLocation(location) and (location.zone ..
         (location.x and string.format(" · %.1f, %.1f",location.x,location.y) or "") .. " · " .. date("%b %d %H:%M",location.time)) or
@@ -447,12 +558,15 @@ function UI.Refresh()
     UI.categoryNotes[2]:SetText("Gold: " .. U.Coins(summary.questCoins or 0) .. " + rewards")
     UI.categoryNotes[3]:SetText("Herbs, ore and skins")
     UI.pause:SetText(live.paused and "Resume" or "Pause");UI.reset:SetText(UI.confirmSession and "Confirm reset" or "Reset session")
-    UI.pause:SetEnabled(not history);UI.reset:SetEnabled(not history)
-    local rows=UI.view=="recent" and summary.recent or summary.items
-    UI.breakdownTitle:SetText(UI.view=="recent" and "Recent pickups - value when received" or "Item breakdown - current valuation")
-    if UI.view=="history" then
-        rows=history and history.top or {}
-        UI.breakdownTitle:SetText(history and ("Saved session " .. UI.historyIndex .. " · Top items") or "No previous sessions")
+    UI.pause:SetEnabled(not history and not live.dead);UI.reset:SetEnabled(not history)
+    local rows
+    if UI.view=="recent" and summary.recent then
+        rows=summary.recent;UI.breakdownTitle:SetText("Recent pickups · value when received")
+    elseif history then
+        rows=history.items or history.top
+        UI.breakdownTitle:SetText(history.items and "Saved items · value when saved" or "Saved summary · top items only")
+    else
+        rows=summary.items;UI.breakdownTitle:SetText("Items · current valuation")
     end
     local filtered={}
     for _,item in ipairs(rows) do
@@ -460,23 +574,34 @@ function UI.Refresh()
             filtered[#filtered+1]=item
         end
     end
-    rows=filtered
-    local pages=math.max(1,math.ceil(#rows/#UI.lines))
-    UI.listPage=math.max(1,math.min(UI.listPage,pages))
-    UI.prev:SetEnabled(UI.listPage>1);UI.next:SetEnabled(UI.listPage<pages)
-    UI.pageText:SetText("Page " .. UI.listPage .. " / " .. pages .. " | " .. #rows .. " entries")
-    for i,label in ipairs(UI.lines) do
-        local item=rows[(UI.listPage-1)*#UI.lines+i]
+    rows=filtered;UI.visibleItems=rows
+    local maximum=math.max(0,#rows-#UI.rows)
+    UI.offset=math.max(0,math.min(UI.offset,maximum))
+    UI.syncScroll=true;UI.scrollbar:SetMinMaxValues(0,maximum);UI.scrollbar:SetValue(UI.offset);UI.scrollbar:SetEnabled(maximum>0);UI.syncScroll=false
+    UI.listCount:SetText(#rows.." entries"..(#rows>0 and (" · "..(UI.offset+1).."-"..math.min(#rows,UI.offset+#UI.rows)) or ""))
+    for i,button in ipairs(UI.rows) do
+        local item=rows[UI.offset+i]
+        if button.item~=item then button.highlight:Hide() end
+        button.item=item
         if item then
-            label:SetText((sourceLabels[item.source] and (sourceLabels[item.source] .. ": ") or "") ..
-                (item.quantity and (item.quantity .. " x ") or "") .. item.name .. "  -  " ..
-                U.Coins(item.total or item.amount) .. (item.mode and (" (" .. item.mode .. ")") or ""))
-        else label:SetText(i==1 and "No recorded income yet." or "") end
+            local total=item.total or item.amount
+            local unit=item.unit or (item.quantity and item.quantity>0 and total and total/item.quantity)
+            button.name:SetText(item.name);button.source:SetText(sourceLabels[item.source] or "")
+            button.quantity:SetText(item.quantity or "-")
+            button.unit:SetText(unit and U.Coins(unit) or item.quantity and "Unknown" or "-")
+            button.total:SetText(total and U.Coins(total) or "Unknown");button:Show()
+        else button:Hide() end
     end
+    if #rows==0 then UI.empty:Show() else UI.empty:Hide() end
     UI.note:SetText(UI.message or F.reason or (history and "Saved values from this session.") or
+        (live.dead and "Paused on death · After resurrection, Resume, combat or received loot starts timing.") or
+        (live.idleReason=="login" and "Idle after login · Resume, combat or received loot starts timing.") or
+        (live.idleReason=="death" and "Idle after death · Resume, combat or received loot starts timing.") or
         (live.idlePaused and "Idle · Combat or your next loot resumes the session.") or
+        (live.paused and "Paused manually · Click Resume when you are ready.") or
         ((summary.unknown or 0)>0 and (summary.unknown .. " acquired items need item data; excluded from the estimate.")) or
         "Acquired items and quest rewards are valued once. Mail, trades and sale proceeds stay in the ledger.")
+    UI.RefreshManagement()
 end
 
 function UI.Show(page)

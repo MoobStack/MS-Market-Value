@@ -1,8 +1,8 @@
 # MS Market Value
 
-**Version 1.3.1-beta · Test revision 1 · WoW Forever · By MoobStack**
+**Version 1.3.1-beta · Test revision 2 · WoW Forever · By MoobStack**
 
-This is a test build. See [test notes](RELEASE-NOTES-v1.3.1-beta-test1.md) for the changes and checks to try.
+This is a test build. See [test notes](RELEASE-NOTES-v1.3.1-beta-test2.md) for the changes and checks to try.
 
 Auction prices, crafting profits, farming estimates, drop rates and a personal gold ledger in one addon.
 
@@ -14,7 +14,7 @@ Close WoW and extract the Clean ZIP into `Interface/AddOns`. The folder should b
 
 - **Prices and crafting:** save AH prices, build daily history and see vendor, auction and disenchant values in tooltips. Compare learned recipes by material cost, net profit and return, or prepare a crafting quote.
 - **Market opportunities:** search resale candidates and price movements, filter by rarity and supply, and keep item modifiers separate. Save watchlist targets from Opportunities or the Buy page.
-- **Farming:** track acquired value, hourly average, recent rate and a located farming peak. Keep quest rewards in the total or include them in hourly rates. Browse saved sessions from a menu. Resize or lock the gold display and let idle pause handle breaks.
+- **Farming:** track acquired value, hourly average, recent rate and a located farming peak. Keep quest rewards in the total or include them in hourly rates. Scroll through item details, manage saved sessions and pause automatically on death. Resize or lock the gold display. Timing starts idle at login; combat, received loot or Resume starts it.
 - **Drop rates:** view reference rates and personal observations for creatures and harvesting. Personal drops fill missing entries; needed quest items stay first. Choose sorting, rarity and item limits.
 - **Ledger:** review purchases, sales, commissions, tips, loot and expenses by local date. Edit entries, separate known costs from estimates and export CSV.
 

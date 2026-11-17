@@ -1,6 +1,6 @@
 local _, A = ...
 local U, D, C = A.Util, A.DB, A.Crafting
-local UI = { mode = "recipe", sort = "profit", page = 1, search = "" }
+local UI = { mode = "recipe", sort = "profit", offset = 0, search = "" }
 A.CraftingUI = UI
 
 local function Label(parent, text, x, y, width, font)
@@ -71,7 +71,7 @@ end
 
 function UI.SetSearch(text)
     if not U.String(text) or #text > 256 then return end
-    UI.search, UI.page = string.lower(string.match(text, "^%s*(.-)%s*$")), 1
+    UI.search, UI.offset = string.lower(string.match(text, "^%s*(.-)%s*$")), 0
     UI.Refresh()
 end
 
@@ -79,12 +79,13 @@ end
 -- this single-view cache; changing search never rebuilds recipe valuations.
 function UI.CatalogView()
     if UI.searchProfession ~= C.professionID then
-        UI.searchProfession, UI.search, UI.page = C.professionID, "", 1
+        UI.searchProfession, UI.search, UI.offset = C.professionID, "", 0
         if UI.searchBox then UI.searchBox:SetText("") end
     end
     local source = C.Ranked(UI.sort, D.Settings().showAllRecipes)
     local cache = UI.filtered
     if cache and cache.source == source and cache.count == #source and cache.query == UI.search then return cache.rows end
+    if cache and cache.source~=source then UI.offset=0 end
     local rows = source
     if UI.search ~= "" then
         rows = {}
@@ -112,6 +113,11 @@ function UI.CatalogSummary()
 end
 
 local function HideTooltip() if GameTooltip then GameTooltip:Hide() end end
+function UI.Scroll(offset)
+    if not U.Number(offset) or not UI.catalogRows then return end
+    UI.offset=math.max(0,math.min(math.floor(offset),math.max(0,#UI.CatalogView()-#UI.catalogRows)))
+    HideTooltip();UI.Refresh()
+end
 local function RecipeTooltip(button)
     local row = button.row
     if not row or not GameTooltip then return end
@@ -256,7 +262,7 @@ function UI.Create()
     end)
     UI.showAllButton = Button(frame, "Show all recipes", 368, -61, 176, function()
         if U.Combat() or not D.data then return end
-        D.data.settings.showAllRecipes = not D.Settings().showAllRecipes; UI.page = 1; UI.Refresh()
+        D.data.settings.showAllRecipes = not D.Settings().showAllRecipes; UI.offset = 0; HideTooltip();UI.Refresh()
     end)
 
     local details = CreateFrame("Frame", nil, frame)
@@ -318,7 +324,7 @@ function UI.Create()
     UI.reason = Label(details, "", 18, -570, 524); UI.reason:SetHeight(30); UI.reason:SetWordWrap(true)
 
     local catalog = CreateFrame("Frame", nil, frame)
-    catalog:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -95); catalog:SetSize(560, 510); UI.catalog = catalog
+    catalog:SetPoint("TOPLEFT", frame, "TOPLEFT", 0, -95); catalog:SetSize(560, 604); UI.catalog = catalog
     local controls = Inset(catalog, 0, 45)
     Label(controls, "Search", 12, -15, 45)
     UI.searchBox = CreateFrame("EditBox", nil, controls, "InputBoxTemplate")
@@ -328,24 +334,27 @@ function UI.Create()
     UI.searchBox:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     UI.searchBox:SetScript("OnEscapePressed", function(self) self:ClearFocus(); self:SetText(""); UI.SetSearch("") end)
     UI.clearSearch = Button(controls, "X", 243, -8, 25, function() UI.searchBox:SetText(""); UI.SetSearch("") end)
-    UI.sortProfit = Button(controls, "Profit / craft", 280, -8, 126, function() UI.sort = "profit"; UI.page = 1; UI.Refresh() end)
-    UI.sortReturn = Button(controls, "Return %", 414, -8, 108, function() UI.sort = "return"; UI.page = 1; UI.Refresh() end)
-    local list = Inset(catalog, -52, 378)
+    UI.sortProfit = Button(controls, "Profit / craft", 280, -8, 126, function() UI.sort = "profit"; UI.offset = 0;HideTooltip(); UI.Refresh() end)
+    UI.sortReturn = Button(controls, "Return %", 414, -8, 108, function() UI.sort = "return"; UI.offset = 0;HideTooltip(); UI.Refresh() end)
+    local list = Inset(catalog, -52, 488);UI.list=list
+    local function Wheel(_,delta)if U.Number(delta) then UI.Scroll(UI.offset-delta*3) end end
+    list:EnableMouseWheel(true);list:SetScript("OnMouseWheel",Wheel)
     local header = CreateFrame("Frame", nil, list)
     header:SetPoint("TOPLEFT", list, "TOPLEFT", 4, -4); header:SetSize(528, 22); Fill(header, 0.22, 0.18, 0.09, 0.45)
-    Label(header, "Recipe", 10, -3, 275, "GameFontNormalSmall")
-    Label(header, "Net / Quote", 285, -3, 129, "GameFontNormalSmall"):SetJustifyH("RIGHT")
-    Label(header, "Return", 420, -3, 94, "GameFontNormalSmall"):SetJustifyH("RIGHT")
+    Label(header, "Recipe", 10, -3, 248, "GameFontNormalSmall")
+    Label(header, "Net / Quote", 264, -3, 128, "GameFontNormalSmall"):SetJustifyH("RIGHT")
+    Label(header, "Return", 400, -3, 82, "GameFontNormalSmall"):SetJustifyH("RIGHT")
     UI.catalogRows = {}
-    for index = 1, 8 do
+    for index = 1, 11 do
         local row = CreateFrame("Button", nil, list)
-        row:SetPoint("TOPLEFT", list, "TOPLEFT", 10, -31 - (index - 1) * 38); row:SetSize(516, 36)
+        row:SetPoint("TOPLEFT", list, "TOPLEFT", 10, -31 - (index - 1) * 38); row:SetSize(492, 36)
+        row:EnableMouseWheel(true);row:SetScript("OnMouseWheel",Wheel)
         Fill(row, 0.12, 0.13, 0.15, index % 2 == 0 and 0.5 or 0.15)
         row.highlight = Fill(row, 0.72, 0.55, 0.20, 0.18); row.highlight:Hide()
-        row.name = Label(row, "", 9, -3, 266)
-        row.note = Label(row, "", 9, -19, 266); row.note:SetTextColor(0.61, 0.66, 0.70)
-        row.profit = Label(row, "", 279, -11, 125); row.profit:SetJustifyH("RIGHT")
-        row.percent = Label(row, "", 410, -11, 97); row.percent:SetJustifyH("RIGHT")
+        row.name = Label(row, "", 9, -3, 245)
+        row.note = Label(row, "", 9, -19, 245); row.note:SetTextColor(0.61, 0.66, 0.70)
+        row.profit = Label(row, "", 253, -11, 130); row.profit:SetJustifyH("RIGHT")
+        row.percent = Label(row, "", 390, -11, 90); row.percent:SetJustifyH("RIGHT")
         row:SetScript("OnEnter", function(self) self.highlight:Show(); RecipeTooltip(self) end)
         row:SetScript("OnLeave", function(self) self.highlight:Hide(); HideTooltip() end)
         row:SetScript("OnClick", function(self)
@@ -355,15 +364,17 @@ function UI.Create()
         end)
         UI.catalogRows[index] = row
     end
-    UI.pageText = Label(list, "", 14, -348, 272)
-    UI.previous = Button(list, "Previous", 303, -341, 104, function() UI.page = math.max(1, UI.page - 1); HideTooltip(); UI.Refresh() end)
-    UI.next = Button(list, "Next", 416, -341, 104, function() UI.page = UI.page + 1; HideTooltip(); UI.Refresh() end)
-    local status = Inset(catalog, -438, 63)
+    UI.listCount = Label(list, "", 14, -463, 492)
+    UI.scrollbar=CreateFrame("Slider",nil,list,"UIPanelScrollBarTemplate")
+    UI.scrollbar:SetPoint("TOPRIGHT",list,"TOPRIGHT",-4,-43);UI.scrollbar:SetPoint("BOTTOMRIGHT",list,"BOTTOMRIGHT",-4,49)
+    UI.scrollbar:SetWidth(16);UI.scrollbar:SetValueStep(1);UI.scrollbar:SetObeyStepOnDrag(true)
+    UI.scrollbar:SetScript("OnValueChanged",function(_,value)if not UI.syncScroll then UI.Scroll(value) end end)
+    local status = Inset(catalog, -544, 58)
     UI.catalogStatus = Label(status, "", 12, -9, 512)
-    UI.catalogNote = Label(status, "", 12, -29, 512); UI.catalogNote:SetHeight(28); UI.catalogNote:SetWordWrap(true)
+    UI.catalogNote = Label(status, "", 12, -29, 512); UI.catalogNote:SetHeight(24); UI.catalogNote:SetWordWrap(true)
     UI.empty = Label(list, "", 22, -124, 492); UI.empty:SetHeight(68); UI.empty:SetWordWrap(true)
     UI.CreatePricing(frame)
-    Label(frame, "Net craft profit includes the AH cut; deposits are excluded.\nService quotes follow your materials and labor settings.", 18, -703, 524):SetHeight(28)
+    Label(frame, "Net craft profit includes the AH cut; deposits are excluded.\nService quotes follow your materials and labor settings.", 18, -699, 524):SetHeight(24)
     frame:Hide()
 end
 
@@ -457,9 +468,13 @@ function UI.Refresh()
         UI.sortProfit:SetText(UI.sort == "profit" and "|cffffd100Net / craft|r" or "Net / craft")
         UI.sortReturn:SetText(UI.sort == "return" and "|cffffd100Return %|r" or "Return %")
         local rows = UI.CatalogView()
-        local pages = math.max(1, math.ceil(#rows / 8)); UI.page = math.max(1, math.min(UI.page, pages))
+        local maximum=math.max(0,#rows-#UI.catalogRows)
+        UI.offset=math.max(0,math.min(UI.offset,maximum))
+        UI.syncScroll=true;UI.scrollbar:SetMinMaxValues(0,maximum);UI.scrollbar:SetValue(UI.offset);UI.scrollbar:SetEnabled(maximum>0);UI.syncScroll=false
         for index, button in ipairs(UI.catalogRows) do
-            local row = rows[(UI.page - 1) * 8 + index]; button.row = row; button.recipeID = row and row.recipeID or nil
+            local row = rows[UI.offset+index]
+            if button.row~=row then button.highlight:Hide() end
+            button.row = row; button.recipeID = row and row.recipeID or nil
             if row then
                 local _, state = UI.RecipeState(row)
                 button.name:SetText(row.name); button.note:SetText(state)
@@ -472,8 +487,8 @@ function UI.Refresh()
                 button.profit:SetTextColor(r, g, b); button.percent:SetTextColor(r, g, b); button:Show()
             else button:Hide() end
         end
-        UI.pageText:SetText(string.format("%d %s | Page %d / %d", #rows, showAll and "recipes" or "profitable", UI.page, pages))
-        UI.previous:SetEnabled(UI.page > 1); UI.next:SetEnabled(UI.page < pages)
+        UI.listCount:SetText(string.format("%d %s%s",#rows,showAll and "recipes" or "profitable",
+            #rows>0 and string.format(" | Showing %d-%d",UI.offset+1,math.min(#rows,UI.offset+#UI.catalogRows)) or ""))
         local summary = UI.CatalogSummary()
         UI.catalogStatus:SetText(C.reason or (C.ready and string.format("%d priced | %d services | %d quote-only | %d need data", summary.priced, summary.services, summary.quotes, summary.missing) or
             ("Checking recipes: " .. math.min(C.cursor - 1, #(C.ids or {})) .. " / " .. #(C.ids or {}) .. (#C.rows > 0 and ". Showing the last complete list." or ""))))

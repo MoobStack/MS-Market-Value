@@ -177,7 +177,12 @@ function UI.DiagnosticsText()
     lines[#lines+1]="Farming quest rewards: " .. (not D.Settings().farmIncludeQuest and "new rewards excluded" or
         D.Settings().farmQuestInRate and "session and hourly" or "session only") .. "; peak=always_excluded"
     lines[#lines+1]="Farming idle: enabled=" .. tostring(D.Settings().farmIdle) .. "; minutes=" .. D.Settings().farmIdleMinutes ..
-        "; automatic_pause=" .. tostring(farm.idlePaused==true) .. "; inactive=" .. math.floor(farm.idleSeconds or 0) .. "s; combat=" .. tostring(A.Farm.combat==true)
+        "; automatic_pause=" .. tostring(farm.idlePaused==true) .. "; inactive=" .. math.floor(farm.idleSeconds or 0) .. "s; combat=" .. tostring(A.Farm.combat==true) ..
+        "; waiting=" .. (farm.idleReason or "none") .. "; death_pause=" .. tostring(D.Settings().farmPauseOnDeath) .. "; dead=" .. tostring(farm.dead==true)
+    local sessions=A.Farm.Profile();local detailed=0
+    for _,session in ipairs(sessions and sessions.history or {})do if session.items then detailed=detailed+1 end end
+    lines[#lines+1]="Farming sessions: saved=" .. (sessions and #sessions.history or 0) .. "/" .. A.Farm.HistoryLimit() ..
+        "; maximum=50; full_details=" .. detailed
     lines[#lines+1]="Farming rates: session=" .. U.Money(farm.perHour) .. "; recent60m=" .. U.Money(farm.recentRate or 0) ..
         "; peak5m=" .. U.Money(farm.peak and farm.peak.rate or 0) .. "; unpriced_pickups=" .. (farm.metricMissing or 0)
     lines[#lines+1]="Reference cache: format=" .. (A.LootReference.packed and "packed" or "table") .. "; sources=" ..

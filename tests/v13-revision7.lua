@@ -155,8 +155,9 @@ end)
 
 test("session summary uses neutral text and keeps the item list inside the report",function()
     local _,A=world();local ui=A.FarmingUI;ui.Show("session")
-    equal(ui.frame.width,760);equal(ui.frame.height,620);equal(#ui.metricValues,4)
+    equal(ui.frame.width,760);equal(ui.frame.height,680);equal(#ui.metricValues,4)
     for _,font in ipairs({ui.rate,ui.total,ui.sessionTitle})do equal(font.color,nil) end
-    truth(ui.rateNote.color[1]<.7);truth(ui.lines[7].points[1][5]+ui.lines[7].height<0)
-    truth(-ui.lines[7].points[1][5]+ui.lines[7].height < -ui.prev.points[1][5])
+    truth(ui.rateNote.color[1]<.7);equal(#ui.rows,12)
+    truth(-ui.rows[12].points[1][5]+ui.rows[12].height<ui.list.height)
+    truth(-ui.list.points[1][5]+ui.list.height < -ui.note.points[1][5])
 end)

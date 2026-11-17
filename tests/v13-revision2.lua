@@ -240,7 +240,7 @@ test("categorized reports and saved summaries reconcile loot quests and harvesti
     local s=A.Farm.Summary();equal(s.total,350);equal(s.harvestValue,30);equal(s.categories.loot,110);equal(s.categories.quest,210)
     A.FarmingUI.Show("session");local ui=A.FarmingUI
     equal(ui.categoryTotals[3]:GetText(),coin(30))
-    ui.source="harvesting";ui.Refresh();truth(ui.pageText:GetText():find("3 entries",1,true))
+    ui.source="harvesting";ui.Refresh();truth(ui.listCount:GetText():find("3 entries",1,true))
     w:advance(60);A.Farm.Tick();truth(A.Farm.Reset());equal(A.Farm.Profile().history[1].categories.mining,10)
     equal(A.Farm.Profile().history[1].harvestValue,30)
 end)

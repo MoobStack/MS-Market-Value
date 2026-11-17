@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.3.1-beta — Test revision 2 · 2026-11-17
+
+- Add a 0–50 saved-session limit and confirmed deletion of individual saves. Limits and records stay separate by character and market.
+- Retain complete item breakdowns and recent receipts in new saves while preserving older summaries.
+- Expand the session item area, add quantity/unit/total columns and replace page buttons with native scrolling.
+- Replace crafting recipe pagination with an eleven-row scrolling list; preserve search, sorting, filters, hover details and recipe selection.
+- Start timing idle at login until manual resume, combat or received loot. Quest rewards alone do not resume an idle timer.
+- Add optional death pause, enabled by default. Exclude death/ghost time and wait for a trigger after resurrection; keep manual pauses paused.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test2.md) for in-game checks.
+
 ## 1.3.1-beta — Test revision 1 · 2026-11-16
 
 - Include reliably identified empty corpses in personal drop-rate denominators without counting reopened bodies twice.

@@ -82,9 +82,9 @@ test("loot activity restarts the full grace period including unpriced pickups",f
     tick(w,A,50);truth(A.Farm.Summary().idlePaused);near(A.Farm.Elapsed(),550)
 end)
 
-test("included quest rewards and harvested items resume an automatic pause",function()
+test("quest rewards keep an idle session idle while harvested items resume it",function()
     local w,A=world();w.items[100]={vendor=10};enable(A);tick(w,A,300)
-    w:event("QUEST_TURNED_IN",42,500,100);equal(A.Farm.Summary().idlePaused,false)
+    w:event("QUEST_TURNED_IN",42,500,100);equal(A.Farm.Summary().idlePaused,true);equal(A.Farm.Summary().questCoins,100)
     tick(w,A,300);truth(A.Farm.Summary().idlePaused)
     truth(A.Farm.AddItem(link(100),2,"herbalism"));equal(A.Farm.Summary().harvestValue,20)
     equal(A.Farm.Summary().idlePaused,false)

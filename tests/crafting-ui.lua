@@ -49,7 +49,7 @@ test("recipe search is case insensitive literal text with trimmed whitespace", f
     UI.SetSearch("  rObE [A+B]%  "); equal(#UI.CatalogView(),1); equal(UI.CatalogView()[1].recipeID,1)
     UI.SetSearch(".*"); equal(#UI.CatalogView(),0); truth(UI.empty:IsShown())
     UI.SetSearch(secret); equal(UI.search,".*")
-    UI.clearSearch.scripts.OnClick(); equal(#UI.CatalogView(),3); equal(UI.page,1)
+    UI.clearSearch.scripts.OnClick(); equal(#UI.CatalogView(),3); equal(UI.offset,0)
 end)
 test("search and sorting reuse published recipe valuations without pricing calls", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); list(A,true); local UI=A.CraftingUI

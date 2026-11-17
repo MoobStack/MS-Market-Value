@@ -1,8 +1,8 @@
 local _, A = ...
 local U, D, Metrics = A.Util, A.DB, A.FarmMetrics
-local F={revision=0,pending={},questCredits={},receipts={},messages={},messageRing={},serial=0}
+local F={revision=0,historyRevision=0,pending={},questCredits={},receipts={},messages={},messageRing={},serial=0}
 A.Farm=F
-local MAX_ITEMS, MAX_RECENT, MAX_HISTORY = 500, 20, 5
+local MAX_ITEMS, MAX_RECENT, MAX_HISTORY = 500, 20, 50
 F.limits={items=MAX_ITEMS,recent=MAX_RECENT,history=MAX_HISTORY}
 local MAX=1000000000000
 F.sources={loot="Loot",quest="Quests",herbalism="Herbalism",mining="Mining",skinning="Skinning"}
@@ -25,7 +25,7 @@ function F.Profile()
     local key=D.ProfileKey(F.data,"characters",U.MarketInfo(),"|" .. guid)
     if not key then return nil end
     local profile=F.data.characters[key]
-    if profile==nil then profile={current=New(),history={}};F.data.characters[key]=profile end
+    if profile==nil then profile={current=New(),history={},historyLimit=5};F.data.characters[key]=profile end
     local session=U.Table(profile) and profile.current
     if not U.Table(session) or not U.Table(session.items) or not U.Table(session.recent) or
        not U.Number(session.elapsed,0,315360000) or not Amount(session.coins) or not Amount(session.questCoins) or
@@ -34,6 +34,8 @@ function F.Profile()
         F.reason="Invalid farming session preserved.";return nil
     end
     if F.checked~=profile then
+        if profile.historyLimit==nil then profile.historyLimit=5 end
+        if not U.Number(profile.historyLimit,0,MAX_HISTORY,true) then F.reason="Invalid session limit preserved.";return nil end
         if session.idleElapsed==nil then session.idleElapsed=0 end
         if session.idlePaused==nil then session.idlePaused=false end
         if not U.Number(session.idleElapsed,0,315360000) or not U.Accessible(session.idlePaused) or type(session.idlePaused)~="boolean" then
@@ -62,6 +64,25 @@ function F.Profile()
                 if not U.Table(item) or not U.String(item.name) or not U.Number(item.quantity,0,1000000000,true) or
                    not U.Accessible(item.total) or (item.total~=nil and not U.Number(item.total,0,MAX)) then F.reason="Invalid session breakdown preserved.";return nil end
             end
+            if not U.Accessible(record.items) or not U.Accessible(record.recent) then F.reason="Invalid saved session details preserved.";return nil end
+            for _,field in ipairs({"items","recent"}) do
+                local rows=record[field]
+                if rows~=nil then
+                    if not U.Table(rows) or #rows>(field=="items" and MAX_ITEMS or MAX_RECENT) then F.reason="Invalid saved session details preserved.";return nil end
+                    for _,item in ipairs(rows) do
+                        if not U.Table(item) or not U.String(item.name) or #item.name>256 or
+                           not U.Accessible(item.link) or (item.link~=nil and (not U.String(item.link) or #item.link>2048 or not U.ItemID(item.link))) or
+                           not U.Accessible(item.source) or (item.source~=nil and (not U.String(item.source) or not F.sources[item.source])) or
+                           not U.Accessible(item.quantity) or (item.quantity~=nil and not U.Number(item.quantity,0,1000000000,true)) then
+                            F.reason="Invalid saved session item preserved.";return nil
+                        end
+                        for _,key in ipairs({"total","amount","unit","time"}) do
+                            if not U.Accessible(item[key]) or (item[key]~=nil and not U.Number(item[key],0,MAX)) then F.reason="Invalid saved session value preserved.";return nil end
+                        end
+                        if not U.Accessible(item.mode) or (item.mode~=nil and (not U.String(item.mode) or #item.mode>80)) then F.reason="Invalid saved session value preserved.";return nil end
+                    end
+                end
+            end
         end
         F.checked=profile
     end
@@ -70,12 +91,13 @@ end
 
 function F.Accepting()
     local profile=F.Profile()
-    return profile and D.Settings().farmTracking and not profile.current.paused and F.inWorld~=false
+    return profile and D.Settings().farmTracking and not profile.current.paused and F.inWorld~=false and
+        not (D.Settings().farmPauseOnDeath and F.dead)
 end
 
 function F.Active()
     local profile=F.Profile()
-    return F.Accepting() and (not D.Settings().farmIdle or not profile.current.idlePaused)
+    return F.Accepting() and not F.waiting and (not D.Settings().farmIdle or not profile.current.idlePaused)
 end
 
 -- Account up to the idle boundary, including the whole grace period. Persist
@@ -83,7 +105,8 @@ end
 function F.Advance(profile,key,now)
     local session=profile and profile.current
     if session and not D.Settings().farmIdle then session.idlePaused=false;session.idleElapsed=0 end
-    if session and F.last and F.player==key and D.Settings().farmTracking and not session.paused and F.inWorld~=false then
+    if session and F.last and F.player==key and D.Settings().farmTracking and not session.paused and F.inWorld~=false and
+       not F.waiting and not (D.Settings().farmPauseOnDeath and F.dead) then
         local delta=math.max(0,now-F.last)
         if D.Settings().farmIdle and not F.combat then
             local boundary=D.Settings().farmIdleMinutes*60
@@ -101,8 +124,48 @@ function F.Activity()
     if not F.Accepting() then return false end
     local profile,key=F.Profile()
     F.Advance(profile,key,U.Mono())
+    F.waiting=nil
     profile.current.idleElapsed,profile.current.idlePaused=0,false
     return true
+end
+
+function F.IsDead()
+    local value=U.Call(UnitIsDeadOrGhost,"player")
+    if value==nil then value=U.Call(UnitIsDead,"player") end
+    return value==true
+end
+
+function F.ConfigureDeath(enabled)
+    if type(enabled)~="boolean" or not D.data then return false end
+    F.Tick();D.data.settings.farmPauseOnDeath=enabled;F.dead=F.IsDead()
+    if enabled and F.dead then F.waiting="death" end
+    F.last=U.Mono();return true
+end
+
+function F.HistoryLimit()
+    local profile=F.Profile()
+    return profile and profile.historyLimit or 5
+end
+
+function F.SetHistoryLimit(limit)
+    if not U.Number(limit,0,MAX_HISTORY,true) then return false,"Choose 0-50 saved sessions." end
+    local profile=F.Profile()
+    if not profile then return false,F.reason end
+    profile.historyLimit=limit
+    while #profile.history>limit do table.remove(profile.history) end
+    F.historyRevision=F.historyRevision+1
+    return true
+end
+
+-- Delete the exact selected record, never whichever index it later occupies.
+function F.DeleteSession(record)
+    local profile=F.Profile()
+    if profile and U.Table(record) then
+        for index,saved in ipairs(profile.history) do
+            if saved==record then table.remove(profile.history,index);F.historyRevision=F.historyRevision+1;return true end
+        end
+    end
+    return false,"That saved session is no longer available."
 end
 
 function F.ConfigureIdle(enabled,minutes)
@@ -148,7 +211,7 @@ end
 
 function F.AddMoney(amount,quest)
     if not Amount(amount) or amount==0 or not F.Accepting() or (quest and not D.Settings().farmIncludeQuest) then return false end
-    F.Activity()
+    if quest then local profile,key=F.Profile();F.Advance(profile,key,U.Mono()) else F.Activity() end
     local session=F.Profile().current
     local field=quest and "questCoins" or "coins"
     if not Amount(session[field]+amount) then return false end
@@ -164,7 +227,9 @@ function F.AddItem(itemLink,quantity,source,settledSession)
     if not session or (settledSession~=session and not F.Accepting()) or not U.String(itemLink) or #itemLink>2048 or not U.ItemID(itemLink) or
        not U.Number(quantity,1,1000000,true) or not U.String(source) or not F.sources[source] or
        (source=="quest" and not D.Settings().farmIncludeQuest) then return false end
-    if settledSession~=session then F.Activity() end
+    if settledSession~=session then
+        if source=="quest" then local _,key=F.Profile();F.Advance(profile,key,U.Mono()) else F.Activity() end
+    end
     local key=(U.VariantKey(itemLink) or tostring(U.ItemID(itemLink))) .. "|" .. source
     local item=session.items[key]
     if not item then
@@ -220,9 +285,11 @@ function F.Summary()
     result.rateValue=F.HourlyValue(result)
     result.perHour=session.elapsed>=60 and result.rateValue and result.rateValue/session.elapsed*3600 or 0
     Metrics.Summary(session,result,D.Settings().farmQuestInRate)
-    result.idlePaused=D.Settings().farmIdle and session.idlePaused
+    result.idlePaused=not session.paused and (F.waiting~=nil or D.Settings().farmIdle and session.idlePaused)
+    result.idleReason=result.idlePaused and (F.waiting or "inactive") or nil
+    result.dead=D.Settings().farmPauseOnDeath and F.dead==true
     result.idleSeconds=session.idleElapsed
-    result.paused=session.paused or result.idlePaused or not D.Settings().farmTracking or F.inWorld==false
+    result.paused=session.paused or result.idlePaused or result.dead or not D.Settings().farmTracking or F.inWorld==false
     return result
 end
 
@@ -238,7 +305,10 @@ end
 function F.Pause(paused)
     local profile=F.Profile()
     if not profile then return false end
-    F.Tick();profile.current.paused=paused==true
+    F.Tick()
+    if paused~=true and D.Settings().farmPauseOnDeath and F.dead then return false,"Resume after resurrecting." end
+    profile.current.paused=paused==true
+    if not paused then F.waiting=nil end
     profile.current.idleElapsed,profile.current.idlePaused=0,false
     F.last=U.Mono();return true
 end
@@ -250,18 +320,26 @@ function F.Reset()
     F.Tick()
     if #F.pending>0 or #F.receipts>0 then return false,"Recent loot is settling. Try again in a moment." end
     local summary=F.Summary()
-    if summary.elapsed>0 then
+    if (summary.elapsed>0 or summary.total>0 or summary.unknown>0) and profile.historyLimit>0 then
         local top={};for index=1,math.min(#summary.items,10) do
             local item=summary.items[index];top[index]={name=item.name,quantity=item.quantity,total=item.total,mode=item.mode,source=item.source}
+        end
+        local items,recent={},{}
+        for _,item in ipairs(summary.items) do
+            items[#items+1]={name=item.name,link=item.link,quantity=item.quantity,total=item.total,unit=item.unit,mode=item.mode,source=item.source}
+        end
+        for _,item in ipairs(summary.recent) do
+            recent[#recent+1]={name=item.name,link=item.link,quantity=item.quantity,amount=item.amount,source=item.source,time=item.time}
         end
         table.insert(profile.history,1,{startedAt=profile.current.startedAt,endedAt=U.Now(),elapsed=summary.elapsed,
             total=summary.total,coins=summary.coins,questCoins=summary.questCoins,
             lootValue=summary.lootValue,questValue=summary.questValue,harvestValue=summary.harvestValue,
-            categories=summary.categories,unknown=summary.unknown,top=top,
+            categories=summary.categories,unknown=summary.unknown,top=top,items=items,recent=recent,
             recentRate=summary.recentRate,recentDuration=summary.recentDuration,peak=summary.peak,
             recentFarmRate=summary.recentFarmRate,recentTotalRate=summary.recentTotalRate,ratePolicy=2,
             metricMissing=summary.metricMissing,metricsSince=summary.metricsSince})
-        if #profile.history>MAX_HISTORY then table.remove(profile.history) end
+        while #profile.history>profile.historyLimit do table.remove(profile.history) end
+        F.historyRevision=F.historyRevision+1
     end
     profile.current=New();F.last=U.Mono();F.pending,F.questCredits,F.receipts,F.messages,F.messageRing={},{},{},{},{}
     F.questWindow,F.questFinished,F.lastQuest=nil,nil,nil
@@ -299,10 +377,10 @@ function F.LootMessage(message,lineID)
         local itemLink,quantity=Match(message,_G[formatName])
         if U.ItemID(itemLink) and U.Number(quantity,1,1000000,true) then
             if #F.pending>=64 then F.reason="Loot receipt queue full; review the session.";return end
-            F.Activity()
             local source=A.Drops.ReceiptKind(U.ItemID(itemLink))
             local worldLoot=A.Drops.lootOpen==true
             if not worldLoot and F.QuestContext() then source="quest" end
+            if source=="quest" then local profile,key=F.Profile();F.Advance(profile,key,U.Mono()) else F.Activity() end
             F.pending[#F.pending+1]={link=itemLink,quantity=quantity,at=U.Mono(),session=F.Profile().current,source=source,worldLoot=worldLoot}
             return
         end
@@ -378,7 +456,16 @@ function F.Event(event,...)
     local a,b,c=...
     if event=="PLAYER_LOGIN" or event=="PLAYER_ENTERING_WORLD" then
         F.inWorld=true;F.last=U.Mono();F.combat=U.Combat()
+        F.dead=F.IsDead()
+        if event=="PLAYER_LOGIN" then F.waiting="login" end
+        if D.Settings().farmPauseOnDeath and F.dead then F.waiting="death" end
         if F.combat then F.Activity() end
+    elseif event=="PLAYER_DEAD" then
+        F.Tick(true);F.dead=true;F.combat=false
+        if D.Settings().farmPauseOnDeath then F.waiting="death" end
+        F.last=U.Mono()
+    elseif event=="PLAYER_ALIVE" or event=="PLAYER_UNGHOST" then
+        F.Tick();F.dead=F.IsDead();F.last=U.Mono()
     elseif event=="PLAYER_REGEN_DISABLED" then
         F.Tick();F.combat=true;F.Activity()
     elseif event=="PLAYER_REGEN_ENABLED" then

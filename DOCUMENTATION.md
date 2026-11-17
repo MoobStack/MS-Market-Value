@@ -10,7 +10,7 @@ Tooltips can show vendor sell value, historic average, current AH low and disenc
 
 ## Crafting and quotes
 
-Open a profession and click Show profits, or use `/msmv craft`. Select a learned recipe to inspect its materials, cost, net profit, return and break-even price. Search or sort recipes and choose profitable recipes or all recipes. Automatic opening is optional.
+Open a profession and click Show profits, or use `/msmv craft`. Select a learned recipe to inspect its materials, cost, net profit, return and break-even price. Search or sort recipes and choose profitable recipes or all recipes. Scroll with the mouse wheel or native scrollbar; click any visible recipe for details. Automatic opening is optional.
 
 Visit a supplies vendor to learn your discounted material costs. Other materials use market replacement value, including items you already own. Missing prices stay unknown rather than becoming zero. The AH cut defaults to 5%; deposits and unsold stock are excluded.
 
@@ -24,7 +24,7 @@ Watch item is also available on the Buy page. Zero disables a target; all enable
 
 ## Farming, drops and the ledger
 
-Use `/msmv farm` for session totals, rates and display options. Select a saved session from the menu; Current session returns to the live report. Quest rewards default to the session total only, with an option to include them in hourly rates; peaks always exclude quests. Idle pause is on by default after five minutes; a manual pause stays paused. `/msmv drops` controls collection, reference/personal display, sorting, rarity and resets. See [Farming and drops](docs/FARMING-AND-DROPS.md).
+Use `/msmv farm` for session totals, rates and display options. Select a saved session from the menu; Current session returns to the live report. Manage sets a 0–50-session limit or deletes the selected saved session after confirmation. Both item views scroll. Quest rewards default to the session total only, with an option to include them in hourly rates; peaks always exclude quests. Timing starts idle after login. Resume, combat or received loot starts it. Pause on death is on by default; resurrection alone leaves it idle. Inactivity pause also defaults to five minutes, and a manual pause stays paused. `/msmv drops` controls collection, reference/personal display, sorting, rarity and resets. See [Farming and drops](docs/FARMING-AND-DROPS.md).
 
 Use `/msmv ledger` for income, spending, cash flow and profit reports. Choose local dates, filter Transactions and click a row to edit it outside combat. Other expenses have category checkboxes; CSV follows the active filters. See [Money tools](docs/ECONOMY-TOOLS.md) for tracking and cost rules.
 
