@@ -8,7 +8,9 @@ Start a full scan at an auctioneer from the MS Market Value tab. A completed sca
 
 Tooltips can show vendor sell value, historic average, current AH low and disenchant estimates. Known stack quantities show each-item and stack totals. Stale or missing prices are labeled. History keeps 1–30 UTC days; ordinary item prices use the latest completed scan for each day. Exact modifiers retain their latest priced observation within that UTC day, even when a later scan no longer lists them. The average's day count is the number of days priced for that item, not every day saved for the market.
 
-On the AH Sell page, the larger red arrow buttons beside the copper field increase or decrease the unit price by one copper. Silver and gold roll over automatically, and the total updates as usual. Prices stop at zero.
+On the AH Sell page, the red arrow buttons beside the copper field increase or decrease the unit price by one copper. Silver and gold roll over automatically, and the total updates as usual. Prices stop at zero.
+
+Hover unfamiliar buttons, filters and settings for short explanations. **Tooltips → Addon interface tooltips** is on by default; turn it off to hide control help and list hover details inside addon windows. Item-value and world-drop tooltips have their own display settings.
 
 ## Crafting and quotes
 

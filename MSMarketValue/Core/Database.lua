@@ -4,7 +4,7 @@ local D = {}
 A.DB = D
 
 D.defaults = {
-    showVendor = true, showAuction = true, showDisenchant = true,
+    showInterfaceTips = true, showVendor = true, showAuction = true, showDisenchant = true,
     showMaterials = true, showAge = true, showHistory = true,
     craftAutoOpen = false, showAllRecipes = false,
     staleHours = 24, quoteMarkup = 0, historyDays = 30,

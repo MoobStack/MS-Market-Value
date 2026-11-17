@@ -146,6 +146,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     end
     if uiElapsed >= 0.25 then
         uiElapsed = 0
+        A.Help.Refresh()
         if D.data and not A.disabledReason then A.Cash.Tick(); A.Transactions.Tick(); A.Farm.Tick(); A.Drops.CheckTooltip() end
         if A.MarketUI.pendingVariant then A.MarketUI.ResolvePendingVariant() end
         A.History.Maintain()

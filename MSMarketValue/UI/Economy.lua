@@ -10,7 +10,7 @@ local function Label(parent,text,x,y,width,right)
 end
 local function Button(parent,text,x,y,width,fn)
     local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
-    b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetSize(width,25);b:SetText(text);b:SetScript("OnClick",fn);return b
+    b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetSize(width,25);b:SetText(text);b:SetScript("OnClick",fn);A.Help.Button(b, "economy", text); return b
 end
 local function Inset(parent,y,height)
     local f=CreateFrame("Frame",nil,parent,"InsetFrameTemplate")
@@ -38,7 +38,7 @@ local function TableRows(parent,columns,count,step,click,enter)
         b.labels={};for n,col in ipairs(columns)do b.labels[n]=Label(b,"",col[2],-5,col[3],col[4])end
         b:SetScript("OnClick",function(self)if self.row then click(self.row)end end)
         b:SetScript("OnEnter",function(self)if self.row and enter then enter(self,self.row)end end)
-        b:SetScript("OnLeave",function()if GameTooltip then GameTooltip:Hide()end end)
+        b:SetScript("OnLeave",function()A.Help.Hide() end)
         result[index]=b
     end
     return result
@@ -90,8 +90,7 @@ function E.InstallBuyButtons()
                 local b=CreateFrame("Button",nil,display,"UIPanelButtonTemplate")
                 b:SetSize(108,22);b:SetPoint("BOTTOMRIGHT",display,"BOTTOMRIGHT",-8,5);b:SetText("Watch item")
                 b:SetScript("OnClick",function()E.WatchFromBuy(native,commodity)end)
-                b:SetScript("OnEnter",function(self)if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:AddLine("Add this item or edit its watchlist targets.");GameTooltip:Show()end end)
-                b:SetScript("OnLeave",function()if GameTooltip then GameTooltip:Hide()end end)
+                A.Help.Bind(b, "Add this item or edit its watchlist targets.")
                 b:Show();E.buyButtons[native]=b
             end
         end
@@ -254,6 +253,8 @@ function E.CreateLedger(f)
     E.dateFirst:SetMaxLetters(10);E.dateLast:SetMaxLetters(10)
     E.dateFirst:SetText(date("%Y-%m-%d",L.Range("30d").first));E.dateLast:SetText(date("%Y-%m-%d",U.Now()))
     E.appliedFirst,E.appliedLast=E.dateFirst:GetText(),E.dateLast:GetText()
+    A.Help.Bind(E.dateFirst, "First local date to include, in YYYY-MM-DD format.")
+    A.Help.Bind(E.dateLast, "Last local date to include, in YYYY-MM-DD format.")
     Button(dates,"Apply dates",355,-49,112,E.ApplyDates)
     Label(dates,"Local dates: YYYY-MM-DD",490,-55,258)
     E.reportTab=Button(ledger,"Period report",16,-198,132,function()E.SetLedgerView("report")end)
@@ -277,8 +278,7 @@ function E.CreateLedger(f)
         local bg=row:CreateTexture(nil,"BACKGROUND");bg:SetAllPoints(row);bg:SetColorTexture(.14,.15,.17,.5)
         row.title=Label(row,title,10,-5,164);row.value=Label(row,"",176,-5,174,true)
         row:SetScript("OnClick",function()E.SetFilter(key)end)
-        row:SetScript("OnEnter",function(self)if GameTooltip then GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:ClearLines();GameTooltip:AddLine("View "..string.lower(title).." for this period.");GameTooltip:Show()end end)
-        row:SetScript("OnLeave",function()if GameTooltip then GameTooltip:Hide()end end)
+        A.Help.Bind(row, "View "..string.lower(title).." for this period.")
         E.activityRows[key]=row
     end
     Activity("sale","AH sales",14,-136);Activity("vendor_sale","Vendor sales",14,-166);Activity("commission","Commissions",14,-196)
@@ -311,12 +311,13 @@ function E.CreateLedger(f)
             root:CreateCheckbox(entry[2],function(key)return E.otherCategories[key]==true end,E.SelectOther,entry[1])
         end
     end)
+    A.Help.Bind(E.otherDropdown, "Choose which other-spending categories to show in the transaction list.")
     transactions:SetScript("OnHide",function()E.otherDropdown:CloseMenu()end)
     local entries=Inset(transactions,-342,262)
     local columns={{"Date local",0,84},{"Type",90,88},{"Item / note",184,158},{"Qty",346,28,true},{"Net",386,96,true},{"Cost",494,98,true},{"Profit",606,82,true},{"Source",704,40}}
     E.ledgerRows=TableRows(entries,columns,LEDGER_ROWS,28,E.LoadLedger,function(button,row)
-        if not GameTooltip then return end
-        GameTooltip:SetOwner(button,"ANCHOR_RIGHT");GameTooltip:ClearLines();GameTooltip:AddLine(row.name,1,.82,0)
+        if not A.Help.Begin(button) then return end
+        GameTooltip:AddLine(row.name,1,.82,0)
         GameTooltip:AddLine(date("%Y-%m-%d %H:%M local",row.time).." - "..row.source)
         if L.Category(row)then GameTooltip:AddDoubleLine("Category",L.categoryTitles[L.Category(row)])end
         if row.kind=="loot"then GameTooltip:AddLine("Daily total; time is the first recorded loot award.",.8,.8,.8,true)end
@@ -354,13 +355,16 @@ function E.CreateLedger(f)
         local b=CreateFrame("CheckButton",nil,settings,"UICheckButtonTemplate")
         b:SetPoint("TOPLEFT",settings,"TOPLEFT",390,y);b:SetSize(26,26)
         b:SetScript("OnClick",function(self)if U.Combat()then return end;D.data.settings[key]=self:GetChecked()==true;if key=="trackOther"then A.Cash.Reset()end;E.Refresh()end)
+        A.Help.Setting(b,key)
         Label(settings,text,423,y-7,320);return b
     end
+    A.Help.Setting(E.autoAH,"trackAH");A.Help.Setting(E.autoVendor,"trackVendor");A.Help.Setting(E.autoTrade,"trackTrade")
     E.autoLoot=CashOption("trackLoot","Track daily loot income",-43)
     E.autoOther=CashOption("trackOther","Track other spending",-77)
     local help=Label(settings,"AH sales load from completed mail invoices. Loot is totaled each local day. Other spending uses confirmed wallet deductions; unrecognized costs appear as Unclassified. Reclassify trade payments instead of recording them twice.",14,-154,730);help:SetHeight(48);help:SetWordWrap(true)
     Label(settings,"Retention",14,-224,730):SetFontObject("GameFontNormal")
     Label(settings,"Keep transactions for",14,-260,164);E.retention=Box(settings,190,-253,57,true);E.retention:SetMaxLetters(3)
+    A.Help.Setting(E.retention,"ledgerDays")
     Label(settings,"days (1-365)",267,-260,130);Button(settings,"Apply",410,-253,90,E.ApplyRetention)
     local retentionHelp=Label(settings,"A shorter retention period removes older entries. Copy the records you need before applying it.",14,-297,730);retentionHelp:SetHeight(34);retentionHelp:SetWordWrap(true)
     Button(settings,"View other spending",14,-349,196,function()E.SetFilter("expense")end)
@@ -382,6 +386,13 @@ function E.CreateLedger(f)
         if E.originalRow and E.originalRow.kind=="loot"then root:CreateRadio(titles.loot,Selected,E.SetKind,"loot")end
     end)
     E.ledgerInputs={name=Box(fields,191,-31,331),quantity=Box(fields,553,-31,60,true),amount=Box(fields,20,-91,102),fee=Box(fields,143,-91,80),tip=Box(fields,245,-91,80),cost=Box(fields,347,-91,106)}
+    A.Help.Bind(E.ledgerInputs.name, "Name or item link used to identify this transaction.")
+    A.Help.Bind(E.ledgerInputs.quantity, "Number of items in the transaction. Money fields are totals for the whole lot.")
+    A.Help.Bind(E.ledgerInputs.amount, "Whole-lot payment in gold before adding tips or subtracting fees.")
+    A.Help.Bind(E.ledgerInputs.fee, "Total fees in gold for the whole transaction.")
+    A.Help.Bind(E.ledgerInputs.tip, "Total tip in gold, added to the payment.")
+    A.Help.Bind(E.ledgerInputs.cost, "Actual cost in gold for the whole lot. Leave blank if unknown; 0 means no cost.")
+    A.Help.Bind(E.kindDropdown, "Choose the transaction type so income, spending and profit are grouped correctly.")
     E.ledgerInputs.name:SetMaxLetters(256)
     for _,key in ipairs({"amount","fee","tip","cost"})do E.ledgerInputs[key]:SetMaxLetters(24)end
     Label(fields,"Total before tip " .. U.coin.gold,14,-70,125);Label(fields,"Fees " .. U.coin.gold,137,-70,90);Label(fields,"Total tip " .. U.coin.gold,239,-70,90);Label(fields,"Actual cost " .. U.coin.gold,341,-70,112)
@@ -398,6 +409,7 @@ function E.CreateLedger(f)
             end,entry[1])
         end
     end)
+    A.Help.Bind(E.categoryDropdown, "Choose the category for this expense in the period report.")
     Button(fields,"Clear fields",624,-91,126,function()E.NewManual();E.Refresh()end)
     E.deleteEntry=Button(fields,"Delete entry",14,-135,128,function()
         if L.Remove(E.entryID)then E.NewManual();E.messages.ledger="Entry deleted. Undo delete can restore it.";E.Refresh()end
@@ -484,7 +496,7 @@ function E.Create()
     E.ledgerTab=Button(f,"Ledger",16,-63,164,function()E.mode="ledger";E.Refresh()end)
     E.watchTab=Button(f,"Watchlists",190,-63,140,function()E.mode="watch";E.Refresh()end)
     E.settingsTab=Button(f,"Watch settings",340,-63,140,function()if E.mode=="watch"then A.WatchUI.ShowSettings()else A.UI.OpenSettings()end end)
-    f:SetScript("OnHide",function()if E.editorFrame then E.editorFrame:Hide()end;A.WatchUI.HideChildren();if E.mode=="watch"and E.wasShown then W.Dismiss()end;E.wasShown=false;if GameTooltip then GameTooltip:Hide()end end)
+    f:SetScript("OnHide",function()if E.editorFrame then E.editorFrame:Hide()end;A.WatchUI.HideChildren();if E.mode=="watch"and E.wasShown then W.Dismiss()end;E.wasShown=false;A.Help.Hide() end)
     E.status=Label(f,"",16,-573,756);E.status:SetHeight(30);E.status:SetWordWrap(true)
     A.WatchUI.Create(f)
 

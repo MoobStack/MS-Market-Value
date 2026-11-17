@@ -65,25 +65,18 @@ end
 
 local function Arrow(control,up)
     local button=CreateFrame("Button",nil,control.frame,"UIPanelButtonTemplate")
-    button:SetSize(28,24)
-    button:SetPoint("TOPLEFT",control.frame,"TOPLEFT",0,up and 0 or -26)
+    button:SetSize(26,22)
+    button:SetPoint("TOPLEFT",control.frame,"TOPLEFT",0,up and 0 or -24)
     local icon=button:CreateTexture(nil,"ARTWORK")
     icon:SetAtlas("auctionhouse-ui-sortarrow")
-    icon:SetSize(14,12);icon:SetPoint("CENTER",button,"CENTER",0,0)
+    icon:SetSize(12,10);icon:SetPoint("CENTER",button,"CENTER",0,0)
     icon:SetTexCoord(0,1,up and 1 or 0,up and 0 or 1)
     button.icon=icon
     button:RegisterForClicks("LeftButtonUp")
     button:SetScript("OnClick",function(_,mouse)
         if mouse=="LeftButton" then UI.Change(control,up and 1 or -1) end
     end)
-    button:SetScript("OnEnter",function(self)
-        if GameTooltip then
-            GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
-            GameTooltip:AddLine((up and "Increase" or "Decrease").." unit price by 1 copper.")
-            GameTooltip:Show()
-        end
-    end)
-    button:SetScript("OnLeave",function()if GameTooltip then GameTooltip:Hide()end end)
+    A.Help.Bind(button, (up and "Increase" or "Decrease").." unit price by 1 copper.")
     button:Show()
     return button
 end
@@ -96,7 +89,7 @@ function UI.Install()
             if price and not UI.controls[native] then
                 local frame=CreateFrame("Frame",nil,money.CopperBox)
                 frame:SetPoint("LEFT",money.CopperBox,"RIGHT",6,0)
-                frame:SetSize(28,50)
+                frame:SetSize(26,46)
                 local control={frame=frame,native=native,price=price,copper=money.CopperBox}
                 control.up,control.down=Arrow(control,true),Arrow(control,false)
                 UI.controls[native]=control

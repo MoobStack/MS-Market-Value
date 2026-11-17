@@ -18,18 +18,20 @@ local function Button(parent, text, x, y, width, handler)
     button:SetSize(width, 26)
     button:SetText(text)
     button:SetScript("OnClick", handler)
-    return button
+    A.Help.Button(button, "main", text); return button
 end
 
-local function Check(parent, key, text, y)
+local function Check(parent, key, text, y, compact)
     local button = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-    button:SetSize(26, 26)
+    button:SetSize(compact and 22 or 26, compact and 22 or 26)
     button:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, y)
-    button.label = Label(parent, text, 41, y - 7, 309)
+    button.label = Label(parent, text, compact and 38 or 41, y - (compact and 5 or 7), 309)
+    A.Help.Setting(button, key)
     button:SetScript("OnClick", function(self)
         if not D.data then return end
         D.data.settings[key] = self:GetChecked() and true or false
-        if A.Tooltips then A.Tooltips.RefreshVisible() end
+        A.Help.Refresh()
+        if key ~= "showInterfaceTips" and A.Tooltips then A.Tooltips.RefreshVisible() end
         UI.Refresh()
     end)
     UI.checks[key] = button
@@ -68,6 +70,7 @@ function UI.DiagnosticsText()
         "Tooltip callback installed: " .. tostring(A.Tooltips.installed or false),
         "Addon disabled: " .. tostring(A.disabledReason or "no"),
         "Tooltip status: " .. tostring(A.tooltipReason or "ready"),
+        "Interface tooltips: enabled=" .. tostring(A.Help.Enabled()),
         "Scan state: " .. S.state,
         "Resume phase: " .. tostring(S.resumeState or "none"),
         "Staged rows: " .. tostring(S.work and S.work.processedRows or 0),
@@ -308,12 +311,13 @@ function UI.Create()
     local tooltipSettings = CreateFrame("Frame", nil, settings)
     tooltipSettings:SetPoint("TOPLEFT", 0, -40); tooltipSettings:SetSize(366, 158)
     UI.tooltipSettings = tooltipSettings
-    Check(tooltipSettings, "showVendor", "Vendor sell price", 0)
-    Check(tooltipSettings, "showHistory", "Historic average and sample days", -25)
-    Check(tooltipSettings, "showAuction", "Lowest AH buyout", -50)
-    Check(tooltipSettings, "showDisenchant", "Estimated disenchant value", -75)
-    Check(tooltipSettings, "showMaterials", "Material ranges and chances", -100)
-    Check(tooltipSettings, "showAge", "Snapshot age and stale flag", -125)
+    Check(tooltipSettings, "showInterfaceTips", "Addon interface tooltips", 0, true)
+    Check(tooltipSettings, "showVendor", "Vendor sell price", -22, true)
+    Check(tooltipSettings, "showHistory", "Historic average and sample days", -44, true)
+    Check(tooltipSettings, "showAuction", "Lowest AH buyout", -66, true)
+    Check(tooltipSettings, "showDisenchant", "Estimated disenchant value", -88, true)
+    Check(tooltipSettings, "showMaterials", "Material ranges and chances", -110, true)
+    Check(tooltipSettings, "showAge", "Snapshot age and stale flag", -132, true)
     local craftSettings = CreateFrame("Frame", nil, settings)
     craftSettings:SetPoint("TOPLEFT", 0, -40); craftSettings:SetSize(366, 158)
     UI.craftSettings = craftSettings
@@ -325,6 +329,7 @@ function UI.Create()
     retention:SetScript("OnEnterPressed", UI.ApplyRetention)
     retention:SetScript("OnEscapePressed", function(self) self:ClearFocus(); UI.Refresh() end)
     UI.retentionBox = retention
+    A.Help.Setting(retention, "historyDays")
     Label(craftSettings, "days", 220, -42, 42)
     UI.retentionApply = Button(craftSettings, "Apply", 272, -34, 76, UI.ApplyRetention)
     Label(craftSettings, "1-30 days. Latest complete scan per UTC day.", 14, -72, 338)
@@ -343,6 +348,7 @@ function UI.Create()
     stale:SetMaxLetters(3)
     stale:SetScript("OnEscapePressed", function(self) self:ClearFocus(); UI.Refresh() end)
     UI.staleBox = stale
+    A.Help.Setting(stale, "staleHours")
     Label(prices, "hours (1-168)", 237, -41, 113)
     Button(prices, "Apply", 260, -72, 90, function()
         if not D.data then return end
@@ -355,6 +361,7 @@ function UI.Create()
     end)
     Label(prices, "Disenchant exclusions", 14, -118, 338, "GameFontNormal")
     local exclude = CreateFrame("EditBox", nil, prices, "InputBoxTemplate")
+    A.Help.Bind(exclude, "Enter an item ID to exclude its disenchant estimate or restore it.")
     exclude:SetSize(95, 24)
     exclude:SetPoint("TOPLEFT", 20, -143)
     exclude:SetAutoFocus(false)

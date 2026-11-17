@@ -2,7 +2,7 @@
 
 1. Close WoW and back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` file.
 2. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP's folder. Keep WTF/SavedVariables.
-3. Start the game and check that `/msmv diagnostics` shows 1.3.1-beta, test revision 6.
+3. Start the game and check that `/msmv diagnostics` shows 1.3.1-beta, test revision 7.
 
 Prices, history, preferences, watchlists, ledger, session totals/time and personal observations are kept. Updating from earlier 1.3.1 test builds keeps recent and peak history. Updating directly from 1.3.0 starts that coverage fresh because older receipts may have been misclassified. Older saved summaries retain their totals and averages; unverifiable recent rates and peaks show Not recorded. Start a new session for a clean comparison.
 
@@ -14,6 +14,6 @@ Quest rewards default to the session total only. Farming settings can include th
 
 Only install the Clean ZIP in AddOns. Keep source archives elsewhere. To roll back, close WoW and restore both the older addon and its matching SavedVariables backup. Unfinished auction scans do not survive reload or logout.
 
-See the [test notes](RELEASE-NOTES-v1.3.1-beta-test6.md) for the checks to try before release.
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test7.md) for the checks to try before release.
 
-This build enlarges the Sell-page arrow buttons and gives them a red game-style background. Watchlist search remains a filter for items already watched. Existing watches, targets, modifier choices and alert preferences are kept.
+Interface help starts enabled. Turn it off under Tooltips → Addon interface tooltips to hide control help and list hover details. Item-price and world-drop displays keep their existing settings. The red Sell-page arrows are slightly smaller at 26×22 each. Watchlist search still filters items already watched.

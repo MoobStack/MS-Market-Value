@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1-beta — Test revision 7 · 2026-11-17
+
+- Add short hover explanations for unfamiliar controls, filters and inputs across scanning, crafting, opportunities, watchlists, ledger, farming and drop settings.
+- Add **Addon interface tooltips** under Tooltips, enabled by default. Disabling it hides control help and list hover details immediately while retaining clicks, row highlights and input behavior. Item-value and world-drop displays keep their existing controls.
+- Trim each red Sell-page arrow to 26×22, keeping one-copper changes, rollover and native total updates.
+
+See the [test notes](RELEASE-NOTES-v1.3.1-beta-test7.md) for the switch and layout checks.
+
 ## 1.3.1-beta — Test revision 6 · 2026-11-17
 
 - Enlarge the Sell-page arrow buttons from 18×16 to 28×24 each. Use red game-style panel buttons and clearer native AH arrow icons.

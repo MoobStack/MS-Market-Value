@@ -1,8 +1,8 @@
 # MS Market Value
 
-**Version 1.3.1-beta · Test revision 6 · WoW Forever · By MoobStack**
+**Version 1.3.1-beta · Test revision 7 · WoW Forever · By MoobStack**
 
-This is a test build. See [test notes](RELEASE-NOTES-v1.3.1-beta-test6.md) for the changes and checks to try.
+This is a test build. See [test notes](RELEASE-NOTES-v1.3.1-beta-test7.md) for the changes and checks to try.
 
 Auction prices, crafting profits, farming estimates, drop rates and a personal gold ledger in one addon.
 
@@ -13,7 +13,7 @@ Close WoW and extract the Clean ZIP into `Interface/AddOns`. The folder should b
 ## What it does
 
 - **Prices and crafting:** save AH prices, build daily history and see vendor, auction and disenchant values in tooltips. Compare learned recipes by material cost, net profit and return, or prepare a crafting quote.
-- **Market opportunities:** search resale candidates and price movements, filter by rarity and supply, and keep item modifiers separate. Adjust the Sell-page price by one copper with larger, stacked red arrow buttons beside the copper field.
+- **Market opportunities:** search resale candidates and price movements, filter by rarity and supply, and keep item modifiers separate. Adjust the Sell-page price by one copper with stacked red arrow buttons beside the copper field.
 - **Watchlists:** save targets from Opportunities or the Buy page. Search your saved watches, sort and scroll the list, spot target-met rows and click an item for its Buy page. Quiet alerts can open the watchlist for new or improved matches.
 - **Farming:** track acquired value, hourly average, recent rate and a located farming peak. Keep quest rewards in the total or include them in hourly rates. Scroll through item details, manage saved sessions and pause automatically on death. Resize or lock the gold display. Timing starts idle at login; combat, received loot or Resume starts it.
 - **Drop rates:** view reference rates and personal observations for creatures and harvesting. Personal drops fill missing entries; needed quest items stay first. Choose sorting, rarity and item limits.
@@ -24,7 +24,7 @@ Close WoW and extract the Clean ZIP into `Interface/AddOns`. The folder should b
 1. At an auctioneer, open **MS Market Value → Scan entire AH**. Keep the AH open until **Local copy** is complete. New full scans have a 15-minute minimum interval.
 2. Open a profession and click **Show profits**. Visit a supplies vendor so crafting calculations can learn your purchase costs.
 3. Use **MS Opportunities → All items** for current prices. Resale signals need three earlier priced UTC days for each exact modifier by default; the market's total saved days may be higher.
-4. Open the farming, drop or ledger tools with the commands below. Settings and display choices are saved automatically.
+4. Open the farming, drop or ledger tools with the commands below. Hover unfamiliar controls for help; switch it off under **Tooltips → Addon interface tooltips**. Settings are saved automatically.
 
 ## Commands
 

@@ -14,8 +14,10 @@ Only a completed scan replaces current prices. Full requests are user-started an
 
 Persistent records include prices, preferences, cooldowns, history, watchlists, ledger entries, farming summaries and personal drop samples. Runtime caches remain outside SavedVariables. Unsupported saved formats are preserved. Native actions remain under player control.
 
-The three TOCs load the same 30 Lua files. Bundled-library hashes and focused behavioral checks are enforced by `tools/validate.py`.
+The three TOCs load the same 33 Lua files. Bundled-library hashes and focused behavioral checks are enforced by `tools/validate.py`.
 
 Farming rate history uses its own schema 2. Upgrades preserve session totals/time and observations while starting new recent/peak coverage. Quest and world-loot receipts are reconciled separately; only non-quest minute values can set a peak. Empty inspections require a recent, identified dead-unit interaction. Tooltip sections are owned and rebuilt as a unit rather than appended repeatedly.
 
 Saved-session retention is per character/market, 0–50 with a default of five. New archives copy up to 500 item rows and 20 recent receipts; older top-item summaries remain readable. Both scrolling lists reuse fixed row pools and cached results. Login/death waiting is separate from the saved manual pause and the inactivity timer.
+
+UI/Help owns interface tooltip binding and the saved display preference. It hooks existing hover handlers once and checks the preference at display time. Only its own tooltip owner is hidden; item-price and world-drop integrations keep separate settings.

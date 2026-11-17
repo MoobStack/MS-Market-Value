@@ -14,7 +14,7 @@ end
 local function Button(parent,text,x,y,width,callback)
     local button=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
     button:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);button:SetSize(width,24);button:SetText(text);button:SetScript("OnClick",callback)
-    return button
+    A.Help.Button(button, "watch", text); return button
 end
 local function Fill(parent,r,g,b,a)
     local texture=parent:CreateTexture(nil,"BACKGROUND");texture:SetAllPoints(parent);texture:SetColorTexture(r,g,b,a);return texture
@@ -34,7 +34,7 @@ local function Dialog(name,title,height)
     frame:SetTitle(title);frame.CloseButton:SetScript("OnClick",function()frame:Hide()end)
     U.ManageWindow(frame);table.insert(UISpecialFrames,name);frame:Hide();return frame
 end
-local function HideTooltip()if GameTooltip then GameTooltip:Hide()end end
+local function HideTooltip()A.Help.Hide() end
 local function Message(text)
     E.messages.watch=text;if UI.editorMessage and UI.editor:IsShown()then UI.editorMessage:SetText(text)end;E.Refresh();return false
 end
@@ -102,8 +102,7 @@ function UI.Open(row)
 end
 
 function UI.Tooltip(button,row)
-    if not GameTooltip then return end
-    GameTooltip:SetOwner(button,"ANCHOR_RIGHT");GameTooltip:ClearLines()
+    if not A.Help.Begin(button) then return end
     GameTooltip:AddLine(UI.Name(row),U.ItemColor(row.link,row.quality))
     GameTooltip:AddLine(row.suffix~=nil and "Exact modifier"or"Any modifier / item-wide prices",.61,.66,.70)
     GameTooltip:AddDoubleLine("Scan each",row.current and U.Coins(row.current)or"Unavailable")
@@ -189,7 +188,7 @@ function UI.CreateSettings()
         button:SetScript("OnClick",function(self)
             if not U.Combat()then D.Settings()[key]=self:GetChecked()==true end
             self:SetChecked(D.Settings()[key])
-        end);UI.checks[key]=button
+        end);UI.checks[key]=button;A.Help.Setting(button,key)
     end
     local help=Label(frame,"New matches and lower matched prices are grouped into one review. Unchanged prices stay quiet. Alerts wait while you sell or edit.",22,-193,452)
     help:SetSize(452,42);help:SetWordWrap(true);help:SetTextColor(.61,.66,.70)
@@ -203,17 +202,10 @@ function UI.Create(parent)
     UI.searchBox:SetScript("OnTextChanged",function(self)
         UI.search=self:GetText();UI.offset=0;E.Refresh()
     end)
-    UI.searchBox:SetScript("OnEnter",function(self)
-        if GameTooltip then
-            GameTooltip:SetOwner(self,"ANCHOR_RIGHT");GameTooltip:ClearLines()
-            GameTooltip:AddLine("Search your watchlist")
-            GameTooltip:AddLine("Filters items already watched. Use the AH Buy page to find other items.",.61,.66,.70,true)
-            GameTooltip:Show()
-        end
-    end)
-    UI.searchBox:SetScript("OnLeave",HideTooltip)
+    A.Help.Bind(UI.searchBox, "Search your watchlist: filter items already watched. Use the AH Buy page to find other items.")
     UI.only=CreateFrame("CheckButton",nil,toolbar,"UICheckButtonTemplate");UI.only:SetPoint("TOPLEFT",toolbar,"TOPLEFT",316,-9);UI.only:SetSize(26,26)
     UI.only:SetScript("OnClick",function(self)D.Settings().watchReadyOnly=self:GetChecked()==true;UI.offset=0;E.Refresh()end)
+    A.Help.Setting(UI.only,"watchReadyOnly")
     Label(toolbar,"Targets met only",348,-16,160)
     Button(toolbar,"Add watch",630,-10,118,UI.New)
     UI.summary=Label(toolbar,"",14,-44,730)
@@ -224,6 +216,7 @@ function UI.Create(parent)
         button.text=Label(button,column[1],0,-2,column[4]);button.text:SetFontObject("GameFontNormalSmall")
         button.text:SetJustifyH(column[5]and"RIGHT"or"LEFT")
         button:SetScript("OnClick",function()UI.Sort(key)end);UI.headers[key]=button
+        A.Help.Bind(button, "Sort by "..string.lower(column[1])..". Click again to reverse the order.")
     end
     for index=1,ROWS do
         local button=CreateFrame("Button",nil,list);button:SetPoint("TOPLEFT",list,"TOPLEFT",10,-31-(index-1)*STEP);button:SetSize(724,STEP-1)
@@ -257,6 +250,10 @@ function UI.Create(parent)
     UI.source=Label(UI.editor,"",22,-68,452);UI.source:SetTextColor(.61,.66,.70)
     E.watchInputs={item=Box(UI.editor,28,-94,444),itemPrice=Box(UI.editor,28,-149,132),roi=Box(UI.editor,190,-149,110),profit=Box(UI.editor,330,-149,142)}
     local inputs=E.watchInputs;inputs.item:SetScript("OnReceiveDrag",UI.Drop)
+    A.Help.Bind(inputs.item, "Paste or drag an item link to add a watch. Use its Buy page to select an exact modifier.")
+    A.Help.Bind(inputs.itemPrice, "Maximum buy price per item in gold. Use 0 to turn this target off.")
+    A.Help.Bind(inputs.roi, "Minimum return percentage against earlier prices. Use 0 to turn this target off.")
+    A.Help.Bind(inputs.profit, "Minimum net profit per item in gold after the AH cut. Use 0 to turn this target off.")
     inputs.item:SetScript("OnTextChanged",function(self)
         if not UI.input then
             local valid=U.ItemID(self:GetText())

@@ -5,9 +5,9 @@
   "build": "2026-11-16-beta001",
   "buildNumber": "001",
   "interface": 16001,
-  "gitTag": "v1.3.1-beta-test6",
+  "gitTag": "v1.3.1-beta-test7",
   "archiveDate": "2026-11-17",
   "releaseChannel": "beta",
-  "testRevision": 6,
-  "releaseNotes": "RELEASE-NOTES-v1.3.1-beta-test6.md"
+  "testRevision": 7,
+  "releaseNotes": "RELEASE-NOTES-v1.3.1-beta-test7.md"
 }

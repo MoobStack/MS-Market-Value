@@ -231,7 +231,7 @@ test("farming HUD interpolates without changing accounting and hover mode stays 
     truth(A.FarmingUI.displayTotal>0 and A.FarmingUI.displayTotal<100)
     equal(A.Farm.Summary().total,100)
     A.DB.Settings().farmHover=true;A.FarmingUI.HUD();equal(A.FarmingUI.hud.alpha,0)
-    A.FarmingUI.hud.scripts.OnEnter();equal(A.FarmingUI.hud.alpha,1)
+    A.FarmingUI.hud.scripts.OnEnter(A.FarmingUI.hud);equal(A.FarmingUI.hud.alpha,1)
     SlashCmdList.MSMARKETVALUE("drops");truth(A.FarmingUI.drops:IsShown())
     SlashCmdList.MSMARKETVALUE("farm");truth(A.FarmingUI.session:IsShown())
 end)

@@ -14,7 +14,7 @@ local function Button(parent, text, x, y, width, handler)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y); button:SetSize(width, 24)
     button:SetText(text); button:SetScript("OnClick", handler)
-    return button
+    A.Help.Button(button, "market", text); return button
 end
 
 local function Fill(parent, layer, r, g, b, alpha)
@@ -327,12 +327,14 @@ function UI.Create(parent)
             UI.dirty[key], UI.message = nil, nil; self:ClearFocus(); self:SetText(AppliedText(key)); UI.Refresh()
         end)
         UI.inputs[key] = box
+        A.Help.Setting(box, key)
     end
     Label(filters,"Rarity",410,-132,100)
     UI.qualityDraft=D.Settings().marketQuality
     UI.qualityMenu=CreateFrame("DropdownButton",nil,filters,"WowStyle1DropdownTemplate")
     UI.qualityMenu:SetPoint("TOPLEFT",filters,"TOPLEFT",518,-126);UI.qualityMenu:SetSize(214,24)
     UI.qualityMenu:SetDefaultText("All rarities")
+    A.Help.Setting(UI.qualityMenu, "marketQuality")
     UI.qualityMenu:SetupMenu(function(_,root)
         root:CreateCheckbox("All rarities",function()return UI.qualityDraft==63 end,function()
             UI.qualityDraft=UI.qualityDraft==63 and 0 or 63;UI.dirty.marketQuality=true;UI.Refresh()
@@ -354,6 +356,7 @@ function UI.Create(parent)
     UI.searchBox:SetScript("OnEscapePressed",function(self)
         self:ClearFocus(); self:SetText(D.Settings().marketSearch); UI.dirty.marketSearch=nil; UI.Refresh()
     end)
+    A.Help.Bind(UI.searchBox, "Find item names or modifiers in the saved scan. Press Enter or Apply search to update results.")
     UI.apply = Button(filters, "Apply filters", 618, -19, 114, UI.Apply)
     UI.quickApply=Button(panel,"Apply search",559,-84,201,UI.Apply)
     Label(filters, "0.25" .. U.coin.gold .. " = 25" .. U.coin.silver, 618, -49, 114)
@@ -382,14 +385,14 @@ function UI.Create(parent)
         end)
         button:SetScript("OnEnter", function(self)
             self.hovered = true; UI.hovered = self.row; Highlight(self); UI.RefreshDetails()
-            if self.row and GameTooltip and type(GameTooltip.SetHyperlink) == "function" then
-                GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetHyperlink(self.row.link)
+            if self.row and A.Help.Begin(self) and type(GameTooltip.SetHyperlink) == "function" then
+                GameTooltip:SetHyperlink(self.row.link)
                 GameTooltip:AddLine(M.HistoryDescription(self.row),.61,.66,.70);GameTooltip:Show()
             end
         end)
         button:SetScript("OnLeave", function(self)
             self.hovered, UI.hovered = nil, nil; Highlight(self); UI.RefreshDetails()
-            if GameTooltip then GameTooltip:Hide() end
+            A.Help.Hide()
         end)
         UI.rows[index] = button
     end
@@ -407,7 +410,7 @@ function UI.Create(parent)
     UI.next = Button(panel, "Next", 660, -432, 100, function() UI.Scroll(UI.offset+(UI.pageSize or 12)) end)
     UI.status = Label(panel, "", 14, -459, 746)
     panel:SetScript("OnShow", function() M.Ensure(UI.view, UI.sort); UI.Refresh() end)
-    panel:SetScript("OnHide", function() UI.hovered = nil; if GameTooltip then GameTooltip:Hide() end end)
+    panel:SetScript("OnHide", function() UI.hovered = nil; A.Help.Hide() end)
     panel:Hide()
     return panel
 end

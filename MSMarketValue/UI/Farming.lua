@@ -20,7 +20,7 @@ local function Label(parent,text,x,y,width,normal)
 end
 local function Button(parent,text,x,y,width,callback)
     local b=CreateFrame("Button",nil,parent,"UIPanelButtonTemplate")
-    b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetSize(width,24);b:SetText(text);b:SetScript("OnClick",callback);return b
+    b:SetPoint("TOPLEFT",parent,"TOPLEFT",x,y);b:SetSize(width,24);b:SetText(text);b:SetScript("OnClick",callback);A.Help.Button(b, "farm", text); return b
 end
 local function Check(parent,text,key,x,y,width)
     local b=CreateFrame("CheckButton",nil,parent,"UICheckButtonTemplate")
@@ -32,6 +32,7 @@ local function Check(parent,text,key,x,y,width)
         else D.data.settings[key]=self:GetChecked()==true end
         F.summary=nil;UI.Refresh();UI.HUD()
     end)
+    A.Help.Setting(b,key)
     b.key=key;UI.checks[#UI.checks+1]=b;return b
 end
 local function Box(parent,x,y,width)
@@ -76,7 +77,7 @@ end
 function UI.Scroll(offset)
     if not U.Number(offset) or not UI.rows then return end
     UI.offset=math.max(0,math.min(math.floor(offset),math.max(0,#(UI.visibleItems or {})-#UI.rows)))
-    if GameTooltip then GameTooltip:Hide() end
+    A.Help.Hide()
     UI.Refresh()
 end
 
@@ -120,6 +121,7 @@ function UI.ManageSessions()
         UI.managerCount=Label(frame,"",18,-38,400)
         Label(frame,"Keep saved sessions",18,-73,188)
         UI.historyLimit=Box(frame,210,-66,62);UI.historyLimit:SetNumeric(true);UI.historyLimit:SetMaxLetters(2)
+        A.Help.Bind(UI.historyLimit, "Keep 0-50 saved sessions. Reducing the limit removes the oldest sessions after confirmation.")
         UI.historyLimit:SetScript("OnEnterPressed",UI.ApplyHistoryLimit)
         UI.historyLimit:SetScript("OnTextChanged",function(_,user)if user then UI.confirmLimit=nil;UI.manageMessage=nil;UI.RefreshManagement() end end)
         UI.applyHistory=Button(frame,"Apply",286,-66,130,UI.ApplyHistoryLimit)
@@ -204,6 +206,7 @@ function UI.HUD()
         end)
         frame:SetScript("OnEnter",function()UI.hovered=true;UI.HUD()end)
         frame:SetScript("OnLeave",function()UI.hovered=false;UI.HUD()end)
+        A.Help.Bind(frame, "Right-click to pause or resume. Drag to move when the display position is unlocked.")
         frame:SetScript("OnClick",function(self,mouse)
             if self.dragging then return end
             if mouse=="RightButton" then local summary=F.Summary();F.Pause(not summary.paused) else UI.Show("session") end
@@ -250,7 +253,7 @@ function UI.Create()
     frame:SetMovable(true);frame:EnableMouse(true);frame:RegisterForDrag("LeftButton")
     frame:SetScript("OnDragStart",function(self)self:StartMoving()end);frame:SetScript("OnDragStop",function(self)self:StopMovingOrSizing()end)
     if frame.CloseButton then frame.CloseButton:SetScript("OnClick",function()frame:Hide()end) end
-    frame:SetScript("OnHide",function()if UI.manager then UI.manager:Hide() end;if GameTooltip then GameTooltip:Hide() end end)
+    frame:SetScript("OnHide",function()if UI.manager then UI.manager:Hide() end;A.Help.Hide() end)
     UISpecialFrames[#UISpecialFrames+1]="MSMarketValueFarming"
     UI.frame=frame;UI.tabs={}
     for i,entry in ipairs({{"session","Session"},{"settings","Farming settings"},{"drops","Drop rates"}}) do
@@ -262,6 +265,7 @@ function UI.Create()
     UI.sessionMenu=CreateFrame("DropdownButton",nil,session,"WowStyle1DropdownTemplate")
     UI.sessionMenu:SetPoint("TOPLEFT",session,"TOPLEFT",16,-8);UI.sessionMenu:SetSize(390,25)
     UI.sessionMenu:SetDefaultText("Current session")
+    A.Help.Bind(UI.sessionMenu, "Choose the current session or a saved session. Manage controls retention and deletion.")
     UI.sessionMenu:SetupMenu(function(_,root)
         if root.SetScrollMode then root:SetScrollMode(300) end
         root:CreateRadio("Current session",function()return UI.historyRecord==nil end,function()UI.SelectSession(0)end,0)
@@ -337,16 +341,15 @@ function UI.Create()
         button:EnableMouseWheel(true);button:SetScript("OnMouseWheel",Wheel)
         button:SetScript("OnEnter",function(self)
             local item=self.item
-            if item and GameTooltip then
-                self.highlight:Show()
-                GameTooltip:SetOwner(self,"ANCHOR_RIGHT")
+            if item then self.highlight:Show() end
+            if item and A.Help.Begin(self) then
                 if U.String(item.link) then GameTooltip:SetHyperlink(item.link) else GameTooltip:ClearLines();GameTooltip:AddLine(item.name) end
                 if item.mode then GameTooltip:AddDoubleLine("Session valuation",item.mode) end
                 if item.time then GameTooltip:AddDoubleLine("Received",date("%b %d %H:%M:%S",item.time)) end
                 GameTooltip:Show()
             end
         end)
-        button:SetScript("OnLeave",function(self)self.highlight:Hide();if GameTooltip then GameTooltip:Hide() end end)
+        button:SetScript("OnLeave",function(self)self.highlight:Hide();A.Help.Hide() end)
         UI.rows[i]=button
     end
     UI.empty=Muted(Label(list,"No recorded income yet.",16,-42,620))
@@ -366,6 +369,7 @@ function UI.Create()
     Check(settings,"Use current AH value after the configured AH cut","farmUseAuction",14,-143)
     Label(settings,"Quest rewards",18,-185,130)
     UI.questMenu=CreateFrame("DropdownButton",nil,settings,"WowStyle1DropdownTemplate")
+    A.Help.Bind(UI.questMenu, "Choose whether new quest rewards count in totals and hourly rates. Peaks always exclude quests.")
     UI.questMenu:SetPoint("TOPLEFT",settings,"TOPLEFT",154,-177);UI.questMenu:SetSize(484,25)
     UI.questMenu:SetupMenu(function(_,root)
         for _,entry in ipairs({{"session","Session total only"},{"hourly","Session total and hourly rates"},{"off","Do not record new quest rewards"}})do
@@ -483,6 +487,12 @@ function UI.Create()
         if not UI.confirmDrops then UI.confirmDrops=true;UI.clearDrops:SetText("Confirm reset");return end
         UI.confirmDrops=false;local ok,reason=P.Reset(UI.resetScope,UI.monster:GetText());UI.message=reason;UI.Refresh()
     end)
+    for widget,key in pairs({[UI.threshold]="farmThreshold",[UI.idleMinutes]="farmIdleMinutes",[UI.hudWidth]="farmHUDWidth",
+        [UI.maxDrops]="dropRows",[UI.dropSort]="dropSort",[UI.dropQuality]="dropQuality"}) do A.Help.Setting(widget,key) end
+    A.Help.Bind(UI.sourceMenu, "Filter session items and recent pickups by loot, quests or harvesting source.")
+    A.Help.Bind(UI.mode, "Choose reference or personal rates. Personal observations fill missing reference drops; sample counts stay separate.")
+    A.Help.Bind(UI.scope, "Choose which personal drop observations to clear. Reference data is kept.")
+    A.Help.Bind(UI.monster, "Enter the creature or node name or ID when resetting one source. Other scopes use your current location.")
     UI.dropStatus=Label(drops,"",18,-407,700);UI.dropStatus:SetHeight(78);UI.dropStatus:SetWordWrap(true)
     frame:SetScript("OnHide",function()UI.confirmSession,UI.confirmDrops=false,false end)
     U.ManageWindow(frame)

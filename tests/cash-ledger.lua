@@ -54,7 +54,7 @@ local function record(L,category,amount)
 end
 
 test("release defaults enable loot and other spending independently",function()
-    local w,A=world();equal(A.DB.Settings().trackLoot,true);equal(A.DB.Settings().trackOther,true);equal(A.TEST_REVISION,6)
+    local w,A=world();equal(A.DB.Settings().trackLoot,true);equal(A.DB.Settings().trackOther,true);equal(A.TEST_REVISION,7)
 end)
 test("only the dedicated loot-money event creates loot income",function()
     local w,A,C,L=world();w:event("CHAT_MSG_SYSTEM","You loot 5 Silver.");w.money=w.money+500;w:event("PLAYER_MONEY");w:tick();equal(#L.Records(),0)

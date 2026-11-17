@@ -18,3 +18,5 @@ Sell-page coverage checks both price fields, one-copper steps, silver/gold rollo
 Watchlist regressions cover virtual scrolling, cached search/sort views, native Buy navigation, hidden item IDs, target editing, settings, grouped alerts, unchanged-scan/reload deduplication, rearming and deferred delivery. The optional 200-watch UI workload checks frame reuse and avoids metadata or pricing rebuilds while scrolling.
 
 Sell styling coverage checks the larger panel-button hit area, native AH arrow orientation and warning placement. Watchlist search remains scoped to saved watches.
+
+Interface-help checks cover default and saved preferences, immediate hiding, native tooltip ownership, preserved handlers, concise control/input explanations and list hover opt-out across the addon. Sell help follows the same switch; its 26×22 buttons retain native price callbacks.

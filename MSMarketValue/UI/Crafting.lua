@@ -14,7 +14,7 @@ local function Button(parent, text, x, y, width, handler)
     local button = CreateFrame("Button", nil, parent, "UIPanelButtonTemplate")
     button:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y); button:SetSize(width, 26)
     button:SetText(text); button:SetScript("OnClick", handler)
-    return button
+    A.Help.Button(button, "craft", text); return button
 end
 
 local function Inset(parent, y, height)
@@ -112,7 +112,7 @@ function UI.CatalogSummary()
     return cache
 end
 
-local function HideTooltip() if GameTooltip then GameTooltip:Hide() end end
+local function HideTooltip() A.Help.Hide() end
 function UI.Scroll(offset)
     if not U.Number(offset) or not UI.catalogRows then return end
     UI.offset=math.max(0,math.min(math.floor(offset),math.max(0,#UI.CatalogView()-#UI.catalogRows)))
@@ -120,8 +120,7 @@ function UI.Scroll(offset)
 end
 local function RecipeTooltip(button)
     local row = button.row
-    if not row or not GameTooltip then return end
-    GameTooltip:SetOwner(button, "ANCHOR_RIGHT"); GameTooltip:ClearLines()
+    if not row or not A.Help.Begin(button) then return end
     GameTooltip:AddLine(row.name, 1, 0.82, 0)
     local _, state = UI.RecipeState(row)
     GameTooltip:AddLine(state, 0.83, 0.86, 0.89, true)
@@ -197,6 +196,7 @@ function UI.CreatePricing(frame)
         box:SetScript("OnEnterPressed",UI.ApplyPricing)
         box:SetScript("OnEscapePressed",function(self) self:ClearFocus(); UI.ResetPricing() end)
         UI.priceInputs[key] = box
+        A.Help.Setting(box, key)
     end
     Input(fees,"marketFee",290,-36,false)
     local services = Inset(panel,-107,270)
@@ -207,6 +207,7 @@ function UI.CreatePricing(frame)
     UI.customerMaterials = CreateFrame("CheckButton",nil,services,"UICheckButtonTemplate")
     UI.customerMaterials:SetPoint("TOPLEFT",services,"TOPLEFT",10,-175); UI.customerMaterials:SetSize(26,26)
     UI.customerMaterials:SetScript("OnClick",function() UI.priceDirty = true end)
+    A.Help.Setting(UI.customerMaterials, "serviceCustomerMaterials")
     Label(services,"Customer supplies materials",43,-181,460)
     local help = Label(services,"Your materials: cost + markup + labor, subject to the minimum.\nCustomer materials: labor or the minimum charge, whichever is higher.",14,-218,507)
     help:SetHeight(38); help:SetWordWrap(true)
@@ -287,6 +288,7 @@ function UI.Create()
     markup:SetPoint("TOPLEFT", quotes, "TOPLEFT", 340, -8); markup:SetSize(50, 24)
     markup:SetAutoFocus(false); markup:SetNumeric(true); markup:SetMaxLetters(4)
     markup:SetText(tostring(D.Settings().quoteMarkup)); UI.markup = markup
+    A.Help.Setting(markup, "quoteMarkup")
     Label(quotes, "%", 394, -15, 15)
     markup:SetScript("OnEnterPressed", UI.ApplyMarkup)
     markup:SetScript("OnEscapePressed", function(self) self:ClearFocus(); self:SetText(tostring(D.Settings().quoteMarkup)) end)
@@ -297,6 +299,7 @@ function UI.Create()
     quote:SetScript("OnEditFocusGained", function(self) self:HighlightText() end)
     quote:SetScript("OnEscapePressed", function(self) self:ClearFocus() end)
     UI.quoteBox = quote
+    A.Help.Bind(quote, "Click to select this quote, then press Ctrl+C to copy it.")
     Label(quotes, "Ctrl+C to copy quote.", 14, -73, 215)
     UI.insertQuote = Button(quotes, "Insert in chat", 383, -67, 137, UI.InsertQuote)
     local sale = Inset(details, -310, 92)
@@ -310,6 +313,9 @@ function UI.Create()
         box:SetAutoFocus(false); box:SetNumeric(field[4]); box:SetMaxLetters(24); box:SetText(field[5])
         box:SetScript("OnEscapePressed",function(self)self:ClearFocus()end); UI.saleInputs[field[1]]=box
     end
+    A.Help.Bind(UI.saleInputs.price, "Payment per item or service in gold. Leave blank to use the current quote.")
+    A.Help.Bind(UI.saleInputs.tip, "Total tip in gold for this whole commission, added to the payment.")
+    A.Help.Bind(UI.saleInputs.quantity, "Number of items or services sold in this commission.")
     UI.recordSale = Button(sale,"Record sale",412,-51,108,UI.RecordCommission)
     local materials = Inset(details, -412, 148)
     Label(materials, "Materials", 14, -10, 507, "GameFontNormal")
@@ -333,6 +339,7 @@ function UI.Create()
     UI.searchBox:SetScript("OnTextChanged", function(self, userInput) if userInput then UI.SetSearch(self:GetText()) end end)
     UI.searchBox:SetScript("OnEnterPressed", function(self) self:ClearFocus() end)
     UI.searchBox:SetScript("OnEscapePressed", function(self) self:ClearFocus(); self:SetText(""); UI.SetSearch("") end)
+    A.Help.Bind(UI.searchBox, "Filter learned recipes by name. Clear the field to show all matching recipes.")
     UI.clearSearch = Button(controls, "X", 243, -8, 25, function() UI.searchBox:SetText(""); UI.SetSearch("") end)
     UI.sortProfit = Button(controls, "Profit / craft", 280, -8, 126, function() UI.sort = "profit"; UI.offset = 0;HideTooltip(); UI.Refresh() end)
     UI.sortReturn = Button(controls, "Return %", 414, -8, 108, function() UI.sort = "return"; UI.offset = 0;HideTooltip(); UI.Refresh() end)
@@ -391,8 +398,8 @@ function UI.RefreshMaterials(row)
             button.source = Label(button, "", 291, -4, 80)
             button.total = Label(button, "", 377, -4, 111); button.total:SetJustifyH("RIGHT")
             button:SetScript("OnEnter", function(self)
-                if self.material and GameTooltip and type(GameTooltip.SetHyperlink) == "function" then
-                    GameTooltip:SetOwner(self, "ANCHOR_RIGHT"); GameTooltip:SetHyperlink("item:" .. self.material.id); GameTooltip:Show()
+                if self.material and A.Help.Begin(self) and type(GameTooltip.SetHyperlink) == "function" then
+                    GameTooltip:SetHyperlink("item:" .. self.material.id); GameTooltip:Show()
                 end
             end)
             button:SetScript("OnLeave", HideTooltip); UI.materialRows[index] = button
@@ -530,6 +537,7 @@ local function AttachToggle()
         UI.opener = CreateFrame("Button", "MSMarketValueCraftingToggle", page, "UIPanelButtonTemplate")
         UI.opener:SetSize(146, 22)
         UI.opener:SetScript("OnClick", UI.Toggle)
+        A.Help.Bind(UI.opener, "Show or hide crafting profit and quote details for this profession.")
     end
     if UI.nativePage ~= page then
         UI.opener:SetParent(page)
