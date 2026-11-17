@@ -1,10 +1,6 @@
 # MS Market Value
 
-<<<<<<< HEAD
 **Version 1.3.1 · WoW Forever**
-=======
-**Version 1.3.1 · WoW Forever · By MoobStack**
->>>>>>> parent of 4393f67 (v1.3.1)
 
 Auction prices, crafting profits, farming estimates, drop rates and a personal gold ledger in one addon.
 

@@ -13,11 +13,6 @@
     "releaseNotes": "RELEASE-NOTES-v1.3.1.md"
   },
   "checkedUTC": "2026-11-17T21:41:20.619580+00:00",
-<<<<<<< HEAD
-=======
-  "acceptedBaselineCommit": "3764d4f2c3ae2c0ad8d8d45976de916e22149ce5",
-  "publishedBaselineCommit": "c6950af767404598a1b3cca61e960e031d41395d",
->>>>>>> parent of 4393f67 (v1.3.1)
   "runtime": "Lua 5.1 through Lupa 2.8; native API/frame fixtures",
   "timezone": "America/New_York",
   "luaCases": 943,
@@ -59,16 +54,6 @@
     "UI/Watchlist.lua": "4eece62a11a974c4078d31a9962fe2e7a17a4077b15fe1eb411d176827902962",
     "UI/Window.lua": "f7f1afe9c69f269c4664aac877d048053947ee5c1cd2ebc4139f4f389ad94d1f"
   },
-<<<<<<< HEAD
-=======
-  "runtimeChangesFromAcceptedCandidate": [
-    "Bootstrap.lua"
-  ],
-  "documentationGuidesMirrored": 12,
-  "documentationLinksChecked": 17,
-  "currentDocumentationUsesReleaseIdentity": true,
-  "individualTestNotesInInstall": false,
->>>>>>> parent of 4393f67 (v1.3.1)
   "workloads": [
     ".BUNDLED_REFERENCE_BENCHMARK sources=243 rows=1876 packed_kib=34.12 with_cache_kib=54.11 cached_sources=8 max_decode_ms=0.917",
     "....CLASSIC_REFERENCE_BENCHMARK rows=1284783 packed_kib=1951.14 with_cache_kib=1957.62 max_source_rows=564 max_decode_ms=720.905",
