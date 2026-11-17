@@ -1,0 +1,130 @@
+{
+  "schema": 1,
+  "build": {
+    "addon": "MSMarketValue",
+    "repository": "MS-Market-Value",
+    "version": "1.3.1-beta",
+    "build": "2026-11-16-beta001",
+    "buildNumber": "001",
+    "interface": 16001,
+    "gitTag": "v1.3.1-beta-test5",
+    "archiveDate": "2026-11-17",
+    "releaseChannel": "beta",
+    "testRevision": 5,
+    "releaseNotes": "RELEASE-NOTES-v1.3.1-beta-test5.md"
+  },
+  "checkedUTC": "2026-11-17T19:17:57.765439+00:00",
+  "sourceBaseline": "d72a5e628d792f60268ab69f5216f401d707a388",
+  "runtime": "Lua 5.1 through Lupa 2.8; native API/frame fixtures",
+  "timezone": "America/New_York",
+  "luaCases": 924,
+  "newRegressionCases": 34,
+  "pythonChecksIncludingWorkloads": 23,
+  "runtimeLuaFiles": 32,
+  "runtimeSHA256": {
+    "Auction/Scanner.lua": "80e2eb92f439b2c157f9d5689b0cfc38b3515ca50dc6a302359f0a7b6dfc152b",
+    "Bootstrap.lua": "1c64960e77d30bc0aaebf12c4c07b71fa803f03a40b7ec3eca85223181c05e2f",
+    "Core/Cash.lua": "83cc593c6d9269a820d1f1e676f4ab526387d3554dfedc962f857800ab6e32dc",
+    "Core/Database.lua": "73130c9b4559dd4cfcf0462115aff12d6b87b45bc89c3f1443bbf6725d68ec88",
+    "Core/Drops.lua": "446efcbbdd3b1acb94adbc80f32ace5a2368c5e21145337b57831708f35becae",
+    "Core/Events.lua": "1e879e432d712ee8797283114c262ec5c091bc7346184f943df2ac58eb64170f",
+    "Core/FarmMetrics.lua": "0e32e07290d132afb8e383ba64d5b8b4a3dbcf014e05fd83e66dbb0fa24272bf",
+    "Core/Farming.lua": "55d4219cfffb4b5e5cc77c9624b58d5e5c6f4d94e7626268bed2a6be2a08426e",
+    "Core/History.lua": "7de6eb3e778edbd3cd51efb2dc97deda1dd307da58aca26dce7e53d4ae6ee339",
+    "Core/Ledger.lua": "0c84f3fbe3e92dd5a927ae33cc0933f02ca49bbbe383e7e3ad0e83f9434652de",
+    "Core/Transactions.lua": "bd8c3826f7ee5d6acb97df03d4ded9e90bb9ebaca3fcd443638ad6c677613578",
+    "Core/Util.lua": "2bd8c70dbd6c49e0b34a1a9e1096f6c9d9c248f8af3a537c9a384828e30b9e54",
+    "Core/Valuation.lua": "91b02416d89a0adfd7841221fcaa9c1bb9446345e06b511ca9fe4a9096616d47",
+    "Core/Vendor.lua": "1c95963b1806664c8402c3388482c1eb5456f06a0edc4ed6f0b104a44804c225",
+    "Core/Watchlist.lua": "d5d8065b15cc93735e359259871a687803001f58e5ae2bd92152a8d2cbd04387",
+    "Crafting/Analysis.lua": "680b3998cf0542e7e826a1fb9555ed3638d7f6ef3f5a0988d5f5918fe6b8348c",
+    "Data/Classic.lua": "976b7ab4b7161bf1abf3f98718c74e7fa46eba232f1424c2a8830a1c16c46219",
+    "Data/Disenchant.lua": "cf74d8dc2cab1e5c8a4c50632e231d1ca2ca38583cac7402048acb37598e6f1c",
+    "Data/Everloot.lua": "fca188a59a1b0fe520ba93afe0ab2408577353d0a800c135ba68b18cdd79aa6e",
+    "Data/LootReference.lua": "c031256633d25a5c2f2738a282ee7e696277470b2be376766b82fb43d2d03334",
+    "Integrations/Tooltips.lua": "d9f40f0b96c30ce2d7e780f421dc80746f791d2da6f127ab1c794121810dd623",
+    "Libs/LibAHTab/LibAHTab.lua": "aed63f812cbd85df57e5f4ec0795f5188f473c81cea1317d4a0ed3e1df12c23f",
+    "Libs/LibStub/LibStub.lua": "f378dd3e36f8c6cf6e72bdb79a41171649f59b07d6489ff3e7dab94403a2e9b1",
+    "Market/Analysis.lua": "dac68ef490f52505fd686cc04f473c5d00096590eb819942ce33fc831af69d23",
+    "Market/Metadata.lua": "dc795f22e23673fa2a134250bef6be5ffc804af71635e952cdf9d581d564682c",
+    "UI/Crafting.lua": "ebf0cecb6c8cb9ce4ba28a75c18a4985e6a237540a09de2ecc7429f97485c581",
+    "UI/Economy.lua": "f43c9867a12fc3897c176d938a7432abbc07f8d84b11171822fe47d0acd9ccfe",
+    "UI/Farming.lua": "db04e0a829a3b0c87ae600411d073c25525f7cf8d3b1db5ef6778ab2fe03f5c9",
+    "UI/Market.lua": "65b10db21f1fe894248ccb5aefed192abac0431b3a6cec3fef7a1df9b8af65c3",
+    "UI/Sell.lua": "b905b4e3972f1994c8d77bb0fb2ade15d44387ac7694802c40f44475483c9e83",
+    "UI/Watchlist.lua": "c9b5d777b0c6d86eb6b737a281e95e5468f9d0897017ad8181e53b7617f82195",
+    "UI/Window.lua": "66d30a7ef2b9c91bb7722bed251ad04a56c54c29feefdd6808acbed4207c69b5"
+  },
+  "watchlist": {
+    "maximum": 200,
+    "visibleRows": 10,
+    "sortDefault": "target status, discount to target, estimated net, name",
+    "uiWorkload": {
+      "scrolls": 200,
+      "searches": 200,
+      "newFrames": 0,
+      "newPricingPublications": 0,
+      "metadataReadsDuringScroll": 0,
+      "maxScrollMS": 2.23
+    },
+    "alerts": {
+      "default": "grouped automatic review, optional chat off",
+      "triggers": [
+        "completed scan",
+        "AH entry with fresh saved results"
+      ],
+      "deduplication": [
+        "same or higher matched price",
+        "repeat visit",
+        "reload",
+        "manual review"
+      ],
+      "rearm": [
+        "fresh out-of-target scan",
+        "fresh unlisted scan"
+      ],
+      "deferral": [
+        "combat",
+        "closed AH",
+        "stale or future data",
+        "active scan",
+        "selling",
+        "purchase confirmation",
+        "typing",
+        "target/ledger editing"
+      ]
+    },
+    "itemIDs": "backend retained; absent from visible selection/editing workflow",
+    "existingWatches": "targets and exact/item-wide scope preserved"
+  },
+  "workloads": [
+    ".BUNDLED_REFERENCE_BENCHMARK sources=243 rows=1876 packed_kib=34.12 with_cache_kib=54.11 cached_sources=8 max_decode_ms=0.173",
+    "....CLASSIC_REFERENCE_BENCHMARK rows=1284783 packed_kib=1951.14 with_cache_kib=1957.62 max_source_rows=564 max_decode_ms=525.067",
+    "TRACKING_BENCHMARK npcs=200 item_counters=12800 receipts=2600 source_ring=2048 session_types=500 retained_lua_kib=4764 cpu_ms=593.55 requests=0",
+    "WATCHLIST_UI_BENCHMARK watches=200 visible_rows=10 scrolls=200 searches=200 new_frames=0 new_publications=0 metadata_reads_during_scroll=0 cpu_ms=333.67 max_scroll_ms=2.23 requests=0",
+    "REFERENCE_BENCHMARK sources=1000 rows=500000 packed_lua_kib=1861 retained_with_cache_kib=3426 decoded_cache_rows=4000 max_decode_ms=4.23 total_decode_ms=68.20 requests=0",
+    "FARMING_BENCHMARK active_minutes=600 receipts=12000 minute_buckets=60 saved_locations=5 retained_kib=24.51 cpu_ms=1770.20 requests=0",
+    "SESSION_STORAGE_BENCHMARK saved=50 items=25000 recent_receipts=1000 retained_kib=10511.13 cpu_ms=7299.96 reload_ms=193.24 reduced_to=5",
+    "BENCHMARK items=5000 days=15 ticks=89 cpu_ms=358.06 max_tick_ms=4.23 results=500 heap_lua_kib=64131 retained_lua_kib=17779",
+    "SEARCH_BENCHMARK items=16000 days=10 cold_cpu_ms=1278.36 cold_ticks=319 cold_max_ms=4.75 warm_cpu_ms=263.35 warm_ticks=69 warm_max_ms=4.23 warm_metadata_calls=0 empty_cpu_ms=264.19 empty_ticks=69 empty_max_ms=4.91 analysis_retained_kib=5423 requests=0",
+    "MARKET_EVENT_BENCHMARK items=16000 days=10 queries=4 builds=4 publications=4 replies=160 frames=528 cpu_ms=1154.73 max_step_ms=4.67 requests=0",
+    "MARKET_CACHE_BENCHMARK items=16000 queries=4 builds=5 publications=5 native_reads_after_eviction=0 cache_entries=16000 cache_hits=640 replies=12336 frames=771 cpu_ms=3277.07 max_step_ms=31.36",
+    "ECONOMY_BENCHMARK watches=200 history_days=15 steps=11 watch_cpu_ms=12.37 max_step_ms=1.38 ledger_entries=2000 cached_view_cpu_ms=12.74 csv_bytes=237146 requests=0",
+    "TRANSACTION_BENCHMARK invoices=500 steps=100 mail_cpu_ms=82.70 max_step_ms=2.86 ledger_entries=10000 cached_filtered_view_cpu_ms=21.77 filtered_entries=5250 csv_bytes=1165430 requests=0"
+  ],
+  "documentationGuidesChecked": 17,
+  "documentationLinksChecked": 23,
+  "reportedClient": {
+    "version": "1.60.1",
+    "build": 70959,
+    "interface": 16001,
+    "testRevision": 4
+  },
+  "reportedNativeObservations": {
+    "sellArrowsItem": "installed",
+    "sellArrowsCommodity": "installed",
+    "farmingIgnoredMoney": 0,
+    "exactPriorDates": 2
+  },
+  "nativeVerification": "pending: watchlist layout, drag/paste, native Buy navigation and quiet review timing on client 70959"
+}
