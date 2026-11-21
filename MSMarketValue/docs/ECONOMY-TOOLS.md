@@ -16,7 +16,7 @@ Left-click a row to open its native Buy page. Broader equipment watches open a n
 | Return | Estimated net profit divided by the scan price |
 | Status | Target met, watching, tracking, missing history or a scan/listing gap |
 
-Profit/return need earlier history; a buy-price-only target can match immediately. Hover for enabled targets, exact-history days, listed units and the difference from your buy target. Saved asking prices can change; review live listings before buying. Keep up to 200 watches per market.
+Profit and return follow **Price settings**. Daily compares with earlier priced UTC dates, and Intraday compares with earlier scans today. A buy-price-only target can match after one scan. Hover for targets, sample counts, listed units and the difference from your buy target. Review live listings before buying. Keep up to 200 watches per market.
 
 Watch settings stays within the watchlist. By default, new matches or lower matched prices can open one grouped review after a scan or on an AH visit. Reviewed results stay quiet across repeat visits, unchanged scans and reloads. A fresh scan showing a watch out of target or unlisted rearms it for a later match. An already-open watchlist updates in place.
 

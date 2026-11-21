@@ -21,17 +21,57 @@ local function Button(parent, text, x, y, width, handler)
     A.Help.Button(button, "main", text); return button
 end
 
+local function PriceBasisSwitch(parent)
+    Label(parent, "Prices", 14, -48, 130)
+    local switch = CreateFrame("Button", nil, parent)
+    switch:SetPoint("TOPLEFT", parent, "TOPLEFT", 166, -41)
+    switch:SetSize(184, 26)
+    switch:RegisterForClicks("LeftButtonUp")
+    switch.dailyLabel = Label(switch, "Daily", 0, -7, 56)
+    switch.dailyLabel:SetJustifyH("RIGHT")
+    switch.intradayLabel = Label(switch, "Intraday", 126, -7, 58)
+
+    local rim = switch:CreateTexture(nil, "BACKGROUND")
+    rim:SetPoint("CENTER", switch, "CENTER")
+    rim:SetSize(52, 17)
+    rim:SetColorTexture(.43, .34, .23)
+    local track = switch:CreateTexture(nil, "BORDER")
+    track:SetPoint("CENTER", rim, "CENTER")
+    track:SetSize(48, 13)
+    track:SetColorTexture(.10, .085, .07)
+    local thumb = switch:CreateTexture(nil, "ARTWORK")
+    thumb:SetTexture("Interface\\Buttons\\UI-SliderBar-Button-Horizontal")
+    thumb:SetSize(30, 30)
+    switch.thumb = thumb
+
+    switch:SetScript("OnClick", function()
+        if not D.data or U.Combat() then return end
+        local settings = D.Settings()
+        settings.priceBasis = settings.priceBasis == "daily" and "intraday" or "daily"
+        A.refreshTooltips = true
+        A.Drops.InvalidateDisplay()
+        UI.Refresh()
+    end)
+    A.Help.Setting(switch, "priceBasis")
+    return switch
+end
+
 local function Check(parent, key, text, y, compact)
     local button = CreateFrame("CheckButton", nil, parent, "UICheckButtonTemplate")
-    button:SetSize(compact and 22 or 26, compact and 22 or 26)
+    local size = compact and 20 or 26
+    button:SetSize(size, size)
     button:SetPoint("TOPLEFT", parent, "TOPLEFT", 12, y)
-    button.label = Label(parent, text, compact and 38 or 41, y - (compact and 5 or 7), 309)
+    button.label = Label(parent, text, compact and 38 or 41, y - (compact and 4 or 7), 309)
     A.Help.Setting(button, key)
     button:SetScript("OnClick", function(self)
         if not D.data then return end
         D.data.settings[key] = self:GetChecked() and true or false
         A.Help.Refresh()
-        if key ~= "showInterfaceTips" and A.Tooltips then A.Tooltips.RefreshVisible() end
+        if key == "showMinimapBadge" then
+            A.MinimapBadge.Refresh()
+        elseif key ~= "showInterfaceTips" and A.Tooltips then
+            A.Tooltips.RefreshVisible()
+        end
         UI.Refresh()
     end)
     UI.checks[key] = button
@@ -57,6 +97,67 @@ local function PortraitWindow(name, title, width, height)
     frame.CloseButton:SetScript("OnClick", function() frame:Hide() end)
     table.insert(UISpecialFrames, name)
     return frame
+end
+
+local function ChangeRuleset(ruleset)
+    if U.Combat() then return end
+    if S.active or S.paused then
+        U.Print("Finish or discard the current scan before changing your ruleset.")
+        return
+    end
+    local market = U.MarketInfo()
+    if not D.SetRuleset(market, ruleset) then return end
+    local current = U.MarketInfo()
+    UI.rulesetFrame:Hide()
+    if current.key ~= market.key then
+        S.OnMarketChanged(current.key)
+        if A.auctionOpen then A.Watchlist.OnAuctionShow() end
+        A.refreshTooltips = true
+    end
+    U.Notify()
+    if current.key then U.Print("Auction House market set to " .. current.label .. ".")
+    else UI.ShowRuleset(current) end
+end
+
+function UI.ShowRuleset(market)
+    market = market or U.MarketInfo()
+    if not D.data or not market.canChooseRuleset or U.Combat() then return false end
+    if not UI.rulesetFrame then
+        local frame = PortraitWindow("MSMarketValueRuleset", A.TITLE .. " - Ruleset", 452, 218)
+        UI.rulesetFrame = frame
+        frame:SetScript("OnHide", function() A.Help.Hide() end)
+        local inset = Inset(frame, 12, -42, 428, 164)
+        Label(inset, "Which ruleset are you playing on?", 12, -10, 400, "GameFontNormal")
+        UI.rulesetExplanation = Label(inset, "", 12, -34, 400)
+        UI.rulesetButtons = {}
+        for index, ruleset in ipairs(U.rulesetOrder) do
+            local choice = ruleset
+            local x = 12 + ((index - 1) % 3) * 136
+            local y = -65 - math.floor((index - 1) / 3) * 33
+            UI.rulesetButtons[choice] = Button(inset, U.rulesetNames[choice], x, y, 132, function() ChangeRuleset(choice) end)
+        end
+        UI.rulesetAuto = Button(inset, "Use auto-detect", 284, -98, 132, function() ChangeRuleset(nil) end)
+        Button(inset, "Later", 284, -131, 132, function() frame:Hide() end)
+        U.ManageWindow(frame)
+    end
+    local detail = market.pendingRuleset and "The game did not report a ruleset. Choose one to load your Auction House data."
+        or ("Current market: " .. market.label .. ".")
+    UI.rulesetExplanation:SetText(detail)
+    UI.rulesetButtons[U.defaultRuleset]:SetText(market.pendingRuleset and "PvP (default)" or "PvP")
+    UI.rulesetAuto:SetShown(market.selectedRuleset ~= nil)
+    local canChange = not S.active and not S.paused
+    for _, button in pairs(UI.rulesetButtons) do button:SetEnabled(canChange) end
+    UI.rulesetAuto:SetEnabled(canChange)
+    UI.rulesetFrame:Show()
+    U.FocusWindow(UI.rulesetFrame)
+    if market.pendingRuleset then UI.rulesetPrompted = true end
+    return true
+end
+
+function UI.MaybePromptRuleset()
+    if UI.rulesetPrompted or not D.data or U.Combat() then return end
+    local market = U.MarketInfo()
+    if market.pendingRuleset then UI.ShowRuleset(market) end
 end
 
 function UI.DiagnosticsText()
@@ -94,6 +195,12 @@ function UI.DiagnosticsText()
         "Market identity: " .. tostring(market.kind or "unavailable"),
         "Ruleset: " .. tostring(market.ruleset or "undetected"),
         "Ruleset source: " .. tostring(market.rulesetSource or "unavailable"),
+        "Price averages: addon=" .. D.Settings().priceBasis .. "; opportunities=" .. A.Market.PriceBasis() ..
+            (D.Settings().marketPriceBasis == "addon" and " (uses addon setting)" or ""),
+        "Native ruleset flags: PvP=" .. tostring(market.pvpFlag) .. "; Roleplay=" .. tostring(market.roleplayFlag) ..
+            "; Hardcore=" .. tostring(market.hardcoreFlag) ..
+            " | Detected: " .. (U.rulesetNames[market.detectedRuleset] or "undetected") ..
+            (market.pendingRuleset and " | Default: PvP, awaiting confirmation" or ""),
         "Player faction: " .. market.nativeFaction,
         "Normalized reporting alias: " .. market.normalizedRealm,
         "Public reporting alias: " .. market.realmName,
@@ -103,7 +210,6 @@ function UI.DiagnosticsText()
         "Auction House tab: " .. (UI.tabInstalled and "installed" or (UI.tabReason or "waiting for the auctioneer")),
         "Disenchant profile: " .. A.DEProfile.id .. " (Forever unverified)",
     }
-    if A.TEST_REVISION then table.insert(lines, 2, "Test revision: " .. tostring(A.TEST_REVISION)) end
     local vendorCount, vendorReason = A.Vendor.Status()
     lines[#lines + 1] = "Vendor purchase prices: " .. vendorCount .. " for this player" .. (vendorReason and ("; " .. vendorReason) or "")
     lines[#lines + 1] = "Opportunities tab: " .. (A.MarketUI.tabButton and "installed" or "waiting for the auctioneer")
@@ -142,12 +248,13 @@ function UI.DiagnosticsText()
     lines[#lines+1]=A.SellUI.Diagnostics()
     if tracking.reason then lines[#lines+1]="Transaction detail: "..tracking.reason end
     local history = A.History.Status(market)
+    lines[#lines + 1] = "Intraday scans: " .. history.scansToday .. " completed today (UTC)"
     lines[#lines + 1] = "Historic pricing: " .. (history.reason or string.format("%d UTC day%s for this market; retention=%d days",
         history.days, history.days == 1 and "" or "s", history.retention))
     if history.firstDay then
         lines[#lines + 1] = "History dates UTC: " .. date("!%Y-%m-%d", history.firstDay * 86400) .. " to " .. date("!%Y-%m-%d", history.lastDay * 86400)
     end
-    if market.liveAlias then
+    if market.recoverLiveHosts then
         lines[#lines + 1] = string.format("Earlier reporting hosts: %d; recovered UTC days=%d", history.legacyHosts, history.legacyDays)
         if history.legacyReason then lines[#lines + 1] = "History recovery detail: " .. history.legacyReason end
     end
@@ -278,46 +385,53 @@ function UI.Create()
     frame:SetSize(768, 460)
     frame:SetPoint("TOPLEFT", window, "TOPLEFT", 16, -38)
     UI.content = frame
-    local scan = Inset(frame, 12, -8, 744, 196)
-    Label(scan, "Price snapshot", 14, -13, 365, "GameFontNormal")
-    Label(scan, A.VERSION, 270, -14, 200)
-    UI.farmShortcut = Button(scan,"Farming",376,-8,110,function()A.FarmingUI.Show("session")end)
-    UI.ledgerShortcut = Button(scan,"Ledger",496,-8,110,function()A.EconomyUI.Show("ledger")end)
-    UI.watchShortcut = Button(scan,"Watchlists",616,-8,112,function()A.EconomyUI.Show("watch")end)
-    UI.marketText = Label(scan, "", 14, -34, 716)
-    UI.snapshotText = Label(scan, "", 14, -55, 716)
-    UI.statusText = Label(scan, "", 14, -89, 716)
+    UI.farmShortcut = Button(frame, "Farming", 72, -8, 192, function() A.FarmingUI.Show("session") end)
+    UI.ledgerShortcut = Button(frame, "Ledger", 288, -8, 192, function() A.EconomyUI.Show("ledger") end)
+    UI.watchShortcut = Button(frame, "Watchlists", 504, -8, 192, function() A.EconomyUI.Show("watch") end)
+    local scan = Inset(frame, 12, -43, 744, 165)
+    Label(scan, "Price snapshot", 14, -12, 400, "GameFontNormal")
+    UI.rulesetButton = Button(scan, "Change ruleset", 604, -8, 126, function() UI.ShowRuleset() end)
+    UI.rulesetButton:SetHeight(22)
+    A.Help.Bind(UI.rulesetButton, "Choose the ruleset for this character's auction prices and history.")
+    UI.marketText = Label(scan, "", 14, -29, 500)
+    UI.snapshotText = Label(scan, "", 14, -46, 716)
+    UI.statusText = Label(scan, "", 14, -76, 716)
     UI.progress = CreateFrame("StatusBar", nil, scan)
-    UI.progress:SetPoint("TOPLEFT", 14, -135)
-    UI.progress:SetSize(716, 10)
+    UI.progress:SetPoint("TOPLEFT", 14, -116)
+    UI.progress:SetPoint("TOPRIGHT", -14, -116)
+    UI.progress:SetHeight(8)
     UI.progress:SetStatusBarTexture("Interface\\TargetingFrame\\UI-StatusBar")
     UI.progress:SetStatusBarColor(0.2, 0.7, 0.2)
     UI.progress:SetMinMaxValues(0, 1)
     UI.progress:SetValue(0)
-    UI.scanButton = Button(scan, "Scan entire AH", 14, -155, 152, function()
+    UI.scanButton = Button(scan, "Scan entire AH", 14, -130, 170, function()
         local ok, message = S.Start()
         if not ok then U.Print(message) end
     end)
-    UI.stopButton = Button(scan, "Pause scan", 178, -155, 110, function() S.Pause() end)
-    Button(scan, "Copy diagnostics", 300, -155, 150, UI.ShowDiagnostics)
-    UI.restartButton = Button(scan, "Restart scan", 462, -155, 124, function()
+    UI.stopButton = Button(scan, "Pause scan", 196, -130, 170, function() S.Pause() end)
+    Button(scan, "Copy diagnostics", 378, -130, 170, UI.ShowDiagnostics)
+    UI.restartButton = Button(scan, "Restart scan", 560, -130, 170, function()
         local ok, message = S.Restart()
         if not ok then U.Print(message) end
     end)
+    local versionText = scan:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    versionText:SetPoint("BOTTOMRIGHT", UI.progress, "TOPRIGHT", -6, 4)
+    versionText:SetText(A.VERSION)
 
     local settings = Inset(frame, 12, -216, 366, 204)
     UI.tooltipSettingsTab = Button(settings, "Tooltips", 10, -7, 146, function() UI.SettingsPage("tooltips") end)
     UI.craftSettingsTab = Button(settings, "Crafting & history", 163, -7, 193, function() UI.SettingsPage("craft") end)
     local tooltipSettings = CreateFrame("Frame", nil, settings)
-    tooltipSettings:SetPoint("TOPLEFT", 0, -40); tooltipSettings:SetSize(366, 158)
+    tooltipSettings:SetPoint("TOPLEFT", 0, -37); tooltipSettings:SetSize(366, 160)
     UI.tooltipSettings = tooltipSettings
     Check(tooltipSettings, "showInterfaceTips", "Addon interface tooltips", 0, true)
-    Check(tooltipSettings, "showVendor", "Vendor sell price", -22, true)
-    Check(tooltipSettings, "showHistory", "Historic average and sample days", -44, true)
-    Check(tooltipSettings, "showAuction", "Lowest AH buyout", -66, true)
-    Check(tooltipSettings, "showDisenchant", "Estimated disenchant value", -88, true)
-    Check(tooltipSettings, "showMaterials", "Material ranges and chances", -110, true)
-    Check(tooltipSettings, "showAge", "Snapshot age and stale flag", -132, true)
+    Check(tooltipSettings, "showMinimapBadge", "Show minimap button", -20, true)
+    Check(tooltipSettings, "showVendor", "Vendor sell price", -40, true)
+    Check(tooltipSettings, "showHistory", "Price average and sample count", -60, true)
+    Check(tooltipSettings, "showAuction", "Lowest AH buyout", -80, true)
+    Check(tooltipSettings, "showDisenchant", "Estimated disenchant value", -100, true)
+    Check(tooltipSettings, "showMaterials", "Material ranges and chances", -120, true)
+    Check(tooltipSettings, "showAge", "Snapshot age and stale flag", -140, true)
     local craftSettings = CreateFrame("Frame", nil, settings)
     craftSettings:SetPoint("TOPLEFT", 0, -40); craftSettings:SetSize(366, 158)
     UI.craftSettings = craftSettings
@@ -332,25 +446,26 @@ function UI.Create()
     A.Help.Setting(retention, "historyDays")
     Label(craftSettings, "days", 220, -42, 42)
     UI.retentionApply = Button(craftSettings, "Apply", 272, -34, 76, UI.ApplyRetention)
-    Label(craftSettings, "1-30 days. Latest complete scan per UTC day.", 14, -72, 338)
+    Label(craftSettings, "1–30 days of average prices by UTC date.", 14, -72, 338)
     UI.historyText = Label(craftSettings, "", 14, -98, 338)
     Label(craftSettings, "Shortening history removes older days.\nBack up before reducing retention.", 14, -124, 338)
     UI.SettingsPage("tooltips")
 
     local prices = Inset(frame, 390, -216, 366, 204)
     Label(prices, "Price settings", 14, -13, 338, "GameFontNormal")
-    Label(prices, "Mark prices stale after", 14, -41, 165)
+    UI.priceBasis = PriceBasisSwitch(prices)
+    Label(prices, "Mark prices stale after", 14, -83, 135)
     local stale = CreateFrame("EditBox", nil, prices, "InputBoxTemplate")
-    stale:SetSize(45, 24)
-    stale:SetPoint("TOPLEFT", 185, -34)
+    stale:SetSize(44, 24)
+    stale:SetPoint("TOPLEFT", 153, -77)
     stale:SetAutoFocus(false)
     stale:SetNumeric(true)
     stale:SetMaxLetters(3)
     stale:SetScript("OnEscapePressed", function(self) self:ClearFocus(); UI.Refresh() end)
     UI.staleBox = stale
     A.Help.Setting(stale, "staleHours")
-    Label(prices, "hours (1-168)", 237, -41, 113)
-    Button(prices, "Apply", 260, -72, 90, function()
+    Label(prices, "hours (1–168)", 204, -83, 75)
+    Button(prices, "Apply", 282, -76, 68, function()
         if not D.data then return end
         local value = tonumber(stale:GetText())
         if not U.Number(value, 1, 168, true) then return U.Print("Choose a stale age from 1 to 168 hours.") end
@@ -389,13 +504,30 @@ end
 
 function UI.Refresh()
     if not UI.frame then return end
-    local snapshot = D.Snapshot()
     local market = U.MarketInfo()
+    local snapshot = D.Snapshot(market)
+    local history = A.History.Status(market)
     UI.marketText:SetText("Market: " .. (market.label or "Waiting for market identity"))
+    UI.rulesetButton:SetShown(market.canChooseRuleset)
+    UI.rulesetButton:SetText(market.pendingRuleset and "Confirm ruleset" or "Change ruleset")
+    UI.rulesetButton:SetEnabled(D.data ~= nil and not U.Combat() and not S.active and not S.paused)
+    local switch = UI.priceBasis
+    local intraday = D.Settings().priceBasis == "intraday"
+    local active = intraday and switch.intradayLabel or switch.dailyLabel
+    local inactive = intraday and switch.dailyLabel or switch.intradayLabel
+    active:SetTextColor(1, .84, .23)
+    inactive:SetTextColor(.67, .69, .72)
+    switch.thumb:ClearAllPoints()
+    switch.thumb:SetPoint("CENTER", switch, "CENTER", intraday and 14 or -14, 0)
+    switch:SetEnabled(D.data ~= nil and not U.Combat())
     if snapshot then
-        UI.snapshotText:SetText(string.format("Saved: %d auctions | %d priced items | %s%s\nA complete new scan replaces this market's snapshot.", snapshot.totalRows, snapshot.distinctItems, U.Age(snapshot.startedAt), D.IsStale(snapshot) and " (stale)" or ""))
+        UI.snapshotText:SetText(string.format("Saved: %d auctions | %d priced items | %s%s\nToday (UTC): %d scans | %d saved days",
+            snapshot.totalRows, snapshot.distinctItems, U.Age(snapshot.startedAt), D.IsStale(snapshot) and " (stale)" or "",
+            history.scansToday, history.days))
     else
-        UI.snapshotText:SetText("No complete scan saved for this market.\n" .. (market.key and "Click Scan entire AH at an open auctioneer." or market.reason))
+        local hint = market.pendingRuleset and "Confirm your ruleset in Price snapshot." or
+            (market.key and "Click Scan entire AH at an open auctioneer." or market.reason)
+        UI.snapshotText:SetText("No complete scan saved for this market.\n" .. hint)
     end
     local status = S.state .. (S.message and (": " .. S.message) or "")
     if S.work then
@@ -408,15 +540,14 @@ function UI.Refresh()
     UI.statusText:SetText(status)
     UI.progress:SetValue(S.work and (S.totalRows > 0 and S.work.processedRows / S.totalRows or 1) or (S.state == "COMPLETE" and 1 or 0))
     UI.scanButton:SetText(S.paused and (S.bufferLost and S.RemainingCooldown() == 0 and "Restart scan" or "Resume scan") or "Scan entire AH")
-    UI.scanButton:SetEnabled(D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and not S.active and (S.paused == true or S.RemainingCooldown() == 0))
+    UI.scanButton:SetEnabled(market.key ~= nil and D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and not S.active and (S.paused == true or S.RemainingCooldown() == 0))
     UI.stopButton:SetEnabled(S.active)
-    UI.restartButton:SetEnabled(D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and S.paused == true and S.RemainingCooldown() == 0)
+    UI.restartButton:SetEnabled(market.key ~= nil and D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and S.paused == true and S.RemainingCooldown() == 0)
     if UI.tabButton then UI.tabButton:SetEnabled(not U.Combat()) end
     for key, check in pairs(UI.checks) do check:SetChecked(D.Settings()[key]) end
     if not UI.staleBox:HasFocus() then UI.staleBox:SetText(tostring(D.Settings().staleHours)) end
     if not UI.retentionBox:HasFocus() then UI.retentionBox:SetText(tostring(D.Settings().historyDays)) end
-    local history = A.History.Status()
-    UI.historyText:SetText(history.reason or ("Saved daily scans for this market: " .. history.days))
+    UI.historyText:SetText(history.reason or ("Saved UTC days for this market: " .. history.days))
 end
 
 function UI.Dock()
@@ -506,6 +637,7 @@ function UI.ShowStandalone()
     UI.content:Show()
     UI.frame:Show()
     U.FocusWindow(UI.frame)
+    UI.MaybePromptRuleset()
 end
 
 function UI.OpenSettings()

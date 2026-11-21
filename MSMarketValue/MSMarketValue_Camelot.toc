@@ -2,12 +2,12 @@
 ## Title: MS Market Value
 ## Notes: Auction opportunities, crafting profit, personal ledger, farming sessions and creature/harvesting drop observations.
 ## Author: MoobStack
-## Version: 1.3.1
+## Version: 1.3.2
 ## Category: Auction & Economy
 ## IconTexture: Interface\Icons\INV_Misc_Coin_02
 ## SavedVariables: MSMarketValueDB
 ## LoadSavedVariablesFirst: 1
-## X-Build: 2026-11-17-release001
+## X-Build: 2026-11-21-release001
 
 Bootstrap.lua
 Libs\LibStub\LibStub.lua
@@ -35,6 +35,7 @@ Auction\Scanner.lua
 Integrations\Tooltips.lua
 UI\Help.lua
 UI\Window.lua
+UI\Minimap.lua
 UI\Crafting.lua
 UI\Market.lua
 UI\Economy.lua

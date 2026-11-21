@@ -111,7 +111,8 @@ function UI.Tooltip(button,row)
     GameTooltip:AddDoubleLine("Minimum profit",U.Coins(row.watch.minProfit))
     if row.profit then GameTooltip:AddDoubleLine("Estimated net / item",A.CraftingUI.SignedMoney(row.profit))end
     if row.targetGap then GameTooltip:AddDoubleLine("Below buy target",string.format("%+.1f%%",row.targetGap))end
-    GameTooltip:AddDoubleLine("Earlier priced UTC days",row.days.." / "..D.Settings().marketMinDays)
+    if row.scans then GameTooltip:AddDoubleLine("Earlier scans today (UTC)", tostring(row.scans))
+    else GameTooltip:AddDoubleLine("Earlier priced UTC days", row.days.." / "..D.Settings().marketMinDays) end
     if row.units then GameTooltip:AddDoubleLine("Listed units in scan",tostring(row.units))end
     GameTooltip:AddLine(row.status)
     GameTooltip:AddLine("Left-click: Buy page. Right-click or Edit: targets.",.61,.66,.70,true);GameTooltip:Show()
@@ -274,12 +275,14 @@ function UI.Refresh()
     UI.only:SetChecked(D.Settings().watchReadyOnly)
     local rows=UI.View();UI.offset=math.max(0,math.min(UI.offset,math.max(0,#rows-ROWS)))
     local current=W.Current();local matched=W.MatchCount()
-    UI.summary:SetText(matched.." target"..(matched==1 and""or"s").." met  |  "..#W.rows.." watched"..(W.job and"  |  Updating..."or""))
+    local basis = A.History.basisNames[D.Settings().priceBasis]
+    UI.summary:SetText(matched.." target"..(matched==1 and""or"s").." met  |  "..#W.rows.." watched  |  "..basis.." estimates"..(W.job and"  |  Updating..."or""))
     for index,button in ipairs(UI.rows)do
         local row=rows[UI.offset+index];button.row=row
         if row then
             local ready=row.matched and current
-            local status=W.job and"Updating"or row.status=="More history needed"and(row.days.."/"..D.Settings().marketMinDays.." days")or
+            local needs = row.scans and "Earlier scan needed" or (row.days.."/"..D.Settings().marketMinDays.." days")
+            local status=W.job and"Updating"or row.status=="More history needed"and needs or
                 row.status=="Fresh scan needed"and"Scan needed"or row.status=="Not listed"and"Not listed"or row.status=="Tracking only"and"Tracking"or row.status
             if not current and not W.job and row.matched then status="Scan needed"end
             local values={UI.Name(row),row.current and U.Coins(row.current)or"--",row.watch.maxBuy>0 and U.Coins(row.watch.maxBuy)or"Off",

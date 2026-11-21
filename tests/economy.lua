@@ -37,7 +37,7 @@ test("net crafting values deduct AH cut while retaining gross values",function()
     truth(math.floor(r.breakEvenUnitMax*.95)>=r.cost);truth(math.floor((r.breakEvenUnitMax-1)*.95)<r.cost)
 end)
 test("net profit filtering removes recipes whose spread is consumed by fees",function()
-    local w,A=craftingWorld();A.DB.Snapshot().prices[200].low=420;A.DB.Snapshot().variants["200:0"].low=420;w.recipeIDs={1};A.Crafting.Tick()
+    local w,A=craftingWorld();w:priceDay().prices[200]=420;w:priceDay().variants["200:0"]=420;w.recipeIDs={1};A.Crafting.Tick()
     equal(A.Crafting.rows[1].profitMin,20);equal(A.Crafting.rows[1].netProfitMin,-1);equal(#A.Crafting.Ranked("profit"),0)
     A.DB.data.settings.marketFee=0;equal(#A.Crafting.Ranked("profit"),1);equal(A.Crafting.builds,1)
 end)
@@ -61,7 +61,7 @@ test("service quotes include markup labor and minimum without auction fees",func
     equal(A.Crafting.selected.netProfitMin,nil)
 end)
 test("customer-material quotes work with missing prices and do not treat materials as free",function()
-    local w,A=serviceWorld();A.DB.Snapshot().prices[100]=nil;local s=A.DB.Settings()
+    local w,A=serviceWorld();w:priceDay().prices[100]=nil;A.History.Prune();local s=A.DB.Settings()
     s.serviceCustomerMaterials=true;s.serviceLabor=5000;s.serviceMinimum=1000;A.Crafting.Tick()
     equal(A.Crafting.selected.cost,nil);equal(A.Crafting.selected.quote,5000)
     equal(A.Crafting.QuoteText(A.Crafting.selected),"Recipe 4 - 50s 00c ea")
@@ -317,13 +317,13 @@ test("native invoice imports leave counterparty and subject data out of saved re
 end)
 
 test("turning off customer materials immediately invalidates an uncosted service quote",function()
-    local w,A=serviceWorld();A.DB.Snapshot().prices[100]=nil;A.DB.data.settings.serviceCustomerMaterials=true
+    local w,A=serviceWorld();w:priceDay().prices[100]=nil;A.History.Prune();A.DB.data.settings.serviceCustomerMaterials=true
     A.DB.data.settings.serviceLabor=10000;A.Crafting.Tick();equal(A.Crafting.DisplayQuote(A.Crafting.selected),10000)
     A.DB.data.settings.serviceCustomerMaterials=false
     equal(A.Crafting.DisplayQuote(A.Crafting.selected),nil);equal(A.Crafting.QuoteText(A.Crafting.selected),nil)
 end)
 test("service count summaries follow quote mode without a catalog rebuild",function()
-    local w,A=serviceWorld();A.DB.Snapshot().prices[100]=nil;A.Crafting.Invalidate();A.Crafting.Tick()
+    local w,A=serviceWorld();w:priceDay().prices[100]=nil;A.History.Prune();A.Crafting.Invalidate();A.Crafting.Tick()
     local UI=A.CraftingUI;equal(UI.CatalogSummary().missing,1)
     local builds=A.Crafting.builds;A.DB.data.settings.serviceCustomerMaterials=true;A.DB.data.settings.serviceLabor=10000
     equal(UI.CatalogSummary().missing,0);equal(UI.CatalogSummary().services,1);equal(A.Crafting.builds,builds)

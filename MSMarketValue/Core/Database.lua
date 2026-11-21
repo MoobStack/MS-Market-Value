@@ -4,10 +4,11 @@ local D = {}
 A.DB = D
 
 D.defaults = {
-    showInterfaceTips = true, showVendor = true, showAuction = true, showDisenchant = true,
+    showInterfaceTips = true, showMinimapBadge = true, showVendor = true, showAuction = true, showDisenchant = true,
     showMaterials = true, showAge = true, showHistory = true,
     craftAutoOpen = false, showAllRecipes = false,
-    staleHours = 24, quoteMarkup = 0, historyDays = 30,
+    staleHours = 24, quoteMarkup = 0, historyDays = 30, priceBasis = "daily",
+    marketPriceBasis = "addon",
     marketLookback = 14, marketMinDays = 3, marketMinReturn = 20,
     marketMinProfit = 100, marketFee = 5, marketMove = 15,
     marketLowMin = 0, marketLowMax = 0, marketStockMin = 0, marketStockMax = 0,
@@ -35,7 +36,7 @@ function D.Initialize()
     local db = _G.MSMarketValueDB
     if db == nil then db = { schema = A.SCHEMA, markets = {}, settings = {} } end
     if type(db) ~= "table" or (db.schema ~= nil and db.schema ~= A.SCHEMA) then
-        A.disabledReason = "Unsupported saved-data schema. Back up MSMarketValueDB.lua before changing it."
+        A.disabledReason = "Unsupported saved-data schema. Back up MSMarketValue.lua in SavedVariables before changing it."
         return false
     end
     if db.markets ~= nil and type(db.markets) ~= "table" then
@@ -66,6 +67,10 @@ function D.Initialize()
         end
     end
     if db.settings.dropMode ~= "observed" and db.settings.dropMode ~= "reference" then db.settings.dropMode = "reference" end
+    if db.settings.priceBasis ~= "intraday" then db.settings.priceBasis = "daily" end
+    if db.settings.marketPriceBasis ~= "daily" and db.settings.marketPriceBasis ~= "intraday" then
+        db.settings.marketPriceBasis = "addon"
+    end
     if db.settings.dropSort~="rate_desc" and db.settings.dropSort~="rate_asc" and db.settings.dropSort~="value" then db.settings.dropSort="rate_desc" end
     if not ({status=true,name=true,current=true,target=true,profit=true,roi=true})[db.settings.watchSort] then db.settings.watchSort="status" end
     if type(db.excludedItems) ~= "table" then db.excludedItems = {} end
@@ -74,6 +79,7 @@ function D.Initialize()
     db.build = A.BUILD
     _G.MSMarketValueDB = db
     D.data = db
+    D.loginRuleset = nil
     D.legacyPriceViews, D.profileKeys = {}, {}
     A.History.Initialize()
     A.Vendor.Initialize()
@@ -86,6 +92,34 @@ end
 
 function D.Settings()
     return D.data and D.data.settings or D.defaults
+end
+
+local function RulesetScope(market)
+    return market.region .. "|" .. market.faction
+end
+
+function D.RulesetSelection(market)
+    if not D.data then return nil end
+    local choice, saved = D.loginRuleset, D.data.characterRulesets
+    if not choice and not U.Table(saved) then return nil end
+    local scope, guid = RulesetScope(market), U.PlayerGUID()
+    if choice and choice.scope == scope and (not choice.guid or not guid or choice.guid == guid) then
+        return choice.ruleset, choice.guid and "saved selection" or "selected for this login"
+    end
+    local ruleset = guid and U.Table(saved) and saved[scope .. "|" .. guid]
+    if U.String(ruleset) and U.rulesetNames[ruleset] then return ruleset, "saved selection" end
+end
+
+function D.SetRuleset(market, ruleset)
+    if not D.data or not market.canChooseRuleset then return false end
+    if ruleset ~= nil and (not U.String(ruleset) or not U.rulesetNames[ruleset]) then return false end
+    local scope, guid = RulesetScope(market), U.PlayerGUID()
+    D.loginRuleset = ruleset and { scope = scope, guid = guid, ruleset = ruleset } or nil
+    if guid then
+        if not U.Table(D.data.characterRulesets) then D.data.characterRulesets = {} end
+        D.data.characterRulesets[scope .. "|" .. guid] = ruleset
+    end
+    return true
 end
 
 function D.ValidSnapshot(snapshot, key)
@@ -105,7 +139,7 @@ end
 -- Blizzard allows one faction per account there. Bind those sources once to
 -- that faction; conflicting saved vendor observations block the inference.
 function D.LegacyPrices(market)
-    if not D.data or not market.key or not market.liveAlias then return nil end
+    if not D.data or not market.key or not market.recoverLiveHosts then return nil end
     local view = D.legacyPriceViews[market.key]
     if view then return view end
     view = { count = 0, keys = {} }
@@ -162,13 +196,45 @@ function D.LegacyPrices(market)
     return view
 end
 
+local function CharacterActivityKey(root, profiles, market, suffix)
+    local personalKey = "character|" .. RulesetScope(market) .. suffix
+    -- Keep the key used by any receipts recorded before confirmation.
+    if U.Table(profiles[personalKey]) then return personalKey end
+    if market.key then return nil end
+
+    -- A character with one existing profile can keep recording there while
+    -- Auction House prices wait for ruleset confirmation.
+    local prior
+    local links = U.Table(root.liveHostProfiles) and root.liveHostProfiles
+    for _, ruleset in ipairs(U.rulesetOrder) do
+        local key = U.RulesetMarketKey(market.region, ruleset, market.faction) .. suffix
+        local linked = links and links[key]
+        local host = U.String(linked) and #linked > #suffix and linked:sub(1, -#suffix - 1)
+        if U.Table(profiles[key]) then
+            linked = key
+        elseif not host or linked:sub(-#suffix) ~= suffix or
+            not U.LegacyLiveHost(host, { recoverLiveHosts = true, region = market.region, ruleset = ruleset }) or
+            not U.Table(profiles[linked]) then
+            linked = nil
+        end
+        if linked and prior and prior ~= linked then return personalKey end
+        prior = linked or prior
+    end
+    return prior or personalKey
+end
+
 -- Keep one pre-existing profile readable after the market key changes. Never
 -- combine ledgers (their receipt IDs can overlap) or duplicate saved tables.
 function D.ProfileKey(root, field, market, suffix)
+    local profiles = U.Table(root) and root[field]
+    if field == "characters" and market.canChooseRuleset and U.Table(profiles) then
+        local personalKey = CharacterActivityKey(root, profiles, market, suffix)
+        if not market.key or (personalKey and U.Accessible(profiles[market.key .. suffix]) and
+            profiles[market.key .. suffix] == nil) then return personalKey end
+    end
     if not market.key then return nil end
     local key = market.key .. suffix
-    local profiles = U.Table(root) and root[field]
-    if not market.liveAlias or not U.Table(profiles) or not U.Accessible(profiles[key]) or profiles[key] ~= nil then return key end
+    if not market.recoverLiveHosts or not U.Table(profiles) or not U.Accessible(profiles[key]) or profiles[key] ~= nil then return key end
     if field == "markets" and market.ruleset == "pvp" then
         local legacy = D.LegacyPrices(market)
         if legacy and legacy.reason then return key end
@@ -190,7 +256,7 @@ function D.ProfileKey(root, field, market, suffix)
     local prior = links and links[key]
     if not U.Accessible(prior) then return key end
     if not Eligible(prior) then
-        prior = market.legacyKey .. suffix
+        prior = market.legacyKey and (market.legacyKey .. suffix)
         if not Eligible(prior) then
             local bestSize = -1
             prior = nil

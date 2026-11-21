@@ -13,10 +13,22 @@ test("interface help defaults on and an explicit off choice survives reload",fun
     local w2,B=fresh(A.DB.data);w2:load();equal(B.Help.Enabled(),false)
     equal(B.DB.Settings().showAuction,true);equal(B.DB.Settings().showDrops,true);equal(w2.requests,0)
 end)
-test("main tooltip controls fit seven rows and opt-out hides help immediately",function()
+test("main tooltip controls fit eight rows and opt-out hides help immediately",function()
     local _,A,H=world();local box=A.UI.checks.showInterfaceTips
-    equal(box.label.text,"Addon interface tooltips");equal(box.width,22)
-    local last=A.UI.checks.showAge;truth(-last.points[1][5]+last.height<=158)
+    equal(box.label.text,"Addon interface tooltips")
+    local rows, panel = {}, A.UI.tooltipSettings
+    for _, check in pairs(A.UI.checks) do
+        if check:GetParent() == panel then rows[#rows + 1] = check end
+    end
+    equal(#rows, 8)
+    table.sort(rows, function(a, b) return a.points[1][5] > b.points[1][5] end)
+    local bottom = 0
+    for _, check in ipairs(rows) do
+        local top = -check.points[1][5]
+        truth(top >= bottom)
+        bottom = top + check:GetHeight()
+    end
+    truth(bottom <= panel:GetHeight())
     enter(A.UI.restartButton);truth(GameTooltip:IsShown());truth(text():find("unfinished",1,true))
     box:SetChecked(false);click(box);equal(GameTooltip:IsShown(),false);equal(H.owner,nil)
     enter(A.UI.restartButton);equal(GameTooltip:IsShown(),false)

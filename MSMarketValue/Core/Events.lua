@@ -51,6 +51,7 @@ local function Login()
         A.Tooltips.Install()
         A.Drops.Install()
         A.FarmingUI.HUD()
+        A.MinimapBadge.Refresh()
     end
     U.Print(A.VERSION .. " / " .. A.BUILD .. ". Type /msmv to open.")
     if A.disabledReason then U.Print(A.disabledReason) end
@@ -71,12 +72,16 @@ frame:SetScript("OnEvent", function(_, event, ...)
         end
     elseif event == "PLAYER_LOGIN" then
         Login()
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        A.MinimapBadge.Refresh()
+        A.UI.MaybePromptRuleset()
     elseif event == "AUCTION_HOUSE_SHOW" then
         A.auctionOpen = true
         A.UI.OnAuctionShow()
         A.EconomyUI.InstallBuyButtons()
         A.SellUI.Install()
         A.Watchlist.OnAuctionShow()
+        A.UI.MaybePromptRuleset()
         U.Notify()
     elseif event == "AUCTION_HOUSE_CLOSED" then
         A.Watchlist.arrivalRequested,A.Watchlist.scanRequested=nil,nil
@@ -122,12 +127,15 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if A.CraftingUI.opener then A.CraftingUI.opener:Hide() end
         if A.CraftingUI.frame then A.CraftingUI.frame:Hide() end
         if A.EconomyUI.editorFrame then A.EconomyUI.editorFrame:Hide() end
+        if A.UI.rulesetFrame then A.UI.rulesetFrame:Hide() end
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.refreshTooltips = true
         if A.auctionOpen then A.UI.OnAuctionShow() end
+        A.UI.MaybePromptRuleset()
         U.Notify()
     elseif event == "PLAYER_LOGOUT" then
         S.Discard("Logging out; the current client session's auction buffer cannot be saved.")
+        A.History.Maintain()
     end
 end)
 
@@ -156,7 +164,7 @@ frame:SetScript("OnUpdate", function(_, elapsed)
         A.Crafting.Tick()
         if A.Vendor.pending and A.Vendor.open then A.Vendor.Capture() end
         if A.MarketUI.panel and A.MarketUI.panel:IsVisible() and not U.Combat() then
-            A.Market.Ensure(A.MarketUI.view, A.MarketUI.sort)
+            A.MarketUI.Ensure()
             A.MarketUI.Refresh()
         end
         if A.auctionOpen and not A.UI.tabInstalled and not U.Combat() then A.UI.InstallAuctionTab() end
@@ -180,7 +188,11 @@ SlashCmdList.MSMARKETVALUE = function(message)
         A.UI.Toggle()
     elseif command == "scan" then
         local ok, reason = S.Start()
-        if not ok then U.Print(reason) end
+        if not ok then
+            U.Print(reason)
+            local market = U.MarketInfo()
+            if A.auctionOpen and market.pendingRuleset then A.UI.ShowRuleset(market) end
+        end
     elseif command == "pause" or command == "stop" then
         if not S.Pause() then U.Print("No scan is running.") end
     elseif command == "resume" then
@@ -209,7 +221,9 @@ SlashCmdList.MSMARKETVALUE = function(message)
         U.Print(snapshot and ("Saved complete snapshot: " .. tostring(snapshot.totalRows) .. " rows, " .. U.Age(snapshot.startedAt) .. ".") or "No complete snapshot for this market.")
     elseif command == "diagnostics" then
         A.UI.ShowDiagnostics()
+    elseif command == "ruleset" then
+        if not A.UI.ShowRuleset() then U.Print("Ruleset selection is available after entering the world, outside combat.") end
     else
-        U.Print("/msmv | scan | pause | resume | restart | discard | craft | market | watch | ledger | farm | drops | status | diagnostics")
+        U.Print("/msmv | scan | pause | resume | restart | discard | craft | market | watch | ledger | farm | drops | status | diagnostics | ruleset")
     end
 end

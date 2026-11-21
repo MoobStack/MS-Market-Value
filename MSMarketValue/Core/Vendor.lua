@@ -19,10 +19,9 @@ local function Call(fn, ...)
 end
 
 local function CharacterKey()
-    local guid, market = Call(UnitGUID, "player"), U.MarketInfo()
-    local faction = market.faction
-    if not faction and not market.liveAlias then faction = Call(UnitFactionGroup, "player") end
-    if U.String(guid) and #guid <= 128 and U.String(faction) then
+    local guid, market = U.PlayerGUID(), U.MarketInfo()
+    local faction = market.faction or Call(UnitFactionGroup, "player")
+    if guid and U.String(faction) then
         return D.ProfileKey(V.data, "characters", market, "|" .. faction .. "|" .. guid)
     end
 end

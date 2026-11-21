@@ -3,6 +3,17 @@ local U, D, M = A.Util, A.DB, A.Market
 local UI = { view = "deals", sort = "return", page = 1, offset=0, rows = {}, dirty = {} }
 A.MarketUI = UI
 
+local directionSort = { rising = "movement", falling = "movement" }
+local nextDirectionSort = { movement = "return", ["return"] = "profit", profit = "movement" }
+
+local function ActiveSort()
+    return directionSort[UI.view] or UI.sort
+end
+
+function UI.Ensure(force)
+    M.Ensure(UI.view, ActiveSort(), force)
+end
+
 local function Label(parent, text, x, y, width, right)
     local label = parent:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
     label:SetPoint("TOPLEFT", parent, "TOPLEFT", x, y); label:SetSize(width, 16)
@@ -36,7 +47,7 @@ local fields = {
     { "marketMinReturn", "Min return %", 10, -26, 0, 1000 },
     { "marketMinProfit", "Min profit " .. U.coin.gold, 210, -26, 0, 10000 },
     { "marketFee", "AH cut %", 410, -26, 0, 30 },
-    { "marketLookback", "Lookback days", 10, -71, 1, 30 },
+    { "marketLookback", "Daily lookback", 10, -71, 1, 30 },
     { "marketMinDays", "Min priced days", 210, -71, 2, 29 },
     { "marketMove", "Price move %", 410, -71, 0, 1000 },
     { "marketLowMin", "Low qty min", 10, -100, 0, 1000000000 },
@@ -80,7 +91,7 @@ function UI.Apply()
     UI.searchBox:ClearFocus()
     for key, value in pairs(values) do D.data.settings[key] = value; UI.inputs[key]:ClearFocus() end
     UI.message, UI.page, UI.selected, UI.dirty, UI.offset, UI.filtersOpen = nil, 1, nil, {}, 0, false
-    M.Ensure(UI.view, UI.sort); UI.Refresh()
+    UI.Ensure(); UI.Refresh()
     return true
 end
 
@@ -282,8 +293,18 @@ function UI.Create(parent)
     panel:SetPoint("TOPLEFT", parent, "TOPLEFT", 4, -34)
     panel:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", -4, 33)
     UI.panel = panel
-    Label(panel, "Market opportunities", 14, -10, 400):SetFontObject("GameFontNormal")
+    Label(panel, "Market opportunities", 14, -10, 310):SetFontObject("GameFontNormal")
     UI.age = Label(panel, "", 14, -31, 746)
+    UI.priceBasis = Button(panel, "Basis: Daily avg", 346, -7, 154, function(_, click)
+        if not D.data or U.Combat() then return end
+        local settings = D.Settings()
+        settings.marketPriceBasis = click == "RightButton" and "addon" or (M.PriceBasis() == "daily" and "intraday" or "daily")
+        UI.selected, UI.hovered, UI.offset, UI.message = nil, nil, 0, nil
+        UI.Ensure()
+        UI.Refresh()
+    end)
+    UI.priceBasis:RegisterForClicks("LeftButtonUp", "RightButtonUp")
+    A.Help.Setting(UI.priceBasis, "marketPriceBasis")
     UI.watchButton=Button(panel, "Watchlists", 510, -7, 120, function() A.EconomyUI.Show("watch") end)
     Button(panel, "Ledger", 640, -7, 120, function() A.EconomyUI.Show("ledger") end)
     UI.views = {}
@@ -292,16 +313,23 @@ function UI.Create(parent)
         local view = data[1]
         local button = Button(panel, data[2], 14 + (index - 1) * 80, -53, 74, function()
             UI.view, UI.page, UI.selected, UI.message, UI.offset = view, 1, nil, nil, 0
-            M.Ensure(UI.view, UI.sort); UI.Refresh()
+            UI.Ensure(); UI.Refresh()
         end)
         button.caption = data[2]; UI.views[view] = button
     end
     UI.sortButton = Button(panel, "Sort: return", 410, -53, 139, function()
-        UI.sort = UI.sort == "return" and "profit" or "return"
-        UI.page, UI.selected, UI.offset = 1, nil, 0; M.Ensure(UI.view, UI.sort); UI.Refresh()
+        local sort = directionSort[UI.view]
+        if sort then
+            directionSort[UI.view] = nextDirectionSort[sort]
+        else
+            UI.sort = UI.sort == "return" and "profit" or "return"
+        end
+        UI.page, UI.selected, UI.offset = 1, nil, 0
+        UI.Ensure()
+        UI.Refresh()
     end)
     UI.recheck = Button(panel, "Recheck saved scan", 559, -53, 201, function()
-        UI.page, UI.selected, UI.offset = 1, nil, 0; M.Ensure(UI.view, UI.sort, true); UI.Refresh()
+        UI.page, UI.selected, UI.offset = 1, nil, 0; UI.Ensure(true); UI.Refresh()
     end)
     UI.filterToggle=Button(panel,"Filters",410,-84,139,function()
         UI.filtersOpen=not UI.filtersOpen;UI.Refresh()
@@ -409,7 +437,7 @@ function UI.Create(parent)
     UI.watchSelected = Button(panel, "Watch selected", 420, -432, 145, function() A.EconomyUI.WatchDraft(UI.selected) end)
     UI.next = Button(panel, "Next", 660, -432, 100, function() UI.Scroll(UI.offset+(UI.pageSize or 12)) end)
     UI.status = Label(panel, "", 14, -459, 746)
-    panel:SetScript("OnShow", function() M.Ensure(UI.view, UI.sort); UI.Refresh() end)
+    panel:SetScript("OnShow", function() UI.Ensure(); UI.Refresh() end)
     panel:SetScript("OnHide", function() UI.hovered = nil; A.Help.Hide() end)
     panel:Hide()
     return panel
@@ -424,7 +452,8 @@ function UI.RefreshDetails()
             return
         end
         local target = row.maxBuy and row.maxBuy > 0 and ("Buy at " .. U.Coins(row.maxBuy) .. " or less.") or "No positive target buy price."
-        local text = M.Name(row) .. ". " .. target .. " Baseline " .. U.Coins(row.baseline) .. " (" .. row.days .. " days)."
+        local count = row.scans and (row.scans .. (row.scans == 1 and " earlier scan" or " earlier scans")) or (row.days .. " days")
+        local text = M.Name(row) .. ". " .. target .. " Baseline " .. U.Coins(row.baseline) .. " (" .. count .. ")."
         text=text .. (row.stockMove and string.format(" Stock %+.0f%% since prior scan.",row.stockMove) or " Stock change needs two scans.")
         if not row.lowUnits then text=text .. " Rescan for quantities at the low." end
         if row.trend then text = text .. string.format(" Recent trend: %+.0f%%.", row.trend) end
@@ -437,9 +466,15 @@ function UI.Refresh()
     UI.Layout()
     local snapshot = M.snapshot or D.Snapshot()
     local history = A.History.Status()
+    local basis = M.PriceBasis()
+    local context = basis == "intraday" and
+        (history.scansToday .. " scans today (UTC)  |  Intraday baseline: earlier scans") or
+        (history.days .. " saved UTC days  |  Daily baseline: prior daily lower quartile")
     UI.age:SetText((snapshot and ("Scan: " .. U.Age(snapshot.startedAt) .. (D.IsStale(snapshot) and " (stale)" or "")) or "No saved scan") ..
-        "  |  " .. history.days .. " saved UTC days  |  Baseline: prior daily lower quartile")
+        "  |  " .. context)
     local combat = U.Combat()
+    UI.priceBasis:SetText("Basis: " .. A.History.basisNames[basis] .. " avg")
+    UI.priceBasis:SetEnabled(D.data ~= nil and not combat)
     for key, button in pairs(UI.views) do
         button:SetText((key == UI.view and "|cffffd100" or "|cffffffff") .. button.caption .. "|r")
         button:SetEnabled(not combat)
@@ -454,8 +489,8 @@ function UI.Refresh()
     for quality=0,5 do if M.QualityAllowed(UI.qualityDraft,quality) then count=count+1;label=QualityLabel(quality) end end
     if UI.qualityMenu.OverrideText then UI.qualityMenu:OverrideText(count==6 and "All rarities" or count==0 and "No rarities" or count==1 and label or (count .. " rarities selected")) end
     UI.apply:SetEnabled(not combat); UI.quickApply:SetEnabled(not combat); UI.recheck:SetEnabled(not combat and not M.job and not next(UI.dirty))
-    UI.sortButton:SetText((UI.view == "rising" or UI.view == "falling") and "Sort: movement" or ("Sort: " .. UI.sort))
-    UI.sortButton:SetEnabled(not combat and UI.view ~= "rising" and UI.view ~= "falling")
+    UI.sortButton:SetText("Sort: " .. ActiveSort())
+    UI.sortButton:SetEnabled(not combat)
     if UI.publication ~= M.publications or not M.snapshot then
         UI.selected, UI.hovered, UI.publication, UI.offset = nil, nil, M.publications, 0
     end
@@ -469,10 +504,11 @@ function UI.Refresh()
         local row = index<=UI.pageSize and M.rows[UI.offset+index] or nil
         button.row = row
         if row then
+            local needs = row.scans and "Needs scan" or ((row.days or 0).."/"..(row.minDays or D.Settings().marketMinDays).." days")
             local texts = { M.Name(row), U.Coins(row.current), row.lowUnits and tostring(row.lowUnits) or "-",
                 row.lowBuyout and U.Coins(row.lowBuyout) or "-", row.units and tostring(row.units) or "-",
                 row.profit and A.CraftingUI.SignedMoney(row.profit) or row.itemWide and "Rescan" or
-                    row.needsHistory and ((row.days or 0).."/"..(row.minDays or D.Settings().marketMinDays).." days") or "-", row.roi and string.format("%+.0f%%", row.roi) or "-",
+                    row.needsHistory and needs or "-", row.roi and string.format("%+.0f%%", row.roi) or "-",
                 row.movement and string.format("%+.0f%%", row.movement) or "-" }
             for column, value in ipairs(texts) do button.labels[column]:SetText(value) end
             for _, column in ipairs({6,7}) do button.labels[column]:SetTextColor(row.profit and row.profit>0 and 0.35 or 1, row.profit and row.profit>0 and 0.87 or 0.38, 0.38) end
@@ -488,7 +524,8 @@ function UI.Refresh()
     UI.pageText:SetText(string.format("%d-%d / %d%s",#M.rows>0 and UI.offset+1 or 0,math.min(UI.offset+UI.pageSize,#M.rows),
         M.eligible or 0,(M.eligible or 0)>M.limit and (" | Best " .. M.limit .. " shown") or ""))
     UI.status:SetText(UI.message or (next(UI.dirty) and "Changes not applied. Click Apply filters or press Enter; Esc restores the focused field.") or
-        (M.job and ((M.job.phase == "variants" and ("Preparing item variants: " .. (M.job.prepared or 0)) or ("Updating results: " .. M.job.examined .. " current entries checked")) .. ". Previous results shown until finished.") or M.reason) or
+        (M.job and ((M.job.phase == "variants" and ("Preparing item variants: " .. (M.job.prepared or 0)) or ("Updating results: " .. M.job.examined .. " current entries checked")) ..
+            (M.snapshot and ". Previous results shown until finished." or ".")) or M.reason) or
         (M.truncated and "Large dataset: first 50,000 price entries checked." or "Resale requires the minimum price drop. Estimates exclude deposits and unsold stock."))
 end
 

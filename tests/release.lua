@@ -21,17 +21,17 @@ test("saved beta data retains all money tools settings and recorded cost bases",
     local roots={markets=saved.markets,history=saved.history,vendorBuy=saved.vendorBuy,watchlists=saved.watchlists,ledger=saved.ledger}
     local rows=L.Records();local sum=L.Summary();local first=rows[1].time
     local w2,A2=fresh(saved);w2.wall=w.wall;w2:load()
-    equal(A2.VERSION,"1.3.1");equal(A2.BUILD,"2026-11-17-release001");equal(A2.TEST_REVISION,nil)
+    equal(A2.VERSION,"1.3.2");equal(A2.BUILD,"2026-11-21-release001");equal(A2.TEST_REVISION,nil)
     for key,value in pairs(roots)do sameData(A2.DB.data[key],value)end
     equal(#A2.Ledger.Records(),4);equal(A2.Ledger.Records()[1].time,first)
     equal(A2.Ledger.Summary().flow,sum.flow);equal(A2.Ledger.Summary().profit,sum.profit);equal(A2.Ledger.Summary().estimatedProfit,sum.estimatedProfit)
     equal(#A2.Watchlist.Entries(),1);equal(A2.Vendor.Price(2320),9)
     equal(A2.DB.Settings().serviceLabor,120);equal(A2.DB.Settings().serviceMinimum,500);equal(A2.DB.Settings().ledgerDays,60)
     equal(A2.DB.Settings().trackLoot,false);equal(A2.DB.Settings().trackOther,false);equal(A2.DB.Settings().trackTrade,false)
-    equal(A2.DB.data.version,"1.3.1");equal(w2.requests,0)
+    equal(A2.DB.data.version,"1.3.2");equal(w2.requests,0)
 end)
 
-test("accepted 1.3.1 saved data upgrades to the final identity without resetting preferences or records",function()
+test("accepted 1.3.1 saved data upgrades to the new identity without resetting preferences or records",function()
     local w,A=craftingWorld();local saved=A.DB.data
     truth(A.Watchlist.Save(100,1000,0,0))
     truth(A.Ledger.Record({kind="sale",name="Recorded sale",quantity=1,amount=1000,fee=50,cost=400}))
@@ -41,8 +41,8 @@ test("accepted 1.3.1 saved data upgrades to the final identity without resetting
     saved.settings.farmHUDWidth=300;saved.settings.historyDays=20
     local total,elapsed=A.Farm.Summary().total,A.Farm.Elapsed()
     local w2,B=fresh(saved);w2.wall=w.wall;w2:load()
-    equal(B.VERSION,"1.3.1");equal(B.BUILD,"2026-11-17-release001");equal(B.TEST_REVISION,nil)
-    equal(B.DB.data.version,"1.3.1");equal(B.DB.data.build,"2026-11-17-release001")
+    equal(B.VERSION,"1.3.2");equal(B.BUILD,"2026-11-21-release001");equal(B.TEST_REVISION,nil)
+    equal(B.DB.data.version,"1.3.2");equal(B.DB.data.build,"2026-11-21-release001")
     equal(B.Help.Enabled(),false);equal(B.DB.Settings().watchAlerts,false);equal(B.DB.Settings().watchOpenOnScan,false)
     equal(B.DB.Settings().farmHUDWidth,300);equal(B.DB.Settings().historyDays,20)
     equal(#B.Watchlist.Entries(),1);equal(#B.Ledger.Records(),1)
@@ -78,12 +78,12 @@ test("the 1.3.1 upgrade preserves farming drop settings and all existing money r
         watchlists=saved.watchlists,ledger=saved.ledger,drops=saved.drops}
     local total=A.Farm.Summary().total;local elapsed=A.Farm.Elapsed()
     local w2,B=fresh(saved);w2.wall=w.wall;w2:load()
-    equal(B.VERSION,"1.3.1");equal(B.BUILD,"2026-11-17-release001");equal(B.TEST_REVISION,nil)
+    equal(B.VERSION,"1.3.2");equal(B.BUILD,"2026-11-21-release001");equal(B.TEST_REVISION,nil)
     for key,value in pairs(expected)do sameData(B.DB.data[key],value)end
     equal(B.Farm.Summary().total,total);equal(B.Farm.Elapsed(),elapsed);truth(B.Farm.Summary().paused)
     equal(B.Drops.Profile().mobs,1);equal(B.Drops.Profile().cells,1)
     equal(B.DB.Settings().dropSort,"rate_asc");equal(B.DB.Settings().dropQuality,8)
     equal(B.DB.Settings().farmHUDWidth,400);truth(B.DB.Settings().farmHUDLocked)
-    equal(B.DB.data.version,"1.3.1");equal(B.DB.data.build,"2026-11-17-release001")
+    equal(B.DB.data.version,"1.3.2");equal(B.DB.data.build,"2026-11-21-release001")
     equal(B.UI.DiagnosticsText():find("Test revision:",1,true),nil);equal(w2.requests,0)
 end)

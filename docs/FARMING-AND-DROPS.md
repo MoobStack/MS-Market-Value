@@ -24,13 +24,13 @@ Timing starts idle after login. Resume, combat or received loot starts it. **Pau
 
 **Quest rewards** defaults to Session total only. You can include new rewards in hourly rates or stop recording them. Peaks always exclude quest gold and items. Quest rewards do not start an idle timer, and changing this option does not erase earlier rewards.
 
-Quest rewards, bound items and poor items use vendor value. Other items can use a fresh AH estimate after the AH cut when it beats vendor value by the chosen threshold, 10% by default. Unpriced items are counted separately. Purchases, mail, trades and sale proceeds are excluded; later sales do not add the item again.
+Quest rewards, bound items and poor items use vendor value. Other items can use the average from **Price settings** after the AH cut if the scan is fresh and the estimate beats vendor value by the chosen threshold, 10% by default. Unpriced items are counted separately. Purchases, mail, trades and sale proceeds are excluded. Later sales do not add the item again.
 
 Resize or lock the small display in Farming settings. Drag it when unlocked; left-click opens the report and right-click pauses or resumes. Session total and hover-only display are optional.
 
 ## Drop display
 
-Open `/msmv drops`. Sort by chance high to low, chance low to high, or **Expected item value**: drop chance multiplied by one item's saved AH low, or vendor value if no AH price exists. Stack size is excluded.
+Open `/msmv drops`. Sort by chance high to low, chance low to high, or **Expected item value**. Expected value multiplies drop chance by the selected AH average for one item, using vendor value if the average is unavailable.
 
 Choose any of six rarities. Needed quest drops stay visible and first, even when their rarity is unchecked. With no rarities selected, only needed quest drops remain. Filtering happens before the 1–10-item limit; unknown rarity stays visible with All selected. Sort and rarity apply immediately; press Apply after editing Max items.
 

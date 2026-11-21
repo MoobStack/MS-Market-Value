@@ -1,5 +1,25 @@
 # Changelog
 
+## 1.3.2 — 2026-11-21
+
+### Auction House and rulesets
+
+- Restore full AH scans when Forever hides realm names. Detect the ruleset from the client and keep prices separate by region, ruleset and faction.
+- Ask for a character's ruleset when detection is unavailable, with PvP selected initially. **Change ruleset** in Price snapshot lets you revise the choice or return to automatic detection.
+- Keep saved scans, price history and watches available after the realm name change. Farming, drop observations, vendor costs and the ledger can record activity before the character's first AH visit.
+
+### Prices and opportunities
+
+- Keep the lowest unit price from each completed scan for each item and exact modifier. At the UTC day change, retain the day's averages and discard the individual price samples.
+- Add the **Daily / Intraday** switch under Price settings. The selected average feeds item tooltips, crafting, disenchant estimates, farming, drop value sorting and watchlist estimates.
+- Add a separate **Basis** control to Opportunities. Intraday signals compare the latest scan with earlier scans from the same UTC day. Right-click **Basis** to follow Price settings.
+- Enable **Return** and **Profit** sorting in **Rising** and **Falling** alongside **Movement**.
+
+### Interface
+
+- Add a draggable gold minimap button that opens the addon. Hide it under Tooltips.
+- Give the Price snapshot panel a full-width progress bar, put the version above it and show today's scan count. Diagnostics report the ruleset source, selected price averages and intraday scan counts.
+
 ## 1.3.1 — 2026-11-17
 
 ### Farming and drops

@@ -1,10 +1,12 @@
-# Updating to 1.3.1
+# Updating MS Market Value
 
-1. Close WoW and back up `WTF/Account/<account>/SavedVariables/MSMarketValueDB.lua` and its `.bak` file.
+1. Close WoW and back up `WTF/Account/<account>/SavedVariables/MSMarketValue.lua` and its `.bak` file.
 2. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP's folder. Keep SavedVariables.
-3. Open `/msmv diagnostics` and check for **1.3.1 / 2026-11-17-release001**.
+3. Open `/msmv diagnostics` to verify the version is **1.3.2**.
 
 Prices, history, settings, watches, targets, ledger entries and personal observations carry forward. No new scan is required to keep existing records; regular scans add fresh prices and modifier history.
+
+If prompted, choose your character's Auction House ruleset. PvP is the default choice. You can change it in **MS Market Value → Price snapshot → Change ruleset**. Personal activity can record before you choose. A scan requires a confirmed ruleset.
 
 Farming starts idle at login. Resume, combat or received loot starts timing. Death pause is on by default, and a manual pause stays paused. Quest rewards default to the session total; peaks always exclude them.
 
@@ -16,4 +18,4 @@ Interface help starts enabled under Tooltips and can be switched off there. Watc
 
 Only the Clean ZIP belongs in AddOns. To roll back, close WoW and restore the older addon with its matching SavedVariables backup. Unfinished scans do not survive reload or logout.
 
-[Release notes](RELEASE-NOTES-v1.3.1.md) · [User guide](DOCUMENTATION.md)
+[Release notes](RELEASE-NOTES-v1.3.2.md) · [User guide](DOCUMENTATION.md)

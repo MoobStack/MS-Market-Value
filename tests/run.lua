@@ -38,6 +38,7 @@ local function widget(name)
     function w:RegisterEvent(event) self.events = self.events or {}; self.events[event] = true end
     function w:Show() self.shown = true; if self.scripts.OnShow then self.scripts.OnShow(self) end end
     function w:Hide() self.shown = false; if self.scripts.OnHide then self.scripts.OnHide(self) end end
+    function w:SetShown(shown) if shown then self:Show() else self:Hide() end end
     function w:IsShown() return self.shown end
     function w:IsVisible() return self.shown and (not self.parent or self.parent:IsVisible()) end
     function w:SetParent(parent) self.parent = parent end
@@ -54,6 +55,9 @@ local function widget(name)
     function w:SetAlpha(value) self.alpha=value end
     function w:SetWidth(width) self.width = width end
     function w:SetHeight(height) self.height = height end
+    function w:GetWidth() return self.width or 0 end
+    function w:GetHeight() return self.height or 0 end
+    function w:GetEffectiveScale() return self.effectiveScale or 1 end
     function w:CreateFontString() return widget() end
     function w:SetText(text)
         self.text = text
@@ -64,6 +68,7 @@ local function widget(name)
     function w:GetMaxLetters() return self.maxLetters or 0 end
     function w:IsEnabled() return self.enabled end
     function w:SetNormalTexture(value) self.normalTexture=value end
+    function w:SetTexture(value) self.texture=value end
     function w:SetPushedTexture(value) self.pushedTexture=value end
     function w:SetDisabledTexture(value) self.disabledTexture=value end
     function w:SetHighlightTexture(value) self.highlightTexture=value end
@@ -136,6 +141,7 @@ local function fresh(saved)
         "LOOT_ITEM_SELF","LOOT_ITEM_SELF_MULTIPLE"}) do _G[name]=nil end
     for index=1,200 do _G["GameTooltipTextLeft"..index]=nil;_G["GameTooltipTextRight"..index]=nil end
     _G.UnitIsTapDenied,_G.UnitIsDeadOrGhost=nil,nil
+    _G.C_EncodingUtil = nil
     _G.MerchantFrame,_G.MailFrame,_G.QuestFrame=nil,nil,nil
     _G.issecretvalue = function(v) return rawequal(v, secret) end
     _G.canaccessvalue = function(v) return not rawequal(v, secret) end
@@ -157,6 +163,7 @@ local function fresh(saved)
     _G.UIParent = widget("UIParent")
     UIParent:Show()
     _G.LibStub, _G.AuctionHouseFrame, _G.AuctionHouseFrameDisplayMode, _G.AuctionHouseSearchContext = nil, nil, nil, nil
+    _G.Minimap, _G.GetCursorPosition, _G.MSMarketValueMinimapButton = nil, nil, nil
     _G.ProfessionsFrame, _G.C_TradeSkillUI = nil, nil
     world.guid, world.vendorItems, world.factions = "Player-1-fixture", {}, {{factionID=76,reaction=5}}
     _G.UnitGUID = function() return world.guid end
@@ -371,6 +378,10 @@ local function fresh(saved)
             self:advance(0.05)
         end
         error("scan did not terminate")
+    end
+    function world:priceDay()
+        local snapshot = self.A.DB.Snapshot()
+        return self.A.History.Days(self.A.Util.MarketInfo())[math.floor(snapshot.startedAt / 86400)]
     end
     function world:openProfession()
         self.recipes, self.recipeIDs = self.recipes or {}, self.recipeIDs or {}
@@ -797,7 +808,7 @@ test("unavailable market identity consumes no request or cooldown and explains t
         w.portal = portal; equal(A.Scanner.Start(), false); equal(w.requests, 0)
     end
     w.region = 1; w.realm = ""
-    ok, reason = A.Scanner.Start(); equal(ok, false); truth(string.find(reason, "Realm name"))
+    ok, reason = A.Scanner.Start(); equal(ok, false); truth(string.find(reason, "Confirm your ruleset"))
 end)
 test("restricted and throwing market APIs are reported without exposing values", function()
     local w, A = fresh(); w.region = secret; w.portal = secret
@@ -1206,7 +1217,7 @@ test("beta upgrade retains the completed beta003 market, settings, exclusions an
     snapshot.version, snapshot.build = saved.version, saved.build
     saved.settings.staleHours=72; saved.excludedItems[300]=true
     local w2,A2 = fresh(saved); w2.realm="ClassicBetaPvP2"; w2.region=90; w2:load()
-    equal(A2.VERSION,"1.3.1"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
+    equal(A2.VERSION,"1.3.2"); equal(A2.DB.Price(100).low,500); equal(A2.DB.Snapshot(),snapshot)
     equal(A2.DB.data.settings.staleHours,72); equal(A2.DB.data.excludedItems[300],true)
     equal(A2.Scanner.RemainingCooldown(),900); equal(w2.requests,0)
 end)
@@ -1448,7 +1459,7 @@ end)
 test("new complete prices and profession changes rebuild the catalog", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); equal(A.Crafting.selected.profitMin,500)
     newScan(w,{row(100,1,200),row(101,1,200),row(200,1,900)}); w:drain()
-    A.Crafting.Tick(); equal(A.Crafting.selected.cost,600); equal(A.Crafting.selected.profitMin,300)
+    A.Crafting.Tick(); equal(A.Crafting.selected.cost,500); equal(A.Crafting.selected.profitMin,400)
     equal(w.catalogCalls,2); w.professionID=171; A.Crafting.Tick(); equal(w.catalogCalls,3)
 end)
 test("selected recipe and selected optional reagents refresh without changing native state", function()
@@ -1483,9 +1494,9 @@ test("unsupported native profession APIs report cleanly and keep auction prices"
 end)
 test("release diagnostics identify the stable build and crafting support", function()
     local w,A=craftingWorld(); A.Crafting.Tick()
-    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.1 / 2026-11-17-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil)
+    local text=A.UI.DiagnosticsText(); truth(string.find(text,"MS Market Value 1.3.2 / 2026-11-21-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil)
     truth(string.find(text,"Crafting API: true",1,true)); truth(string.find(text,"Selected recipe: 1",1,true))
-    equal(A.VERSION,"1.3.1"); equal(A.BUILD,"2026-11-17-release001")
+    equal(A.VERSION,"1.3.2"); equal(A.BUILD,"2026-11-21-release001")
 end)
 test("filtered native catalog fallback is labeled and leaves the user's filters intact", function()
     local w,A=craftingWorld(); C_TradeSkillUI.GetAllRecipeIDs=nil
@@ -1502,8 +1513,8 @@ test("public combat prices survive inaccessible quantities as each-only values",
     equal(findLine(tooltip.lines,A.TITLE).right,"Each"); truth(findLine(tooltip.lines,"AH low"))
 end)
 test("crafting output values outside the exact copper range remain quote-only", function()
-    local w,A=craftingWorld(); A.DB.Snapshot().prices[200].low=9007199254740991
-    A.DB.Snapshot().variants["200:0"].low=9007199254740991
+    local w,A=craftingWorld(); w:priceDay().prices[200]=9007199254740991
+    w:priceDay().variants["200:0"]=9007199254740991
     w.recipes[1].schematic.quantityMin=2; w.recipes[1].schematic.quantityMax=2
     local value=A.Crafting.Analyze(1,w.form)
     equal(value.cost,400); equal(value.saleMin,nil); equal(value.profitMin,nil); truth(value.reason)
@@ -1679,7 +1690,7 @@ test("the profit page retains the source timestamp until new valuations publish"
     for i=1,45 do w.recipeIDs[i]=i; w.recipes[i]=craftRecipe(i,200) end
     newScan(w,{row(100,1,200),row(101,1,200),row(200,1,900)}); w:drain(); A.Crafting.Tick()
     equal(A.Crafting.publishedSnapshot,old); A.Crafting.Tick(); A.Crafting.Tick()
-    equal(A.Crafting.publishedSnapshot,A.DB.Snapshot()); equal(A.Crafting.rows[1].cost,600)
+    equal(A.Crafting.publishedSnapshot,A.DB.Snapshot()); equal(A.Crafting.rows[1].cost,500)
 end)
 test("a profession change does not show the previous profession's recipe list", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); w.professionID=171; w.recipeIDs={}
@@ -1740,12 +1751,12 @@ test("a recipe or markup change cannot leave a focused old quote in the UI", fun
 end)
 test("missing material prices disable the chat draft button", function()
     local w,A=craftingWorld(); ChatFrameUtil={OpenChat=function() error("no quote should be inserted") end}
-    A.DB.Snapshot().prices[100]=nil; A.Crafting.Tick(); equal(A.CraftingUI.insertQuote.enabled,false)
+    w:priceDay().prices[100]=nil; A.Crafting.Tick(); equal(A.CraftingUI.insertQuote.enabled,false)
     equal(A.CraftingUI.quoteText,nil); A.CraftingUI.InsertQuote()
 end)
 test("diagnostics distinguish copied progress and stable catalog publications", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.3.1 / 2026-11-17-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"Local auction copy: complete",1,true))
+    truth(string.find(text,"MS Market Value 1.3.2 / 2026-11-21-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"Local auction copy: complete",1,true))
     truth(string.find(text,"Recipe catalog builds: 1",1,true)); truth(string.find(text,"Recipe catalog publications: 1",1,true))
 end)
 
@@ -1801,19 +1812,19 @@ test("one completed scan provides a one-day unit-price average", function()
     equal(value.value,900); equal(value.days,1); equal(value.mode,"variant")
     equal(A.History.Status().days,1)
 end)
-test("the latest same-day scan replaces prices rather than accumulating samples", function()
+test("the UTC day averages all completed scans as one historical day", function()
     local w,A=initial(); newScan(w,{row(100,1,500),row(200,1,700)}); w:drain()
-    equal(A.History.Average(100).value,500); equal(A.History.Average(100).days,1)
+    equal(A.History.Average(100).value,700); equal(A.History.Average(100).days,1)
     equal(A.History.Status().days,1); equal(A.History.Average(200).value,700)
 end)
-test("a same-day replacement removes items absent from the final scan", function()
+test("same-day history retains prices for items absent from the final scan", function()
     local w,A=initial(); newScan(w,{row(200,1,700)}); w:drain()
-    equal(A.History.Average(100),nil); equal(A.DB.Price(100),nil)
+    equal(A.History.Average(100).value,900); equal(A.DB.Price(100),nil)
 end)
 test("an older completed scan cannot overwrite the latest history for a day", function()
     local w,A,old=initial(); newScan(w,{row(100,1,500)}); w:drain()
     local latest=A.DB.Snapshot(); A.DB.data.markets[old.marketKey]=old
-    equal(A.History.Record(old),false); equal(A.History.Average(100).value,500)
+    equal(A.History.Record(old),false); equal(A.History.Average(100).value,700)
     A.DB.data.markets[old.marketKey]=latest
 end)
 test("daily averages weight each available day once despite different auction counts", function()
@@ -1839,9 +1850,9 @@ test("a completed empty daily scan is retained without inventing prices", functi
     equal(A.History.Status().days,2); equal(A.History.Average(100).days,1)
     equal(A.DB.Snapshot().totalRows,0)
 end)
-test("a same-day empty scan removes that day's earlier sample", function()
+test("a same-day empty scan preserves the earlier priced sample", function()
     local w,A=initial(); newScan(w,{}); w:drain()
-    equal(A.History.Status().days,1); equal(A.History.Average(100),nil)
+    equal(A.History.Status().days,1); equal(A.History.Average(100).value,900)
 end)
 test("bid-only and sold rows never supply historical buyout values", function()
     local w,A=initial(); local sold=row(200,1,500); sold.saleStatus=1
@@ -1852,7 +1863,7 @@ test("partial and paused scans do not replace historical prices", function()
     local w,A=initial(); local rows={}; for i=1,250 do rows[i]=row(100,1,100) end
     newScan(w,rows); A.Scanner.Tick(); truth(A.Scanner.Pause())
     equal(A.History.Average(100).value,900); equal(A.History.Average(100).days,1)
-    truth(A.Scanner.Resume()); w:drain(); equal(A.History.Average(100).value,100)
+    truth(A.Scanner.Resume()); w:drain(); equal(A.History.Average(100).value,500)
 end)
 test("failed scans and invalid commits keep history unchanged", function()
     local w,A=initial(); newScan(w,{row(100,0,100)}); w:drain()
@@ -2025,7 +2036,7 @@ test("average cache invalidates on completed replacement and retention change", 
     local w,A=initial(); local first=A.History.Average(100); equal(A.History.Average(100),first)
     equal(A.History.Average(200),nil); newScan(w,{row(100,1,500),row(200,1,700)}); w:drain()
     truth(A.History.Average(100)~=first); equal(A.History.Average(200).value,700)
-    nextDayScan(w,{row(100,1,300)}); equal(A.History.Average(100).value,400)
+    nextDayScan(w,{row(100,1,300)}); equal(A.History.Average(100).value,500)
     A.History.SetRetention(1); equal(A.History.Average(100).value,300)
 end)
 test("average caching stays bounded when many different missing items are queried", function()
@@ -2198,7 +2209,7 @@ end)
 test("all-recipes ranking includes losses break-even and unknown values last", function()
     local w,A=craftingWorld()
     w.recipes[4]=craftRecipe(4,999); w.recipes[5]=craftRecipe(5,200); w.recipes[5].schematic.reagentSlotSchematics[1].quantityRequired=7
-    w.recipeIDs={1,2,3,4,5}; A.DB.Snapshot().prices[200].low=948; A.DB.Snapshot().variants["200:0"].low=948; A.Crafting.Tick()
+    w.recipeIDs={1,2,3,4,5}; w:priceDay().prices[200]=948; w:priceDay().variants["200:0"]=948; A.Crafting.Tick()
     local all=A.Crafting.Ranked("profit",true); equal(#all,5)
     equal(all[1].recipeID,3); equal(all[2].recipeID,1); equal(all[3].netProfitMin,0)
     equal(all[4].recipeID,2); equal(all[4].profitMin,-100); equal(all[5].recipeID,4); equal(all[5].profitMin,nil)
@@ -2244,7 +2255,7 @@ test("unpriced all-recipes rows display unavailable rather than zero or no cost"
     A.Crafting.Tick(); A.CraftingUI.mode="profit"; A.DB.data.settings.showAllRecipes=true; A.CraftingUI.Refresh()
     equal(A.CraftingUI.catalogRows[1].profit.text,"Unavailable"); equal(A.CraftingUI.catalogRows[1].percent.text,"Unavailable")
     A.CraftingUI.catalogRows[1].scripts.OnClick(A.CraftingUI.catalogRows[1])
-    equal(w.selectedID,4); truth(string.find(A.CraftingUI.reason.text,"no buyout",1,true))
+    equal(w.selectedID,4); truth(string.find(A.CraftingUI.reason.text,"no price for the selected period",1,true))
 end)
 test("all-recipes setting persists and ranking caches both filter modes independently", function()
     local _,A=craftingWorld(); A.Crafting.Tick()
@@ -2262,7 +2273,7 @@ test("the all-recipes list keeps its completed snapshot during staged refreshes"
 end)
 test("history diagnostics report the release retention dates and crafting preferences", function()
     local _,A=initial(); local text=A.UI.DiagnosticsText()
-    truth(string.find(text,"MS Market Value 1.3.1 / 2026-11-17-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"retention=30 days",1,true))
+    truth(string.find(text,"MS Market Value 1.3.2 / 2026-11-21-release001",1,true)); equal(string.find(text,"Test revision:",1,true),nil); truth(string.find(text,"retention=30 days",1,true))
     truth(string.find(text,"History dates UTC:",1,true)); truth(string.find(text,"Craft auto-open: false",1,true))
     truth(string.find(text,"Recipe list filter: profitable only",1,true))
 end)
@@ -2276,7 +2287,7 @@ test("the 1.1.0-to-1.3.1 upgrade keeps prices history preferences and cooldown w
     saved.settings.quoteMarkup=20; saved.settings.showAge=false; saved.excludedItems[300]=true
     local average=A.History.Average(100)
     local w2,A2=fresh(saved); w2:load()
-    equal(A2.VERSION,"1.3.1"); equal(A2.BUILD,"2026-11-17-release001"); equal(A2.TEST_REVISION,nil)
+    equal(A2.VERSION,"1.3.2"); equal(A2.BUILD,"2026-11-21-release001"); equal(A2.TEST_REVISION,nil)
     equal(A2.DB.data.version,A2.VERSION); equal(A2.DB.data.build,A2.BUILD)
     equal(A2.DB.Snapshot(),snapshot); equal(A2.DB.Price(100).low,100)
     equal(A2.History.Average(100).value,average.value); equal(A2.History.Average(100).days,average.days)
@@ -2313,6 +2324,9 @@ assert(loadfile("tests/v131-test3.lua"))(fresh,row,link,test,equal,near,truth,se
 assert(loadfile("tests/v131-test4.lua"))(fresh,test,equal,truth,secret)
 assert(loadfile("tests/v131-test5.lua"))(fresh,row,link,test,equal,near,truth,secret)
 assert(loadfile("tests/v131-test7.lua"))(fresh,craftingWorld,row,link,test,equal,truth)
+assert(loadfile("tests/v132-rulesets.lua"))(fresh,row,link,test,equal,truth,secret)
+assert(loadfile("tests/v132-test2.lua"))(fresh,craftingWorld,row,link,test,equal,near,truth,findLine,secret)
+assert(loadfile("tests/v132-test4.lua"))(fresh,test,equal,near,truth)
 
 if os.getenv("MSMV_BENCHMARK") == "1" then
     assert(loadfile("tests/watchlist-ui-performance.lua"))(fresh,link,truth,equal)

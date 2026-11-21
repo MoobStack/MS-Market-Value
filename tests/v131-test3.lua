@@ -256,10 +256,10 @@ test("three sold-out intraday observations can supply a later exact resale basel
     equal(#A.Market.rows,1);equal(A.Market.rows[1].days,3);truth(A.Market.rows[1].deal)
 end)
 
-test("the latest observed price replaces a modifier price without adding another day",function()
+test("modifier prices average intraday observations without adding another day",function()
     local w,A=world();scan(w,A,{{price=1000}});w:tick(900);scan(w,A,{{price=2000}})
     w:tick(900);scan(w,A,{})
-    local average=A.History.Average(100,bonus(100,5661));equal(average.value,2000);equal(average.days,1)
+    local average=A.History.Average(100,bonus(100,5661));equal(average.value,1500);equal(average.days,1)
 end)
 
 test("retained exact observations never fill an unobserved UTC date",function()
@@ -274,7 +274,7 @@ test("daily retention cannot relabel legacy zero-suffix history as exact bonus d
     s.variantFormat=nil;local day=math.floor(w.wall/86400);A.History.Days(A.Util.MarketInfo())[day].variantFormat=nil
     w:tick(900);scan(w,A,{})
     equal(A.History.Days(A.Util.MarketInfo())[day].variants["100:0:b5661"],nil)
-    equal(A.History.Average(100,bonus(100,5661)),nil)
+    equal(A.History.Average(100,bonus(100,5661)).mode,"item-wide")
 end)
 
 test("daily modifier retention stays bounded and newer observations take priority",function()

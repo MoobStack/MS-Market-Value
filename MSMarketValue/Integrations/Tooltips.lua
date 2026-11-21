@@ -50,7 +50,9 @@ function T.StackCount(tooltip, data, itemID)
 end
 
 function T.Lines(itemID, link, stackCount)
-    local settings, snapshot = D.Settings(), D.Snapshot()
+    local market = U.MarketInfo()
+    local settings, snapshot = D.Settings(), D.Snapshot(market)
+    local pricing = A.History.Pricing(market)
     local info = V.ItemInfo(link or itemID)
     local count = U.Number(stackCount, 1, MAX_STACK, true) and stackCount or 1
     local lines = {}
@@ -62,12 +64,13 @@ function T.Lines(itemID, link, stackCount)
         if count > 1 then return each .. " / " .. U.Coins(value * count) end
         return each
     end
-    local average = settings.showHistory and A.History.Average(itemID, link) or nil
-    if not settings.showVendor and not average and not settings.showAuction and not settings.showDisenchant then return lines end
+    local average = settings.showHistory and A.History.Estimate(itemID, link, pricing) or nil
+    local intradayMissing = settings.showHistory and settings.priceBasis == "intraday" and not average
+    if not settings.showVendor and not average and not intradayMissing and not settings.showAuction and not settings.showDisenchant then return lines end
     local outcomes, reason, deValue
     if settings.showDisenchant and info then
         outcomes, reason = V.Outcomes(info)
-        if outcomes then deValue = V.DisenchantValue(outcomes, snapshot) end
+        if outcomes then deValue = V.DisenchantValue(outcomes, pricing) end
     end
     add(A.TITLE, count > 1 and ("Each / Stack (" .. tostring(count) .. ")") or "Each", "header")
     if settings.showVendor then
@@ -75,9 +78,12 @@ function T.Lines(itemID, link, stackCount)
     end
     if settings.showHistory then
         if average then
-            local label = "Historic avg (" .. average.days .. (average.days == 1 and " day)" or " days)")
+            local label = average.scans and ("Intraday avg (" .. average.scans .. (average.scans == 1 and " scan)" or " scans)"))
+                or ("Historic avg (" .. average.days .. (average.days == 1 and " day)" or " days)"))
             add(label, money(average.value))
             if average.mode == "item-wide" and U.VariantKey(link) then add("History scope", "Item-wide", "muted") end
+        elseif intradayMissing then
+            add("Intraday avg", "No priced scan today (UTC)", "muted")
         end
     end
     if settings.showAuction then

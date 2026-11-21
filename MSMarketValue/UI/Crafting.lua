@@ -176,7 +176,7 @@ function UI.ApplyPricing()
     end
     if C.selected then C.selected.quote = C.DisplayQuote(C.selected); C.Net(C.selected) end
     A.Watchlist.Ensure()
-    if A.MarketUI.panel and A.MarketUI.panel:IsVisible() then A.Market.Ensure(A.MarketUI.view,A.MarketUI.sort) end
+    if A.MarketUI.panel and A.MarketUI.panel:IsVisible() then A.MarketUI.Ensure() end
     UI.Refresh(); return true
 end
 
@@ -407,7 +407,8 @@ function UI.RefreshMaterials(row)
         local material = row and row.materials[index]; button.material = material
         if material then
             button.name:SetText(material.name); button.quantity:SetText(tostring(material.quantity))
-            button.source:SetText(material.mode == "vendor" and "Vendor" or (material.mode == "vendor-unseen" and "Visit supplier" or (material.total ~= nil and "AH low" or "Missing")))
+            local basis = material.basis and A.History.basisNames[material.basis]
+            button.source:SetText(material.mode == "vendor" and "Vendor" or (material.mode == "vendor-unseen" and "Visit supplier" or (basis and basis .. " avg" or "Missing")))
             button.source:SetTextColor(material.total ~= nil and 0.70 or 1, material.total ~= nil and 0.75 or 0.65, 0.38)
             button.total:SetText(material.total ~= nil and U.Coins(material.total) or "Unavailable"); button:Show()
         else button:Hide() end
@@ -418,7 +419,9 @@ end
 function UI.Refresh()
     if not UI.frame then return end
     local snapshot = UI.mode == "profit" and C.publishedSnapshot or D.Snapshot()
-    UI.age:SetText(snapshot and ("Price scan: " .. U.Age(snapshot.startedAt) .. (D.IsStale(snapshot) and " (stale)" or "")) or "No complete price scan for this market")
+    local pricing = UI.mode == "profit" and C.publishedPricing or C.pricing
+    local caption = snapshot and ("Price scan: " .. U.Age(snapshot.startedAt) .. (D.IsStale(snapshot) and " (stale)" or "")) or "No complete price scan for this market"
+    UI.age:SetText(caption .. (pricing and ("  |  " .. A.History.basisNames[pricing.basis] .. " avg") or ""))
     UI.recipeTab:SetText((UI.mode == "recipe" and "|cffffd100" or "|cffffffff") .. "Selected recipe|r")
     UI.profitTab:SetText((UI.mode == "profit" and "|cffffd100" or "|cffffffff") .. "Recipe list|r")
     UI.applyMarkup:SetEnabled(not U.Combat())

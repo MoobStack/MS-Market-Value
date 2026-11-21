@@ -1,6 +1,6 @@
 # Architecture
 
-MS Market Value 1.3.1 uses Lua 5.1, Interface 16001 and SavedVariables schema 1.
+MS Market Value 1.3.2 uses Lua 5.1, Interface 16001 and SavedVariables schema 1.
 
 | Area | Responsibility |
 |---|---|
@@ -14,7 +14,9 @@ Only a completed scan replaces current prices. Full requests are user-started an
 
 Persistent records include prices, preferences, cooldowns, history, watchlists, ledger entries, farming summaries and personal drop samples. Runtime caches remain outside SavedVariables. Unsupported saved formats are preserved. Native actions remain under player control.
 
-The three TOCs load the same 33 Lua files. Bundled-library hashes and focused behavioral checks are enforced by `tools/validate.py`.
+Markets use region, ruleset and faction. Ruleset confirmation is saved per character. Character activity can record while market identity is pending. Today's scan prices roll into one daily average per item and exact modifier at the UTC date change.
+
+The three TOCs load the same 34 Lua files. `tools/validate.py` checks the load order, bundled-library hashes and addon behavior.
 
 Farming rate history uses its own schema 2. Upgrades preserve session totals/time and observations while starting new recent/peak coverage. Quest and world-loot receipts are reconciled separately; only non-quest minute values can set a peak. Empty inspections require a recent, identified dead-unit interaction. Tooltip sections are owned and rebuilt as a unit rather than appended repeatedly.
 

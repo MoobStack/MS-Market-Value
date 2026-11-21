@@ -92,8 +92,8 @@ test("catalog count summaries remain on the complete published list while rebuil
 end)
 test("material columns retain full quantities sources and missing-price state", function()
     local w,A=craftingWorld(); A.Crafting.Tick(); local material=A.CraftingUI.materialRows[1]
-    equal(material.quantity.text,"2"); equal(material.source.text,"AH low"); equal(material.total.text,coin(200))
-    A.DB.Snapshot().prices[100]=nil; A.Crafting.Tick()
+    equal(material.quantity.text,"2"); equal(material.source.text,"Daily avg"); equal(material.total.text,coin(200))
+    w:priceDay().prices[100]=nil; A.History.Prune(); A.Crafting.Tick()
     equal(material.quantity.text,"2"); equal(material.source.text,"Missing"); equal(material.total.text,"Unavailable")
     equal(A.CraftingUI.quoteText,nil)
 end)

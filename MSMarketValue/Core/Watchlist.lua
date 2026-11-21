@@ -124,18 +124,28 @@ local function Evaluate(job, watch)
     row.current, row.buy = price.low, math.ceil(price.low)
     row.units=U.Number(price.units,0,1000000000,true) and price.units or nil
     row.targetGap=entry.maxBuy>0 and (entry.maxBuy-row.buy)/entry.maxBuy*100 or nil
-    local samples, day = {}, math.floor(job.snapshot.startedAt / 86400)
-    local history = job.history
     local preciseEquipment=row.suffix==0 and item and (item.classID==2 or item.classID==4) and item.quality>=2
-    for date = day - job.lookback, day - 1 do
-        local record = history[date]
-        local value = record and (row.suffix ~= nil and record.variants or record.prices)[index]
-        if U.Number(value, 0, 1000000000000) and value > 0 and (not preciseEquipment or record.variantFormat==2) then samples[#samples + 1] = value end
-    end
-    row.days = #samples
+    local map = row.suffix ~= nil and "variants" or "prices"
     local settings = { marketMinDays = job.minDays, marketFee = job.fee, marketMove = 0,
         marketMinReturn = entry.minReturn, marketMinProfit = entry.minProfit }
-    local estimate = M.Evaluate(row.current, samples, settings)
+    local estimate
+    if job.basis == "intraday" then
+        local record, average, scans = job.intraday, nil, 0
+        if record and (not preciseEquipment or record.variantFormat == 2) then
+            average, scans = H.EarlierScans(record, map, index)
+        end
+        row.scans = scans
+        estimate = M.EvaluateIntraday(row.current, average, scans, settings)
+    else
+        local samples = {}
+        for _, record in ipairs(job.history) do
+            local value = record[map][index]
+            if U.Number(value, 0, 1000000000000) and value > 0 and
+               (not preciseEquipment or record.variantFormat == 2) then samples[#samples + 1] = value end
+        end
+        row.days = #samples
+        estimate = M.Evaluate(row.current, samples, settings)
+    end
     if estimate then
         for _, key in ipairs({ "profit", "roi", "baseline", "median", "low", "high", "maxBuy", "movement" }) do row[key] = estimate[key] end
     end
@@ -152,17 +162,20 @@ end
 
 function W.Ensure()
     if not W.data then return end
+    H.Maintain()
     local market = U.MarketInfo()
     local key, snapshot = market.key, D.Snapshot(market)
-    local history = H.Days(market)
     local fresh = snapshot ~= nil and U.Number(snapshot.startedAt, 0, U.Now()) and not D.IsStale(snapshot)
     local s = D.Settings()
-    local signature = table.concat({ W.revision, H.revision or 0, s.marketLookback, s.marketMinDays, s.marketFee, tostring(fresh) }, "|")
-    if W.key ~= key then W.rows, W.snapshot, W.arrivalRequested = {}, nil, nil end
+    local signature = table.concat({ W.revision, H.revision or 0, s.priceBasis, s.marketLookback, s.marketMinDays, s.marketFee, tostring(fresh) }, "|")
+    if W.key ~= key then W.rows, W.snapshot, W.arrivalRequested, W.signature = {}, nil, nil, nil end
     W.key = key
     if W.source == snapshot and W.signature == signature then return end
     W.source, W.signature = snapshot, signature
-    W.job = { key = key, snapshot = snapshot, fresh = fresh, history = history or {}, entries = W.Entries(), rows = {}, cursor = 1,
+    local intraday = s.priceBasis == "intraday"
+    W.job = { key = key, snapshot = snapshot, fresh = fresh, basis = s.priceBasis, entries = W.Entries(), rows = {}, cursor = 1,
+        history = not intraday and H.PriorRecords(snapshot, s.marketLookback, market) or nil,
+        intraday = intraday and H.IntradayBaseline(market, snapshot) or nil,
         signature = signature, revision = W.revision, historyRevision = H.revision, lookback = s.marketLookback, minDays = s.marketMinDays, fee = s.marketFee }
 end
 
@@ -187,7 +200,8 @@ function W.Tick()
     end
     local settings = D.Settings()
     if job.key ~= U.MarketKey() or job.snapshot ~= D.Snapshot() or job.historyRevision ~= H.revision or job.signature ~= W.signature or
-       job.revision ~= W.revision or job.fee ~= settings.marketFee or job.lookback ~= settings.marketLookback or job.minDays ~= settings.marketMinDays or
+       job.basis ~= settings.priceBasis or job.revision ~= W.revision or job.fee ~= settings.marketFee or
+       job.lookback ~= settings.marketLookback or job.minDays ~= settings.marketMinDays or
        (job.fresh and (D.IsStale(job.snapshot) or not U.Number(job.snapshot.startedAt,0,U.Now()))) then W.job = nil; W.signature = nil; return end
     local start = debugprofilestop and debugprofilestop() or 0
     for _ = 1, 20 do
@@ -196,6 +210,7 @@ function W.Tick()
             W.rows, W.snapshot, W.job = job.rows, job.snapshot, nil
             W.metadataJob=nil
             W.publishedRevision=job.revision
+            W.publishedBasis, W.publishedHistoryRevision = job.basis, job.historyRevision
             W.publications = W.publications + 1
             for _, row in ipairs(W.rows) do
                 local entry=row.watch
@@ -216,6 +231,7 @@ end
 function W.Current()
     local snapshot=D.Snapshot()
     return not W.job and W.key==U.MarketKey() and W.snapshot==snapshot and snapshot~=nil and
+        W.publishedBasis == D.Settings().priceBasis and W.publishedHistoryRevision == H.revision and
         W.publishedRevision==W.revision and U.Number(snapshot.startedAt,0,U.Now()) and not D.IsStale(snapshot)
 end
 

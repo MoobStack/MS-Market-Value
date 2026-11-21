@@ -88,7 +88,7 @@ local buttons = {
         ["Falling"] = "Show price decreases that meet your movement and history filters.",
         ["All signals"] = "Show qualifying resale, rising and falling price signals together.",
         ["All items"] = "Show current listings, including variants without enough earlier pricing days.",
-        ["Sort: return"] = "Switch between sorting by return percentage and net profit per item.",
+        ["Sort: return"] = "Sort by return or net profit per item. Rising and Falling also sort by price movement.",
         ["Recheck saved scan"] = "Recalculate opportunities from saved prices without starting an auction scan.",
         ["Filters"] = "Show or hide profit, history, quantity and rarity filters.",
         ["Apply filters"] = "Save these filters and update results from the saved scan.",
@@ -136,7 +136,10 @@ function H.Button(widget, scope, label)
 end
 
 local settings = {
+    priceBasis = "Daily averages weight each UTC date equally. Intraday averages use all completed scans today (UTC).",
+    marketPriceBasis = "Toggle the baseline for Opportunities only. Right-click to follow the addon setting.",
     showInterfaceTips = "Show control help and list details inside addon windows, including addon AH buttons.",
+    showMinimapBadge = "Show the shortcut that opens MS Market Value from the minimap.",
     showVendor = "Add the item's vendor sell price to item tooltips.",
     showHistory = "Show historic average prices and the number of sampled UTC days on item tooltips.",
     showAuction = "Show the lowest buyout from your latest saved auction scan.",
@@ -153,8 +156,8 @@ local settings = {
     serviceCustomerMaterials = "Quote labor or the minimum charge when the customer supplies all materials.",
     marketMinReturn = "Minimum net profit as a percentage of the buy price, from 0-1000 percent.",
     marketMinProfit = "Minimum net profit per item in gold. For example, 0.25 is 25 silver.",
-    marketLookback = "Look back 1-30 UTC days for earlier daily prices. The scan's own date is excluded.",
-    marketMinDays = "Require 2-29 earlier priced UTC days for this exact item variant, within the lookback window.",
+    marketLookback = "Set the Daily baseline's lookback from 1 to 30 UTC days, excluding the current scan's date.",
+    marketMinDays = "Set the Daily baseline's minimum earlier priced UTC days for each exact variant.",
     marketMove = "Minimum price change from the historic baseline, in percent. Use 0 to turn this filter off.",
     marketLowMin = "Minimum quantity offered at the lowest unit price. Use 0 for no minimum.",
     marketLowMax = "Maximum quantity offered at the lowest unit price. Use 0 for no maximum.",

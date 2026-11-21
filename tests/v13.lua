@@ -174,7 +174,7 @@ test("farming applies the AH cut and vendor threshold inclusively using exact va
     local w,A=world();w.items[100]={name="Trade item",vendor=100}
     scan(w,A,{row(100,1,115)})
     equal(A.Farm.Price(link(100),"loot"),100)
-    w:advance(901);scan(w,A,{row(100,1,116)})
+    w:advance(901);scan(w,A,{row(100,1,117)})
     equal(A.Farm.Price(link(100),"loot"),110)
     equal(A.Farm.Price(link(100),"quest"),100)
     w:advance(25*3600);equal(A.Farm.Price(link(100),"loot"),100)

@@ -12,42 +12,57 @@ local function Quantile(values, fraction)
     return values[low] + ((values[low + 1] or values[low]) - values[low]) * (position - low)
 end
 
-function M.Evaluate(current, samples, settings)
-    if not Price(current) or not U.Table(samples) or #samples < settings.marketMinDays then return nil end
-    local values, chronological = {}, {}
-    for _, value in ipairs(samples) do
-        if not Price(value) then return nil end
-        values[#values + 1], chronological[#chronological + 1] = value, value
-    end
-    table.sort(values)
-    -- The lower quartile is deliberately below the median. One inflated day
-    -- should not create a resale signal or an unrealistic target sell price.
-    local median, baseline = Quantile(values, 0.5), math.floor(Quantile(values, 0.25))
+local function Signal(current, baseline, reference, settings)
     local buy = math.ceil(current)
     local proceeds = math.floor(baseline * (100 - settings.marketFee) / 100)
     local profit = proceeds - buy
-    local row = { current = current, buy = buy, baseline = baseline, median = median,
-        low = values[1], high = values[#values], days = #values, profit = profit,
-        roi = profit / buy * 100, movement = (current - median) / median * 100,
+    local row = { current = current, buy = buy, baseline = baseline, median = reference, profit = profit,
+        roi = profit / buy * 100, movement = (current - reference) / reference * 100,
         maxBuy = math.max(0, math.floor(math.min(proceeds / (1 + settings.marketMinReturn / 100), proceeds - settings.marketMinProfit))) }
     -- Compare prices directly so an exact percentage boundary is inclusive.
-    local drop = current < median and current <= median * (100 - settings.marketMove) / 100
-    local rise = current > median and current >= median * (100 + settings.marketMove) / 100
+    local drop = current < reference and current <= reference * (100 - settings.marketMove) / 100
+    local rise = current > reference and current >= reference * (100 + settings.marketMove) / 100
     row.deal = profit >= settings.marketMinProfit and profit > 0 and row.roi >= settings.marketMinReturn and
         (settings.marketMove == 0 or drop)
     row.rising, row.falling = rise, drop
-    if #chronological >= 5 then
-        local recent = { chronological[#chronological - 1], chronological[#chronological], current }
-        local older = { chronological[#chronological - 4], chronological[#chronological - 3], chronological[#chronological - 2] }
+    return row
+end
+
+function M.Evaluate(current, samples, settings)
+    if not Price(current) or not U.Table(samples) or #samples < settings.marketMinDays then return nil end
+    local values = {}
+    for _, value in ipairs(samples) do
+        if not Price(value) then return nil end
+        values[#values + 1] = value
+    end
+    table.sort(values)
+    -- Use the lower quartile of the daily means for conservative resale estimates.
+    local row = Signal(current, math.floor(Quantile(values, 0.25)), Quantile(values, 0.5), settings)
+    row.low, row.high, row.days = values[1], values[#values], #values
+    if #samples >= 5 then
+        local recent = { samples[#samples - 1], samples[#samples], current }
+        local older = { samples[#samples - 4], samples[#samples - 3], samples[#samples - 2] }
         table.sort(recent); table.sort(older)
         row.trend = (recent[2] / older[2] - 1) * 100
     end
     return row
 end
 
-local function Signature(view, sort)
+function M.EvaluateIntraday(current, average, scans, settings)
+    if not Price(current) or not Price(average) or scans < 1 then return nil end
+    local row = Signal(current, math.floor(average), average, settings)
+    row.scans = scans
+    return row
+end
+
+function M.PriceBasis()
+    local settings = D.Settings()
+    return settings.marketPriceBasis == "addon" and settings.priceBasis or settings.marketPriceBasis
+end
+
+local function Signature(view, sort, basis)
     local s = D.Settings()
-    return table.concat({ view, sort, s.marketLookback, s.marketMinDays, s.marketFee,
+    return table.concat({ view, sort, basis, s.marketLookback, s.marketMinDays, s.marketFee,
         s.marketMinReturn, s.marketMinProfit, s.marketMove, s.marketLowMin, s.marketLowMax,
         s.marketStockMin, s.marketStockMax, s.marketStockDrop, s.marketSearch, s.marketQuality,A.Vendor.revision }, "|")
 end
@@ -66,14 +81,19 @@ end
 function M.Ensure(view, sort, force)
     H.Maintain()
     view = (view == "rising" or view == "falling" or view == "all" or view=="listed") and view or "deals"
-    sort = sort == "profit" and "profit" or "return"
+    if sort ~= "profit" and sort ~= "return" then
+        sort = (view == "rising" or view == "falling") and "movement" or "return"
+    end
     local market = U.MarketInfo()
     local key, snapshot = market.key, D.Snapshot(market)
     if not Fresh(snapshot) then M.Clear(snapshot and "The saved scan is stale. Complete a fresh AH scan for current signals." or "Complete an AH scan to look for opportunities."); return end
     if not H.data then M.Clear(H.reason or "Price history is unavailable."); return end
-    local signature = Signature(view, sort)
-    if M.key ~= key then M.rows, M.snapshot, M.job = {}, nil, nil end
-    M.key = key
+    local basis = M.PriceBasis()
+    local signature = Signature(view, sort, basis)
+    if M.key ~= key or M.basis ~= basis or (basis == "intraday" and M.utcDay ~= H.prunedDay) then
+        M.rows, M.snapshot, M.job, M.eligible = {}, nil, nil, 0
+    end
+    M.key, M.basis, M.utcDay = key, basis, H.prunedDay
     -- Item replies can arrive continuously. Finish the current pass, then
     -- refresh once, rather than restarting it every quarter second.
     if not force and M.job and M.source==snapshot and M.historyRevision==H.revision and M.signature==signature then
@@ -87,6 +107,7 @@ function M.Ensure(view, sort, force)
     local settings = {}
     for name, value in pairs(D.Settings()) do if U.String(name) and string.sub(name, 1, 6) == "market" then settings[name] = value end end
     local day=math.floor(snapshot.startedAt/86400)
+    local intraday = basis == "intraday"
     local records,historyInfo=H.PriorRecords(snapshot,settings.marketLookback,market)
     local modern=snapshot.variantFormat==2
     local index=M.variantIndex
@@ -98,7 +119,9 @@ function M.Ensure(view, sort, force)
     if not modern then for _, record in ipairs(records) do maps[#maps + 1] = record.variants end end
     local words={}
     for word in string.gmatch(string.lower(settings.marketSearch),"%S+") do words[#words+1]=word end
-    M.job = { snapshot = snapshot, records = records, settings = settings, maps = maps, vendorKnown = A.Vendor.KnownItems(),
+    M.job = { snapshot = snapshot, records = records, settings = settings, basis = basis, maps = maps, vendorKnown = A.Vendor.KnownItems(),
+        intraday = intraday, intradayRecord = intraday and H.IntradayBaseline(market, snapshot) or nil,
+        minimumSamples = intraday and 1 or settings.marketMinDays,
         mapIndex = 1, variants = index and index.variants or {}, currentVariants=index and index.currentVariants or {},
         currentVariantCount=index and index.count or 0,modifierCount=index and index.modifiers or 0,
         phase = index and "prices" or "variants", words=words, rows = {}, examined = 0, eligible = 0,
@@ -147,8 +170,9 @@ end
 
 local function Better(a, b, job)
     local av, bv
-    if job.view == "rising" then av, bv = a.movement, b.movement
-    elseif job.view == "falling" then av, bv = -a.movement, -b.movement
+    if job.sort == "movement" then
+        local direction = job.view == "falling" and -1 or 1
+        av, bv = direction * a.movement, direction * b.movement
     elseif job.sort == "profit" then av, bv = a.profit, b.profit
     else av, bv = a.roi, b.roi end
     av,bv=av or -math.huge,bv or -math.huge
@@ -242,37 +266,49 @@ local function Evaluate(job, key, entry, variant)
     local equipment=item and (item.classID==2 or item.classID==4) and quality and quality>=2
     local legacyEquipment=(equipment and (not U.String(entry.link) or not variant)) or
         (job.snapshot.variantFormat~=2 and not U.String(entry.link))
-    local values,firstDay,lastDay = {},nil,nil
-    for _, record in ipairs(job.records) do
-        local value = (variant and record.variants or record.prices)[key]
-        if Price(value) and (not equipment or suffix~=0 or record.variantFormat==2) then
-            values[#values+1]=value
-            local day=math.floor(record.startedAt/86400);firstDay=firstDay or day;lastDay=day
+    local row, sampleCount, firstDay, lastDay = nil, 0, nil, nil
+    if job.intraday then
+        local record = job.intradayRecord
+        if record and (not equipment or suffix ~= 0 or record.variantFormat == 2) then
+            local average
+            average, sampleCount = H.EarlierScans(record, variant and "variants" or "prices", key)
+            if not legacyEquipment then row = M.EvaluateIntraday(entry.low, average, sampleCount, s) end
         end
+    else
+        local values = {}
+        for _, record in ipairs(job.records) do
+            local value = (variant and record.variants or record.prices)[key]
+            if Price(value) and (not equipment or suffix~=0 or record.variantFormat==2) then
+                values[#values+1]=value
+                local day=math.floor(record.startedAt/86400);firstDay=firstDay or day;lastDay=day
+            end
+        end
+        sampleCount = #values
+        if not legacyEquipment then row = M.Evaluate(entry.low, values, s) end
     end
     local coverage=job.coverage
     coverage.keywordMatches=coverage.keywordMatches+1
     if variant and (suffix~=0 or bonuses) then
         coverage.matchingVariants=coverage.matchingVariants+1
-        local bucket=math.min(#values,s.marketMinDays)
+        local bucket=math.min(sampleCount,job.minimumSamples)
         coverage.modifiedPrior[bucket]=(coverage.modifiedPrior[bucket] or 0)+1
         if legacyEquipment then coverage.modifiedRescan=coverage.modifiedRescan+1 end
         local samples=coverage.samples
         if #samples<3 or key<samples[#samples].key then
-            samples[#samples+1]={key=key,name=name or linkedName or ("Item "..id),days=#values,minDays=s.marketMinDays,formatRequired=equipment and suffix==0}
+            samples[#samples+1]={key=key,name=name or linkedName or ("Item "..id),days=sampleCount,minDays=job.minimumSamples,formatRequired=equipment and suffix==0}
             table.sort(samples,function(a,b)return a.key<b.key end)
             if #samples>3 then table.remove(samples) end
         end
     end
-    if #values<s.marketMinDays or legacyEquipment then coverage.needsHistory=coverage.needsHistory+1 end
-    local row=not legacyEquipment and M.Evaluate(entry.low, values, job.settings) or nil
-    if job.view=="listed" and not row then row={current=entry.low,buy=math.ceil(entry.low),days=#values,needsHistory=true} end
+    if sampleCount<job.minimumSamples or legacyEquipment then coverage.needsHistory=coverage.needsHistory+1 end
+    if job.view=="listed" and not row then row={current=entry.low,buy=math.ceil(entry.low),needsHistory=true} end
     if not row or not Include(job, row) then
-        if #values>=s.marketMinDays and not legacyEquipment then coverage.filteredSignals=coverage.filteredSignals+1 end
+        if sampleCount>=job.minimumSamples and not legacyEquipment then coverage.filteredSignals=coverage.filteredSignals+1 end
         return
     end
     row.id, row.suffix, row.key, row.variantKey, row.hasBonuses = id, suffix, tostring(key), variant and key or nil,bonuses
     row.itemWide=legacyEquipment
+    if job.intraday then row.scans = sampleCount else row.days = sampleCount end
     row.minDays,row.historyFirstDay,row.historyLastDay=s.marketMinDays,firstDay,lastDay
     row.historyFormatRequired=equipment and suffix==0
     row.link = U.String(entry.link) and U.ItemID(entry.link) == id and entry.link or
@@ -297,17 +333,23 @@ local function Publish(job)
     M.historyInfo,M.historyRecords=job.historyInfo,job.records
     M.publications = M.publications + 1
     if job.metadataDirty then M.metadataDirty=true end
+    local requirement = job.intraday and "an earlier priced scan today (UTC)" or
+        (job.minimumSamples .. " earlier priced UTC days")
     M.reason = job.reason or (((job.qualityMissing or 0)>0 or (job.nameMissing or 0)>0) and "Some item names or rarity data is loading. Results update when it arrives.") or
         (#M.rows == 0 and (job.view=="listed" and "No current items match these filters." or
-        ("No matching signals. Use All items for current variants; signals need " .. job.settings.marketMinDays .. " earlier priced UTC days per variant.")) or
-        (job.coverage.needsHistory>0 and (job.coverage.needsHistory .. " matches need " .. job.settings.marketMinDays ..
-            " earlier priced UTC days. All items shows current prices.")) or nil)
+        ("No matching signals. Signals need " .. requirement .. " per variant. All items shows current prices.")) or
+        (job.coverage.needsHistory>0 and (job.coverage.needsHistory .. " matches need " .. requirement ..
+            ". All items shows current prices.")) or nil)
 end
 
 local function UTC(day)return day and date("!%Y-%m-%d",day*86400) or "none" end
 
 function M.HistoryDescription(row)
     if row.itemWide then return "Saved prices are item-wide. Complete a new scan for exact variants." end
+    if row.scans then
+        return row.scans == 0 and "Needs an earlier priced scan for this item today (UTC)." or
+            (row.scans .. (row.scans == 1 and " earlier scan today (UTC)." or " earlier scans today (UTC)."))
+    end
     local text=(row.days or 0).."/"..(row.minDays or D.Settings().marketMinDays).." earlier priced UTC days; current scan date excluded."
     if row.historyFirstDay then text=text.." Seen "..UTC(row.historyFirstDay).." to "..UTC(row.historyLastDay).."." end
     return text
@@ -315,6 +357,11 @@ end
 
 function M.HistoryDiagnostics()
     local snapshot=D.Snapshot()
+    if M.PriceBasis() == "intraday" then
+        local record = H.IntradayBaseline(nil, snapshot)
+        return { "Market intraday history: completed_scans=" .. (record and #record.intraday.scans or 0) ..
+            "; latest_scan_excluded=true" }
+    end
     local records,info=H.PriorRecords(snapshot,D.Settings().marketLookback)
     if not info then return {} end
     local lines={"Market history window: scan_UTC="..UTC(info.scanDay).."; current_format="..(snapshot.variantFormat==2 and "2" or "legacy").."; prior_dates="..info.priorDays..
@@ -358,7 +405,10 @@ function M.Tick()
     local job = M.job
     if not job then return end
     if M.key ~= U.MarketKey() then M.Clear("Market changed; checking the new market."); return end
-    if job.snapshot ~= D.Snapshot() or M.historyRevision ~= H.revision then M.job = nil; return end
+    if job.snapshot ~= D.Snapshot() or M.historyRevision ~= H.revision or job.basis ~= M.PriceBasis() then
+        M.job = nil
+        return
+    end
     if not Fresh(job.snapshot) then M.Clear("The saved scan is stale. Complete a fresh AH scan."); return end
     for _ = 1, 2000 do
         if job.phase == "variants" then

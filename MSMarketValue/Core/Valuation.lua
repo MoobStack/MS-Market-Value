@@ -80,20 +80,21 @@ function V.Outcomes(info)
     return results, P.label
 end
 
-function V.DisenchantValue(outcomes, snapshot)
+function V.DisenchantValue(outcomes, pricing)
+    pricing = pricing or A.History.Pricing()
     local result = { subtotal = 0, missing = {}, complete = true, expectedQuantities = {} }
     for _, outcome in ipairs(outcomes) do
         result.expectedQuantities[outcome.id] = outcome.expected
-        local price = D.Price(outcome.id, nil, snapshot)
+        local price = A.History.Estimate(outcome.id, nil, pricing)
         if price then
-            result.subtotal = result.subtotal + outcome.expected * price.low
+            result.subtotal = result.subtotal + outcome.expected * price.value
         else
             result.complete = false
             result.missing[#result.missing + 1] = outcome.id
         end
     end
     -- A missing price is not a zero price. No complete total is exposed unless
-    -- every possible material has a current-snapshot buyout observation.
+    -- every possible material has a price in the selected period.
     if result.complete then result.value = result.subtotal end
     return result
 end

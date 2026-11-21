@@ -1,12 +1,14 @@
-# MS Market Value 1.3.1 — User guide
+# MS Market Value user guide
 
 Start with the [README](README.md) for installation, commands and a quick setup.
 
 ## Prices and crafting
 
-At an auctioneer, start **Scan entire AH** from the MS Market Value tab. Keep the AH open until Local copy is complete. A completed scan replaces current prices; unfinished work leaves the last snapshot intact. Pause and resume during the same login. Unfinished scans do not survive reload or logout.
+At an auctioneer, choose **Scan entire AH** on the MS Market Value tab and keep the AH open until **Local copy** is complete. The addon detects your ruleset when possible. Confirm it if asked, or use **Change ruleset** in Price snapshot to set it later. The choice is saved for that character.
 
-Item tooltips show your chosen vendor, historic, auction and disenchant values. History keeps 1–30 UTC days. A priced-day count belongs to that item or modifier; it can be lower than the market's total saved days. Stale or missing prices are labeled.
+A completed scan replaces the current snapshot. You can pause and resume during the same login. Unfinished scans expire when you reload or log out.
+
+The **Prices** switch in **Price settings** selects the estimates used across the addon. **Daily** gives each saved UTC date equal weight, including today so far. **Intraday** averages today's completed scans. Each scan contributes its lowest unit price for each item or exact modifier with a buyout. At the UTC date change, the addon keeps the day's averages and drops the individual price samples. History keeps 1–30 UTC days.
 
 Open a profession and click **Show profits**, or use `/msmv craft`. Scroll, search and sort learned recipes, then select one for materials, net profit and break-even price. Visit supplies vendors to learn discounted costs. Other materials use market replacement value, including items you own; missing prices stay unknown.
 
@@ -14,9 +16,9 @@ Open a profession and click **Show profits**, or use `/msmv craft`. Scroll, sear
 
 ## Opportunities and watchlists
 
-At the AH, **MS Opportunities → All items** shows current prices. Resale, Rising and Falling need earlier prices for the exact modifier: three earlier priced UTC days by default, excluding the current scan's date. Repeated scans on one date count as one day. Missing history shows progress such as **2/3 days**; hover or right-click for dates.
+At the AH, **MS Opportunities → All items** shows the latest asking prices and stock. **Basis** changes the reference for that page. Daily uses earlier UTC dates, with three priced dates per variant by default. Intraday uses earlier scans today, with at least one priced scan per variant. Right-click **Basis** to follow the addon setting again.
 
-Apply keywords, rarity and supply filters. Left-click a result for live listings, or use **Watch selected** to save targets. On the Sell page, the red arrows beside copper adjust unit price by one copper and update the total.
+Apply keywords, rarity and supply filters. Use **Sort** to order Rising or Falling by movement, return or net profit per item. Left-click a result for live listings, or use **Watch selected** to save targets. On the Sell page, the red arrows beside copper adjust unit price by one copper and update the total.
 
 Add watches from the Buy page, Opportunities or an item link. Search filters items already watched. Scroll the list, click headings to sort, or enable **Targets met only**. Left-click opens Buy; right-click or Edit changes targets. Money inputs are gold per item, zero disables a target, and all enabled targets must pass.
 

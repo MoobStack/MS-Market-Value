@@ -62,7 +62,9 @@ test("vendor pricing remains fixed even when the current AH material price is ch
 end)
 test("vendor material costs do not require any completed auction scan", function()
     local w,A=craftingWorld(); merchant(w,{supply(100,10),supply(101,20)})
-    A.DB.data.markets[A.Util.MarketKey()]=nil
+    local market = A.Util.MarketKey()
+    A.DB.data.markets[market], A.History.data.markets[market] = nil, nil
+    A.History.Prune()
     local value=A.Crafting.Analyze(1,w.form)
     equal(value.cost,40); equal(value.quote,40); equal(value.profitMin,nil)
 end)
@@ -301,6 +303,62 @@ test("market controls apply all validated targets together and display selected 
     drain(A); A.MarketUI.Refresh(); A.MarketUI.rows[1].scripts.OnClick(A.MarketUI.rows[1], "RightButton")
     truth(string.find(A.MarketUI.detail.text,"Buy at",1,true))
     A.MarketUI.views.rising.scripts.OnClick(); equal(A.MarketUI.sortButton.text,"Sort: movement")
+end)
+test("rising and falling can each sort the same signals by movement, return or profit", function()
+    local prices = {
+        {150, 10000, 1000, 100, 500, 1},
+        {1000, 10000, 1000, 100, 500, 50},
+        {1000, 10000, 1000, 100, 500, 50},
+        {100, 2100, 140, 200, 700, 80},
+    }
+    local series = {}
+    for day, values in ipairs(prices) do
+        series[day] = {}
+        for index, value in ipairs(values) do
+            series[day][index] = row(99 + index, 1, value)
+        end
+    end
+    local w, A = marketWorld(series)
+    w:openAH()
+    w:nativeSearch()
+    A.MarketUI.Show()
+    local ui = A.MarketUI
+    local function Expect(sort, first, second, third)
+        equal(ui.sortButton.text, "Sort: " .. sort)
+        truth(ui.sortButton:IsEnabled())
+        for _ = 1, 10 do A.eventFrame.scripts.OnUpdate(A.eventFrame, .25) end
+        equal(A.Market.job, nil)
+        equal(#A.Market.rows, 3)
+        equal(A.Market.rows[1].id, first)
+        equal(A.Market.rows[2].id, second)
+        equal(A.Market.rows[3].id, third)
+        local builds = A.Market.builds
+        A.eventFrame.scripts.OnUpdate(A.eventFrame, .25)
+        equal(A.Market.builds, builds)
+    end
+    ui.views.falling.scripts.OnClick()
+    Expect("movement", 100, 102, 101)
+    ui.sortButton.scripts.OnClick()
+    Expect("return", 102, 100, 101)
+    ui.sortButton.scripts.OnClick()
+    Expect("profit", 101, 102, 100)
+    ui.views.rising.scripts.OnClick()
+    Expect("movement", 103, 105, 104)
+    ui.sortButton.scripts.OnClick()
+    Expect("return", 104, 103, 105)
+    ui.sortButton.scripts.OnClick()
+    Expect("profit", 105, 103, 104)
+    ui.sortButton.scripts.OnClick()
+    Expect("movement", 103, 105, 104)
+    ui.views.falling.scripts.OnClick()
+    Expect("profit", 101, 102, 100)
+    ui.sortButton.scripts.OnClick()
+    Expect("movement", 100, 102, 101)
+    ui.views.deals.scripts.OnClick()
+    equal(ui.sortButton.text, "Sort: return")
+    equal(w.requests, 0)
+    equal(w.itemSearches, 0)
+    equal(w.browseSearches, 0)
 end)
 test("invalid market filters preserve existing settings and do not begin a rebuild", function()
     local w,A=fresh(); w:load(); w:openAH(); A.MarketUI.Show()

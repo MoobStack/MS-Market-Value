@@ -114,10 +114,14 @@ function U.GoldText(copper)
     return string.format("%.0f", math.floor(copper / 10000)) .. (#fraction > 0 and ("." .. fraction) or "")
 end
 
+function U.PlayerGUID()
+    local guid = U.Call(UnitGUID, "player")
+    if U.String(guid) and #guid > 0 and #guid <= 128 and not guid:find("|", 1, true) then return guid end
+end
+
 function U.PlayerKey()
-    local ok, guid = false, nil
-    if type(UnitGUID) == "function" then ok, guid = pcall(UnitGUID, "player") end
-    if not ok or not U.String(guid) or #guid > 128 then return nil end
+    local guid = U.PlayerGUID()
+    if not guid then return nil end
     return A.DB.ProfileKey(A.Ledger and A.Ledger.data, "characters", U.MarketInfo(), "|" .. guid)
 end
 
@@ -260,8 +264,15 @@ local function Describe(value, errorReason)
     return "unavailable"
 end
 
-local rulesetNames = { normal = "Normal", pvp = "PvP", roleplaying = "Roleplaying",
+U.rulesetNames = { normal = "Normal", pvp = "PvP", roleplaying = "Roleplaying",
     roleplayingpvp = "Roleplaying PvP", hardcore = "Hardcore" }
+U.rulesetOrder = { "pvp", "normal", "roleplaying", "roleplayingpvp", "hardcore" }
+U.defaultRuleset = "pvp"
+
+function U.RulesetMarketKey(region, ruleset, faction)
+    return "forever|" .. region .. "|" .. ruleset .. "|" .. faction
+end
+
 local rulesetTokens = { normal = "normal", pve = "normal", pvp = "pvp", rp = "roleplaying",
     roleplay = "roleplaying", roleplaying = "roleplaying", rppvp = "roleplayingpvp",
     roleplaypvp = "roleplayingpvp", roleplayingpvp = "roleplayingpvp", hardcore = "hardcore" }
@@ -275,9 +286,29 @@ local function LiveRuleset(realm)
     if site and regions[site] then return rulesetTokens[token] end
 end
 
-local function Ruleset(realm, source, live)
-    local hardcore = PublicCall(C_GameRules and C_GameRules.IsHardcoreActive)
+local function ReadGameRule(name)
+    local rule = Enum and Enum.GameRule and Enum.GameRule[name]
+    if not U.Number(rule, 0, nil, true) then return nil end
+    local active = U.Call(C_GameRules and C_GameRules.IsGameRuleActive, rule)
+    if type(active) == "boolean" then return active end
+end
+
+local function NativeRuleset(info)
+    local hardcore = U.Call(C_GameRules and C_GameRules.IsHardcoreActive)
+    local hc = ReadGameRule("HardcoreRuleset")
+    local pvp = ReadGameRule("PvPRuleset")
+    local rp = ReadGameRule("RPRuleset")
+    info.hardcoreFlag, info.pvpFlag, info.roleplayFlag = hc, pvp, rp
     if hardcore == true then return "hardcore", "C_GameRules.IsHardcoreActive" end
+    local source = "C_GameRules.IsGameRuleActive"
+    if hc == true then return "hardcore", source end
+    if (hc == false or hardcore == false) and pvp ~= nil and rp ~= nil then
+        if rp then return pvp and "roleplayingpvp" or "roleplaying", source end
+        return pvp and "pvp" or "normal", source
+    end
+end
+
+local function ReportingRuleset(realm, source, live)
     if live then return live, source .. " (Forever live reporting alias)" end
     if not realm then return nil end
     local compact = string.lower(RealmName(realm) or "")
@@ -330,12 +361,19 @@ function U.MarketInfo()
         info.regionSource = portalSource
     end
     local live = LiveRuleset(info.realm)
-    info.ruleset, info.rulesetSource = Ruleset(info.realm, info.realmSource, live)
-    info.liveAlias = live ~= nil and live == info.ruleset
-    if info.liveAlias and info.region then info.legacyKey = info.region .. "|" .. info.realm end
+    info.detectedRuleset, info.detectedSource = NativeRuleset(info)
+    if not info.detectedRuleset then
+        info.detectedRuleset, info.detectedSource = ReportingRuleset(info.realm, info.realmSource, live)
+    end
     if U.String(faction) and (faction == "Horde" or faction == "Alliance" or faction == "Neutral") then
         info.faction = faction
     end
+    info.canChooseRuleset = info.region ~= nil and info.faction ~= nil and (info.detectedRuleset ~= nil or not info.realm)
+    if info.canChooseRuleset and A.DB then
+        info.selectedRuleset, info.selectionSource = A.DB.RulesetSelection(info)
+    end
+    info.ruleset = info.selectedRuleset or info.detectedRuleset
+    info.rulesetSource = info.selectionSource or info.detectedSource
     if not info.region then
         info.reason = "Region and login portal are unavailable. Copy diagnostics to report the lookup values."
     elseif info.ruleset then
@@ -346,11 +384,20 @@ function U.MarketInfo()
             -- Share reporting hosts in one ruleset, keep Normal/PvP separate,
             -- and conservatively keep faction prices separate until the AH's
             -- cross-faction sharing has been qualified on this client.
-            info.key = "forever|" .. info.region .. "|" .. info.ruleset .. "|" .. info.faction
-            info.label = rulesetNames[info.ruleset] .. " ruleset (" .. info.faction .. ")"
+            info.key = U.RulesetMarketKey(info.region, info.ruleset, info.faction)
+            info.label = U.rulesetNames[info.ruleset] .. " ruleset (" .. info.faction .. ")"
+            local liveAlias = live ~= nil and live == info.ruleset
+            info.recoverLiveHosts = liveAlias or not info.realm
+            if liveAlias then info.legacyKey = info.region .. "|" .. info.realm end
         end
     elseif not info.realm then
-        info.reason = "Realm name is unavailable. Try again after entering the world; diagnostics show the lookup values."
+        if info.canChooseRuleset then
+            info.pendingRuleset = U.defaultRuleset
+            info.label = U.rulesetNames[info.pendingRuleset] .. " (confirm ruleset)"
+            info.reason = "Confirm your ruleset to load saved prices and scan the Auction House."
+        else
+            info.reason = "Player faction is unavailable. Try again after entering the world; copy diagnostics if it persists."
+        end
     else
         -- An unrecognized alias stays isolated. Old realm-key records remain
         -- readable in this fallback but are not merged into ruleset caches.
@@ -361,7 +408,7 @@ function U.MarketInfo()
 end
 
 function U.LegacyLiveHost(key, market)
-    if not market.liveAlias or not U.String(key) then return false end
+    if not market.recoverLiveHosts or not U.String(key) then return false end
     local region, realm = string.match(key, "^([^|]+)|([^|]+)$")
     return region == market.region and LiveRuleset(realm) == market.ruleset
 end

@@ -1,6 +1,6 @@
 # Release workflow
 
-MS Market Value **1.3.1** uses build `2026-11-17-release001` and tag `v1.3.1`.
+MS Market Value **1.3.2** uses build `2026-11-21-release001` and tag `v1.3.2`.
 
 Run the checks from the repository root before packaging:
 

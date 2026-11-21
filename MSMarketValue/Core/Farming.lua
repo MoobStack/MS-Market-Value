@@ -21,8 +21,8 @@ function F.Initialize()
 end
 
 function F.Profile()
-    local guid=U.Call(UnitGUID,"player")
-    if not F.data or not U.String(guid) or #guid>128 then return nil end
+    local guid=U.PlayerGUID()
+    if not F.data or not guid then return nil end
     local key=D.ProfileKey(F.data,"characters",U.MarketInfo(),"|" .. guid)
     if not key then return nil end
     local profile=F.data.characters[key]
@@ -185,7 +185,7 @@ function F.Elapsed()
     return profile and profile.current.elapsed or 0
 end
 
-function F.Price(itemLink,source,snapshot)
+function F.Price(itemLink,source,snapshot,pricing)
     local id=U.ItemID(itemLink)
     local info=A.Valuation.ItemInfo(itemLink)
     if not info then return nil,"loading" end
@@ -195,11 +195,11 @@ function F.Price(itemLink,source,snapshot)
         return vendor,"vendor"
     end
     snapshot=snapshot or D.Snapshot()
-    local price,mode=D.Price(id,itemLink,snapshot)
+    local price=A.History.Estimate(id,itemLink,pricing)
     -- Exact variants and fresh scans only; an unrelated green is not income.
     if snapshot and not D.IsStale(snapshot) and price and
-       (not U.VariantKey(itemLink) or mode=="variant") then
-        local net=math.floor(price.low*(100-D.Settings().marketFee)/100)
+       (not U.VariantKey(itemLink) or price.mode=="variant") then
+        local net=math.floor(price.value*(100-D.Settings().marketFee)/100)
         if net>vendor and net*100>=vendor*(100+D.Settings().farmThreshold) then return net,"AH net" end
     end
     return vendor,"vendor"
@@ -253,20 +253,21 @@ function F.Summary()
     local profile=F.Profile()
     if not profile then return {total=0,perHour=0,elapsed=0,unknown=0,items={},recent={}} end
     local session=profile.current
-    local snapshot=D.Snapshot()
+    local market = U.MarketInfo()
+    local snapshot, pricing = D.Snapshot(market), A.History.Pricing(market)
     local signature=table.concat({F.revision,D.Settings().farmThreshold,D.Settings().marketFee,tostring(D.Settings().farmUseAuction),
         tostring(snapshot and D.IsStale(snapshot)),tostring(D.Settings().farmQuestInRate)},"|")
     local result=F.summary
-    if not result or result.signature~=signature or result.snapshot~=snapshot or result.session~=session then
+    if not result or result.signature~=signature or result.snapshot~=snapshot or result.pricing~=pricing or result.session~=session then
         result={total=session.coins+session.questCoins,coins=session.coins,questCoins=session.questCoins,
             lootValue=0,questValue=0,harvestValue=0,unknown=0,items={},recent=session.recent,
             categories={loot=session.coins,quest=session.questCoins,herbalism=0,mining=0,skinning=0},
-            signature=signature,snapshot=snapshot,session=session}
+            signature=signature,snapshot=snapshot,pricing=pricing,session=session}
         local count=0
         for _,item in pairs(session.items) do
             count=count+1;if count>MAX_ITEMS then F.reason="Oversized session preserved.";break end
             if U.Table(item) and U.String(item.link) and U.Number(item.quantity,0,1000000000,true) then
-                local unit,mode=F.Price(item.link,item.source,snapshot)
+                local unit,mode=F.Price(item.link,item.source,snapshot,pricing)
                 if unit and not U.Number(unit*item.quantity,0,MAX) then unit,mode=nil,"unavailable" end
                 local row={name=item.name,quantity=item.quantity,unit=unit,mode=mode,source=item.source,link=item.link}
                 row.total=unit and unit*item.quantity

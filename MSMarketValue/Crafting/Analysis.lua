@@ -145,7 +145,7 @@ function C.QuoteText(row)
     return name .. " - " .. U.Money(quote) .. " per craft"
 end
 
-function C.Analyze(recipeID, form, snapshot)
+function C.Analyze(recipeID, form, pricing)
     if not C.Supported() or not U.Number(recipeID, 1, MAX_ID, true) then return nil end
     local level = form and Call(form.GetCurrentRecipeLevel, form)
     if not U.Number(level, 1, 1000, true) then level = nil end
@@ -217,15 +217,18 @@ function C.Analyze(recipeID, form, snapshot)
             if not knownSlots[slotIndex] then return Unavailable("Reagent selection is changing. Select the recipe again.") end
         end
     end
-    snapshot = snapshot or D.Snapshot()
+    pricing = pricing or A.History.Pricing()
     for _, id in ipairs(order) do
         local quantity = quantities[id]
         if not U.Number(quantity, 1, MAX_QUANTITY, true) then return Unavailable("Invalid material quantity.") end
         local unit, mode = A.Vendor.Price(id)
         local price
-        if not unit and mode ~= "vendor-unseen" then price, mode = D.Price(id, nil, snapshot) end
-        unit = unit or (price and price.low)
-        local material = { id = id, quantity = quantity, name = C.MaterialName(id), mode = mode }
+        if not unit and mode ~= "vendor-unseen" then
+            price = A.History.Estimate(id, nil, pricing)
+            mode = price and price.mode
+        end
+        unit = unit or (price and price.value)
+        local material = { id = id, quantity = quantity, name = C.MaterialName(id), mode = mode, basis = price and price.basis }
         if unit then
             material.unitPrice, material.total = unit, unit * quantity
             result.subtotal = result.subtotal + material.total
@@ -272,9 +275,9 @@ function C.Analyze(recipeID, form, snapshot)
     result.outputLink = outputLink
     if materialReason then return Unavailable(materialReason) end
     result.unitCostMin, result.unitCostMax = result.cost / maximum, result.cost / minimum
-    local price = D.Price(outputID, outputLink, snapshot)
-    if not price then return Unavailable("Output has no buyout price in the latest scan; material quote only.") end
-    local saleMin, saleMax = price.low * minimum, price.low * maximum
+    local price = A.History.Estimate(outputID, outputLink, pricing)
+    if not price then return Unavailable("Output has no price for the selected period. Material quote only.") end
+    local saleMin, saleMax = price.value * minimum, price.value * maximum
     if not U.Number(saleMin, 0, 9007199254740991) or not U.Number(saleMax, 0, 9007199254740991) then
         return Unavailable("Sale value is out of range; material quote only.")
     end
@@ -316,14 +319,15 @@ end
 
 local function Publish()
     C.rows, C.skipped, C.publishedSnapshot = C.buildRows, C.buildSkipped, C.snapshot
+    C.publishedPricing = C.pricing
     C.buildRows, C.buildSkipped, C.ready, C.rankedCache = nil, nil, true, {}
     C.publications = C.publications + 1
 end
 
-function C.BeginCatalog()
+function C.BeginCatalog(snapshot, pricing)
     C.buildRows, C.cursor, C.ready, C.buildSkipped = {}, 1, false, 0
     C.dirty, C.checkRequested = false, false
-    C.snapshot = D.Snapshot()
+    C.snapshot, C.pricing = snapshot, pricing
     local ids, scope, reason = RecipeIDs()
     C.ids, C.catalogScope, C.reason = ids or {}, scope, reason
     C.builds = C.builds + 1
@@ -367,19 +371,21 @@ function C.Tick()
     end
     if not C.wasOpen then C.Invalidate() end
     C.wasOpen = true
-    local marketKey = U.MarketKey()
+    local market = U.MarketInfo()
+    local marketKey = market.key
     if marketKey ~= C.marketKey then
-        C.marketKey, C.rows, C.skipped, C.rankedCache, C.publishedSnapshot = marketKey, {}, 0, {}, nil
+        C.marketKey, C.rows, C.skipped, C.rankedCache, C.publishedSnapshot, C.publishedPricing = marketKey, {}, 0, {}, nil, nil
         C.Invalidate()
     end
     local profession = C.Supported() and Call(C_TradeSkillUI.GetBaseProfessionInfo)
     local professionID = U.Table(profession) and profession.professionID
     if not U.Number(professionID, 1, MAX_ID, true) then professionID = nil end
     if professionID ~= C.professionID then
-        C.professionID, C.rows, C.skipped, C.rankedCache, C.publishedSnapshot = professionID, {}, 0, {}, nil
+        C.professionID, C.rows, C.skipped, C.rankedCache, C.publishedSnapshot, C.publishedPricing = professionID, {}, 0, {}, nil, nil
         C.Invalidate()
     end
-    if C.snapshot ~= D.Snapshot() then C.Invalidate() end
+    local snapshot, pricing = D.Snapshot(market), A.History.Pricing(market)
+    if C.snapshot ~= snapshot or C.pricing ~= pricing then C.Invalidate() end
     -- List events also report harmless item/filter updates. A changed ID set
     -- warrants a fresh valuation; another copy of the same event does not.
     if C.checkRequested and C.ready and U.Mono() >= (C.nextCatalogCheck or 0) then
@@ -389,13 +395,13 @@ function C.Tick()
         if not changed and ids then for index, id in ipairs(ids) do if id ~= C.ids[index] then changed = true; break end end end
         if changed then C.Invalidate() end
     end
-    if C.dirty then C.BeginCatalog() end
+    if C.dirty then C.BeginCatalog(snapshot, pricing) end
     if C.ids and not C.ready then
         local start = debugprofilestop and debugprofilestop() or 0
         for _ = 1, 20 do
             local id = C.ids[C.cursor]
             if not id then Publish(); break end
-            local row = C.Analyze(id, nil, C.snapshot)
+            local row = C.Analyze(id, nil, C.pricing)
             if row then C.buildRows[#C.buildRows + 1] = row; if not row.profitMin then C.buildSkipped = C.buildSkipped + 1 end end
             C.cursor = C.cursor + 1
             if debugprofilestop and debugprofilestop() - start >= A.FRAME_BUDGET_MS then break end
@@ -403,6 +409,6 @@ function C.Tick()
         if not C.ready and C.cursor > #C.ids then Publish() end
     end
     local selected = Call(form.GetRecipeInfo, form)
-    C.selected = U.Table(selected) and C.Analyze(selected.recipeID, form) or nil
+    C.selected = U.Table(selected) and C.Analyze(selected.recipeID, form, pricing) or nil
     if A.CraftingUI then A.CraftingUI.Update(form) end
 end

@@ -21,6 +21,15 @@ function S.Supported()
     return true
 end
 
+function S.OnMarketChanged(key)
+    if not S.marketKey or S.marketKey == key then return end
+    S.marketKey, S.marketInfo = nil, nil
+    S.localReady, S.bufferLost = false, false
+    S.copiedRows, S.copyCursor, S.totalRows = 0, 0, nil
+    S.responseCount, S.dataUpdateCount = 0, 0
+    SetState("IDLE")
+end
+
 function S.Discard(reason, failed)
     if not S.active and not S.paused then return false end
     S.active, S.paused, S.resumeState = false, false, nil
@@ -119,6 +128,9 @@ function S.Start(restart)
     if not A.auctionOpen then return false, "Open an auctioneer first." end
     if U.Combat() then return false, "Scanning is available outside combat." end
     if not S.Supported() then return false, "The required modern auction API is unavailable." end
+    local market = U.MarketInfo()
+    local key = market.key
+    if not key then return false, market.reason end
     if S.RemainingCooldown() > 0 then
         return false, string.format("Full-scan cooldown: %dm %ds remaining.", math.floor(S.RemainingCooldown() / 60), S.RemainingCooldown() % 60)
     end
@@ -128,9 +140,6 @@ function S.Start(restart)
             return false, "The auction server is busy. Try again when it is ready."
         end
     end
-    local market = U.MarketInfo()
-    local key = market.key
-    if not key then return false, market.reason end
     if restart then S.Discard("Starting a fresh full scan; previous completed prices kept.") end
     U.Log("Scan market: " .. key .. " (" .. market.label .. "; " .. market.regionSource .. ").")
     S.active, S.marketKey, S.marketInfo = true, key, market

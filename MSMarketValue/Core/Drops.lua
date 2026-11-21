@@ -59,8 +59,8 @@ end
 
 function P.Profile()
     if not P.data then return nil end
-    local guid=U.Call(UnitGUID,"player")
-    if not U.String(guid) or #guid>128 then return nil end
+    local guid=U.PlayerGUID()
+    if not guid then return nil end
     local key=D.ProfileKey(P.data,"characters",U.MarketInfo(),"|" .. guid)
     if not key then return nil end
     local profile=P.data.characters[key]
@@ -465,8 +465,8 @@ function P.Rows(npcID,kind)
     local settings=D.Settings()
     local cacheKey=table.concat({tostring(sourceKey),context.key,settings.dropMode,settings.dropSort,
         settings.dropQuality,settings.dropRows,P.revision,A.LootReference.revision or 0},"|")
-    local snapshot=D.Snapshot()
-    if P.cache and P.cache.key==cacheKey and P.cache.snapshot==snapshot then return P.cache.rows,P.cache.samples end
+    local pricing=A.History.Pricing()
+    if P.cache and P.cache.key==cacheKey and P.cache.pricing==pricing then return P.cache.rows,P.cache.samples end
     local personal,samples=PersonalRows(sourceKey,context)
     local rows,referenceCount={},0
     if D.Settings().dropMode=="reference" then
@@ -502,8 +502,8 @@ function P.Rows(npcID,kind)
             -- Needed quest drops stay visible even if their rarity is hidden.
             if wanted or P.QualityAllowed(settings.dropQuality,row.quality) then
                 row.r,row.g,row.b=U.ItemColor(nil,row.quality)
-                local price=D.Price(row.id,nil,snapshot)
-                row.value=price and price.low or (info and info.vendor or 0)
+                local price=A.History.Estimate(row.id,nil,pricing)
+                row.value=price and price.value or (info and info.vendor or 0)
                 row.score=row.rate*row.value
                 visible[#visible+1]=row
             else qualityHidden=qualityHidden+1 end
@@ -525,7 +525,7 @@ function P.Rows(npcID,kind)
         local row=rows[index]
         if row.name=="Item " .. row.id then P.RequestName(row.id) end
     end
-    P.cache={key=cacheKey,rows=rows,samples=samples,snapshot=snapshot,hidden=hidden,qualityHidden=qualityHidden,referenceCount=referenceCount}
+    P.cache={key=cacheKey,rows=rows,samples=samples,pricing=pricing,hidden=hidden,qualityHidden=qualityHidden,referenceCount=referenceCount}
     return rows,samples
 end
 
