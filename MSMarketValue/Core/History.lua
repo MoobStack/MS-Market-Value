@@ -334,6 +334,34 @@ function H.EarlierScans(record, map, key)
     return nil, 0
 end
 
+local function Average(view, map, id, mode, variantFormat)
+    if view.basis == "intraday" then
+        local record = view.days[view.today]
+        local scans = record and (not variantFormat or record.variantFormat == variantFormat) and
+            record.intraday and record.intraday.counts[map][id]
+        if scans then return { value = record[map][id], scans = scans, days = 1, mode = mode, basis = view.basis } end
+        return nil
+    end
+    local count, mean, firstDay, lastDay = 0, 0
+    -- Iterate calendar days in order for deterministic rounding. Each
+    -- available daily low has equal weight; absent listings are skipped.
+    local today = view.today
+    for day = today - view.retention + 1, today do
+        local record = view.days[day]
+        local value = record and (not variantFormat or record.variantFormat == variantFormat) and record[map][id]
+        if Price(value) then
+            count = count + 1
+            mean = mean + (value - mean) / count
+            firstDay, lastDay = firstDay or day, day
+        end
+    end
+    if count > 0 then return { value = mean, days = count, mode = mode, basis = view.basis, firstDay = firstDay, lastDay = lastDay } end
+end
+
+function H.ExactVariantAverage(key, view)
+    return Average(view, "variants", key, "variant", 2)
+end
+
 function H.Average(itemID, link, view)
     if not ItemKey(itemID) or not H.data then return nil end
     view = view or H.Pricing(nil, "daily")
@@ -342,30 +370,8 @@ function H.Average(itemID, link, view)
     if variant and U.ItemID(link) ~= itemID then variant = nil end
     local cacheKey = view.key .. "|" .. (variant or tostring(itemID))
     if H.cache[cacheKey] ~= nil then return H.cache[cacheKey] or nil end
-    local function Average(map, id, mode)
-        if view.basis == "intraday" then
-            local record = view.days[view.today]
-            local scans = record and record.intraday and record.intraday.counts[map][id]
-            if scans then return { value = record[map][id], scans = scans, days = 1, mode = mode, basis = view.basis } end
-            return nil
-        end
-        local count, mean, firstDay, lastDay = 0, 0
-        -- Iterate calendar days in order for deterministic rounding. Each
-        -- available daily low has equal weight; absent listings are skipped.
-        local today = view.today
-        for day = today - view.retention + 1, today do
-            local record = view.days[day]
-            local value = record and record[map][id]
-            if Price(value) then
-                count = count + 1
-                mean = mean + (value - mean) / count
-                firstDay, lastDay = firstDay or day, day
-            end
-        end
-        if count > 0 then return { value = mean, days = count, mode = mode, basis = view.basis, firstDay = firstDay, lastDay = lastDay } end
-    end
-    local result = variant and Average("variants", variant, "variant") or nil
-    result = result or Average("prices", itemID, "item-wide")
+    local result = variant and Average(view, "variants", variant, "variant") or nil
+    result = result or Average(view, "prices", itemID, "item-wide")
     if H.cacheEntries >= MAX_CACHE then ResetCache(false) end
     H.cache[cacheKey], H.cacheEntries = result or false, H.cacheEntries + 1
     return result

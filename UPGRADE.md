@@ -2,9 +2,13 @@
 
 1. Close WoW and back up `WTF/Account/<account>/SavedVariables/MSMarketValue.lua` and its `.bak` file.
 2. Replace `Interface/AddOns/MSMarketValue` with the Clean ZIP's folder. Keep SavedVariables.
-3. Open `/msmv diagnostics` to verify the version is **1.3.2**.
+3. Open `/msmv diagnostics` to verify the version is **1.3.3**.
 
 Prices, history, settings, watches, targets, ledger entries and personal observations carry forward. No new scan is required to keep existing records; regular scans add fresh prices and modifier history.
+
+Version 1.3.3 separates new neutral scans from faction history. Older records carry no auction-house label, so scans saved at neutral auctioneers before this update can still affect faction history. A fresh faction scan replaces the current price snapshot.
+
+The latest saved cooldown carries over as the shared full-scan timer for both houses.
 
 If prompted, choose your character's Auction House ruleset. PvP is the default choice. You can change it in **MS Market Value → Price snapshot → Change ruleset**. Personal activity can record before you choose. A scan requires a confirmed ruleset.
 
@@ -18,4 +22,4 @@ Interface help starts enabled under Tooltips and can be switched off there. Watc
 
 Only the Clean ZIP belongs in AddOns. To roll back, close WoW and restore the older addon with its matching SavedVariables backup. Unfinished scans do not survive reload or logout.
 
-[Release notes](RELEASE-NOTES-v1.3.2.md) · [User guide](DOCUMENTATION.md)
+[Release notes](RELEASE-NOTES-v1.3.3.md) · [User guide](DOCUMENTATION.md)

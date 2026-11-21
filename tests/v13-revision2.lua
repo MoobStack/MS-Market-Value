@@ -8,7 +8,7 @@ local function modern(id,bonuses,name)
 end
 local function world(saved)
     local w,A=fresh(saved)
-    w.guids={player=w.guid,target=guid(1000),mouseover=guid(1000)}
+    w.guids={player=w.guid,npc=guid(8673),target=guid(1000),mouseover=guid(1000)}
     UnitGUID=function(unit)return w.guids[unit]end
     UnitName=function(unit)return unit=="player" and "Player" or "Test creature"end
     UnitIsDead=function()return w.dead or false end

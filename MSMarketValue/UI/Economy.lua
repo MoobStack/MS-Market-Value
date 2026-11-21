@@ -49,6 +49,7 @@ function E.SelectWatch(row)return A.WatchUI.Edit(row)end
 function E.WatchDraft(row,source)return A.WatchUI.Draft(row,source)end
 
 function E.WatchFromBuy(frame,commodity)
+    if A.Scanner.House() ~= "faction" then return U.Print("Add Buy-page watches at a faction auctioneer.") end
     if U.Combat()or not A.auctionOpen or not U.Table(frame)then return end
     local display=commodity and U.Table(frame.BuyDisplay)and frame.BuyDisplay.ItemDisplay or frame.ItemDisplay
     local key=U.Table(display)and display.itemKey or frame.itemKey
@@ -81,9 +82,10 @@ end
 function E.InstallBuyButtons()
     if U.Combat()or not U.Table(AuctionHouseFrame)then return end
     E.buyButtons=E.buyButtons or{}
+    local factionHouse = A.Scanner.House() == "faction"
     for _,definition in ipairs({{"ItemBuyFrame",false},{"CommoditiesBuyFrame",true}})do
         local native=AuctionHouseFrame[definition[1]]
-        if U.Table(native)and not E.buyButtons[native]then
+        if U.Table(native)and factionHouse and not E.buyButtons[native]then
             local commodity=definition[2]
             local display=commodity and U.Table(native.BuyDisplay)and native.BuyDisplay.ItemDisplay or native.ItemDisplay
             if U.Table(display)then
@@ -94,6 +96,7 @@ function E.InstallBuyButtons()
                 b:Show();E.buyButtons[native]=b
             end
         end
+        if U.Table(native) and E.buyButtons[native] then E.buyButtons[native]:SetShown(factionHouse) end
     end
 end
 function E.ViewWatch()

@@ -253,13 +253,14 @@ function W.Dismiss()
 end
 
 function W.OnAuctionShow()
+    if A.Scanner.House() ~= "faction" then return end
     W.Ensure()
     local snapshot=D.Snapshot()
     W.arrivalRequested=snapshot and U.Number(snapshot.startedAt,0,U.Now())and not D.IsStale(snapshot)and snapshot or nil
 end
 
 function W.AlertTick()
-    if U.Combat() or not A.auctionOpen or not W.Current() then return end
+    if U.Combat() or A.Scanner.House() ~= "faction" or not W.Current() then return end
     local settings=D.Settings()
     local scan=W.scanRequested==W.snapshot
     local arrival=W.arrivalRequested==W.snapshot

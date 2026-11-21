@@ -3,6 +3,54 @@ local U, D = A.Util, A.DB
 local S = { state = "IDLE", active = false, requestCount = 0, responseCount = 0, dataUpdateCount = 0 }
 A.Scanner = S
 
+-- Prefer the interaction NPC over location. The same neutral auctioneer
+-- can appear in more than one zone.
+local neutral = { [8661]=true, [9857]=true, [9858]=true, [15677]=true, [15681]=true, [258878]=true }
+local faction = {
+    [8670]=true, [8671]=true, [8672]=true, [8673]=true, [8674]=true,
+    [8719]=true, [8720]=true, [8721]=true, [8722]=true, [8723]=true,
+    [9856]=true, [9859]=true, [15659]=true, [15679]=true, [15682]=true, [15683]=true, [15686]=true,
+}
+
+-- Classic UI map IDs for the known auction locations. Only consult these
+-- while a native Auction House is open.
+local housesByMap = {
+    [1453]="faction", [1454]="faction", [1455]="faction",
+    [1456]="faction", [1457]="faction", [1458]="faction",
+    [1434]="neutral", [1446]="neutral", [1452]="neutral",
+    [1413]="neutral", [1433]="neutral",
+}
+
+local function HouseByLocation()
+    if not C_Map then return nil end
+    local mapID = U.Call(C_Map.GetBestMapForUnit, "player")
+    for _ = 1, 4 do
+        if not U.Number(mapID, 1, 2147483647, true) then return nil end
+        if housesByMap[mapID] then return housesByMap[mapID] end
+        local map = U.Call(C_Map.GetMapInfo, mapID)
+        mapID = U.Table(map) and map.parentMapID
+    end
+end
+
+function S.House()
+    if not A.auctionOpen then return nil end
+    if not S.house then
+        local guid = U.Call(UnitGUID, "npc")
+        local id = U.String(guid) and tonumber(guid:match("^Creature%-%d+%-%d+%-%d+%-%d+%-(%d+)%-"))
+        if id then S.house = neutral[id] and "neutral" or faction[id] and "faction" or nil end
+        if not S.house then S.house = HouseByLocation() end
+    end
+    return S.house
+end
+
+function S.SelectHouse(house)
+    if not A.auctionOpen or S.active or U.Combat() or S.House() or (house ~= "faction" and house ~= "neutral") then return false end
+    S.house = house
+    A.Watchlist.OnAuctionShow()
+    U.Notify()
+    return true
+end
+
 local function SetState(state, message)
     S.state, S.message = state, message
     U.Log(state .. (message and (": " .. message) or ""))
@@ -11,6 +59,11 @@ end
 
 function S.RemainingCooldown()
     return D.data and math.max(0, math.ceil(D.data.cooldownUntil - U.Now())) or 0
+end
+
+function S.BlocksLiveSearch()
+    -- A paused request that has not received a response has no rows to protect.
+    return not S.localReady and (S.active or (S.paused and S.resumeState ~= "WAITING"))
 end
 
 function S.Supported()
@@ -23,7 +76,7 @@ end
 
 function S.OnMarketChanged(key)
     if not S.marketKey or S.marketKey == key then return end
-    S.marketKey, S.marketInfo = nil, nil
+    S.marketKey, S.marketInfo, S.scanHouse = nil, nil, nil
     S.localReady, S.bufferLost = false, false
     S.copiedRows, S.copyCursor, S.totalRows = 0, 0, nil
     S.responseCount, S.dataUpdateCount = 0, 0
@@ -80,6 +133,13 @@ function S.Resume()
         S.Discard("The market changed; the incomplete scan cannot be resumed.", true)
         return false, S.message
     end
+    local house = S.House()
+    if not house then
+        A.UI.ShowAuctionHouseChoice()
+        return false, "Choose Faction or Neutral before resuming."
+    end
+    if house ~= S.scanHouse then return false, "Return to the original auction house type to resume, or restart the scan here." end
+    if S.resumeState == "WAITING" and S.RemainingCooldown() == 0 then return S.Restart() end
     if S.work and not S.localReady then
         local ok, count = pcall(C_AuctionHouse.GetNumReplicateItems)
         if not ok or (U.Number(count, 0, A.MAX_ROWS, true) and count == 0 and S.totalRows > 0) then
@@ -112,11 +172,12 @@ local function Complete()
     local work = S.work
     if not work then return S.Stop("No staged snapshot.", true) end
     if #S.pending ~= 0 then return S.Stop("Some auction rows remain unresolved.", true) end
-    local ok, reason = D.Commit(work)
+    local ok, reason = D.Commit(work, S.scanHouse)
     if not ok then return S.Stop(reason, true) end
     S.active, S.paused, S.work, S.pending, S.retryWork = false, false, nil, nil, nil
     S.copy, S.copyPending, S.copyRetryWork, S.anchor = nil, nil, nil, nil
-    SetState("COMPLETE", string.format("%d rows; %d priced items. Snapshot replaced.", work.totalRows, work.distinctItems))
+    local label = S.scanHouse == "neutral" and "Neutral" or "Faction"
+    SetState("COMPLETE", string.format("%s snapshot replaced. %d rows, %d priced items.", label, work.totalRows, work.distinctItems))
     U.Print(S.message)
 end
 
@@ -131,8 +192,14 @@ function S.Start(restart)
     local market = U.MarketInfo()
     local key = market.key
     if not key then return false, market.reason end
-    if S.RemainingCooldown() > 0 then
-        return false, string.format("Full-scan cooldown: %dm %ds remaining.", math.floor(S.RemainingCooldown() / 60), S.RemainingCooldown() % 60)
+    local house = S.House()
+    if not house then
+        A.UI.ShowAuctionHouseChoice()
+        return false, "Choose Faction or Neutral before scanning."
+    end
+    local cooldown = S.RemainingCooldown()
+    if cooldown > 0 then
+        return false, string.format("Shared full-scan cooldown: %dm %ds remaining.", math.floor(cooldown / 60), cooldown % 60)
     end
     if C_AuctionHouse.IsThrottledMessageSystemReady then
         local ok, ready = pcall(C_AuctionHouse.IsThrottledMessageSystemReady)
@@ -142,15 +209,14 @@ function S.Start(restart)
     end
     if restart then S.Discard("Starting a fresh full scan; previous completed prices kept.") end
     U.Log("Scan market: " .. key .. " (" .. market.label .. "; " .. market.regionSource .. ").")
-    S.active, S.marketKey, S.marketInfo = true, key, market
+    S.active, S.marketKey, S.marketInfo, S.scanHouse = true, key, market, house
     S.requestAt, S.startedMono = U.Now(), U.Mono()
     S.cursor, S.pending, S.loaded = 0, {}, {}
     S.responseCount, S.dataUpdateCount = 0, 0
     S.work, S.retryWork, S.totalRows = nil, nil, nil
     S.copy, S.copyPending, S.copyRetryWork, S.anchor = nil, nil, nil, nil
     S.copiedRows, S.copyCursor, S.localReady, S.bufferLost = 0, 0, false, false
-    -- Keep the throttle across reload/logout, including cancelled requests. A
-    -- locally cancelled request is not evidence that the server cancelled it.
+    -- Full scans share the server's account-wide limit, even across auction houses.
     D.data.cooldownUntil = S.requestAt + A.SCAN_COOLDOWN
     SetState("WAITING", "Waiting for the auction server's full snapshot.")
     S.sending = true
@@ -170,6 +236,7 @@ end
 
 function S.OnResponse()
     if not S.active and not S.paused then return end
+    if S.House() ~= S.scanHouse then return end
     S.responseCount = S.responseCount + 1
     if S.localReady then
         -- Count native notifications for diagnostics, but a copied snapshot
@@ -286,6 +353,7 @@ function S.CopyTick()
     if (not S.active and not S.paused) or not S.copy or S.localReady or
        not A.auctionOpen or U.Combat() then return end
     if U.MarketKey() ~= S.marketKey then return S.Stop("The market changed.", true) end
+    if S.House() ~= S.scanHouse then return S.Stop("The auction house type changed.", true) end
     if not BufferAvailable() then return end
     local startMS, processed = debugprofilestop and debugprofilestop() or 0, 0
     local function Expired()
@@ -342,10 +410,11 @@ function S.Tick()
     if not A.auctionOpen then return S.Stop("The auction house closed.") end
     if U.Combat() then return S.Stop("Combat started.") end
     if U.MarketKey() ~= S.marketKey then return S.Stop("The market changed.", true) end
+    if S.House() ~= S.scanHouse then return S.Stop("The auction house type changed.", true) end
     local now = U.Mono()
     if S.state == "WAITING" then
         if now - S.startedMono > A.REQUEST_TIMEOUT then
-            S.Pause("Response delayed. Resume to keep waiting; no new request is needed.")
+            S.Pause("No reply from the auction server. Resume to wait, or retry when the shared cooldown ends.")
         end
         return
     end

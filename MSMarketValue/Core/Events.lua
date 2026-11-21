@@ -77,6 +77,8 @@ frame:SetScript("OnEvent", function(_, event, ...)
         A.UI.MaybePromptRuleset()
     elseif event == "AUCTION_HOUSE_SHOW" then
         A.auctionOpen = true
+        S.house = nil
+        S.House()
         A.UI.OnAuctionShow()
         A.EconomyUI.InstallBuyButtons()
         A.SellUI.Install()
@@ -87,6 +89,8 @@ frame:SetScript("OnEvent", function(_, event, ...)
         A.Watchlist.arrivalRequested,A.Watchlist.scanRequested=nil,nil
         A.MarketUI.pendingVariant=nil
         A.auctionOpen = false
+        S.house = nil
+        if A.UI.houseChoice then A.UI.houseChoice:Hide() end
         S.Stop("The auction house closed.")
         if A.UI.panel then A.UI.panel:Hide() end
         if A.MarketUI.panel then A.MarketUI.panel:Hide() end
@@ -128,6 +132,7 @@ frame:SetScript("OnEvent", function(_, event, ...)
         if A.CraftingUI.frame then A.CraftingUI.frame:Hide() end
         if A.EconomyUI.editorFrame then A.EconomyUI.editorFrame:Hide() end
         if A.UI.rulesetFrame then A.UI.rulesetFrame:Hide() end
+        if A.UI.houseChoice then A.UI.houseChoice:Hide() end
     elseif event == "PLAYER_REGEN_ENABLED" then
         A.refreshTooltips = true
         if A.auctionOpen then A.UI.OnAuctionShow() end
@@ -145,7 +150,11 @@ frame:SetScript("OnUpdate", function(_, elapsed)
     scanElapsed, uiElapsed = scanElapsed + elapsed, uiElapsed + elapsed
     S.CopyTick()
     A.Watchlist.Tick()
-    if A.MarketUI.panel and A.MarketUI.panel:IsVisible() then A.Market.Tick() end
+    if A.MarketUI.panel and A.MarketUI.panel:IsVisible() then
+        local publication = A.Market.publications
+        A.Market.Tick()
+        if A.Market.publications ~= publication then A.MarketUI.Refresh() end
+    end
     if scanElapsed >= 0.05 then
         scanElapsed = 0
         local wasActive = S.active

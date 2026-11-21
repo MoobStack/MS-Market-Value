@@ -4,6 +4,7 @@ local M = { rows = {}, builds = 0, publications = 0 }
 A.Market = M
 local MAX_PRICE, MAX_RESULTS, MAX_ITEMS = 1000000000000, 500, 50000
 M.limit=MAX_RESULTS
+M.neutralFee = 15
 
 local function Price(value) return U.Number(value, 0, MAX_PRICE) and value > 0 end
 local function Quantile(values, fraction)
@@ -71,38 +72,73 @@ local function Fresh(snapshot)
     return snapshot and U.Number(snapshot.startedAt, 0, U.Now()) and not D.IsStale(snapshot)
 end
 
+local function Arbitrage(factionAverage, factionLow, neutralLow, settings)
+    local buyHouse = neutralLow < factionAverage and "neutral" or "faction"
+    local fromNeutral = buyHouse == "neutral"
+    local buy = math.ceil(fromNeutral and neutralLow or factionLow)
+    local sell = math.floor(fromNeutral and factionAverage or neutralLow)
+    local fee = fromNeutral and settings.marketFee or M.neutralFee
+    local profit = math.floor(sell * (100 - fee) / 100) - buy
+    local roi = profit / buy * 100
+    if profit <= 0 or profit < settings.marketMinProfit or roi < settings.marketMinReturn then return nil end
+    return { current = buy, buy = buy, sell = sell, buyHouse = buyHouse, profit = profit, roi = roi,
+        factionAverage = factionAverage, neutralLow = neutralLow, movement = (neutralLow / factionAverage - 1) * 100 }
+end
+
 function M.Clear(reason)
     M.job, M.rows, M.snapshot, M.reason, M.ready = nil, {}, nil, reason, true
+    M.neutralSource, M.neutralSnapshot = nil, nil
     M.source, M.signature, M.examined, M.eligible = nil, nil, 0, 0
+    M.publishedSignature, M.publishedHistoryRevision = nil, nil
     M.variantIndex=nil
     M.coverage,M.historyInfo,M.historyRecords=nil,nil,nil;I.Begin()
 end
 
+function M.PublishedResultsCurrent()
+    return M.publishedSignature == M.signature and M.publishedHistoryRevision == H.revision
+end
+
 function M.Ensure(view, sort, force)
+    if view == "arbitrage" and A.Scanner.House() ~= "neutral" then
+        M.Clear("Arbitrage is available at neutral auction houses.")
+        return
+    end
     H.Maintain()
-    view = (view == "rising" or view == "falling" or view == "all" or view=="listed") and view or "deals"
+    view = (view == "rising" or view == "falling" or view == "all" or view=="listed" or view == "arbitrage") and view or "deals"
     if sort ~= "profit" and sort ~= "return" then
         sort = (view == "rising" or view == "falling") and "movement" or "return"
     end
     local market = U.MarketInfo()
     local key, snapshot = market.key, D.Snapshot(market)
-    if not Fresh(snapshot) then M.Clear(snapshot and "The saved scan is stale. Complete a fresh AH scan for current signals." or "Complete an AH scan to look for opportunities."); return end
+    if not Fresh(snapshot) then M.Clear(snapshot and "The saved faction scan is stale. Complete a fresh faction scan." or "Complete a faction AH scan to look for opportunities."); return end
     if not H.data then M.Clear(H.reason or "Price history is unavailable."); return end
+    local neutral
+    if view == "arbitrage" then
+        neutral = D.NeutralSnapshot(market)
+        if not Fresh(neutral) then
+            M.Clear(neutral and "The saved neutral scan is stale. Complete a fresh neutral scan." or "Complete a neutral AH scan to compare prices.")
+            return
+        end
+        if snapshot.variantFormat ~= 2 or neutral.variantFormat ~= 2 then
+            M.Clear("Scan both auction houses with the current version to compare exact items.")
+            return
+        end
+    end
     local basis = M.PriceBasis()
     local signature = Signature(view, sort, basis)
-    if M.key ~= key or M.basis ~= basis or (basis == "intraday" and M.utcDay ~= H.prunedDay) then
+    if M.key ~= key or M.basis ~= basis or M.neutralSource ~= neutral or (basis == "intraday" and M.utcDay ~= H.prunedDay) then
         M.rows, M.snapshot, M.job, M.eligible = {}, nil, nil, 0
     end
     M.key, M.basis, M.utcDay = key, basis, H.prunedDay
     -- Item replies can arrive continuously. Finish the current pass, then
     -- refresh once, rather than restarting it every quarter second.
-    if not force and M.job and M.source==snapshot and M.historyRevision==H.revision and M.signature==signature then
+    if not force and M.job and M.source==snapshot and M.neutralSource==neutral and M.historyRevision==H.revision and M.signature==signature then
         if M.metadataDirty then M.job.metadataDirty=true;M.metadataDirty=nil end
         return
     end
     force=force or M.metadataDirty;M.metadataDirty=nil
-    if not force and M.source == snapshot and M.historyRevision == H.revision and M.signature == signature then return end
-    M.source, M.historyRevision, M.signature = snapshot, H.revision, signature
+    if not force and M.source == snapshot and M.neutralSource == neutral and M.historyRevision == H.revision and M.signature == signature then return end
+    M.source, M.neutralSource, M.historyRevision, M.signature = snapshot, neutral, H.revision, signature
     I.Begin(snapshot,key)
     local settings = {}
     for name, value in pairs(D.Settings()) do if U.String(name) and string.sub(name, 1, 6) == "market" then settings[name] = value end end
@@ -119,8 +155,9 @@ function M.Ensure(view, sort, force)
     if not modern then for _, record in ipairs(records) do maps[#maps + 1] = record.variants end end
     local words={}
     for word in string.gmatch(string.lower(settings.marketSearch),"%S+") do words[#words+1]=word end
-    M.job = { snapshot = snapshot, records = records, settings = settings, basis = basis, maps = maps, vendorKnown = A.Vendor.KnownItems(),
-        intraday = intraday, intradayRecord = intraday and H.IntradayBaseline(market, snapshot) or nil,
+    M.job = { snapshot = snapshot, neutral = neutral, records = records, settings = settings, basis = basis, maps = maps, vendorKnown = A.Vendor.KnownItems(),
+        factionPricing = neutral and H.Pricing(market, basis) or nil,
+        intraday = intraday, intradayRecord = not neutral and intraday and H.IntradayBaseline(market, snapshot) or nil,
         minimumSamples = intraday and 1 or settings.marketMinDays,
         mapIndex = 1, variants = index and index.variants or {}, currentVariants=index and index.currentVariants or {},
         currentVariantCount=index and index.count or 0,modifierCount=index and index.modifiers or 0,
@@ -181,7 +218,7 @@ local function Better(a, b, job)
 end
 
 local function Include(job, row)
-    if job.view=="listed" then return true end
+    if job.view=="listed" or job.neutral then return true end
     if job.view == "deals" then return row.deal end
     if job.view == "rising" then return row.rising end
     if job.view == "falling" then return row.falling end
@@ -194,12 +231,12 @@ local function Matches(words,name)
     return true
 end
 
-local function SupplyAllowed(settings,units,lowUnits,stockMove)
+local function SupplyAllowed(settings,units,lowUnits,stockMove,compareHouses)
     return not ((settings.marketLowMin>0 and (not lowUnits or lowUnits<settings.marketLowMin)) or
         (settings.marketLowMax>0 and (not lowUnits or lowUnits>settings.marketLowMax)) or
         (settings.marketStockMin>0 and (not units or units<settings.marketStockMin)) or
         (settings.marketStockMax>0 and (not units or units>settings.marketStockMax)) or
-        (settings.marketStockDrop>0 and (not stockMove or stockMove > -settings.marketStockDrop)))
+        (not compareHouses and settings.marketStockDrop>0 and (not stockMove or stockMove > -settings.marketStockDrop)))
 end
 
 -- Keep only the best 500 in a worst-first heap. Broad searches avoid
@@ -232,12 +269,26 @@ local function Evaluate(job, key, entry, variant)
     if not id or job.settings.marketQuality==0 or (not variant and job.variants[id] and (job.view~="listed" or job.currentVariants[id])) or (job.vendorKnown[id] and job.view~="listed") or
        not U.Table(entry) or not Price(entry.low) then return end
     local s=job.settings
-    local units=U.Number(entry.units,1,1000000000,true) and entry.units or nil
-    local lowUnits=U.Number(entry.lowUnits,1,1000000000,true) and entry.lowUnits or nil
+    local row, sampleCount, firstDay, lastDay = nil, 0, nil, nil
+    local buyEntry = entry
+    if job.neutral then
+        -- Both prices must describe the same exact item. Item-wide lows
+        -- can represent different modifiers in the two houses.
+        local other = variant and job.neutral.variants[key]
+        if not U.Table(other) or not Price(other.low) then return end
+        local average = H.ExactVariantAverage(key, job.factionPricing)
+        if not average or not Price(average.value) then return end
+        row = Arbitrage(average.value, entry.low, other.low, s)
+        if not row then return end
+        sampleCount = average.scans or average.days
+        if row.buyHouse == "neutral" then buyEntry = other end
+    end
+    local units=U.Number(buyEntry.units,1,1000000000,true) and buyEntry.units or nil
+    local lowUnits=U.Number(buyEntry.lowUnits,1,1000000000,true) and buyEntry.lowUnits or nil
     local previous=job.snapshot.previousSupply
     local prior=U.Table(previous) and U.Table(previous[variant and "variants" or "prices"]) and previous[variant and "variants" or "prices"][key]
     local stockMove=units and U.Number(prior,1,1000000000,true) and (units/prior-1)*100 or nil
-    if not SupplyAllowed(s,units,lowUnits,stockMove) then return end
+    if not SupplyAllowed(s,units,lowUnits,stockMove,job.neutral) then return end
     local display=U.Table(entry.display) and entry.display or nil
     local scannedQuality=display and U.Number(display[1],0,8,true) and display[1] or nil
     if scannedQuality and not M.QualityAllowed(s.marketQuality,scannedQuality) then return end
@@ -266,15 +317,14 @@ local function Evaluate(job, key, entry, variant)
     local equipment=item and (item.classID==2 or item.classID==4) and quality and quality>=2
     local legacyEquipment=(equipment and (not U.String(entry.link) or not variant)) or
         (job.snapshot.variantFormat~=2 and not U.String(entry.link))
-    local row, sampleCount, firstDay, lastDay = nil, 0, nil, nil
-    if job.intraday then
+    if not job.neutral and job.intraday then
         local record = job.intradayRecord
         if record and (not equipment or suffix ~= 0 or record.variantFormat == 2) then
             local average
             average, sampleCount = H.EarlierScans(record, variant and "variants" or "prices", key)
             if not legacyEquipment then row = M.EvaluateIntraday(entry.low, average, sampleCount, s) end
         end
-    else
+    elseif not job.neutral then
         local values = {}
         for _, record in ipairs(job.records) do
             local value = (variant and record.variants or record.prices)[key]
@@ -300,7 +350,7 @@ local function Evaluate(job, key, entry, variant)
             if #samples>3 then table.remove(samples) end
         end
     end
-    if sampleCount<job.minimumSamples or legacyEquipment then coverage.needsHistory=coverage.needsHistory+1 end
+    if not job.neutral and (sampleCount<job.minimumSamples or legacyEquipment) then coverage.needsHistory=coverage.needsHistory+1 end
     if job.view=="listed" and not row then row={current=entry.low,buy=math.ceil(entry.low),needsHistory=true} end
     if not row or not Include(job, row) then
         if sampleCount>=job.minimumSamples and not legacyEquipment then coverage.filteredSignals=coverage.filteredSignals+1 end
@@ -319,14 +369,15 @@ local function Evaluate(job, key, entry, variant)
     row.quality=quality
     row.r,row.g,row.b=U.ItemColor(entry.link,quality)
     row.units, row.lowUnits, row.stockMove = units, lowUnits, stockMove
-    row.lowBuyout = row.lowUnits and U.Number(entry.lowBuyout,0,9007199254740991) and entry.lowBuyout or nil
+    row.lowBuyout = row.lowUnits and U.Number(buyEntry.lowBuyout,0,9007199254740991) and buyEntry.lowBuyout or nil
     job.eligible = job.eligible + 1
     Retain(job,row)
 end
 
 local function Publish(job)
     table.sort(job.rows,function(a,b)return Better(a,b,job)end)
-    M.rows, M.snapshot, M.settings = job.rows, job.snapshot, job.settings
+    M.rows, M.snapshot, M.neutralSnapshot, M.settings = job.rows, job.snapshot, job.neutral, job.settings
+    M.publishedSignature, M.publishedHistoryRevision = M.signature, M.historyRevision
     M.examined, M.eligible, M.truncated = job.examined, job.eligible, job.truncated
     M.ready, M.job = true, nil
     M.coverage=job.coverage
@@ -336,7 +387,7 @@ local function Publish(job)
     local requirement = job.intraday and "an earlier priced scan today (UTC)" or
         (job.minimumSamples .. " earlier priced UTC days")
     M.reason = job.reason or (((job.qualityMissing or 0)>0 or (job.nameMissing or 0)>0) and "Some item names or rarity data is loading. Results update when it arrives.") or
-        (#M.rows == 0 and (job.view=="listed" and "No current items match these filters." or
+        (#M.rows == 0 and (job.neutral and ("No profitable exact matches using the " .. H.basisNames[job.basis] .. " faction average.") or job.view=="listed" and "No current items match these filters." or
         ("No matching signals. Signals need " .. requirement .. " per variant. All items shows current prices.")) or
         (job.coverage.needsHistory>0 and (job.coverage.needsHistory .. " matches need " .. requirement ..
             ". All items shows current prices.")) or nil)
@@ -346,6 +397,10 @@ local function UTC(day)return day and date("!%Y-%m-%d",day*86400) or "none" end
 
 function M.HistoryDescription(row)
     if row.itemWide then return "Saved prices are item-wide. Complete a new scan for exact variants." end
+    if row.buyHouse then
+        return row.scans and ("Faction Intraday avg, " .. row.scans .. (row.scans == 1 and " scan today (UTC)." or " scans today (UTC).")) or
+            ("Faction Daily avg, " .. row.days .. (row.days == 1 and " priced UTC day." or " priced UTC days."))
+    end
     if row.scans then
         return row.scans == 0 and "Needs an earlier priced scan for this item today (UTC)." or
             (row.scans .. (row.scans == 1 and " earlier scan today (UTC)." or " earlier scans today (UTC)."))
@@ -356,6 +411,9 @@ function M.HistoryDescription(row)
 end
 
 function M.HistoryDiagnostics()
+    if A.MarketUI and A.MarketUI.view == "arbitrage" then
+        return { "Arbitrage price basis: faction=" .. M.PriceBasis() .. "; neutral=latest scan" }
+    end
     local snapshot=D.Snapshot()
     if M.PriceBasis() == "intraday" then
         local record = H.IntradayBaseline(nil, snapshot)
@@ -404,12 +462,20 @@ function M.Tick()
     I.Tick(M)
     local job = M.job
     if not job then return end
+    if job.neutral and A.Scanner.House() ~= "neutral" then
+        M.Clear("Arbitrage is available at neutral auction houses.")
+        return
+    end
     if M.key ~= U.MarketKey() then M.Clear("Market changed; checking the new market."); return end
-    if job.snapshot ~= D.Snapshot() or M.historyRevision ~= H.revision or job.basis ~= M.PriceBasis() then
+    if job.snapshot ~= D.Snapshot() or M.historyRevision ~= H.revision or
+       (job.neutral and job.neutral ~= D.NeutralSnapshot()) or job.basis ~= M.PriceBasis() then
         M.job = nil
         return
     end
-    if not Fresh(job.snapshot) then M.Clear("The saved scan is stale. Complete a fresh AH scan."); return end
+    if not Fresh(job.snapshot) or (job.neutral and not Fresh(job.neutral)) then
+        M.Clear("A saved scan is stale. Complete a fresh scan.")
+        return
+    end
     for _ = 1, 2000 do
         if job.phase == "variants" then
             local map = job.maps[job.mapIndex]

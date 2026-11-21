@@ -556,9 +556,38 @@ test("combat and a closed or forbidden auction frame block item lookups", functi
     ah.forbidden=false; ah:Hide(); equal(A.MarketUI.OpenListings(item),false)
     equal(w.itemSearches,0); equal(w.browseSearches,0)
 end)
-test("pending analysis unapplied filters and nonpublished rows cannot open stale listings", function()
+test("background item updates keep lower Opportunities rows clickable", function()
+    local series = {}
+    for day = 1, 4 do
+        local rows = {}
+        for id = 100, 115 do rows[#rows + 1] = row(id, 1, day == 4 and 500 or 1000) end
+        series[day] = rows
+    end
+    local w,A = liveWorld(series)
+    local ui = A.MarketUI
+    ui.Scroll(3)
+    local button = ui.rows[12]
+    local id = button.row.id
+    w.items[id] = {name="Last Visible Test Item"}
+
+    A.Market.metadataDirty = true
+    ui.Ensure()
+    truth(A.Market.job)
+    button.scripts.OnClick(button, "LeftButton")
+    equal(w.itemSearches, 1)
+    equal(w.searchedKey.itemID, id)
+
+    A.MarketUI.Show()
+    A.eventFrame.scripts.OnUpdate(A.eventFrame, 0.01)
+    equal(ui.offset, 3)
+    equal(button.row, A.Market.rows[15])
+    equal(w.itemSearches, 1)
+end)
+test("changed filters unapplied filters and nonpublished rows cannot open stale listings", function()
     local w,A=liveWorld(); local item=A.Market.rows[1]
-    A.Market.Ensure("deals","return",true); equal(A.MarketUI.OpenListings(item),false)
+    A.DB.Settings().marketMinProfit=101
+    A.MarketUI.Ensure()
+    truth(A.Market.job); equal(A.MarketUI.OpenListings(item),false)
     drain(A); A.MarketUI.Refresh(); item=A.Market.rows[1]
     A.MarketUI.dirty.marketFee=true; equal(A.MarketUI.OpenListings(item),false)
     A.MarketUI.dirty={}; equal(A.MarketUI.OpenListings({id=100}),false)
@@ -595,7 +624,43 @@ test("live lookups wait until an incomplete full scan has its complete local cop
     local w,A=liveWorld(); local item=A.Market.rows[1]
     A.Scanner.active=true; A.Scanner.localReady=false
     equal(A.MarketUI.OpenListings(item),false); equal(w.itemSearches,0)
-    A.Scanner.active=false; A.Scanner.paused=true
+    A.Scanner.active=false; A.Scanner.paused=true; A.Scanner.resumeState="PROCESSING"
     equal(A.MarketUI.OpenListings(item),false); equal(w.itemSearches,0)
     A.Scanner.localReady=true; truth(A.MarketUI.OpenListings(item)); equal(w.itemSearches,1)
+end)
+
+test("a paused scan with no response allows a Buy click after reopening the faction house", function()
+    local w, A, ah = liveWorld()
+    local scan, saved = A.Scanner, A.DB.Snapshot()
+    truth(scan.Start())
+    equal(scan.state, "WAITING")
+    click(A)
+    equal(w.itemSearches, 0)
+
+    w:event("AUCTION_HOUSE_CLOSED")
+    w:openAH()
+    A.MarketUI.Show()
+    equal(scan.resumeState, "WAITING")
+    equal(scan.work, nil)
+    local deadline = A.DB.data.cooldownUntil
+    click(A)
+    equal(w.itemSearches, 1)
+    equal(ah.displayMode, AuctionHouseFrameDisplayMode.ItemBuy)
+    equal(w.requests, 1)
+    equal(scan.state, "PAUSED")
+    equal(A.DB.data.cooldownUntil, deadline)
+    equal(A.DB.Snapshot(), saved)
+
+    w.rows = {row(100, 1, 600)}
+    scan.OnResponse()
+    equal(scan.resumeState, "PROCESSING")
+    w:advance(1)
+    A.MarketUI.Show()
+    click(A)
+    equal(w.itemSearches, 1)
+    scan.CopyTick()
+    truth(scan.localReady)
+    click(A)
+    equal(w.itemSearches, 2)
+    equal(A.DB.Snapshot(), saved)
 end)

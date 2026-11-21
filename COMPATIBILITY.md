@@ -1,6 +1,6 @@
 # Compatibility
 
-MS Market Value 1.3.2 targets **WoW Forever 1.60.1 / Interface 16001**. Scanning was checked on build 71037 with realm names hidden. The standard, Camelot and Forever TOCs load the same addon.
+MS Market Value 1.3.3 targets **WoW Forever 1.60.1 / Interface 16001**. Live diagnostics confirmed faction and neutral scanning on client build 71037 with realm names hidden. The standard, Camelot and Forever TOCs load the same addon.
 
 - Use one full AH scanner at a time. Prices are kept separate by region, ruleset and faction.
 - Public tooltip prices and read-only reports can remain available in combat. Scans, live Buy navigation, profession controls and transaction editing wait until combat ends.

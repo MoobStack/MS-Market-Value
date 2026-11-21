@@ -88,6 +88,7 @@ local buttons = {
         ["Falling"] = "Show price decreases that meet your movement and history filters.",
         ["All signals"] = "Show qualifying resale, rising and falling price signals together.",
         ["All items"] = "Show current listings, including variants without enough earlier pricing days.",
+        ["Arbitrage"] = "Compare the selected faction average with the latest neutral scan.",
         ["Sort: return"] = "Sort by return or net profit per item. Rising and Falling also sort by price movement.",
         ["Recheck saved scan"] = "Recalculate opportunities from saved prices without starting an auction scan.",
         ["Filters"] = "Show or hide profit, history, quantity and rarity filters.",
@@ -137,7 +138,7 @@ end
 
 local settings = {
     priceBasis = "Daily averages weight each UTC date equally. Intraday averages use all completed scans today (UTC).",
-    marketPriceBasis = "Toggle the baseline for Opportunities only. Right-click to follow the addon setting.",
+    marketPriceBasis = "Switch the faction price basis for Opportunities. Right-click to follow the addon setting.",
     showInterfaceTips = "Show control help and list details inside addon windows, including addon AH buttons.",
     showMinimapBadge = "Show the shortcut that opens MS Market Value from the minimap.",
     showVendor = "Add the item's vendor sell price to item tooltips.",

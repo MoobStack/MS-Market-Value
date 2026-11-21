@@ -64,6 +64,14 @@ function T.Lines(itemID, link, stackCount)
         if count > 1 then return each .. " / " .. U.Coins(value * count) end
         return each
     end
+    local anyVariant = false
+    local function priceLabel(label, mode)
+        if mode == "item-wide" then
+            anyVariant = true
+            return label .. "*"
+        end
+        return label
+    end
     local average = settings.showHistory and A.History.Estimate(itemID, link, pricing) or nil
     local intradayMissing = settings.showHistory and settings.priceBasis == "intraday" and not average
     if not settings.showVendor and not average and not intradayMissing and not settings.showAuction and not settings.showDisenchant then return lines end
@@ -80,8 +88,7 @@ function T.Lines(itemID, link, stackCount)
         if average then
             local label = average.scans and ("Intraday avg (" .. average.scans .. (average.scans == 1 and " scan)" or " scans)"))
                 or ("Historic avg (" .. average.days .. (average.days == 1 and " day)" or " days)"))
-            add(label, money(average.value))
-            if average.mode == "item-wide" and U.VariantKey(link) then add("History scope", "Item-wide", "muted") end
+            add(priceLabel(label, average.mode), money(average.value))
         elseif intradayMissing then
             add("Intraday avg", "No priced scan today (UTC)", "muted")
         end
@@ -89,12 +96,13 @@ function T.Lines(itemID, link, stackCount)
     if settings.showAuction then
         local price, mode = D.Price(itemID, link, snapshot)
         if price then
-            add(mode == "item-wide" and "AH low (item-wide)" or "AH low", money(price.low))
+            add(priceLabel("AH low", mode), money(price.low))
         else
             local messages = { ["no-scan"] = "Scan required", ["bid-only"] = "No buyout in scan", ["not-listed"] = "Not listed in scan" }
             add("AH low", messages[mode] or "Unavailable", "muted")
         end
     end
+    if anyVariant then add("* Any variant", nil, "muted") end
     if deValue then
         add("DE expected", deValue.complete and money(deValue.value) or "Unavailable", deValue.complete and "normal" or "muted")
         if not deValue.complete then

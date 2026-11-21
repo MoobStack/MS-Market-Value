@@ -119,6 +119,28 @@ local function ChangeRuleset(ruleset)
     else UI.ShowRuleset(current) end
 end
 
+function UI.ShowAuctionHouseChoice()
+    if U.Combat() or not A.auctionOpen or S.House() then return end
+    if not UI.houseChoice then
+        local frame = PortraitWindow("MSMarketValueAuctionHouseChoice", A.TITLE .. " - Auction House", 422, 158)
+        UI.houseChoice = frame
+        local inset = Inset(frame, 12, -42, 398, 104)
+        Label(inset, "Which Auction House is open?", 12, -10, 374, "GameFontNormal")
+        Label(inset, "Choose Faction for your faction's listings or Neutral for cross-faction listings.", 12, -32, 374)
+        Button(inset, "Faction", 12, -69, 178, function()
+            S.SelectHouse("faction")
+            frame:Hide()
+        end)
+        Button(inset, "Neutral", 208, -69, 178, function()
+            S.SelectHouse("neutral")
+            frame:Hide()
+        end)
+        U.ManageWindow(frame)
+    end
+    UI.houseChoice:Show()
+    U.FocusWindow(UI.houseChoice)
+end
+
 function UI.ShowRuleset(market)
     market = market or U.MarketInfo()
     if not D.data or not market.canChooseRuleset or U.Combat() then return false end
@@ -190,7 +212,7 @@ function UI.DiagnosticsText()
         "Full-scan requests this session: " .. tostring(S.requestCount),
         "Replication events this scan: " .. tostring(S.responseCount),
         "Same-count data updates: " .. tostring(S.dataUpdateCount),
-        "Full-scan cooldown seconds: " .. tostring(S.RemainingCooldown()),
+        string.format("Full-scan cooldown seconds: shared=%d", S.RemainingCooldown()),
         "Market key: " .. tostring(market.key or market.reason),
         "Market identity: " .. tostring(market.kind or "unavailable"),
         "Ruleset: " .. tostring(market.ruleset or "undetected"),
@@ -218,6 +240,10 @@ function UI.DiagnosticsText()
     local index,coverage=A.Market.variantIndex,A.Market.coverage
     lines[#lines+1]="Market search: view=" .. (A.MarketUI.view or "deals") .. "; keyword=" .. string.format("%q",D.Settings().marketSearch) ..
         "; min_prior_days=" .. D.Settings().marketMinDays
+    local neutral = D.NeutralSnapshot(market)
+    lines[#lines+1] = "Auction house: " .. (S.House() or (A.auctionOpen and "unidentified" or "closed")) ..
+        "; scan=" .. (S.scanHouse or "none") .. "; neutral snapshot=" ..
+        (neutral and string.format("%d priced items, %s", neutral.distinctItems, U.Age(neutral.startedAt)) or "none")
     if index then lines[#lines+1]="Market variants: current=" .. (index.count or 0) .. "; modified=" .. (index.modifiers or 0) end
     if coverage then lines[#lines+1]="Market matches: current=" .. coverage.keywordMatches .. "; modified=" .. coverage.matchingVariants ..
         "; need_history=" .. coverage.needsHistory .. "; other_signal_filters=" .. coverage.filteredSignals end
@@ -507,7 +533,11 @@ function UI.Refresh()
     local market = U.MarketInfo()
     local snapshot = D.Snapshot(market)
     local history = A.History.Status(market)
-    UI.marketText:SetText("Market: " .. (market.label or "Waiting for market identity"))
+    local house = S.House()
+    local cooldown = S.RemainingCooldown()
+    local houseLabel = house == "neutral" and " | Neutral AH open" or house == "faction" and " | Faction AH open" or
+        A.auctionOpen and " | Identify auction house to scan" or ""
+    UI.marketText:SetText("Market: " .. (market.label or "Waiting for market identity") .. houseLabel)
     UI.rulesetButton:SetShown(market.canChooseRuleset)
     UI.rulesetButton:SetText(market.pendingRuleset and "Confirm ruleset" or "Change ruleset")
     UI.rulesetButton:SetEnabled(D.data ~= nil and not U.Combat() and not S.active and not S.paused)
@@ -521,28 +551,34 @@ function UI.Refresh()
     switch.thumb:SetPoint("CENTER", switch, "CENTER", intraday and 14 or -14, 0)
     switch:SetEnabled(D.data ~= nil and not U.Combat())
     if snapshot then
-        UI.snapshotText:SetText(string.format("Saved: %d auctions | %d priced items | %s%s\nToday (UTC): %d scans | %d saved days",
+        UI.snapshotText:SetText(string.format("Faction: %d auctions | %d priced items | %s%s\nToday (UTC): %d scans | %d saved days",
             snapshot.totalRows, snapshot.distinctItems, U.Age(snapshot.startedAt), D.IsStale(snapshot) and " (stale)" or "",
             history.scansToday, history.days))
     else
         local hint = market.pendingRuleset and "Confirm your ruleset in Price snapshot." or
-            (market.key and "Click Scan entire AH at an open auctioneer." or market.reason)
-        UI.snapshotText:SetText("No complete scan saved for this market.\n" .. hint)
+            (market.key and "Scan at a faction auctioneer to build price history." or market.reason)
+        UI.snapshotText:SetText("No completed faction scan.\n" .. hint)
     end
     local status = S.state .. (S.message and (": " .. S.message) or "")
     if S.work then
         status = status .. string.format("\nLocal copy %d/%d%s | Read %d; unresolved %d.", S.copiedRows or 0, S.totalRows, S.localReady and " (complete)" or "", S.work.processedRows, #S.pending)
-    elseif S.RemainingCooldown() > 0 then
-        status = status .. string.format("\nNext full scan in %dm %ds.", math.floor(S.RemainingCooldown() / 60), S.RemainingCooldown() % 60)
+    elseif cooldown > 0 then
+        status = status .. string.format("\nNext full scan (any AH) in %dm %ds.", math.floor(cooldown / 60), cooldown % 60)
     end
     if A.disabledReason then status = A.disabledReason end
     if A.tooltipReason then status = status .. "\n" .. A.tooltipReason end
     UI.statusText:SetText(status)
     UI.progress:SetValue(S.work and (S.totalRows > 0 and S.work.processedRows / S.totalRows or 1) or (S.state == "COMPLETE" and 1 or 0))
-    UI.scanButton:SetText(S.paused and (S.bufferLost and S.RemainingCooldown() == 0 and "Restart scan" or "Resume scan") or "Scan entire AH")
-    UI.scanButton:SetEnabled(market.key ~= nil and D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and not S.active and (S.paused == true or S.RemainingCooldown() == 0))
+    local caption = house == "neutral" and "Scan neutral AH" or "Scan entire AH"
+    if A.auctionOpen and not house then caption = "Choose auction house"
+    elseif S.paused then
+        local canRestart = house == S.scanHouse and cooldown == 0 and (S.bufferLost or S.resumeState == "WAITING")
+        caption = canRestart and "Restart scan" or "Resume scan"
+    end
+    UI.scanButton:SetText(caption)
+    UI.scanButton:SetEnabled(market.key ~= nil and D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and not S.active and (not house or S.paused == true or cooldown == 0))
     UI.stopButton:SetEnabled(S.active)
-    UI.restartButton:SetEnabled(market.key ~= nil and D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and S.paused == true and S.RemainingCooldown() == 0)
+    UI.restartButton:SetEnabled(market.key ~= nil and D.data ~= nil and not A.disabledReason and A.auctionOpen and not U.Combat() and S.paused == true and cooldown == 0)
     if UI.tabButton then UI.tabButton:SetEnabled(not U.Combat()) end
     for key, check in pairs(UI.checks) do check:SetChecked(D.Settings()[key]) end
     if not UI.staleBox:HasFocus() then UI.staleBox:SetText(tostring(D.Settings().staleHours)) end

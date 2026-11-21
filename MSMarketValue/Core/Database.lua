@@ -75,6 +75,10 @@ function D.Initialize()
     if not ({status=true,name=true,current=true,target=true,profit=true,roi=true})[db.settings.watchSort] then db.settings.watchSort="status" end
     if type(db.excludedItems) ~= "table" then db.excludedItems = {} end
     if not U.Number(db.cooldownUntil, 0) then db.cooldownUntil = 0 end
+    if U.Number(db.neutralCooldownUntil, 0) then
+        db.cooldownUntil = math.max(db.cooldownUntil, db.neutralCooldownUntil)
+    end
+    db.neutralCooldownUntil = nil
     db.version = A.VERSION
     db.build = A.BUILD
     _G.MSMarketValueDB = db
@@ -289,6 +293,19 @@ function D.Snapshot(market)
     return snapshot
 end
 
+local function NeutralKey(market)
+    if not market.key then return nil end
+    if market.ruleset then return "neutral|" .. market.region .. "|" .. market.ruleset end
+    return "neutral|" .. market.key
+end
+
+function D.NeutralSnapshot(market)
+    local key = NeutralKey(market or U.MarketInfo())
+    local neutral = D.data and D.data.neutralMarkets
+    local snapshot = key and U.Table(neutral) and neutral[key]
+    if D.ValidSnapshot(snapshot, key) and snapshot.auctionHouse == "neutral" then return snapshot end
+end
+
 local function AddPrice(map, key, unitPrice, quantity, link, display)
     local p = map[key]
     if not p then
@@ -358,15 +375,26 @@ function D.AddRow(snapshot, itemID, quantity, buyout, link, saleStatus, quality,
     snapshot.buyoutRows = snapshot.buyoutRows + 1
 end
 
-function D.Commit(snapshot)
+function D.Commit(snapshot, house)
     if not D.data or type(snapshot) ~= "table" or
        snapshot.complete ~= false or not U.Number(snapshot.totalRows, 0, A.MAX_ROWS, true) or
        snapshot.processedRows ~= snapshot.totalRows or
        snapshot.processedRows ~= snapshot.buyoutRows + snapshot.bidOnlyRows + snapshot.soldRows then
         return false, "Snapshot validation failed."
     end
-    local key = U.MarketKey()
+    local market = U.MarketInfo()
+    local key = market.key
     if key ~= snapshot.marketKey then return false, "Market changed while scanning." end
+    if house == "neutral" then
+        key = NeutralKey(market)
+        if not key then return false, "Neutral market identity is unavailable." end
+        snapshot.marketKey, snapshot.auctionHouse, snapshot.faction = key, "neutral", nil
+        snapshot.finishedAt, snapshot.complete = U.Now(), true
+        if not U.Table(D.data.neutralMarkets) then D.data.neutralMarkets = {} end
+        D.data.neutralMarkets[key] = snapshot
+        return true
+    end
+    snapshot.auctionHouse = "faction"
     local previous = D.Snapshot()
     if previous then
         local supply = { startedAt=previous.startedAt, prices={}, variants={} }

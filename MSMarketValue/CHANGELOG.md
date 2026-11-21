@@ -1,5 +1,18 @@
 # Changelog
 
+## 1.3.3 — 2026-11-21
+
+- Save only the latest neutral AH scan per region and ruleset. Faction prices, history, tools and watchlists use the faction dataset.
+- Identify the house from known auctioneers or locations. Ask when neither is recognized and resume paused scans only at the original house type.
+- Share the game's 15-minute full-scan cooldown across faction and neutral auction houses and characters. Allow a fresh request after the cooldown if the server never replied.
+- Add **Arbitrage** and its hover help at neutral auction houses. Use **Basis** to compare the latest neutral prices with exact faction Daily or Intraday averages. Profit estimates include the selling house’s cut.
+- Keep the Daily/Intraday switch in regular Opportunities views. Returning from a neutral house restores your previous regular view and price basis.
+- Mark base-item price fallbacks with a short **Any variant** note in item tooltips.
+- Open Buy listings from Opportunities when a paused scan is still waiting for its first response. Copying auction rows still takes priority once they arrive.
+- Keep current Opportunities rows clickable and hold the scroll position while item details refresh.
+- Open the item's live neutral listings from every Arbitrage row. **Buy from** shows where to purchase.
+- Open Arbitrage on the first visit to Opportunities at a neutral auctioneer each login.
+
 ## 1.3.2 — 2026-11-21
 
 ### Auction House and rulesets

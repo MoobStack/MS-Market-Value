@@ -1,7 +1,7 @@
 # Release validation
 
-MS Market Value **1.3.2 / 2026-11-21-release001** passed 964 Lua cases and 23 Python checks. All 34 runtime Lua files passed syntax, load order and release identity checks.
+MS Market Value **1.3.3 / 2026-11-21-release008** passed 976 Lua tests and 23 Python checks. All 34 runtime Lua files passed syntax, load order and release identity checks.
 
-The suite covers saved-data upgrades, hidden realm names, per-character rulesets, intraday rollover, minimap controls and sorting in Rising and Falling. Larger workloads include 16,000 market items, 200 watches and 50 saved sessions.
+Local checks cover the shared cooldown, scan retries and switching the Arbitrage price basis. Both Arbitrage trade directions open the neutral Buy page with the exact item and its saved neutral price. A separate check covers resolving a modifier from Browse results.
 
-In-game diagnostics on Forever 1.60.1 build 71037 recorded a completed scan of 231,576 rows and six scans in the same UTC day. UTC rollover was verified with simulated time. The final progress-bar layout and sort controls were checked against frame fixtures.
+Live diagnostics confirmed the neutral scan and Basis switch on the preceding build. Final row navigation was verified in local checks.

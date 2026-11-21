@@ -10,7 +10,19 @@ local function ActiveSort()
     return directionSort[UI.view] or UI.sort
 end
 
+local function NeutralHouseOpen()
+    return A.Scanner.House() == "neutral"
+end
+
+local function SelectView(view)
+    UI.view, UI.page, UI.offset = view, 1, 0
+    UI.selected, UI.hovered, UI.message = nil, nil, nil
+end
+
 function UI.Ensure(force)
+    if UI.view == "arbitrage" and not NeutralHouseOpen() then
+        SelectView(UI.factionView or "deals")
+    end
     M.Ensure(UI.view, ActiveSort(), force)
 end
 
@@ -97,7 +109,7 @@ end
 
 local function Message(text)
     UI.message = text; UI.Refresh()
-    if UI.panel and not UI.panel:IsShown() then U.Print(text) end
+    if UI.panel and not UI.panel:IsShown() then U.Print(text) else U.Log(text) end
     return false
 end
 
@@ -157,7 +169,7 @@ local function OpenNative(row,key,info)
     if not context or not ah or type(ah.SelectBrowseResult)~="function" or type(ah.QueryItem)~="function" then return false end
     return pcall(function()
         ah:SetDisplayMode(AuctionHouseFrameDisplayMode.Buy)
-        ah:SelectBrowseResult({itemKey=key,minPrice=row.buy})
+        ah:SelectBrowseResult({itemKey=key,minPrice=row.neutralLow or row.buy})
         if ah.SetSearchText then ah:SetSearchText(info.itemName) end
         ah:QueryItem(context,key)
     end)
@@ -165,13 +177,15 @@ end
 function UI.ResolvePendingVariant()
     local pending=UI.pendingVariant
     if not pending then return end
-    if U.Combat() or not A.auctionOpen or pending.market~=U.MarketKey() or pending.snapshot~=D.Snapshot() then UI.pendingVariant=nil;return end
+    if U.Combat() or pending.house ~= A.Scanner.House() or pending.market~=U.MarketKey() or pending.snapshot~=D.Snapshot() or
+       (pending.neutral and pending.neutral ~= D.NeutralSnapshot()) then UI.pendingVariant=nil;return end
     if U.Mono()-pending.at>6 then
         UI.pendingVariant=nil;return Message("Exact modifier details are not ready. Choose it in the Buy results, or try again.")
     end
     local bar=AuctionHouseFrame and AuctionHouseFrame.SearchBar
     local query=bar and U.Call(bar.GetSearchText,bar)
     if U.String(query) and query~=pending.query then UI.pendingVariant=nil;return end
+    if A.Scanner.BlocksLiveSearch() then return end
     if type(C_AuctionHouse.IsThrottledMessageSystemReady)=="function" and
        U.Call(C_AuctionHouse.IsThrottledMessageSystemReady)~=true then return end
     local key,info,nextIndex=BrowseVariant(pending.row,pending.index)
@@ -190,12 +204,23 @@ function UI.OpenListings(row, source)
     local ah, modes = AuctionHouseFrame, AuctionHouseFrameDisplayMode
     if not A.auctionOpen or not U.Table(ah) or not ah.IsShown or not ah:IsShown() or
        (ah.IsForbidden and ah:IsForbidden()) then return Message("Open the auction house to view live listings.") end
-    if (A.Scanner.active or A.Scanner.paused) and not A.Scanner.localReady then
+    if A.Scanner.BlocksLiveSearch() then
         return Message("Wait for the scan's local copy to finish before opening live listings.")
+    end
+    local house = A.Scanner.House()
+    local listingHouse = row and row.buyHouse and "neutral" or "faction"
+    if not house then A.UI.ShowAuctionHouseChoice() end
+    if house ~= listingHouse then
+        return Message("Visit a " .. listingHouse .. " auctioneer to open these listings.")
+    end
+    local neutral = listingHouse == "neutral" and D.NeutralSnapshot()
+    if listingHouse == "neutral" and (not neutral or neutral ~= M.neutralSnapshot or D.IsStale(neutral)) then
+        return Message("Refresh the comparison with a current neutral scan.")
     end
     local snapshot = D.Snapshot()
     local results = source == "watch" and A.Watchlist or M
-    if results.job or results.snapshot ~= snapshot or results.key ~= U.MarketKey() or not snapshot or
+    local updating = source == "watch" and results.job or source ~= "watch" and not M.PublishedResultsCurrent()
+    if updating or results.snapshot ~= snapshot or results.key ~= U.MarketKey() or not snapshot or
        not U.Number(snapshot.startedAt, 0, U.Now()) or D.IsStale(snapshot) then
         return Message("Wait for current results, then choose the item again.")
     end
@@ -213,7 +238,11 @@ function UI.OpenListings(row, source)
     end
     if row.hasBonuses then
         local key,info=BrowseVariant(row)
-        if key then UI.lastSearch=U.Mono();return OpenNative(row,key,info) end
+        if key then
+            UI.lastSearch, UI.message = U.Mono(), nil
+            if not OpenNative(row,key,info) then return Message("Could not open that modifier. Use the Buy search.") end
+            return true
+        end
         local bar=ah.SearchBar
         if not U.Table(bar) or type(bar.SetSearchText)~="function" or type(bar.StartSearch)~="function" then
             return Message("Exact modifier details are unavailable. Use the Buy search.")
@@ -222,7 +251,7 @@ function UI.OpenListings(row, source)
         -- matching full sample link may then open a modifier's listings.
         local item=A.Valuation.ItemInfo(row.id)
         local query=item and item.name or M.Name(row)
-        UI.pendingVariant={row=row,market=U.MarketKey(),snapshot=snapshot,at=U.Mono(),index=1,query=query}
+        UI.pendingVariant={row=row,house=house,neutral=neutral,market=U.MarketKey(),snapshot=snapshot,at=U.Mono(),index=1,query=query}
         UI.lastSearch,UI.message=U.Mono(),nil
         local ok=pcall(function()ah:SetDisplayMode(modes.Buy);bar:SetSearchText(query);bar:StartSearch()end)
         if not ok then UI.pendingVariant=nil;return Message("Could not start the native modifier search.") end
@@ -236,7 +265,7 @@ function UI.OpenListings(row, source)
         UI.lastSearch, UI.message = U.Mono(), nil
         local ok = pcall(function()
             ah:SetDisplayMode(modes.Buy)
-            ah:SelectBrowseResult({ itemKey = key, minPrice = row.buy })
+            ah:SelectBrowseResult({ itemKey = key, minPrice = row.neutralLow or row.buy })
             if type(ah.SetSearchText) == "function" then ah:SetSearchText(info.itemName) end
             ah:QueryItem(context, key)
         end)
@@ -303,21 +332,25 @@ function UI.Create(parent)
         UI.Ensure()
         UI.Refresh()
     end)
+    UI.priceBasis:Show()
     UI.priceBasis:RegisterForClicks("LeftButtonUp", "RightButtonUp")
     A.Help.Setting(UI.priceBasis, "marketPriceBasis")
     UI.watchButton=Button(panel, "Watchlists", 510, -7, 120, function() A.EconomyUI.Show("watch") end)
     Button(panel, "Ledger", 640, -7, 120, function() A.EconomyUI.Show("ledger") end)
     UI.views = {}
-    local names = { { "deals", "Resale" }, { "rising", "Rising" }, { "falling", "Falling" }, { "all", "All signals" }, {"listed","All items"} }
+    local names = { { "deals", "Resale" }, { "rising", "Rising" }, { "falling", "Falling" },
+        { "all", "All signals" }, { "listed", "All items" }, { "arbitrage", "Arbitrage" } }
     for index, data in ipairs(names) do
         local view = data[1]
         local button = Button(panel, data[2], 14 + (index - 1) * 80, -53, 74, function()
-            UI.view, UI.page, UI.selected, UI.message, UI.offset = view, 1, nil, nil, 0
+            if U.Combat() or (view == "arbitrage" and not NeutralHouseOpen()) then return end
+            if view ~= "arbitrage" then UI.factionView = view end
+            SelectView(view)
             UI.Ensure(); UI.Refresh()
         end)
         button.caption = data[2]; UI.views[view] = button
     end
-    UI.sortButton = Button(panel, "Sort: return", 410, -53, 139, function()
+    UI.sortButton = Button(panel, "Sort: return", 496, -53, 109, function()
         local sort = directionSort[UI.view]
         if sort then
             directionSort[UI.view] = nextDirectionSort[sort]
@@ -328,7 +361,7 @@ function UI.Create(parent)
         UI.Ensure()
         UI.Refresh()
     end)
-    UI.recheck = Button(panel, "Recheck saved scan", 559, -53, 201, function()
+    UI.recheck = Button(panel, "Recheck saved scan", 615, -53, 145, function()
         UI.page, UI.selected, UI.offset = 1, nil, 0; UI.Ensure(true); UI.Refresh()
     end)
     UI.filterToggle=Button(panel,"Filters",410,-84,139,function()
@@ -399,7 +432,12 @@ function UI.Create(parent)
     local columns = { {"Item / modifier",7,211}, {"Each",222,76}, {"At low",302,44},
         {"Low buyout",350,92}, {"Stock",446,44}, {"Net / item",494,88},
         {"Return",586,53}, {"Move",643,63} }
-    for index, column in ipairs(columns) do Label(header, column[1], column[2], -3, column[3], index > 1):SetFontObject("GameFontNormalSmall") end
+    UI.columns = {}
+    for index, column in ipairs(columns) do
+        local label = Label(header, column[1], column[2], -3, column[3], index > 1)
+        label:SetFontObject("GameFontNormalSmall")
+        UI.columns[index] = label
+    end
     for index = 1, 12 do
         local button = CreateFrame("Button", nil, tableFrame)
         button:SetPoint("TOPLEFT", tableFrame, "TOPLEFT", 3, -25 - (index - 1) * 20); button:SetSize(716, 20)
@@ -408,8 +446,11 @@ function UI.Create(parent)
         button:RegisterForClicks("LeftButtonUp", "RightButtonUp"); button.labels = {}
         for column, data in ipairs(columns) do button.labels[column] = Label(button, "", data[2], -3, data[3], column > 1) end
         button:SetScript("OnClick", function(self, mouse)
-            UI.selected = self.row; UI.Refresh()
-            if mouse == "LeftButton" then UI.OpenListings(self.row) end
+            local row = self.row
+            if not row then return end
+            UI.selected, UI.message = row, nil
+            if mouse == "LeftButton" then UI.OpenListings(row) end
+            UI.Refresh()
         end)
         button:SetScript("OnEnter", function(self)
             self.hovered = true; UI.hovered = self.row; Highlight(self); UI.RefreshDetails()
@@ -437,7 +478,14 @@ function UI.Create(parent)
     UI.watchSelected = Button(panel, "Watch selected", 420, -432, 145, function() A.EconomyUI.WatchDraft(UI.selected) end)
     UI.next = Button(panel, "Next", 660, -432, 100, function() UI.Scroll(UI.offset+(UI.pageSize or 12)) end)
     UI.status = Label(panel, "", 14, -459, 746)
-    panel:SetScript("OnShow", function() UI.Ensure(); UI.Refresh() end)
+    panel:SetScript("OnShow", function()
+        if not UI.neutralOpened and NeutralHouseOpen() then
+            UI.neutralOpened = true
+            SelectView("arbitrage")
+        end
+        UI.Ensure()
+        UI.Refresh()
+    end)
     panel:SetScript("OnHide", function() UI.hovered = nil; A.Help.Hide() end)
     panel:Hide()
     return panel
@@ -447,6 +495,12 @@ function UI.RefreshDetails()
     if not UI.detail then return end
     local row = UI.hovered or UI.selected
     if row then
+        if row.buyHouse then
+            local sellHouse = row.buyHouse == "neutral" and "faction" or "neutral"
+            UI.detail:SetText(M.Name(row) .. ". Buy from " .. row.buyHouse .. " at " .. U.Coins(row.current) ..
+                ". Estimated " .. sellHouse .. " sale: " .. U.Coins(row.sell) .. ". Left-click for neutral listings.")
+            return
+        end
         if row.needsHistory then
             UI.detail:SetText(M.Name(row)..". "..M.HistoryDescription(row))
             return
@@ -458,26 +512,64 @@ function UI.RefreshDetails()
         if not row.lowUnits then text=text .. " Rescan for quantities at the low." end
         if row.trend then text = text .. string.format(" Recent trend: %+.0f%%.", row.trend) end
         UI.detail:SetText(text)
-    else UI.detail:SetText("Left-click an item to open live listings. Right-click for details; hover for its tooltip. Values are per item.") end
+    else
+        UI.detail:SetText(UI.view == "arbitrage" and "Left-click any row for live neutral listings. Buy from shows where to purchase." or
+            "Left-click an item to open live listings. Right-click for details; hover for its tooltip. Values are per item.")
+    end
 end
 
 function UI.Refresh()
     if not UI.panel then return end
+    local neutralOpen = NeutralHouseOpen()
+    if UI.view == "arbitrage" and not neutralOpen then UI.Ensure() end
+    if neutralOpen ~= UI.neutralLayout then
+        UI.views.arbitrage:SetShown(neutralOpen)
+        UI.sortButton:ClearAllPoints()
+        UI.sortButton:SetPoint("TOPLEFT", UI.panel, "TOPLEFT", neutralOpen and 496 or 410, -53)
+        UI.sortButton:SetWidth(neutralOpen and 109 or 139)
+        UI.recheck:ClearAllPoints()
+        UI.recheck:SetPoint("TOPLEFT", UI.panel, "TOPLEFT", neutralOpen and 615 or 559, -53)
+        UI.recheck:SetWidth(neutralOpen and 145 or 201)
+        UI.neutralLayout = neutralOpen
+    end
     UI.Layout()
     local snapshot = M.snapshot or D.Snapshot()
     local history = A.History.Status()
     local basis = M.PriceBasis()
+    local arbitrage = UI.view == "arbitrage"
     local context = basis == "intraday" and
         (history.scansToday .. " scans today (UTC)  |  Intraday baseline: earlier scans") or
         (history.days .. " saved UTC days  |  Daily baseline: prior daily lower quartile")
-    UI.age:SetText((snapshot and ("Scan: " .. U.Age(snapshot.startedAt) .. (D.IsStale(snapshot) and " (stale)" or "")) or "No saved scan") ..
-        "  |  " .. context)
+    if arbitrage then
+        local neutral = D.NeutralSnapshot()
+        UI.age:SetText("Faction scan: " .. (snapshot and U.Age(snapshot.startedAt) or "none") ..
+            "  |  Neutral: " .. (neutral and U.Age(neutral.startedAt) or "no scan") ..
+            "  |  Sale cuts: " .. D.Settings().marketFee .. "% faction, " .. M.neutralFee .. "% neutral")
+    else
+        UI.age:SetText((snapshot and ("Scan: " .. U.Age(snapshot.startedAt) .. (D.IsStale(snapshot) and " (stale)" or "")) or "No saved scan") ..
+            "  |  " .. context)
+    end
+    if arbitrage ~= UI.arbitrageColumns then
+        UI.columns[2]:SetText(arbitrage and "Faction avg" or "Each")
+        UI.columns[3]:SetText(arbitrage and "Neutral low" or "At low")
+        UI.columns[4]:SetText(arbitrage and "Buy from" or "Low buyout")
+        UI.columns[8]:SetText(arbitrage and "Spread" or "Move")
+        local function FitPrices(labels)
+            labels[3]:SetWidth(arbitrage and 78 or 44)
+            labels[4]:ClearAllPoints()
+            labels[4]:SetPoint("TOPLEFT", arbitrage and 384 or 350, -3)
+            labels[4]:SetWidth(arbitrage and 58 or 92)
+        end
+        FitPrices(UI.columns)
+        for _, button in ipairs(UI.rows) do FitPrices(button.labels) end
+        UI.arbitrageColumns = arbitrage
+    end
     local combat = U.Combat()
     UI.priceBasis:SetText("Basis: " .. A.History.basisNames[basis] .. " avg")
     UI.priceBasis:SetEnabled(D.data ~= nil and not combat)
     for key, button in pairs(UI.views) do
         button:SetText((key == UI.view and "|cffffd100" or "|cffffffff") .. button.caption .. "|r")
-        button:SetEnabled(not combat)
+        button:SetEnabled(not combat and (key ~= "arbitrage" or neutralOpen))
     end
     for _, field in ipairs(fields) do
         local box = UI.inputs[field[1]]
@@ -491,8 +583,11 @@ function UI.Refresh()
     UI.apply:SetEnabled(not combat); UI.quickApply:SetEnabled(not combat); UI.recheck:SetEnabled(not combat and not M.job and not next(UI.dirty))
     UI.sortButton:SetText("Sort: " .. ActiveSort())
     UI.sortButton:SetEnabled(not combat)
+    if UI.renderedSnapshot ~= M.snapshot then
+        UI.offset, UI.renderedSnapshot = 0, M.snapshot
+    end
     if UI.publication ~= M.publications or not M.snapshot then
-        UI.selected, UI.hovered, UI.publication, UI.offset = nil, nil, M.publications, 0
+        UI.selected, UI.hovered, UI.publication = nil, nil, M.publications
     end
     UI.offset=math.max(0,math.min(UI.offset or 0,math.max(0,#M.rows-UI.pageSize)))
     UI.page=math.floor(UI.offset/UI.pageSize)+1
@@ -510,6 +605,10 @@ function UI.Refresh()
                 row.profit and A.CraftingUI.SignedMoney(row.profit) or row.itemWide and "Rescan" or
                     row.needsHistory and needs or "-", row.roi and string.format("%+.0f%%", row.roi) or "-",
                 row.movement and string.format("%+.0f%%", row.movement) or "-" }
+            if row.buyHouse then
+                texts[2], texts[3], texts[4] = U.Coins(row.factionAverage), U.Coins(row.neutralLow),
+                    row.buyHouse == "neutral" and "Neutral" or "Faction"
+            end
             for column, value in ipairs(texts) do button.labels[column]:SetText(value) end
             for _, column in ipairs({6,7}) do button.labels[column]:SetTextColor(row.profit and row.profit>0 and 0.35 or 1, row.profit and row.profit>0 and 0.87 or 0.38, 0.38) end
             button.labels[8]:SetTextColor(row.movement and row.movement>0 and 0.35 or 1, row.movement and row.movement>0 and 0.87 or 0.65, 0.38)
@@ -520,13 +619,15 @@ function UI.Refresh()
     end
     UI.RefreshDetails()
     UI.previous:SetEnabled(UI.offset>0); UI.next:SetEnabled(UI.offset+UI.pageSize<#M.rows)
-    UI.watchSelected:SetEnabled(UI.selected ~= nil and not combat and not M.job)
+    UI.watchSelected:SetEnabled(UI.selected ~= nil and not combat and not M.job and not arbitrage)
     UI.pageText:SetText(string.format("%d-%d / %d%s",#M.rows>0 and UI.offset+1 or 0,math.min(UI.offset+UI.pageSize,#M.rows),
         M.eligible or 0,(M.eligible or 0)>M.limit and (" | Best " .. M.limit .. " shown") or ""))
     UI.status:SetText(UI.message or (next(UI.dirty) and "Changes not applied. Click Apply filters or press Enter; Esc restores the focused field.") or
         (M.job and ((M.job.phase == "variants" and ("Preparing item variants: " .. (M.job.prepared or 0)) or ("Updating results: " .. M.job.examined .. " current entries checked")) ..
             (M.snapshot and ". Previous results shown until finished." or ".")) or M.reason) or
-        (M.truncated and "Large dataset: first 50,000 price entries checked." or "Resale requires the minimum price drop. Estimates exclude deposits and unsold stock."))
+        (M.truncated and "Large dataset: first 50,000 price entries checked." or arbitrage and
+            "Stock is from the buy side. Estimates exclude deposits and unsold stock." or
+            "Resale requires the minimum price drop. Estimates exclude deposits and unsold stock."))
 end
 
 function UI.Show()

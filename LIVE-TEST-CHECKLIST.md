@@ -1,5 +1,9 @@
-# In-game checks for 1.3.2
+# In-game checks for 1.3.3
 
+- Complete a faction scan, then log in to a character at a neutral auctioneer. The same countdown should carry over. When it expires, scan the neutral house and verify that only the neutral snapshot updates.
+- On the first neutral visit to Opportunities after login, check that Arbitrage opens. Switch **Basis** and verify the **Faction avg**, spread and profit update where the averages differ. Click rows marked **Neutral** and **Faction** and verify both open the exact item’s neutral listings. Return to a faction auctioneer and check that the regular view is restored.
+- Close a faction house before a scan receives its first response. Reopen it and click a saved Opportunities result while the scan is paused. Buy should open when the game is ready for a search.
+- Hover over gear with and without a price for its exact stat roll. Only prices using any variant should show an asterisk.
 - Confirm the market and saved prices with realm names hidden. If prompted, choose the ruleset before scanning. Verify activity from before the choice is still recorded.
 - Complete two AH scans in the same UTC day. Check that Intraday uses both in item tooltips and that Opportunities compares with earlier scans. After midnight UTC, confirm the daily average remains and today's scan count starts over.
 - Check that the scan bar fills Price snapshot when complete and that the version sits above it. Try Return, Profit and Movement in both Rising and Falling.

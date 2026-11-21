@@ -4,11 +4,15 @@ Start with the [README](README.md) for installation, commands and a quick setup.
 
 ## Prices and crafting
 
-At an auctioneer, choose **Scan entire AH** on the MS Market Value tab and keep the AH open until **Local copy** is complete. The addon detects your ruleset when possible. Confirm it if asked, or use **Change ruleset** in Price snapshot to set it later. The choice is saved for that character.
+At a faction auctioneer, choose **Scan entire AH** on the MS Market Value tab and keep the AH open until **Local copy** is complete. Confirm your ruleset if asked, or use **Change ruleset** in Price snapshot to set it later. The ruleset choice is saved for that character.
 
-A completed scan replaces the current snapshot. You can pause and resume during the same login. Unfinished scans expire when you reload or log out.
+A completed faction scan updates faction prices, history and watchlists. At a neutral auctioneer, **Scan neutral AH** saves one separate snapshot for **Arbitrage**. The addon checks the auctioneer and location before asking you to choose a house. Resume a paused scan at the same type of house during the same login.
+
+Full scans share a 15-minute cooldown across both auction houses and all characters on the account. Watch the countdown in **Price snapshot**. If the server never replies, use **Restart scan** once the timer ends.
 
 The **Prices** switch in **Price settings** selects the estimates used across the addon. **Daily** gives each saved UTC date equal weight, including today so far. **Intraday** averages today's completed scans. Each scan contributes its lowest unit price for each item or exact modifier with a buyout. At the UTC date change, the addon keeps the day's averages and drops the individual price samples. History keeps 1–30 UTC days.
+
+The tooltip marks a price with `*` when it uses the base item across any variant. For gear with random stats, the price may come from a different roll.
 
 Open a profession and click **Show profits**, or use `/msmv craft`. Scroll, search and sort learned recipes, then select one for materials, net profit and break-even price. Visit supplies vendors to learn discounted costs. Other materials use market replacement value, including items you own; missing prices stay unknown.
 
@@ -17,6 +21,8 @@ Open a profession and click **Show profits**, or use `/msmv craft`. Scroll, sear
 ## Opportunities and watchlists
 
 At the AH, **MS Opportunities → All items** shows the latest asking prices and stock. **Basis** changes the reference for that page. Daily uses earlier UTC dates, with three priced dates per variant by default. Intraday uses earlier scans today, with at least one priced scan per variant. Right-click **Basis** to follow the addon setting again.
+
+At a neutral auctioneer, **Arbitrage** opens the first time you visit Opportunities each login. **Basis** compares the latest neutral price with the exact faction average across saved UTC days or today’s scans. Both houses need fresh scans. Profit uses the buy price from the saved scan and includes the selling house’s cut. Click any row to check neutral listings. **Buy from** shows where to purchase.
 
 Apply keywords, rarity and supply filters. Use **Sort** to order Rising or Falling by movement, return or net profit per item. Left-click a result for live listings, or use **Watch selected** to save targets. On the Sell page, the red arrows beside copper adjust unit price by one copper and update the total.
 
